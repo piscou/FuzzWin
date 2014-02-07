@@ -1,0 +1,495 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{E535A52C-8237-4B5A-8A50-5CE162AB679C}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>PINTOOL</RootNamespace>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v110</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v110</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>false</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v110</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>false</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v110</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <LinkIncremental>false</LinkIncremental>
+    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
+    <OutDir>$(SolutionDir)BUILD\</OutDir>
+    <TargetExt>.dll</TargetExt>
+    <IncludePath>$(PIN_ROOT)source\include\pin;$(PIN_ROOT)source\include\pin\gen;$(PIN_ROOT)extras\xed2-ia32\include;$(PIN_ROOT)extras\components\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(PIN_ROOT)ia32\lib;$(PIN_ROOT)ia32\lib-ext;$(PIN_ROOT)extras\xed2-ia32\lib;$(LibraryPath)</LibraryPath>
+    <GenerateManifest />
+    <ExecutablePath>$(VCInstallDir)bin;$(WindowsSdkDir)bin\NETFX 4.0 Tools;$(WindowsSdkDir)bin;$(VSInstallDir)Common7\Tools\bin;$(VSInstallDir)Common7\tools;$(VSInstallDir)Common7\ide;$(ProgramFiles)\HTML Help Workshop;$(FrameworkSDKDir)\bin;$(MSBuildToolsPath32);$(VSInstallDir);$(SystemRoot)\SysWow64;$(FxCopDir);$(PATH);</ExecutablePath>
+    <TargetName>fuzzwinX86</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <TargetExt>.dll</TargetExt>
+    <IncludePath>$(PIN_ROOT)source\include\pin;$(PIN_ROOT)source\include\pin\gen;$(PIN_ROOT)extras\xed2-intel64\include;$(PIN_ROOT)extras\components\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(PIN_ROOT)intel64\lib;$(PIN_ROOT)intel64\lib-ext;$(PIN_ROOT)extras\xed2-intel64\lib;$(LibraryPath)</LibraryPath>
+    <GenerateManifest />
+    <LinkIncremental>false</LinkIncremental>
+    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
+    <TargetName>fuzzwinX64</TargetName>
+    <OutDir>$(SolutionDir)BUILD\</OutDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <LinkIncremental>false</LinkIncremental>
+    <IncludePath>$(PIN_ROOT)source\include\pin;$(PIN_ROOT)source\include\pin\gen;$(PIN_ROOT)extras\xed2-ia32\include;$(PIN_ROOT)extras\components\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(PIN_ROOT)ia32\lib;$(PIN_ROOT)ia32\lib-ext;$(PIN_ROOT)extras\xed2-ia32\lib;$(LibraryPath)</LibraryPath>
+    <OutDir>$(SolutionDir)BUILD\</OutDir>
+    <TargetExt>.dll</TargetExt>
+    <GenerateManifest />
+    <ExecutablePath>$(VCInstallDir)bin;$(WindowsSdkDir)bin\NETFX 4.0 Tools;$(WindowsSdkDir)bin;$(VSInstallDir)Common7\Tools\bin;$(VSInstallDir)Common7\tools;$(VSInstallDir)Common7\ide;$(ProgramFiles)\HTML Help Workshop;$(FrameworkSDKDir)\bin;$(MSBuildToolsPath32);$(VSInstallDir);$(SystemRoot)\SysWow64;$(FxCopDir);$(PATH);</ExecutablePath>
+    <TargetName>fuzzwinX86</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <TargetExt>.dll</TargetExt>
+    <GenerateManifest />
+    <LinkIncremental>false</LinkIncremental>
+    <IncludePath>$(PIN_ROOT)source\include\pin;$(PIN_ROOT)source\include\pin\gen;$(PIN_ROOT)extras\xed2-intel64\include;$(PIN_ROOT)extras\components\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(PIN_ROOT)intel64\lib;$(PIN_ROOT)intel64\lib-ext;$(PIN_ROOT)extras\xed2-intel64\lib;$(LibraryPath)</LibraryPath>
+    <TargetName>fuzzwinX64</TargetName>
+    <OutDir>$(SolutionDir)BUILD\</OutDir>
+    <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>DEBUG;TARGET_IA32;HOST_IA32;TARGET_WINDOWS;BIGARRAY_MULTIPLIER=1;_CRT_SECURE_NO_DEPRECATE;_SECURE_SCL=0;WIN32</PreprocessorDefinitions>
+      <ExceptionHandling>false</ExceptionHandling>
+      <BasicRuntimeChecks>
+      </BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
+      <TreatWarningAsError>
+      </TreatWarningAsError>
+      <OmitFramePointers>false</OmitFramePointers>
+      <TreatWChar_tAsBuiltInType>
+      </TreatWChar_tAsBuiltInType>
+      <ForceConformanceInForLoopScope>
+      </ForceConformanceInForLoopScope>
+      <MinimalRebuild>false</MinimalRebuild>
+      <FloatingPointModel>Precise</FloatingPointModel>
+      <ErrorReporting>Prompt</ErrorReporting>
+      <BrowseInformation>
+      </BrowseInformation>
+      <DisableLanguageExtensions>
+      </DisableLanguageExtensions>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <AdditionalOptions>/EHs- /EHa- %(AdditionalOptions)</AdditionalOptions>
+      <CallingConvention>Cdecl</CallingConvention>
+      <DisableSpecificWarnings>4530;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions />
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <RuntimeTypeInfo>false</RuntimeTypeInfo>
+    </ClCompile>
+    <Link>
+      <SubSystem>
+      </SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>pin.lib;libxed.lib;libcpmt.lib;libcmt.lib;pinvm.lib;kernel32.lib;ntdll-32.lib</AdditionalDependencies>
+      <IgnoreAllDefaultLibraries>true</IgnoreAllDefaultLibraries>
+      <AllowIsolation>
+      </AllowIsolation>
+      <EnableUAC>
+      </EnableUAC>
+      <UACExecutionLevel>
+      </UACExecutionLevel>
+      <UACUIAccess>
+      </UACUIAccess>
+      <ManifestFile>
+      </ManifestFile>
+      <BaseAddress>0x55000000</BaseAddress>
+      <RandomizedBaseAddress>
+      </RandomizedBaseAddress>
+      <EntryPointSymbol>Ptrace_DllMainCRTStartup@12 </EntryPointSymbol>
+      <OptimizeReferences>
+      </OptimizeReferences>
+      <DataExecutionPrevention>
+      </DataExecutionPrevention>
+      <LinkErrorReporting>
+      </LinkErrorReporting>
+      <TypeLibraryResourceID>
+      </TypeLibraryResourceID>
+      <AdditionalOptions>/EXPORT:main %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalLibraryDirectories>
+      </AdditionalLibraryDirectories>
+      <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
+    </Link>
+    <PostBuildEvent>
+      <Command>del "$(TargetDir)$(TargetName).lib"
+del "$(TargetDir)$(TargetName).exp"</Command>
+    </PostBuildEvent>
+    <PostBuildEvent>
+      <Message>suppression fichers Export et Lib</Message>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>DEBUG; TARGET_IA32E;HOST_IA32E;TARGET_WINDOWS;BIGARRAY_MULTIPLIER=1;_CRT_SECURE_NO_DEPRECATE;_SECURE_SCL=0;WIN32</PreprocessorDefinitions>
+      <ExceptionHandling>
+      </ExceptionHandling>
+      <BasicRuntimeChecks>
+      </BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <EnableEnhancedInstructionSet>NotSet</EnableEnhancedInstructionSet>
+      <TreatWarningAsError>
+      </TreatWarningAsError>
+      <OmitFramePointers>
+      </OmitFramePointers>
+      <TreatWChar_tAsBuiltInType>
+      </TreatWChar_tAsBuiltInType>
+      <ForceConformanceInForLoopScope>
+      </ForceConformanceInForLoopScope>
+      <MinimalRebuild>false</MinimalRebuild>
+      <FloatingPointModel>Precise</FloatingPointModel>
+      <ErrorReporting>Prompt</ErrorReporting>
+      <BrowseInformation>
+      </BrowseInformation>
+      <DisableLanguageExtensions>
+      </DisableLanguageExtensions>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <AdditionalOptions>/EHs- /EHa- /DTARGET_WINDOWS /DBIGARRAY_MULTIPLIER=1 /DUSING_XED /D_CRT_SECURE_NO_DEPRECATE /D_SECURE_SCL=0 /DTARGET_IA32E /DHOST_IA32E %(AdditionalOptions)</AdditionalOptions>
+      <CallingConvention>Cdecl</CallingConvention>
+      <DisableSpecificWarnings>4530;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions />
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <RuntimeTypeInfo>false</RuntimeTypeInfo>
+    </ClCompile>
+    <Link>
+      <SubSystem>
+      </SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>pin.lib;libxed.lib;libcpmt.lib;libcmt.lib;pinvm.lib;kernel32.lib;ntdll-64.lib</AdditionalDependencies>
+      <IgnoreAllDefaultLibraries>true</IgnoreAllDefaultLibraries>
+      <AllowIsolation>
+      </AllowIsolation>
+      <EnableUAC>
+      </EnableUAC>
+      <UACExecutionLevel>
+      </UACExecutionLevel>
+      <UACUIAccess>
+      </UACUIAccess>
+      <ManifestFile>
+      </ManifestFile>
+      <BaseAddress>0xC5000000</BaseAddress>
+      <RandomizedBaseAddress>
+      </RandomizedBaseAddress>
+      <EntryPointSymbol>Ptrace_DllMainCRTStartup</EntryPointSymbol>
+      <OptimizeReferences>
+      </OptimizeReferences>
+      <DataExecutionPrevention>
+      </DataExecutionPrevention>
+      <LinkErrorReporting>
+      </LinkErrorReporting>
+      <TypeLibraryResourceID>
+      </TypeLibraryResourceID>
+      <AdditionalOptions>/EXPORT:main %(AdditionalOptions)</AdditionalOptions>
+      <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
+    </Link>
+    <PostBuildEvent>
+      <Command>del "$(TargetDir)$(TargetName).lib"
+del "$(TargetDir)$(TargetName).exp"</Command>
+    </PostBuildEvent>
+    <PostBuildEvent>
+      <Message>suppression fichers Export et Lib</Message>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>TARGET_IA32;HOST_IA32;TARGET_WINDOWS;BIGARRAY_MULTIPLIER=1;_CRT_SECURE_NO_DEPRECATE;_SECURE_SCL=0;WIN32</PreprocessorDefinitions>
+      <OmitFramePointers>true</OmitFramePointers>
+      <MinimalRebuild>false</MinimalRebuild>
+      <ExceptionHandling>false</ExceptionHandling>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <FloatingPointModel>Precise</FloatingPointModel>
+      <BasicRuntimeChecks>
+      </BasicRuntimeChecks>
+      <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
+      <DisableLanguageExtensions>
+      </DisableLanguageExtensions>
+      <TreatWChar_tAsBuiltInType>
+      </TreatWChar_tAsBuiltInType>
+      <ForceConformanceInForLoopScope>
+      </ForceConformanceInForLoopScope>
+      <PrecompiledHeaderFile>stdafx.h</PrecompiledHeaderFile>
+      <PrecompiledHeaderOutputFile>$(IntDir)$(TargetName).pch</PrecompiledHeaderOutputFile>
+      <BrowseInformation>
+      </BrowseInformation>
+      <CallingConvention>Cdecl</CallingConvention>
+      <DisableSpecificWarnings>4530;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <ErrorReporting>Prompt</ErrorReporting>
+      <AdditionalOptions>/EHs- /EHa- %(AdditionalOptions)</AdditionalOptions>
+      <TreatWarningAsError>true</TreatWarningAsError>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <RuntimeTypeInfo>false</RuntimeTypeInfo>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+    </ClCompile>
+    <Link>
+      <SubSystem>
+      </SubSystem>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <EnableCOMDATFolding>
+      </EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalDependencies>pin.lib;libxed.lib;libcpmt.lib;libcmt.lib;pinvm.lib;kernel32.lib;ntdll-32.lib</AdditionalDependencies>
+      <IgnoreAllDefaultLibraries>true</IgnoreAllDefaultLibraries>
+      <ManifestFile>
+      </ManifestFile>
+      <AllowIsolation>
+      </AllowIsolation>
+      <EnableUAC>
+      </EnableUAC>
+      <UACExecutionLevel>
+      </UACExecutionLevel>
+      <UACUIAccess>
+      </UACUIAccess>
+      <TypeLibraryResourceID>
+      </TypeLibraryResourceID>
+      <EntryPointSymbol>Ptrace_DllMainCRTStartup@12 </EntryPointSymbol>
+      <RandomizedBaseAddress>
+      </RandomizedBaseAddress>
+      <DataExecutionPrevention>
+      </DataExecutionPrevention>
+      <TurnOffAssemblyGeneration>false</TurnOffAssemblyGeneration>
+      <BaseAddress>0x55000000</BaseAddress>
+      <LinkErrorReporting>
+      </LinkErrorReporting>
+      <AdditionalOptions>/EXPORT:main %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalLibraryDirectories>
+      </AdditionalLibraryDirectories>
+      <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
+    </Link>
+    <PostBuildEvent>
+      <Command>del "$(TargetDir)$(TargetName).lib"
+del "$(TargetDir)$(TargetName).exp"</Command>
+    </PostBuildEvent>
+    <PostBuildEvent>
+      <Message>suppression fichers Export et Lib</Message>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>TARGET_IA32E;HOST_IA32E;TARGET_WINDOWS;BIGARRAY_MULTIPLIER=1;_CRT_SECURE_NO_DEPRECATE;_SECURE_SCL=0;WIN32</PreprocessorDefinitions>
+      <OmitFramePointers>
+      </OmitFramePointers>
+      <MinimalRebuild>false</MinimalRebuild>
+      <ExceptionHandling>
+      </ExceptionHandling>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <FloatingPointModel>Precise</FloatingPointModel>
+      <BasicRuntimeChecks>
+      </BasicRuntimeChecks>
+      <EnableEnhancedInstructionSet>NotSet</EnableEnhancedInstructionSet>
+      <DisableLanguageExtensions>
+      </DisableLanguageExtensions>
+      <TreatWChar_tAsBuiltInType>
+      </TreatWChar_tAsBuiltInType>
+      <ForceConformanceInForLoopScope>
+      </ForceConformanceInForLoopScope>
+      <PrecompiledHeaderFile>stdafx.h</PrecompiledHeaderFile>
+      <PrecompiledHeaderOutputFile>$(IntDir)$(TargetName).pch</PrecompiledHeaderOutputFile>
+      <BrowseInformation>
+      </BrowseInformation>
+      <CallingConvention>Cdecl</CallingConvention>
+      <DisableSpecificWarnings>4530;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+      <ErrorReporting>Prompt</ErrorReporting>
+      <AdditionalOptions>/EHs- /EHa- %(AdditionalOptions)</AdditionalOptions>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <RuntimeTypeInfo>false</RuntimeTypeInfo>
+    </ClCompile>
+    <Link>
+      <SubSystem>
+      </SubSystem>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
+      <EnableCOMDATFolding>
+      </EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalDependencies>pin.lib;libxed.lib;libcpmt.lib;libcmt.lib;pinvm.lib;kernel32.lib;ntdll-64.lib</AdditionalDependencies>
+      <IgnoreAllDefaultLibraries>true</IgnoreAllDefaultLibraries>
+      <ManifestFile>
+      </ManifestFile>
+      <AllowIsolation>
+      </AllowIsolation>
+      <EnableUAC>
+      </EnableUAC>
+      <UACExecutionLevel>
+      </UACExecutionLevel>
+      <UACUIAccess>
+      </UACUIAccess>
+      <TypeLibraryResourceID>
+      </TypeLibraryResourceID>
+      <EntryPointSymbol>Ptrace_DllMainCRTStartup</EntryPointSymbol>
+      <RandomizedBaseAddress>
+      </RandomizedBaseAddress>
+      <DataExecutionPrevention>
+      </DataExecutionPrevention>
+      <TurnOffAssemblyGeneration>false</TurnOffAssemblyGeneration>
+      <BaseAddress>0xC5000000</BaseAddress>
+      <LinkErrorReporting>
+      </LinkErrorReporting>
+      <AdditionalOptions>/EXPORT:main %(AdditionalOptions)</AdditionalOptions>
+      <ImageHasSafeExceptionHandlers>false</ImageHasSafeExceptionHandlers>
+    </Link>
+    <PostBuildEvent>
+      <Command>del "$(TargetDir)$(TargetName).lib"
+del "$(TargetDir)$(TargetName).exp"</Command>
+      <Message>suppression fichers Export et Lib</Message>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClInclude Include="bitbyte.h" />
+    <ClInclude Include="bitbyte.hpp" />
+    <ClInclude Include="convert.h" />
+    <ClInclude Include="misc.hpp" />
+    <ClInclude Include="pintool.h" />
+    <ClInclude Include="pop.hpp" />
+    <ClInclude Include="push.hpp" />
+    <ClInclude Include="ret.h" />
+    <ClInclude Include="rotate.h" />
+    <ClInclude Include="rotate.hpp" />
+    <ClInclude Include="routine.h" />
+    <ClInclude Include="semaphore.h" />
+    <ClInclude Include="semaphore.hpp" />
+    <ClInclude Include="shift.hpp" />
+    <ClInclude Include="stringop.hpp" />
+    <ClInclude Include="unconditional_branch.h" />
+    <ClInclude Include="binary.hpp" />
+    <ClInclude Include="dataxfer.hpp">
+      <FileType>Document</FileType>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</ExcludedFromBuild>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="architecture.h" />
+    <ClInclude Include="binary.h" />
+    <ClInclude Include="call.h" />
+    <ClInclude Include="cmov.h" />
+    <ClInclude Include="conditional_branch.h" />
+    <ClInclude Include="dataxfer.h" />
+    <ClInclude Include="instrumentation.h" />
+    <ClInclude Include="logical.h" />
+    <ClInclude Include="logical.hpp" />
+    <ClInclude Include="misc.h" />
+    <ClInclude Include="ObjectSource.h" />
+    <ClInclude Include="pop.h" />
+    <ClInclude Include="push.h" />
+    <ClInclude Include="relations.h" />
+    <ClInclude Include="shift.h" />
+    <ClInclude Include="stringop.h" />
+    <ClInclude Include="syscalls.h" />
+    <ClInclude Include="TaintManager.h" />
+    <ClInclude Include="TaintObject.h" />
+    <ClInclude Include="buildFormula.h" />
+    <ClInclude Include="utils.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="binary.cpp" />
+    <ClCompile Include="bitbyte.cpp" />
+    <ClCompile Include="call.cpp" />
+    <ClCompile Include="cmov.cpp" />
+    <ClCompile Include="conditional_branch.cpp" />
+    <ClCompile Include="convert.cpp" />
+    <ClCompile Include="dataxfer.cpp" />
+    <ClCompile Include="fuzzwinInit.cpp" />
+    <ClCompile Include="instrumentation.cpp" />
+    <ClCompile Include="logical.cpp" />
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="misc.cpp" />
+    <ClCompile Include="ObjectSource.cpp" />
+    <ClCompile Include="pop.cpp" />
+    <ClCompile Include="push.cpp" />
+    <ClCompile Include="ret.cpp" />
+    <ClCompile Include="rotate.cpp" />
+    <ClCompile Include="Routine.cpp" />
+    <ClCompile Include="semaphore.cpp" />
+    <ClCompile Include="shift.cpp" />
+    <ClCompile Include="stringop.cpp" />
+    <ClCompile Include="syscalls.cpp" />
+    <ClCompile Include="TaintObject.cpp" />
+    <ClCompile Include="buildFormula.cpp" />
+    <ClCompile Include="unconditional_branch.cpp" />
+    <ClCompile Include="utils.cpp" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
