@@ -409,13 +409,13 @@ void BITBYTE::cSETNLE(INS &ins)
 // -------------------
 void BITBYTE::sSETB_M(THREADID tid, ADDRINT address, ADDRINT insAddress)
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     // SETB/SETNAE/SETC   CF = 1     Below/not above or equal/carry   
     if (pTmgrTls->isCarryFlagTainted()) 
     {
         _LOGTAINT("SETB_M");
         // prédicat vrai si la destination est non nulle
-        pFormula->addConstraint_BELOW(pTmgrTls, insAddress, (getMemoryValue<8>(address) != 0));
+        g_pFormula->addConstraint_BELOW(pTmgrTls, insAddress, (getMemoryValue<8>(address) != 0));
     }
 
     // démarquage de la destination (la contrainte sur sa valeur a été enregistrée)
@@ -424,13 +424,13 @@ void BITBYTE::sSETB_M(THREADID tid, ADDRINT address, ADDRINT insAddress)
 
 void BITBYTE::sSETNB_M(THREADID tid, ADDRINT address, ADDRINT insAddress)
 { 
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     // SETAE/SETNB/SETNC  CF = 0     Above or equal/not below
     if (pTmgrTls->isCarryFlagTainted()) 
     {
         _LOGTAINT("SETNB_M");
         // prédicat vrai si la destination est non nulle + inversion car NOT BELOW
-        pFormula->addConstraint_BELOW(pTmgrTls, insAddress, (getMemoryValue<8>(address) == 0));
+        g_pFormula->addConstraint_BELOW(pTmgrTls, insAddress, (getMemoryValue<8>(address) == 0));
     }
 
     // démarquage de la destination (la contrainte sur sa valeur a été enregistrée)
@@ -439,13 +439,13 @@ void BITBYTE::sSETNB_M(THREADID tid, ADDRINT address, ADDRINT insAddress)
 
 void BITBYTE::sSETS_M(THREADID tid, ADDRINT address, ADDRINT insAddress)
 { 
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     // SETS           SF = 1          Sign (negative)
     if (pTmgrTls->isSignFlagTainted()) 
     {
         _LOGTAINT("SETS_M");
         // prédicat vrai si la destination est non nulle
-        pFormula->addConstraint_SIGN(pTmgrTls, insAddress, (getMemoryValue<8>(address) != 0));
+        g_pFormula->addConstraint_SIGN(pTmgrTls, insAddress, (getMemoryValue<8>(address) != 0));
     }
 
     // démarquage de la destination (la contrainte sur sa valeur a été enregistrée)
@@ -454,13 +454,13 @@ void BITBYTE::sSETS_M(THREADID tid, ADDRINT address, ADDRINT insAddress)
 
 void BITBYTE::sSETNS_M(THREADID tid, ADDRINT address, ADDRINT insAddress)
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     // SETNS       SF = 0      Not sign (non-negative)
     if (pTmgrTls->isSignFlagTainted()) 
     {
         _LOGTAINT("SETNS_M");
         // prédicat vrai si la destination est nulle (inversion car NOT)
-        pFormula->addConstraint_SIGN(pTmgrTls, insAddress, (getMemoryValue<8>(address) == 0));
+        g_pFormula->addConstraint_SIGN(pTmgrTls, insAddress, (getMemoryValue<8>(address) == 0));
     }
 
     // démarquage de la destination (la contrainte sur sa valeur a été enregistrée)
@@ -469,13 +469,13 @@ void BITBYTE::sSETNS_M(THREADID tid, ADDRINT address, ADDRINT insAddress)
 
 void BITBYTE::sSETO_M(THREADID tid, ADDRINT address, ADDRINT insAddress)
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     // SETO           OF = 1          Overflow
     if (pTmgrTls->isOverflowFlagTainted())  
     {
         _LOGTAINT("SETO_M");
         // prédicat vrai si la destination est non nulle
-        pFormula->addConstraint_OVERFLOW(pTmgrTls, insAddress, (getMemoryValue<8>(address) != 0));
+        g_pFormula->addConstraint_OVERFLOW(pTmgrTls, insAddress, (getMemoryValue<8>(address) != 0));
     }
     // démarquage de la destination (la contrainte sur sa valeur a été enregistrée)
     pTmgrGlobal->unTaintMemory<8>(address);
@@ -483,13 +483,13 @@ void BITBYTE::sSETO_M(THREADID tid, ADDRINT address, ADDRINT insAddress)
 
 void BITBYTE::sSETNO_M(THREADID tid, ADDRINT address, ADDRINT insAddress)
 { 
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     // SETNO           OF = 0          not Overflow
     if (pTmgrTls->isOverflowFlagTainted()) 
     {
         _LOGTAINT("SETNO_M");
         // prédicat vrai si la destination est nulle (inversion car NOT)
-        pFormula->addConstraint_OVERFLOW(pTmgrTls, insAddress, (getMemoryValue<8>(address) == 0));
+        g_pFormula->addConstraint_OVERFLOW(pTmgrTls, insAddress, (getMemoryValue<8>(address) == 0));
     }
     // démarquage de la destination (la contrainte sur sa valeur a été enregistrée)
     pTmgrGlobal->unTaintMemory<8>(address);
@@ -497,13 +497,13 @@ void BITBYTE::sSETNO_M(THREADID tid, ADDRINT address, ADDRINT insAddress)
 
 void BITBYTE::sSETP_M(THREADID tid, ADDRINT address, ADDRINT insAddress)
 { 
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     // SETP/SETPE       PF = 1          Parity/parity even
     if (pTmgrTls->isParityFlagTainted()) 
     {
         _LOGTAINT("SETP_M");
         // prédicat vrai si la destination est non nulle
-        pFormula->addConstraint_PARITY(pTmgrTls, insAddress, (getMemoryValue<8>(address) != 0));
+        g_pFormula->addConstraint_PARITY(pTmgrTls, insAddress, (getMemoryValue<8>(address) != 0));
     }
     // démarquage de la destination (la contrainte sur sa valeur a été enregistrée)
     pTmgrGlobal->unTaintMemory<8>(address);
@@ -511,13 +511,13 @@ void BITBYTE::sSETP_M(THREADID tid, ADDRINT address, ADDRINT insAddress)
 
 void BITBYTE::sSETNP_M(THREADID tid, ADDRINT address, ADDRINT insAddress)
 { 
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     // SETNP/SETPO      PF = 0          Not parity/parity odd
     if (pTmgrTls->isParityFlagTainted()) 
     {
         _LOGTAINT("SETNP_M");
         // prédicat vrai si la destination est nulle (inversion car NOT)
-        pFormula->addConstraint_PARITY(pTmgrTls, insAddress, (getMemoryValue<8>(address) == 0));
+        g_pFormula->addConstraint_PARITY(pTmgrTls, insAddress, (getMemoryValue<8>(address) == 0));
     }
     // démarquage de la destination (la contrainte sur sa valeur a été enregistrée)
     pTmgrGlobal->unTaintMemory<8>(address);
@@ -525,13 +525,13 @@ void BITBYTE::sSETNP_M(THREADID tid, ADDRINT address, ADDRINT insAddress)
 
 void BITBYTE::sSETZ_M(THREADID tid, ADDRINT address, ADDRINT insAddress)
 { 
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     // SETE/SETZ        ZF = 1          Equal/zero
     if (pTmgrTls->isZeroFlagTainted()) 
     {
         _LOGTAINT("SETZ_M");
         // prédicat vrai si la destination est non nulle
-        pFormula->addConstraint_ZERO(pTmgrTls, insAddress, (getMemoryValue<8>(address) != 0));
+        g_pFormula->addConstraint_ZERO(pTmgrTls, insAddress, (getMemoryValue<8>(address) != 0));
     }
     // démarquage de la destination (la contrainte sur sa valeur a été enregistrée)
     pTmgrGlobal->unTaintMemory<8>(address);
@@ -539,13 +539,13 @@ void BITBYTE::sSETZ_M(THREADID tid, ADDRINT address, ADDRINT insAddress)
 
 void BITBYTE::sSETNZ_M(THREADID tid, ADDRINT address, ADDRINT insAddress)
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     // SETNE/SETNZ      ZF = 0          Not equal/not zero
     if (pTmgrTls->isZeroFlagTainted()) 
     {
         _LOGTAINT("SETNZ_M");
         // prédicat vrai si la destination est nulle (inversion car NOT)
-        pFormula->addConstraint_ZERO(pTmgrTls, insAddress, (getMemoryValue<8>(address) == 0));
+        g_pFormula->addConstraint_ZERO(pTmgrTls, insAddress, (getMemoryValue<8>(address) == 0));
     }
     // démarquage de la destination (la contrainte sur sa valeur a été enregistrée)
     pTmgrGlobal->unTaintMemory<8>(address);
@@ -553,13 +553,13 @@ void BITBYTE::sSETNZ_M(THREADID tid, ADDRINT address, ADDRINT insAddress)
 
 void BITBYTE::sSETBE_M(THREADID tid, ADDRINT address, ADDRINT regEflagsValue, ADDRINT insAddress)
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     // (CF or ZF) = 1  Below or equal/not above
     if (pTmgrTls->isZeroFlagTainted() || pTmgrTls->isCarryFlagTainted() ) 
     {
         _LOGTAINT("SETBE_M");
         // prédicat vrai si la destination est non nulle
-        pFormula->addConstraint_BELOW_OR_EQUAL(pTmgrTls, insAddress, (getMemoryValue<8>(address) != 0), regEflagsValue);
+        g_pFormula->addConstraint_BELOW_OR_EQUAL(pTmgrTls, insAddress, (getMemoryValue<8>(address) != 0), regEflagsValue);
     }
     // démarquage de la destination (la contrainte sur sa valeur a été enregistrée)
     pTmgrGlobal->unTaintMemory<8>(address);
@@ -567,13 +567,13 @@ void BITBYTE::sSETBE_M(THREADID tid, ADDRINT address, ADDRINT regEflagsValue, AD
 
 void BITBYTE::sSETNBE_M(THREADID tid, ADDRINT address, ADDRINT regEflagsValue, ADDRINT insAddress)
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     // SETA/SETNBE      (CF or ZF) = 0  Above/not below or equal
     if (pTmgrTls->isZeroFlagTainted() || pTmgrTls->isCarryFlagTainted() ) 
     {
         _LOGTAINT("SETNBE_M");
         // prédicat vrai si la destination est nulle (inversion car NOT)
-        pFormula->addConstraint_BELOW_OR_EQUAL(pTmgrTls, insAddress, (getMemoryValue<8>(address) == 0), regEflagsValue);
+        g_pFormula->addConstraint_BELOW_OR_EQUAL(pTmgrTls, insAddress, (getMemoryValue<8>(address) == 0), regEflagsValue);
     }
     // démarquage de la destination (la contrainte sur sa valeur a été enregistrée)
     pTmgrGlobal->unTaintMemory<8>(address);
@@ -581,13 +581,13 @@ void BITBYTE::sSETNBE_M(THREADID tid, ADDRINT address, ADDRINT regEflagsValue, A
 
 void BITBYTE::sSETL_M(THREADID tid, ADDRINT address, ADDRINT regEflagsValue, ADDRINT insAddress)
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     // SETL/SETNGE      (SF xor OF) = 1 Less/not greater or equal
     if (pTmgrTls->isSignFlagTainted() || pTmgrTls->isOverflowFlagTainted() ) 
     {
         _LOGTAINT("SETL_M");
         // prédicat vrai si la destination est non nulle
-        pFormula->addConstraint_LESS(pTmgrTls, insAddress, (getMemoryValue<8>(address) != 0), regEflagsValue);
+        g_pFormula->addConstraint_LESS(pTmgrTls, insAddress, (getMemoryValue<8>(address) != 0), regEflagsValue);
     }
     // démarquage de la destination (la contrainte sur sa valeur a été enregistrée)
     pTmgrGlobal->unTaintMemory<8>(address);
@@ -595,13 +595,13 @@ void BITBYTE::sSETL_M(THREADID tid, ADDRINT address, ADDRINT regEflagsValue, ADD
 
 void BITBYTE::sSETNL_M(THREADID tid, ADDRINT address, ADDRINT regEflagsValue, ADDRINT insAddress)
 { 
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     // SETGE/SETNL      (SF xor OF) = 0 Greater or equal/not less
     if (pTmgrTls->isSignFlagTainted() || pTmgrTls->isOverflowFlagTainted() ) 
     {
         _LOGTAINT("SETNL_M");
         // prédicat vrai si la destination est nulle (inversion car NOT)
-        pFormula->addConstraint_LESS(pTmgrTls, insAddress, (getMemoryValue<8>(address) == 0), regEflagsValue);
+        g_pFormula->addConstraint_LESS(pTmgrTls, insAddress, (getMemoryValue<8>(address) == 0), regEflagsValue);
     }
     // démarquage de la destination (la contrainte sur sa valeur a été enregistrée)
     pTmgrGlobal->unTaintMemory<8>(address);
@@ -609,7 +609,7 @@ void BITBYTE::sSETNL_M(THREADID tid, ADDRINT address, ADDRINT regEflagsValue, AD
 
 void BITBYTE::sSETLE_M(THREADID tid, ADDRINT address, ADDRINT regEflagsValue, ADDRINT insAddress) 
 { 
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     // SETLE/SETNG      ((SF xor OF) or ZF) = 1 Less or equal/not greater
     if (pTmgrTls->isZeroFlagTainted() 
         || pTmgrTls->isSignFlagTainted() 
@@ -617,7 +617,7 @@ void BITBYTE::sSETLE_M(THREADID tid, ADDRINT address, ADDRINT regEflagsValue, AD
     {
         _LOGTAINT("SETLE_M");
         // prédicat vrai si la destination est non nulle
-        pFormula->addConstraint_LESS_OR_EQUAL(pTmgrTls, insAddress, (getMemoryValue<8>(address) != 0), regEflagsValue);
+        g_pFormula->addConstraint_LESS_OR_EQUAL(pTmgrTls, insAddress, (getMemoryValue<8>(address) != 0), regEflagsValue);
     }
     // démarquage de la destination (la contrainte sur sa valeur a été enregistrée)
     pTmgrGlobal->unTaintMemory<8>(address);
@@ -625,7 +625,7 @@ void BITBYTE::sSETLE_M(THREADID tid, ADDRINT address, ADDRINT regEflagsValue, AD
 
 void BITBYTE::sSETNLE_M(THREADID tid, ADDRINT address, ADDRINT regEflagsValue, ADDRINT insAddress) 
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     // SETG/SETNLE      ((SF xor OF) or ZF) = 0 Greater/not less or equal
     if (pTmgrTls->isZeroFlagTainted() 
         || pTmgrTls->isSignFlagTainted() 
@@ -633,7 +633,7 @@ void BITBYTE::sSETNLE_M(THREADID tid, ADDRINT address, ADDRINT regEflagsValue, A
     {
         _LOGTAINT("SETNLE_M");
         // prédicat vrai si la destination est nulle (inversion car NOT)
-        pFormula->addConstraint_LESS_OR_EQUAL(pTmgrTls, insAddress, (getMemoryValue<8>(address) == 0), regEflagsValue);
+        g_pFormula->addConstraint_LESS_OR_EQUAL(pTmgrTls, insAddress, (getMemoryValue<8>(address) == 0), regEflagsValue);
     }
     // démarquage de la destination (la contrainte sur sa valeur a été enregistrée)
     pTmgrGlobal->unTaintMemory<8>(address);
@@ -647,13 +647,13 @@ void BITBYTE::sSETNLE_M(THREADID tid, ADDRINT address, ADDRINT regEflagsValue, A
 
 void BITBYTE::sSETB_R(THREADID tid, REG regDest, ADDRINT regDestValue, ADDRINT insAddress)
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     // SETB/SETNAE/SETC   CF = 1     Below/not above or equal/carry   
     if (pTmgrTls->isCarryFlagTainted()) 
     {
         _LOGTAINT("SETB_R");
         // prédicat vrai si la destination est non nulle
-        pFormula->addConstraint_BELOW(pTmgrTls, insAddress, (regDestValue != 0));
+        g_pFormula->addConstraint_BELOW(pTmgrTls, insAddress, (regDestValue != 0));
     }
 
     // démarquage de la destination (la contrainte sur sa valeur a été enregistrée)
@@ -662,13 +662,13 @@ void BITBYTE::sSETB_R(THREADID tid, REG regDest, ADDRINT regDestValue, ADDRINT i
 
 void BITBYTE::sSETNB_R(THREADID tid, REG regDest, ADDRINT regDestValue, ADDRINT insAddress)
 { 
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     // SETAE/SETNB/SETNC  CF = 0     Above or equal/not below
     if (pTmgrTls->isCarryFlagTainted()) 
     {
         _LOGTAINT("SETNB_R");
         // prédicat vrai si la destination est non nulle + inversion car NOT BELOW
-        pFormula->addConstraint_BELOW(pTmgrTls, insAddress, (regDestValue == 0));
+        g_pFormula->addConstraint_BELOW(pTmgrTls, insAddress, (regDestValue == 0));
     }
 
     // démarquage de la destination (la contrainte sur sa valeur a été enregistrée)
@@ -677,13 +677,13 @@ void BITBYTE::sSETNB_R(THREADID tid, REG regDest, ADDRINT regDestValue, ADDRINT 
 
 void BITBYTE::sSETS_R(THREADID tid, REG regDest, ADDRINT regDestValue, ADDRINT insAddress)
 { 
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     // SETS           SF = 1          Sign (negative)
     if (pTmgrTls->isSignFlagTainted()) 
     {
         _LOGTAINT("SETS_R");
         // prédicat vrai si la destination est non nulle
-        pFormula->addConstraint_SIGN(pTmgrTls, insAddress, (regDestValue != 0));
+        g_pFormula->addConstraint_SIGN(pTmgrTls, insAddress, (regDestValue != 0));
     }
 
     // démarquage de la destination (la contrainte sur sa valeur a été enregistrée)
@@ -692,13 +692,13 @@ void BITBYTE::sSETS_R(THREADID tid, REG regDest, ADDRINT regDestValue, ADDRINT i
 
 void BITBYTE::sSETNS_R(THREADID tid, REG regDest, ADDRINT regDestValue, ADDRINT insAddress)
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     // SETNS       SF = 0      Not sign (non-negative)
     if (pTmgrTls->isSignFlagTainted()) 
     {
         _LOGTAINT("SETNS_R");
         // prédicat vrai si la destination est nulle (inversion car NOT)
-        pFormula->addConstraint_SIGN(pTmgrTls, insAddress, (regDestValue == 0));
+        g_pFormula->addConstraint_SIGN(pTmgrTls, insAddress, (regDestValue == 0));
     }
 
     // démarquage de la destination (la contrainte sur sa valeur a été enregistrée)
@@ -707,13 +707,13 @@ void BITBYTE::sSETNS_R(THREADID tid, REG regDest, ADDRINT regDestValue, ADDRINT 
 
 void BITBYTE::sSETO_R(THREADID tid, REG regDest, ADDRINT regDestValue, ADDRINT insAddress)
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     // SETO           OF = 1          Overflow
     if (pTmgrTls->isOverflowFlagTainted())  
     {
         _LOGTAINT("SETO_R");
         // prédicat vrai si la destination est non nulle
-        pFormula->addConstraint_OVERFLOW(pTmgrTls, insAddress, (regDestValue != 0));
+        g_pFormula->addConstraint_OVERFLOW(pTmgrTls, insAddress, (regDestValue != 0));
     }
     // démarquage de la destination (la contrainte sur sa valeur a été enregistrée)
     pTmgrTls->unTaintRegister<8>(regDest);
@@ -721,13 +721,13 @@ void BITBYTE::sSETO_R(THREADID tid, REG regDest, ADDRINT regDestValue, ADDRINT i
 
 void BITBYTE::sSETNO_R(THREADID tid,REG regDest, ADDRINT regDestValue, ADDRINT insAddress)
 { 
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     // SETNO           OF = 0          not Overflow
     if (pTmgrTls->isOverflowFlagTainted()) 
     {
         _LOGTAINT("SETNO_R");
         // prédicat vrai si la destination est nulle (inversion car NOT)
-        pFormula->addConstraint_OVERFLOW(pTmgrTls, insAddress, (regDestValue == 0));
+        g_pFormula->addConstraint_OVERFLOW(pTmgrTls, insAddress, (regDestValue == 0));
     }
     // démarquage de la destination (la contrainte sur sa valeur a été enregistrée)
     pTmgrTls->unTaintRegister<8>(regDest);
@@ -735,13 +735,13 @@ void BITBYTE::sSETNO_R(THREADID tid,REG regDest, ADDRINT regDestValue, ADDRINT i
 
 void BITBYTE::sSETP_R(THREADID tid, REG regDest, ADDRINT regDestValue, ADDRINT insAddress)
 { 
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     // SETP/SETPE       PF = 1          Parity/parity even
     if (pTmgrTls->isParityFlagTainted()) 
     {
         _LOGTAINT("SETP_R");
         // prédicat vrai si la destination est non nulle
-        pFormula->addConstraint_PARITY(pTmgrTls, insAddress, (regDestValue != 0));
+        g_pFormula->addConstraint_PARITY(pTmgrTls, insAddress, (regDestValue != 0));
     }
     // démarquage de la destination (la contrainte sur sa valeur a été enregistrée)
     pTmgrTls->unTaintRegister<8>(regDest);
@@ -749,13 +749,13 @@ void BITBYTE::sSETP_R(THREADID tid, REG regDest, ADDRINT regDestValue, ADDRINT i
 
 void BITBYTE::sSETNP_R(THREADID tid, REG regDest, ADDRINT regDestValue, ADDRINT insAddress)
 { 
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     // SETNP/SETPO      PF = 0          Not parity/parity odd
     if (pTmgrTls->isParityFlagTainted()) 
     {
         _LOGTAINT("SETNP_R");
         // prédicat vrai si la destination est nulle (inversion car NOT)
-        pFormula->addConstraint_PARITY(pTmgrTls, insAddress, (regDestValue == 0));
+        g_pFormula->addConstraint_PARITY(pTmgrTls, insAddress, (regDestValue == 0));
     }
     // démarquage de la destination (la contrainte sur sa valeur a été enregistrée)
     pTmgrTls->unTaintRegister<8>(regDest);
@@ -763,13 +763,13 @@ void BITBYTE::sSETNP_R(THREADID tid, REG regDest, ADDRINT regDestValue, ADDRINT 
 
 void BITBYTE::sSETZ_R(THREADID tid, REG regDest, ADDRINT regDestValue, ADDRINT insAddress)
 { 
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     // SETE/SETZ        ZF = 1          Equal/zero
     if (pTmgrTls->isZeroFlagTainted()) 
     {
         _LOGTAINT("SETZ_R");
         // prédicat vrai si la destination est non nulle
-        pFormula->addConstraint_ZERO(pTmgrTls, insAddress, (regDestValue != 0));
+        g_pFormula->addConstraint_ZERO(pTmgrTls, insAddress, (regDestValue != 0));
     }
     // démarquage de la destination (la contrainte sur sa valeur a été enregistrée)
     pTmgrTls->unTaintRegister<8>(regDest);
@@ -777,13 +777,13 @@ void BITBYTE::sSETZ_R(THREADID tid, REG regDest, ADDRINT regDestValue, ADDRINT i
 
 void BITBYTE::sSETNZ_R(THREADID tid, REG regDest, ADDRINT regDestValue, ADDRINT insAddress)
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     // SETNE/SETNZ      ZF = 0          Not equal/not zero
     if (pTmgrTls->isZeroFlagTainted()) 
     {
         _LOGTAINT("SETNZ_R");
         // prédicat vrai si la destination est nulle (inversion car NOT)
-        pFormula->addConstraint_ZERO(pTmgrTls, insAddress, (regDestValue == 0));
+        g_pFormula->addConstraint_ZERO(pTmgrTls, insAddress, (regDestValue == 0));
     }
     // démarquage de la destination (la contrainte sur sa valeur a été enregistrée)
     pTmgrTls->unTaintRegister<8>(regDest);
@@ -791,13 +791,13 @@ void BITBYTE::sSETNZ_R(THREADID tid, REG regDest, ADDRINT regDestValue, ADDRINT 
 
 void BITBYTE::sSETBE_R(THREADID tid, REG regDest, ADDRINT regDestValue, ADDRINT regEflagsValue, ADDRINT insAddress)
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     // (CF or ZF) = 1  Below or equal/not above
     if (pTmgrTls->isZeroFlagTainted() || pTmgrTls->isCarryFlagTainted() ) 
     {
         _LOGTAINT("SETBE_R");
         // prédicat vrai si la destination est non nulle
-        pFormula->addConstraint_BELOW_OR_EQUAL(pTmgrTls, insAddress, (regDestValue != 0), regEflagsValue);
+        g_pFormula->addConstraint_BELOW_OR_EQUAL(pTmgrTls, insAddress, (regDestValue != 0), regEflagsValue);
     }
     // démarquage de la destination (la contrainte sur sa valeur a été enregistrée)
     pTmgrTls->unTaintRegister<8>(regDest);
@@ -805,13 +805,13 @@ void BITBYTE::sSETBE_R(THREADID tid, REG regDest, ADDRINT regDestValue, ADDRINT 
 
 void BITBYTE::sSETNBE_R(THREADID tid, REG regDest, ADDRINT regDestValue, ADDRINT regEflagsValue, ADDRINT insAddress)
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     // SETA/SETNBE      (CF or ZF) = 0  Above/not below or equal
     if (pTmgrTls->isZeroFlagTainted() || pTmgrTls->isCarryFlagTainted() ) 
     {
         _LOGTAINT("SETNBE_R");
         // prédicat vrai si la destination est nulle (inversion car NOT)
-        pFormula->addConstraint_BELOW_OR_EQUAL(pTmgrTls, insAddress, (regDestValue == 0), regEflagsValue);
+        g_pFormula->addConstraint_BELOW_OR_EQUAL(pTmgrTls, insAddress, (regDestValue == 0), regEflagsValue);
     }
     // démarquage de la destination (la contrainte sur sa valeur a été enregistrée)
     pTmgrTls->unTaintRegister<8>(regDest);
@@ -819,13 +819,13 @@ void BITBYTE::sSETNBE_R(THREADID tid, REG regDest, ADDRINT regDestValue, ADDRINT
 
 void BITBYTE::sSETL_R(THREADID tid, REG regDest, ADDRINT regDestValue, ADDRINT regEflagsValue, ADDRINT insAddress)
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     // SETL/SETNGE      (SF xor OF) = 1 Less/not greater or equal
     if (pTmgrTls->isSignFlagTainted() || pTmgrTls->isOverflowFlagTainted() ) 
     {
         _LOGTAINT("SETL_R");
         // prédicat vrai si la destination est non nulle
-        pFormula->addConstraint_LESS(pTmgrTls, insAddress, (regDestValue != 0), regEflagsValue);
+        g_pFormula->addConstraint_LESS(pTmgrTls, insAddress, (regDestValue != 0), regEflagsValue);
     }
     // démarquage de la destination (la contrainte sur sa valeur a été enregistrée)
     pTmgrTls->unTaintRegister<8>(regDest);
@@ -833,13 +833,13 @@ void BITBYTE::sSETL_R(THREADID tid, REG regDest, ADDRINT regDestValue, ADDRINT r
 
 void BITBYTE::sSETNL_R(THREADID tid, REG regDest, ADDRINT regDestValue, ADDRINT regEflagsValue, ADDRINT insAddress)
 { 
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     // SETGE/SETNL      (SF xor OF) = 0 Greater or equal/not less
     if (pTmgrTls->isSignFlagTainted() || pTmgrTls->isOverflowFlagTainted() ) 
     {
         _LOGTAINT("SETNL_R");
         // prédicat vrai si la destination est nulle (inversion car NOT)
-        pFormula->addConstraint_LESS(pTmgrTls, insAddress, (regDestValue == 0), regEflagsValue);
+        g_pFormula->addConstraint_LESS(pTmgrTls, insAddress, (regDestValue == 0), regEflagsValue);
     }
     // démarquage de la destination (la contrainte sur sa valeur a été enregistrée)
     pTmgrTls->unTaintRegister<8>(regDest);
@@ -847,7 +847,7 @@ void BITBYTE::sSETNL_R(THREADID tid, REG regDest, ADDRINT regDestValue, ADDRINT 
 
 void BITBYTE::sSETLE_R(THREADID tid, REG regDest, ADDRINT regDestValue, ADDRINT regEflagsValue, ADDRINT insAddress) 
 { 
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     // SETLE/SETNG      ((SF xor OF) or ZF) = 1 Less or equal/not greater
     if (pTmgrTls->isZeroFlagTainted() 
         || pTmgrTls->isSignFlagTainted() 
@@ -855,7 +855,7 @@ void BITBYTE::sSETLE_R(THREADID tid, REG regDest, ADDRINT regDestValue, ADDRINT 
     {
         _LOGTAINT("SETLE_R");
         // prédicat vrai si la destination est non nulle
-        pFormula->addConstraint_LESS_OR_EQUAL(pTmgrTls, insAddress, (regDestValue != 0), regEflagsValue);
+        g_pFormula->addConstraint_LESS_OR_EQUAL(pTmgrTls, insAddress, (regDestValue != 0), regEflagsValue);
     }
     // démarquage de la destination (la contrainte sur sa valeur a été enregistrée)
     pTmgrTls->unTaintRegister<8>(regDest);
@@ -863,7 +863,7 @@ void BITBYTE::sSETLE_R(THREADID tid, REG regDest, ADDRINT regDestValue, ADDRINT 
 
 void BITBYTE::sSETNLE_R(THREADID tid, REG regDest, ADDRINT regDestValue, ADDRINT regEflagsValue, ADDRINT insAddress) 
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     // SETG/SETNLE      ((SF xor OF) or ZF) = 0 Greater/not less or equal
     if (pTmgrTls->isZeroFlagTainted() 
         || pTmgrTls->isSignFlagTainted() 
@@ -871,7 +871,7 @@ void BITBYTE::sSETNLE_R(THREADID tid, REG regDest, ADDRINT regDestValue, ADDRINT
     {
         _LOGTAINT("SETNLE_R");
         // prédicat vrai si la destination est nulle (inversion car NOT)
-        pFormula->addConstraint_LESS_OR_EQUAL(pTmgrTls, insAddress, (regDestValue == 0), regEflagsValue);
+        g_pFormula->addConstraint_LESS_OR_EQUAL(pTmgrTls, insAddress, (regDestValue == 0), regEflagsValue);
     }
     // démarquage de la destination (la contrainte sur sa valeur a été enregistrée)
     pTmgrTls->unTaintRegister<8>(regDest);

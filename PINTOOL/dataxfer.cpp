@@ -107,7 +107,7 @@ void DATAXFER::cMOV(INS &ins)
 // SIMULATE (templates spécialisés)
 template<> void DATAXFER::sMOV_RR<8>(THREADID tid, REG regSrc, REG regDest ADDRESS_DEBUG) 
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     
     if ( !pTmgrTls->isRegisterTainted<8>(regSrc))   pTmgrTls->unTaintRegister<8>(regDest);
     else 
@@ -121,7 +121,7 @@ template<> void DATAXFER::sMOV_RR<8>(THREADID tid, REG regSrc, REG regDest ADDRE
 
 template<> void DATAXFER::sMOV_RM<8>(THREADID tid, REG regSrc, ADDRINT writeAddress ADDRESS_DEBUG) 
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     
     if (!pTmgrTls->isRegisterTainted<8>(regSrc)) pTmgrGlobal->unTaintMemory<8>(writeAddress);
     else 
@@ -135,7 +135,7 @@ template<> void DATAXFER::sMOV_RM<8>(THREADID tid, REG regSrc, ADDRINT writeAddr
 
 template<> void DATAXFER::sMOV_MR<8>(THREADID tid, ADDRINT readAddress, REG regDest ADDRESS_DEBUG) 
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     
     if (!pTmgrGlobal->isMemoryTainted<8>(readAddress)) pTmgrTls->unTaintRegister<8>(regDest);
     else 
@@ -202,7 +202,7 @@ void DATAXFER::cXCHG(INS &ins)
 // SIMULATE (templates spécialisés)
 template<> void DATAXFER::sXCHG_M<8>(THREADID tid, REG reg, ADDRINT address ADDRESS_DEBUG) 
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     
     TaintBytePtr tbTempPtr; // variable de mise en cache
     REGINDEX regIndex = getRegIndex(reg);
@@ -224,7 +224,7 @@ template<> void DATAXFER::sXCHG_M<8>(THREADID tid, REG reg, ADDRINT address ADDR
 
 template<> void DATAXFER::sXCHG_R<8>(THREADID tid, REG regSrc, REG regDest ADDRESS_DEBUG) 
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     
     TaintBytePtr tbTempPtr; // variable de mise en cache
             

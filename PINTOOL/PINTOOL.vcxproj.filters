@@ -79,9 +79,6 @@
     <ClInclude Include="semaphore.hpp">
       <Filter>Fichiers Templates %28hpp%29</Filter>
     </ClInclude>
-    <ClInclude Include="routine.h">
-      <Filter>Fichiers d%27en-tête</Filter>
-    </ClInclude>
     <ClInclude Include="stringop.hpp">
       <Filter>Fichiers Templates %28hpp%29</Filter>
     </ClInclude>
@@ -180,9 +177,6 @@
     <ClCompile Include="semaphore.cpp">
       <Filter>Fichiers sources</Filter>
     </ClCompile>
-    <ClCompile Include="Routine.cpp">
-      <Filter>Fichiers sources</Filter>
-    </ClCompile>
     <ClCompile Include="rotate.cpp">
       <Filter>Fichiers sources</Filter>
     </ClCompile>
@@ -213,7 +207,7 @@
     <ClCompile Include="logical.cpp">
       <Filter>Fichiers sources</Filter>
     </ClCompile>
-    <ClCompile Include="fuzzwinInit.cpp">
+    <ClCompile Include="initialize.cpp">
       <Filter>Fichiers sources</Filter>
     </ClCompile>
   </ItemGroup>

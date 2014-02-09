@@ -122,7 +122,7 @@ public:
         bool result = false;
         ADDRINT lastAddress = address + (len >> 3);
 
-        PIN_GetLock(&lock, 0); // obligatoire car classe globale
+        PIN_GetLock(&g_lock, 0); // obligatoire car classe globale
         while (address < lastAddress)
         { 
             if (this->_memoryPtrs.find(address++) != this->_memoryPtrs.end())
@@ -131,7 +131,7 @@ public:
                 break;
             }
         }
-        PIN_ReleaseLock(&lock);
+        PIN_ReleaseLock(&g_lock);
 
         // si on arrive ici c'est que aucun emplacement mémoire n'est marqué
         return (result); 
@@ -140,10 +140,10 @@ public:
     // spécialisation 8bits
     template<> bool isMemoryTainted<8>(ADDRINT address) const 
     {
-        PIN_GetLock(&lock, 0); // obligatoire car classe globale
+        PIN_GetLock(&g_lock, 0); // obligatoire car classe globale
         auto it    = this->_memoryPtrs.find(address);
         auto itEnd = this->_memoryPtrs.end();
-        PIN_ReleaseLock(&lock);
+        PIN_ReleaseLock(&g_lock);
 
         return (it != itEnd);
     }
@@ -159,7 +159,7 @@ public:
         TaintObject<len> result(CONCAT);
         ADDRINT lastAddress = address + (len >> 3);
         
-        PIN_GetLock(&lock, 0); // obligatoire car classe globale
+        PIN_GetLock(&g_lock, 0); // obligatoire car classe globale
         auto itEnd = this->_memoryPtrs.end();
         
         while (address < lastAddress) 
@@ -173,17 +173,17 @@ public:
 
             address++;
         }
-        PIN_ReleaseLock(&lock);
+        PIN_ReleaseLock(&g_lock);
         return (std::make_shared<TaintObject<len>>(result));
     }
 
     // spécialisation pour le cas 8 bits
     template<> TaintBytePtr getMemoryTaint<8>(ADDRINT address) const
     {
-        PIN_GetLock(&lock, 0); // obligatoire car classe globale
+        PIN_GetLock(&g_lock, 0); // obligatoire car classe globale
         auto it    = this->_memoryPtrs.find(address);
         auto itEnd = this->_memoryPtrs.end();
-        PIN_ReleaseLock(&lock);
+        PIN_ReleaseLock(&g_lock);
 
         return ( (it == itEnd) ? nullptr : it->second);
     }
@@ -203,7 +203,7 @@ public:
         TaintBytePtr tbPtr;
         ADDRINT endOfBuffer = buffer + nb;  // dernier octet du buffer
         
-        PIN_GetLock(&lock, 0); // obligatoire car classe globale
+        PIN_GetLock(&g_lock, 0); // obligatoire car classe globale
 
         // Si le vecteur est vide, tous les octets de la source doivent être marqué
         // sinon il faudra vérifier que chaque octet est dans les intervelles à suivre
@@ -249,7 +249,7 @@ public:
             // marquage de la mémoire
             this->_memoryPtrs[buffer] = tbPtr;          
         }
-        PIN_ReleaseLock(&lock);
+        PIN_ReleaseLock(&g_lock);
 
     } // createNewSourceTaintBytes
 
@@ -263,7 +263,7 @@ public:
         (ADDRINT address, const std::shared_ptr<TaintObject<len>> &tPtr) 
     {
         static_assert((len & 0x7) == 0, "taille memoire non valide");           
-        PIN_GetLock(&lock, 0); // obligatoire car classe globale
+        PIN_GetLock(&g_lock, 0); // obligatoire car classe globale
         
         if (!tPtr) this->unTaintMemory<len>(address);
         else
@@ -278,16 +278,16 @@ public:
             }
         }
 
-        PIN_ReleaseLock(&lock);
+        PIN_ReleaseLock(&g_lock);
     }
 
     // spécialisation pour le cas 8bits
     template<> void updateMemoryTaint<8>(ADDRINT address, const TaintBytePtr &tbPtr) 
     { 
-        PIN_GetLock(&lock, 0); // obligatoire car classe globale
+        PIN_GetLock(&g_lock, 0); // obligatoire car classe globale
         if (!tbPtr) this->_memoryPtrs.erase(address);
         else        this->_memoryPtrs[address] = tbPtr;
-        PIN_ReleaseLock(&lock);
+        PIN_ReleaseLock(&g_lock);
     }
 
     /****************************/
@@ -298,9 +298,9 @@ public:
     template<UINT32 len> void unTaintMemory(ADDRINT address) 
     {            
         ADDRINT lastAddress = address + (len >> 3);
-        PIN_GetLock(&lock, 0); // obligatoire car classe globale
+        PIN_GetLock(&g_lock, 0); // obligatoire car classe globale
         while (address < lastAddress) this->_memoryPtrs.erase(address++);
-        PIN_ReleaseLock(&lock);
+        PIN_ReleaseLock(&g_lock);
     }
 };
 
@@ -384,7 +384,7 @@ public:
         #if DEBUG
         if (regIndex == rINVALID)
         {
-            debug << "Erreur isRegisterTainted non géré" << std::endl;
+            g_debug << "Erreur isRegisterTainted non géré" << std::endl;
             PIN_ExitApplication(-1);
         }
         #endif
@@ -409,7 +409,7 @@ public:
         #if DEBUG
         if (regIndex == rINVALID)
         {
-            debug << "Erreur isRegisterTainted non géré" << std::endl;
+            g_debug << "Erreur isRegisterTainted non géré" << std::endl;
             PIN_ExitApplication(-1);
         }
         #endif
@@ -460,7 +460,7 @@ public:
         #if DEBUG
         if (regIndex == rINVALID)
         {
-            debug << "Erreur getRegisterTainted non géré" << std::endl;
+            g_debug << "Erreur getRegisterTainted non géré" << std::endl;
             PIN_ExitApplication(-1);
         }
         #endif
@@ -494,7 +494,7 @@ public:
         #if DEBUG
         if (regIndex == rINVALID)
         {
-            debug << "Erreur getRegisterTainted non géré" << std::endl;
+            g_debug << "Erreur getRegisterTainted non géré" << std::endl;
             PIN_ExitApplication(-1);
         }
         #endif
@@ -532,7 +532,7 @@ public:
         #if DEBUG
         if (regIndex == rINVALID)
         {
-            debug << "Erreur getRegisterTainted non géré" << std::endl;
+            g_debug << "Erreur getRegisterTainted non géré" << std::endl;
             PIN_ExitApplication(-1);
         }
         #endif
@@ -570,7 +570,7 @@ public:
         #if DEBUG
         if (regIndex == rINVALID)
         {
-            debug << "Erreur getRegisterTainted non géré" << std::endl;
+            g_debug << "Erreur getRegisterTainted non géré" << std::endl;
             PIN_ExitApplication(-1);
         }
         #endif
@@ -621,7 +621,7 @@ public:
         #if DEBUG
         if (regIndex == rINVALID)
         {
-            debug << "Erreur updateTaintRegister non géré" << std::endl;
+            g_debug << "Erreur updateTaintRegister non géré" << std::endl;
             PIN_ExitApplication(-1);
         }
         #endif
@@ -645,7 +645,7 @@ public:
         #if DEBUG
         if (regIndex == rINVALID)
         {
-            debug << "Erreur updateTaintRegister non géré" << std::endl;
+            g_debug << "Erreur updateTaintRegister non géré" << std::endl;
             PIN_ExitApplication(-1);
         }
         #endif
@@ -677,7 +677,7 @@ public:
         #if DEBUG
         if (regIndex == rINVALID)
         {
-            debug << "Erreur updateTaintRegister non géré" << std::endl;
+            g_debug << "Erreur updateTaintRegister non géré" << std::endl;
             PIN_ExitApplication(-1);
         }
         #endif
@@ -710,7 +710,7 @@ public:
         #if DEBUG
         if (regIndex == rINVALID)
         {
-            debug << "Erreur updateTaintRegister non géré" << std::endl;
+            g_debug << "Erreur updateTaintRegister non géré" << std::endl;
             PIN_ExitApplication(-1);
         }
         #endif
@@ -769,7 +769,7 @@ public:
         #if DEBUG
         if (regIndex == rINVALID)
         {
-            debug << "Erreur unTaintRegister non géré" << std::endl;
+            g_debug << "Erreur unTaintRegister non géré" << std::endl;
             PIN_ExitApplication(-1);
         }
         #endif
@@ -794,7 +794,7 @@ public:
         #if DEBUG
         if (regIndex == rINVALID)
         {
-            debug << "Erreur unTaintRegister non géré" << std::endl;
+            g_debug << "Erreur unTaintRegister non géré" << std::endl;
             PIN_ExitApplication(-1);
         }
         #endif
@@ -856,5 +856,5 @@ public:
 
 };
 
-// déclaration du pointeur vers la classe de gestion globale
+// pointeur global vers classe de gestion du marquage mémoire
 extern TaintManager_Global *pTmgrGlobal;

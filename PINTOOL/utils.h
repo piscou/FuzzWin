@@ -9,7 +9,7 @@ void cUNHANDLED(INS &ins);
 // démarquage rapide registre par callback 
 template<UINT32 len> void PIN_FAST_ANALYSIS_CALL uREG(THREADID tid, REG reg)
 {  
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     pTmgrTls->unTaintRegister<len>(reg); 
 }
 
@@ -22,7 +22,7 @@ inline void PIN_FAST_ANALYSIS_CALL uMEM(ADDRINT address, UINT32 sizeInBytes)
 
 inline void PIN_FAST_ANALYSIS_CALL uFLAGS(THREADID tid)  
 {  
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     pTmgrTls->unTaintAllFlags(); 
 }
 

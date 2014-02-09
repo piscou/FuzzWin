@@ -135,10 +135,10 @@ void SYSCALLS::defineSyscallsNumbers()
 void SYSCALLS::syscallEntry(THREADID tid, CONTEXT *ctxt, SYSCALL_STANDARD std, void *)
 {
     // récupération de la structure de gestion des syscalls dans la TLS
-    Syscall_Data *pSysData = static_cast<Syscall_Data*>(PIN_GetThreadData(tlsKeySyscallData, tid));
+    Syscall_Data *pSysData = static_cast<Syscall_Data*>(PIN_GetThreadData(g_tlsKeySyscallData, tid));
     
-    // par défaut, le syscall ne sera pas étudié apres son appel
-    // on l'indique en stockant un numéro de syscall nul dans la TLS 
+    // Si le syscall doit être étudié, le numéro du syscall sera stocké dans la TLS
+    // par défaut, le numéro est mis à zéro
     pSysData->syscallNumber = 0;
     
     // stockage du numéro du syscall concerné
@@ -205,7 +205,7 @@ void SYSCALLS::syscallEntry(THREADID tid, CONTEXT *ctxt, SYSCALL_STANDARD std, v
         _LOGSYSCALLS("]  Nom du fichier :" << filename);
 
         // si le nom du fichier est celui de la cible : sauvegarde des arguments
-        if (filename.find(inputFile) != std::string::npos) 
+        if (filename.find(g_inputFile) != std::string::npos) 
         { 
             // stockage du numéro du syscall dans la TLS pour traitement au retour du syscall
             pSysData->syscallNumber = PIN_NtCreateFile;
@@ -271,6 +271,8 @@ void SYSCALLS::syscallEntry(THREADID tid, CONTEXT *ctxt, SYSCALL_STANDARD std, v
             { 
                 // stockage du numéro du syscall dans la TLS pour traitement au retour du syscall
                 pSysData->syscallNumber = PIN_NtSetInformationFile;
+                // stockage du handle du fichier concerné
+                pSysData->hFile = hFile;
 
                 // (2:IN) structure contenant le nouvel offset
                 PFILE_POSITION_INFORMATION pFileInfo = 
@@ -361,13 +363,14 @@ void SYSCALLS::syscallEntry(THREADID tid, CONTEXT *ctxt, SYSCALL_STANDARD std, v
 void SYSCALLS::syscallExit(THREADID tid, CONTEXT *ctxt, SYSCALL_STANDARD std, void *) 
 {
     // récupération de la structure de gestion des syscalls dans la TLS
-    Syscall_Data *pSysData = static_cast<Syscall_Data*>(PIN_GetThreadData(tlsKeySyscallData, tid));
+    Syscall_Data *pSysData = static_cast<Syscall_Data*>(PIN_GetThreadData(g_tlsKeySyscallData, tid));
 
     // récupération du numéro de syscall stocké avant l'appel
     ADDRINT syscallNumber = pSysData->syscallNumber;
 
     // fin si le syscall ne doit pas être étudié (valeur nulle), ou si erreur du syscall
     if ((syscallNumber == 0) || (PIN_GetSyscallErrno(ctxt, std) != 0))  return;
+    /******** READFILE ********/
     else if (syscallNumber == PIN_NtReadFile)
     {
         // récupération du nombre d'octets réellement lus dans le fichier
@@ -389,10 +392,10 @@ void SYSCALLS::syscallExit(THREADID tid, CONTEXT *ctxt, SYSCALL_STANDARD std, vo
         _LOGSYSCALLS("] *** ReadFile AFTER offset " << startOffset << " nb octets lus " << nbBytesRead);
 
         // des données ont été lues dans le fichier, on peut commencer l'instrumentation
-        // obligation d'obtenir le lock, la variable étant globale
-        PIN_GetLock(&lock, tid + 1);
-        beginInstrumentation = true;
-        PIN_ReleaseLock(&lock);
+        // obligation d'obtenir le g_lock, la variable étant globale
+        PIN_GetLock(&g_lock, tid + 1);
+        g_beginInstrumentationOfInstructions = true;
+        PIN_ReleaseLock(&g_lock);
     }
     /******** OPENFILE & CREATEFILE ********/
     else if ( (syscallNumber == PIN_NtCreateFile) || (syscallNumber == PIN_NtOpenFile))
@@ -444,10 +447,10 @@ void SYSCALLS::syscallExit(THREADID tid, CONTEXT *ctxt, SYSCALL_STANDARD std, vo
         pTmgrGlobal->createNewSourceTaintBytes(startAddress, viewSize, 0);
 
         // Les données ud fichier ont été mappées, on peut commencer l'instrumentation
-        // obligation d'obtenir le lock, la variable étant globale
-        PIN_GetLock(&lock, tid + 1);
-        beginInstrumentation = true;
-        PIN_ReleaseLock(&lock);
+        // obligation d'obtenir le g_lock, la variable étant globale
+        PIN_GetLock(&g_lock, tid + 1);
+        g_beginInstrumentationOfInstructions = true;
+        PIN_ReleaseLock(&g_lock);
 
         _LOGSYSCALLS("] *** MapViewOfSection After adresse départ " << startAddress << " taille " << viewSize);
  } 

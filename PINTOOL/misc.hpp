@@ -5,7 +5,7 @@
 template<UINT32 lenEA, UINT32 lenDest> 
 void MISC::sLEA_BD(THREADID tid, REG regDest, REG baseReg, ADDRINT baseRegValue, INT32 displ ADDRESS_DEBUG) 
 {  
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     
     // traitement ssi le registre de base est marqué 
     if (pTmgrTls->isRegisterTainted<32>(baseReg)) 
@@ -34,7 +34,7 @@ template<UINT32 lenEA, UINT32 lenDest>
 void MISC::sLEA_ISD(THREADID tid, REG regDest, REG indexReg, ADDRINT indexRegValue, 
                     UINT32 scale, INT32 displ ADDRESS_DEBUG) 
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     
     // traitement ssi le registre d'index est marqué 
     if (pTmgrTls->isRegisterTainted<32>(indexReg)) 
@@ -84,7 +84,7 @@ template<UINT32 lenEA, UINT32 lenDest>
 void MISC::sLEA_BISD(THREADID tid, REG regDest, REG baseReg, ADDRINT baseRegValue, 
                      REG indexReg, ADDRINT indexRegValue, UINT32 scale, INT32 displ ADDRESS_DEBUG) 
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     
     bool isIndexRegTainted = pTmgrTls->isRegisterTainted<32>(indexReg);
     bool isBaseRegTainted =  pTmgrTls->isRegisterTainted<32>(baseReg);
@@ -148,7 +148,7 @@ void MISC::sLEA_BISD(THREADID tid, REG regDest, REG baseReg, ADDRINT baseRegValu
 template<UINT32 lenEA, UINT32 lenDest> 
 void MISC::sLEA_BD(THREADID tid, REG regDest, REG baseReg, ADDRINT baseRegValue, INT32 displ ADDRESS_DEBUG) 
 {  
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     
     // traitement si le registre de base est marqué 
     if (pTmgrTls->isRegisterTainted<64>(baseReg)) 
@@ -177,7 +177,7 @@ template<UINT32 lenEA, UINT32 lenDest>
 void MISC::sLEA_ISD(THREADID tid, REG regDest, REG indexReg, ADDRINT indexRegValue, 
                     UINT32 scale, INT32 displ ADDRESS_DEBUG) 
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     
     // traitement ssi le registre d'index est marqué 
     if (pTmgrTls->isRegisterTainted<64>(indexReg)) 
@@ -227,7 +227,7 @@ template<UINT32 lenEA, UINT32 lenDest>
 void MISC::sLEA_BISD(THREADID tid, REG regDest, REG baseReg, ADDRINT baseRegValue, 
                      REG indexReg, ADDRINT indexRegValue, UINT32 scale, INT32 displ ADDRESS_DEBUG) 
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     
     bool isIndexRegTainted = pTmgrTls->isRegisterTainted<64>(indexReg);
     bool isBaseRegTainted =  pTmgrTls->isRegisterTainted<64>(baseReg);

@@ -18,7 +18,7 @@
 
 template<UINT32 len> void BITBYTE::sBT_IM(THREADID tid, ADDRINT testedAddress, ADDRINT value ADDRESS_DEBUG)
 { 
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     
     // calcul du modulo du déplacement 16/32/64 (NB : modulo 'len' = AND 'len-1')
     UINT32 maskedValue = value & (len - 1);
@@ -49,7 +49,7 @@ template<UINT32 len> void BITBYTE::sBT_IR(THREADID tid, REG testedReg, ADDRINT v
     // calcul de l'octet réellement concerné par le test (maskedValue DIV 8)
     UINT32 testedByte = maskedValue >> 3;  
 
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     
     // test du marquage de l'octet concerné
     if ( !pTmgrTls->isRegisterPartTainted(regIndex, testedByte)) pTmgrTls->unTaintCarryFlag();
@@ -76,7 +76,7 @@ template<UINT32 len> void BITBYTE::sBT_RM
     // calcul de l'adresse de base pour le test du bit
     ADDRINT testedByte = testedAddress + displ;
 
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     
     // test du marquage de la plage d'adresse. Si non marqué => démarquage CF (meme si le registre est marqué)
     if ( !pTmgrGlobal->isMemoryTainted<len>(testedByte)) pTmgrTls->unTaintCarryFlag();
@@ -116,7 +116,7 @@ template<UINT32 len> void BITBYTE::sBT_RM
 template<UINT32 len> void BITBYTE::sBT_RR
     (THREADID tid, REG testedReg, ADDRINT testedRegValue, REG bitIndexReg, ADDRINT bitIndexRegValue ADDRESS_DEBUG)
 { 
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
         
     bool isbitIndexTainted  = pTmgrTls->isRegisterTainted<len>(bitIndexReg);
     bool isTestedRegTainted = pTmgrTls->isRegisterTainted<len>(testedReg);
@@ -157,7 +157,7 @@ template<UINT32 len> void BITBYTE::sBT_RR
 
 template<UINT32 len> void BITBYTE::sBTC_IM(THREADID tid, ADDRINT testedAddress, ADDRINT value ADDRESS_DEBUG)
 { 
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     
     // calcul du modulo du déplacement 16/32/64 (NB : modulo 'len' = AND 'len-1')
     UINT32 maskedValue = value & (len - 1);
@@ -196,7 +196,7 @@ template<UINT32 len> void BITBYTE::sBTC_IR(THREADID tid, REG testedReg, ADDRINT 
     // calcul de l'octet réellement concerné par le test (maskedValue DIV 8)
     UINT32 testedByte = maskedValue >> 3;  
 
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     
     // test du marquage de l'octet concerné
     if ( !pTmgrTls->isRegisterPartTainted(regIndex, testedByte)) pTmgrTls->unTaintCarryFlag();
@@ -232,7 +232,7 @@ template<UINT32 len> void BITBYTE::sBTC_RM
     // calcul de l'adresse de base pour le test du bit. Le bit testé sera compris entre 0 et 31 ou 63
     ADDRINT testedByte = testedAddress + displ;
 
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     
     // test du marquage de la plage d'adresse. Si non marqué => démarquage CF (meme si le registre est marqué)
     if ( !pTmgrGlobal->isMemoryTainted<len>(testedByte)) pTmgrTls->unTaintCarryFlag();
@@ -294,7 +294,7 @@ template<UINT32 len> void BITBYTE::sBTC_RM
 template<UINT32 len> void BITBYTE::sBTC_RR
     (THREADID tid, REG testedReg, ADDRINT testedRegValue, REG bitIndexReg, ADDRINT bitIndexRegValue ADDRESS_DEBUG)
 { 
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
         
     bool isbitIndexTainted  = pTmgrTls->isRegisterTainted<len>(bitIndexReg);
     bool isTestedRegTainted = pTmgrTls->isRegisterTainted<len>(testedReg);
@@ -336,7 +336,7 @@ template<UINT32 len> void BITBYTE::sBTC_RR
 
 template<UINT32 len> void BITBYTE::sBTR_IM(THREADID tid, ADDRINT testedAddress, ADDRINT value ADDRESS_DEBUG)
 { 
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     
     // calcul du modulo du déplacement 16/32/64 (NB : modulo 'len' = AND 'len-1')
     UINT32 maskedValue = value & (len - 1);
@@ -375,7 +375,7 @@ template<UINT32 len> void BITBYTE::sBTR_IR(THREADID tid, REG testedReg, ADDRINT 
     // calcul de l'octet réellement concerné par le test (maskedValue DIV 8)
     UINT32 testedByte = maskedValue >> 3;  
 
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     
     // test du marquage de l'octet concerné
     if ( !pTmgrTls->isRegisterPartTainted(regIndex, testedByte)) pTmgrTls->unTaintCarryFlag();
@@ -411,7 +411,7 @@ template<UINT32 len> void BITBYTE::sBTR_RM
     // calcul de l'adresse de base pour le test du bit. Le bit testé sera compris entre 0 et 31 ou 63
     ADDRINT testedByte = testedAddress + displ;
 
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     
     // test du marquage de la plage d'adresse. Si non marqué => démarquage CF (meme si le registre est marqué)
     if ( !pTmgrGlobal->isMemoryTainted<len>(testedByte)) pTmgrTls->unTaintCarryFlag();
@@ -473,7 +473,7 @@ template<UINT32 len> void BITBYTE::sBTR_RM
 template<UINT32 len> void BITBYTE::sBTR_RR
     (THREADID tid, REG testedReg, ADDRINT testedRegValue, REG bitIndexReg, ADDRINT bitIndexRegValue ADDRESS_DEBUG)
 { 
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
         
     bool isbitIndexTainted  = pTmgrTls->isRegisterTainted<len>(bitIndexReg);
     bool isTestedRegTainted = pTmgrTls->isRegisterTainted<len>(testedReg);
@@ -515,7 +515,7 @@ template<UINT32 len> void BITBYTE::sBTR_RR
 
 template<UINT32 len> void BITBYTE::sBTS_IM(THREADID tid, ADDRINT testedAddress, ADDRINT value ADDRESS_DEBUG)
 { 
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     
     // calcul du modulo du déplacement 16/32/64 (NB : modulo 'len' = AND 'len-1')
     UINT32 maskedValue = value & (len - 1);
@@ -554,7 +554,7 @@ template<UINT32 len> void BITBYTE::sBTS_IR(THREADID tid, REG testedReg, ADDRINT 
     // calcul de l'octet réellement concerné par le test (maskedValue DIV 8)
     UINT32 testedByte = maskedValue >> 3;  
 
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     
     // test du marquage de l'octet concerné
     if ( !pTmgrTls->isRegisterPartTainted(regIndex, testedByte)) pTmgrTls->unTaintCarryFlag();
@@ -590,7 +590,7 @@ template<UINT32 len> void BITBYTE::sBTS_RM
     // calcul de l'adresse de base pour le test du bit. Le bit testé sera compris entre 0 et 31 ou 63
     ADDRINT testedByte = testedAddress + displ;
 
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     
     // test du marquage de la plage d'adresse. Si non marqué => démarquage CF (meme si le registre est marqué)
     if ( !pTmgrGlobal->isMemoryTainted<len>(testedByte)) pTmgrTls->unTaintCarryFlag();
@@ -652,7 +652,7 @@ template<UINT32 len> void BITBYTE::sBTS_RM
 template<UINT32 len> void BITBYTE::sBTS_RR
     (THREADID tid, REG testedReg, ADDRINT testedRegValue, REG bitIndexReg, ADDRINT bitIndexRegValue ADDRESS_DEBUG)
 { 
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
         
     bool isbitIndexTainted  = pTmgrTls->isRegisterTainted<len>(bitIndexReg);
     bool isTestedRegTainted = pTmgrTls->isRegisterTainted<len>(testedReg);

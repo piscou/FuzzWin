@@ -20,18 +20,24 @@
 #include "utils.h"
 #include "stringop.h"
 #include "semaphore.h"
-#include "routine.h"
 
-// Fonction d'analyse "Instruction" : appel de la procédure de traitement
-// spécifique à chaque instruction. Le tri s'effectue à l'aide du mon de l'instruction
-// sans passer par la catégorie : permet d'économiser un switch à chaque instruction !!!
+/*********************/
+/*** PINTOOL TAINT ***/
+/*********************/
+
+// Fonction d'instrumentation des instructions
+// premier tri en fonction du nom de l'instruction, qui orientera vers les
+// procédures spécifiques à chaque instruction
+// les instructions sont regroupées en CATEGORIES (fichiers .cpp, .hpp et .h)
+// ces catégories sont celles définies par PIN
 void INSTRUMENTATION::Instruction(INS ins, void* )
 {
-    if (!beginInstrumentation) return;
+    if (!g_beginInstrumentationOfInstructions) return;
 
+    // mode DEBUG : désassemblage 
     _LOGINS(ins); 
 
-    switch (INS_Opcode(ins)) // BIG SWITCH :)
+    switch (INS_Opcode(ins)) // BIG BIG SWITCH :)
     {
     case XED_ICLASS_NOP:    break;    // la plus facile :p
 
@@ -130,7 +136,7 @@ void INSTRUMENTATION::Instruction(INS ins, void* )
     // MISC: LEA, LEAVE (RET Far considéré niveau marquage comme ret)
     case XED_ICLASS_LEA:    MISC::cLEA(ins);      break;
     case XED_ICLASS_LEAVE:  MISC::cLEAVE(ins);    break;
-    case XED_ICLASS_RET_FAR: 
+    case XED_ICLASS_RET_FAR: // identique en traitement à RET_NEAR
     case XED_ICLASS_RET_NEAR:    RET::cRET(ins);   break;
 
     // STRINGOP: le second argument est la taille des opérandes, en octets
@@ -168,6 +174,7 @@ void INSTRUMENTATION::Instruction(INS ins, void* )
 
     // UNCONDITIONAL_BR
     case XED_ICLASS_JMP: UNCONDITIONAL_BR::cJMP(ins); break;
+    // les JMP_FAR ne sont pas traités pour l'instant
     case XED_ICLASS_JMP_FAR: _LOGDEBUG(" *** JMP_FAR ***"); break;
 
     // CONVERT
@@ -221,57 +228,57 @@ void INSTRUMENTATION::Instruction(INS ins, void* )
     
    
     default: // fonction non traitée : démarquage de(s) destination(s)
-        #if DEBUG
-        nbIns++;
-        #endif
+        UTILS::cUNHANDLED(ins);     
         _LOGUNHANDLED(ins);
-        UTILS::cUNHANDLED(ins);
         break;
     }
     _LOGDEBUG(""); // juste un retour chariot
 }
 
-void INSTRUMENTATION::Fini(INT32 code, void* ) 
+// Fonction de notification lors de la fin de l'exécution
+void INSTRUMENTATION::FiniTaint(INT32 code, void* ) 
 {
-    PIN_GetLock(&lock, 0);
+    PIN_GetLock(&g_lock, 0);
     
     // envoi des dernieres données récoltées
-    pFormula->final();
+    g_pFormula->final();
 
 #if DEBUG
     // fermeture des fichiers de log
-    clock_t totalTime = clock() - timeBegin;
+    clock_t totalTime = clock() - g_timeBegin;
 
-    debug << "Temps ecoule (ticks) : " << decstr(totalTime);
-    debug << " soit " << ((float) totalTime)/CLOCKS_PER_SEC << " secondes" << std::endl;
-    debug << nbIns << " instructions non gerees \n"; 
-    debug << "#eof\n";    debug.close();
+    g_debug << "Temps ecoule (ticks) : " << decstr(totalTime);
+    g_debug << " soit " << ((float) totalTime)/CLOCKS_PER_SEC << " secondes" << std::endl;
+    g_debug << "#eof\n";    
+    g_debug.close();
 
     // récupération du nombre d'objets encore marqués en mémoire
     auto taintedMem = pTmgrGlobal->getSnapshotOfTaintedLocations();
-    taint << "nombre d'octets encore marqués : " << taintedMem.size() << std::endl;
-    taint << "#eof\n";    taint.close();
+    g_taint << "nombre d'octets encore marqués : " << taintedMem.size() << std::endl;
+    g_taint << "#eof\n";    
+    g_taint.close();
 #else   
     // flush puis déconnexion du pipe, en mode release
-    WINDOWS::FlushFileBuffers(hPipe);
-    WINDOWS::CloseHandle(hPipe);     
+    WINDOWS::FlushFileBuffers(g_hPipe);
+    WINDOWS::CloseHandle(g_hPipe);     
 #endif    
 
     // libération des classes globales
     delete (pTmgrGlobal);
-    delete (pFormula);
+    delete (g_pFormula);
 
     // libération des slots de la TLS
-    PIN_DeleteThreadDataKey(tlsKeyTaint);
-    PIN_DeleteThreadDataKey(tlsKeySyscallData);
-    PIN_ReleaseLock(&lock);
+    PIN_DeleteThreadDataKey(g_tlsKeyTaint);
+    PIN_DeleteThreadDataKey(g_tlsKeySyscallData);
 
-#if 0
-    // fin forcée (sans attendre le thread "gardien du temps" s'il tourne encore)
+    // Libération du verrou
+    PIN_ReleaseLock(&g_lock);
+
+    // fin forcée (sans attendre le thread "maxtime" s'il s'exécute encore)
     PIN_ExitProcess(code);
-#endif
 }
 
+// Fonction de notification lors du lancement d'un thread
 void INSTRUMENTATION::threadStart(THREADID tid, CONTEXT *, INT32 , VOID *)
 {
     _LOGDEBUG("Création du thread n° " << tid << " et TLS associée");
@@ -280,19 +287,69 @@ void INSTRUMENTATION::threadStart(THREADID tid, CONTEXT *, INT32 , VOID *)
     TaintManager_Thread *pTmgrTls = new TaintManager_Thread;
     Syscall_Data *pSyscallData    = new Syscall_Data;
 
-    PIN_SetThreadData(tlsKeyTaint, pTmgrTls, tid);
-    PIN_SetThreadData(tlsKeySyscallData, pSyscallData, tid);
+    PIN_SetThreadData(g_tlsKeyTaint, pTmgrTls, tid);
+    PIN_SetThreadData(g_tlsKeySyscallData, pSyscallData, tid);
 }
 
+// Fonction de notification lors de la fin d'un thread
 void INSTRUMENTATION::threadFini(THREADID tid, const CONTEXT *, INT32 , VOID *)
 {
     _LOGDEBUG("destruction du thread n° " << tid << " et TLS associée");
 
     TaintManager_Thread *pTmgrTls = 
-        static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+        static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     delete (pTmgrTls);
 
     Syscall_Data *pSysData = 
-        static_cast<Syscall_Data*>(PIN_GetThreadData(tlsKeySyscallData, tid));
+        static_cast<Syscall_Data*>(PIN_GetThreadData(g_tlsKeySyscallData, tid));
     delete (pSysData);
+}
+
+/**************************/
+/*** PINTOOL CHECKSCORE ***/
+/**************************/
+
+// Fonction de notification lors du changement de contexte
+void INSTRUMENTATION::changeCtx
+    (THREADID, CONTEXT_CHANGE_REASON reason, const CONTEXT* , CONTEXT* , INT32 sig, VOID*) 
+{
+    if (reason == CONTEXT_CHANGE_REASON_EXCEPTION) 
+    {
+        g_foundException = true;
+        // appel de la fonction "FiniCheckscore" avant de quitter le programme
+        PIN_ExitApplication(EXIT_EXCEPTION); 
+    }
+}
+
+// Fonction de notification lors de la fin de l'exécution
+void INSTRUMENTATION::FiniCheckScore(INT32 code, void* ) 
+{
+    WINDOWS::DWORD cbWritten;
+    std::string message;
+
+    // si exception, le message sera le caractère '@'
+    // sinon ce sera le nombre d'instructions exécutées
+    if (g_foundException) message = '@';
+    else                  message = decstr(g_nbIns);
+
+    // envoi du resultat en entier dans le pipe  (= stdout en mode debug)
+    WINDOWS::WriteFile(g_hPipe, 
+        message.c_str(), 
+        static_cast<WINDOWS::DWORD>(message.size()), // cast pour eviter C4267 en x64 
+        &cbWritten, 
+        NULL);
+    WINDOWS::FlushFileBuffers(g_hPipe);
+
+    // fin forcée (sans attendre le thread "maxtime" s'il s'exécute encore)
+    PIN_ExitProcess(code);
+}
+
+// Fonction d'instrumentation des traces
+// ajout du nombre d'instructions de la trace au total
+void INSTRUMENTATION::insCount(TRACE trace, VOID *) 
+{
+    for (BBL bbl = TRACE_BblHead(trace) ; BBL_Valid(bbl) ; bbl = BBL_Next(bbl))
+    {
+        g_nbIns += BBL_NumIns(bbl);
+    }
 }

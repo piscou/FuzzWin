@@ -5,15 +5,13 @@
 #include "pintool.h"
 #include "relations.h"
 
-#if DEBUG
-static UINT32 idValue = 0;
-#endif
-
 // classe décrivant la source d'un objet marqué
 // déclaration et implémentation dans objectSource.h et .cpp
 class   ObjectSource;
+
 // classe "mère", décrivant un objet représentant un marquage
 class   Taint; 
+
 // classe "fille", représentant un objet de taille définie (sur 'len' bits)
 template<UINT32 len> class TaintObject;         
 
@@ -51,11 +49,8 @@ protected:
     // sources de cet objet
     std::vector<ObjectSource> m_sources;  
     
-#if DEBUG
-    // un identificateur unique selon le type de classe fille
-    UINT32 m_id;      
-#endif
-
+    // constructeurs privés : classe non instanciable
+    // obligation de passer par les classes filles
     Taint(Relation rel, UINT32 len);
     Taint(Relation rel, UINT32 len, const ObjectSource &os1);
     Taint(Relation rel, UINT32 len, const ObjectSource &os1, const ObjectSource &os2);
@@ -97,11 +92,6 @@ public:
     { 
         this->m_sources.push_back(ObjectSource(length, value)); 
     }
-
-#if DEBUG
-    // un identificateur unique selon le type de classe fille
-    UINT32 getId() const { return (this->m_id); }     
-#endif
 };
 
 template<UINT32 length> class TaintObject : public Taint 

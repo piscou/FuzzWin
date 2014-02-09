@@ -25,8 +25,3 @@ ADDRINT ObjectSource::getValue() const
 
 const TaintPtr& ObjectSource::getTaintedSource() const
 { return (this->m_src); }
-
-#if DEBUG
-UINT32 ObjectSource::getId() const 
-{ return ( (bool)this->m_src ? this->m_src->getId() : 0); }
-#endif

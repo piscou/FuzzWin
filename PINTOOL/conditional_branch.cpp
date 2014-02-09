@@ -242,88 +242,88 @@ void CONDITIONAL_BR::cJNLE(INS &ins)
 
 void CONDITIONAL_BR::sBELOW(THREADID tid, bool isTaken, ADDRINT insAddress) 
 { 
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     // JB/JNAE/JC   CF = 1   Below/not above or equal/carry   
     if (pTmgrTls->isCarryFlagTainted()) 
     {
         _LOGTAINT("J(N)B");
-        pFormula->addConstraint_BELOW(pTmgrTls, insAddress, isTaken);
+        g_pFormula->addConstraint_BELOW(pTmgrTls, insAddress, isTaken);
     }
 } // sBELOW
 
 void CONDITIONAL_BR::sSIGN(THREADID tid, bool isTaken, ADDRINT insAddress)
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     // JS    SF = 1   Sign (negative)
     if (pTmgrTls->isSignFlagTainted()) 
     {
         _LOGTAINT("J(N)S");
-        pFormula->addConstraint_SIGN(pTmgrTls, insAddress, isTaken);
+        g_pFormula->addConstraint_SIGN(pTmgrTls, insAddress, isTaken);
     }
 } // sSIGN
 
 void CONDITIONAL_BR::sOVERFLOW(THREADID tid, bool isTaken, ADDRINT insAddress) 
 {   
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     // JO  OF = 1  Overflow
     if (pTmgrTls->isOverflowFlagTainted()) 
     {
         _LOGTAINT("J(N)O");
-        pFormula->addConstraint_OVERFLOW(pTmgrTls, insAddress, isTaken);
+        g_pFormula->addConstraint_OVERFLOW(pTmgrTls, insAddress, isTaken);
     }
 } // sOVERFLOW
 
 void CONDITIONAL_BR::sPARITY(THREADID tid, bool isTaken, ADDRINT insAddress) 
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     // JP/JPE  PF = 1    Parity/parity even
     if (pTmgrTls->isParityFlagTainted()) 
     {
         _LOGTAINT("J(N)P");
-        pFormula->addConstraint_PARITY(pTmgrTls, insAddress, isTaken);
+        g_pFormula->addConstraint_PARITY(pTmgrTls, insAddress, isTaken);
     }
 } // sPARITY
 
 void CONDITIONAL_BR::sZERO(THREADID tid, bool isTaken, ADDRINT insAddress) 
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     // JE/JZ    ZF = 1    Equal/zero 
     if (pTmgrTls->isZeroFlagTainted()) 
     {
         _LOGTAINT("J(N)Z");
-        pFormula->addConstraint_ZERO(pTmgrTls, insAddress, isTaken);
+        g_pFormula->addConstraint_ZERO(pTmgrTls, insAddress, isTaken);
     }
 }
 
 void CONDITIONAL_BR::sBELOW_OR_EQUAL(THREADID tid, bool isTaken, ADDRINT regEflagsValue, ADDRINT insAddress)
 {   
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     // (CF or ZF) = 1  Below or equal/not above
     if (pTmgrTls->isZeroFlagTainted() || pTmgrTls->isCarryFlagTainted()) 
     {
         _LOGTAINT("J(N)BE");
-        pFormula->addConstraint_BELOW_OR_EQUAL(pTmgrTls, insAddress, isTaken, regEflagsValue);
+        g_pFormula->addConstraint_BELOW_OR_EQUAL(pTmgrTls, insAddress, isTaken, regEflagsValue);
     }
 } // sBELOW_OR_EQUAL
 
 void CONDITIONAL_BR::sLESS(THREADID tid, bool isTaken, ADDRINT regEflagsValue, ADDRINT insAddress)
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     // JL/JNGE   (SF xor OF) = 1 Less/not greater or equal   
     if (pTmgrTls->isSignFlagTainted() || pTmgrTls->isOverflowFlagTainted()) 
-    {TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    {TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
         _LOGTAINT("J(N)L");
-        pFormula->addConstraint_LESS(pTmgrTls, insAddress, isTaken, regEflagsValue);
+        g_pFormula->addConstraint_LESS(pTmgrTls, insAddress, isTaken, regEflagsValue);
     }
 } // sLESS
 
 void CONDITIONAL_BR::sLESS_OR_EQUAL(THREADID tid, bool isTaken, ADDRINT regEflagsValue, ADDRINT insAddress)
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     // JLE/JNG  ((SF xor OF) or ZF) = 1 Less or equal/not greater
     if (pTmgrTls->isZeroFlagTainted() || pTmgrTls->isSignFlagTainted() || pTmgrTls->isOverflowFlagTainted()) 
     {
         _LOGTAINT("J(N)LE");
-        pFormula->addConstraint_LESS_OR_EQUAL(pTmgrTls, insAddress, isTaken, regEflagsValue);
+        g_pFormula->addConstraint_LESS_OR_EQUAL(pTmgrTls, insAddress, isTaken, regEflagsValue);
     }
 } // sLESS_OR_EQUAL

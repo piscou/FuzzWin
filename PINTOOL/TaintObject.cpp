@@ -6,19 +6,12 @@
 // TAINT : classe représentant un objet marqué
 Taint::Taint(Relation rel, UINT32 len) 
     : m_sourceRelation(rel), m_isDeclaredFlag(false), m_len(len)
-{
-#if DEBUG
-    this->m_id = idValue++;
-#endif
-}
+{}
 
 Taint::Taint(Relation rel, UINT32 len, const ObjectSource &os1) 
     : m_sourceRelation(rel), m_isDeclaredFlag(false), m_len(len)
 {
     this->m_sources.push_back(os1);
-    #if DEBUG
-    this->m_id = idValue++;
-    #endif
 }
 
 Taint::Taint(Relation rel, UINT32 len, const ObjectSource &os1, const ObjectSource &os2) 
@@ -26,9 +19,6 @@ Taint::Taint(Relation rel, UINT32 len, const ObjectSource &os1, const ObjectSour
 {
     this->m_sources.push_back(os1);
     this->m_sources.push_back(os2);
-    #if DEBUG
-    this->m_id = idValue++;
-    #endif
 }
 
 Taint::Taint(Relation rel, UINT32 len, const ObjectSource &os1, const ObjectSource &os2, const ObjectSource &os3) 
@@ -37,9 +27,6 @@ Taint::Taint(Relation rel, UINT32 len, const ObjectSource &os1, const ObjectSour
     this->m_sources.push_back(os1);
     this->m_sources.push_back(os2);
     this->m_sources.push_back(os3);
-    #if DEBUG
-    this->m_id = idValue++;
-    #endif
 }
 
 Taint::~Taint() { }
@@ -69,73 +56,23 @@ void Taint::addSource(const TaintPtr &taintPtr) { this->m_sources.push_back(Obje
 void Taint::addSource(const ObjectSource &src) { this->m_sources.push_back(src); }   
 
 template<UINT32 length> 
-TaintObject<length>::TaintObject(Relation rel) : Taint(rel, length)
-{ 
-#if 0
-    PIN_GetLock(&lock, 0);
-    taint << "Nouvel objet TAINT" << std::dec << m_len << " id " << this->m_id;
-    taint << " relation : " << enum_strings[rel] << std::endl;
-    PIN_ReleaseLock(&lock);
-#endif
-}
+TaintObject<length>::TaintObject(Relation rel) : Taint(rel, length) {}
 
 template<UINT32 length> 
 TaintObject<length>::TaintObject(Relation rel, const ObjectSource &os1) 
-    : Taint(rel, length, os1)
-{ 
-    #if 0
-    PIN_GetLock(&lock, 0);
-    taint << "Nouvel objet TAINT" << std::dec << m_len << " id " << this->m_id;
-    taint << " relation : " << enum_strings[rel];
-    taint << "source1 = TAINT" << os1.getLength() << " id " << os1.getId();
-    taint << std::endl;
-    PIN_ReleaseLock(&lock);
-    #endif
-}
+    : Taint(rel, length, os1) {}
 
 template<UINT32 length> 
 TaintObject<length>::TaintObject(Relation rel, const ObjectSource &os1, const ObjectSource &os2) 
-    : Taint(rel, length, os1, os2)
-{
-    #if 0
-    PIN_GetLock(&lock, 0);
-    taint << "Nouvel objet TAINT" << std::dec << m_len << " id " << this->m_id;
-    taint << " relation : " << enum_strings[rel];
-    taint << "source1 = TAINT" << os1.getLength() << " id " << os1.getId();
-    taint << "source2 = TAINT" << os2.getLength() << " id " << os2.getId();
-    taint << std::endl;
-    PIN_ReleaseLock(&lock);
-    #endif
-}
+    : Taint(rel, length, os1, os2) {}
 
 template<UINT32 length> 
 TaintObject<length>::TaintObject(Relation rel, const ObjectSource &os1, const ObjectSource &os2, const ObjectSource &os3) 
-    : Taint(rel, length, os1, os2, os3)
-{
-    #if 0
-    PIN_GetLock(&lock, 0);
-    taint << "Nouvel objet TAINT" << std::dec << m_len << " id " << this->m_id;
-    taint << " relation : " << enum_strings[rel];
-    taint << "source1 = TAINT" << os1.getLength() << " id " << os1.getId();
-    taint << "source2 = TAINT" << os2.getLength() << " id " << os2.getId();
-    taint << "source3 = TAINT" << os3.getLength() << " id " << os3.getId();
-    taint << std::endl;
-    PIN_ReleaseLock(&lock);
-    #endif
-}
+    : Taint(rel, length, os1, os2, os3) {}
 
-template<UINT32 len> TaintObject<len>::~TaintObject() 
-{
-#if 0
-    PIN_GetLock(&lock, 0);
-    taint << "destr objet TAINT" << std::dec << m_len << " id " << this->m_id;
-    if (this->m_sourceRelation == BYTESOURCE) taint << " (INITIAL)";
-    taint << std::endl;
-    PIN_ReleaseLock(&lock);
-#endif
-}
+template<UINT32 len> TaintObject<len>::~TaintObject() {}
 
-// instanciation des templates utilisés (ou alors il aurait fallu les déclarer dans le .h)
+// instanciation des templates utilisés (ici car références croisées)
 class Taint;
 template class TaintObject<1>;
 template class TaintObject<8>;

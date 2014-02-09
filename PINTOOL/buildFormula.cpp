@@ -933,8 +933,8 @@ void SolverFormula::declareConstraintFooter(const std::string &number, bool take
 
     // Si le nombre maximal de contraintes est atteint : quitter le pintool via la fonction "Fini"
     // code = 3 (NOMBRE MAXIMAL DE CONTRAINTES)
-    // si maxConstraints est nul, ce csa n'arrive jamais (la première contrainte est la n°1)
-    if (this->m_iAssert == maxConstraints)  PIN_ExitApplication(3);
+    // si g_maxConstraints est nul, ce csa n'arrive jamais (la première contrainte est la n°1)
+    if (this->m_iAssert == g_maxConstraints)  PIN_ExitApplication(3);
 }
 
 void SolverFormula::addConstraint_OVERFLOW(TaintManager_Thread *pTmgrTls, ADDRINT insAddress, bool isTaken) 
@@ -1198,10 +1198,10 @@ void SolverFormula::final()
     this->m_formula << "@" << std::dec << this->m_iAssert;
     
     // envoi de la formule en entier dans le pipe   (= stdout en mode debug)
-    WINDOWS::WriteFile(hPipe, 
+    WINDOWS::WriteFile(g_hPipe, 
         this->m_formula.str().c_str(), 
         static_cast<WINDOWS::DWORD>(this->m_formula.str().size()), // pour eviter C4267 en x64 
         &cbWritten, 
         NULL);
-    WINDOWS::FlushFileBuffers(hPipe);
+    WINDOWS::FlushFileBuffers(g_hPipe);
 }

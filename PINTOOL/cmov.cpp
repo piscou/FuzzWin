@@ -300,179 +300,179 @@ void CMOV::cCMOVNLE(INS &ins)
 void CMOV::sCMOVB(THREADID tid, bool isPredicatTrue, ADDRINT insAddress)
 {
     // CMOVB/CMOVNAE/CMOVC   CF = 1     Below/not above or equal/carry   
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     if (pTmgrTls->isCarryFlagTainted()) 
     {
         _LOGTAINT("CMOVB");
-        pFormula->addConstraint_BELOW(pTmgrTls, insAddress, isPredicatTrue);
+        g_pFormula->addConstraint_BELOW(pTmgrTls, insAddress, isPredicatTrue);
     }
 }// sCMOVB
 
 void CMOV::sCMOVNB(THREADID tid, bool isPredicatTrue, ADDRINT insAddress)
 { 
     // CMOVAE/CMOVNB/CMOVNC  CF = 0     Above or equal/not below
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     if (pTmgrTls->isCarryFlagTainted()) 
     {
         _LOGTAINT("CMOVNB");
-        pFormula->addConstraint_BELOW(pTmgrTls, insAddress, !(isPredicatTrue));
+        g_pFormula->addConstraint_BELOW(pTmgrTls, insAddress, !(isPredicatTrue));
     }
 }// sCMOVNB
 
 void CMOV::sCMOVS(THREADID tid, bool isPredicatTrue, ADDRINT insAddress)
 { 
     // CMOVS           SF = 1          Sign (negative)
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     if (pTmgrTls->isSignFlagTainted()) 
     {
         _LOGTAINT("CMOVS");
-        pFormula->addConstraint_SIGN(pTmgrTls, insAddress, isPredicatTrue);
+        g_pFormula->addConstraint_SIGN(pTmgrTls, insAddress, isPredicatTrue);
     }
 }// sCMOVS
 
 void CMOV::sCMOVNS(THREADID tid, bool isPredicatTrue, ADDRINT insAddress)
 {
     // CMOVNS       SF = 0      Not sign (non-negative)
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     if (pTmgrTls->isSignFlagTainted()) 
     {
         _LOGTAINT("CMOVNS");
-        pFormula->addConstraint_SIGN(pTmgrTls, insAddress, !(isPredicatTrue));
+        g_pFormula->addConstraint_SIGN(pTmgrTls, insAddress, !(isPredicatTrue));
     }
 }// sCMOVNS
 
 void CMOV::sCMOVO (THREADID tid, bool isPredicatTrue, ADDRINT insAddress)
 {
     // CMOVO           OF = 1          Overflow
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     if (pTmgrTls->isOverflowFlagTainted())  
     {
         _LOGTAINT("CMOVO");
-        pFormula->addConstraint_OVERFLOW(pTmgrTls, insAddress, isPredicatTrue);
+        g_pFormula->addConstraint_OVERFLOW(pTmgrTls, insAddress, isPredicatTrue);
     }
 }// sCMOVO
 
 void CMOV::sCMOVNO(THREADID tid, bool isPredicatTrue, ADDRINT insAddress)
 { 
     // CMOVNO           OF = 0          not Overflow
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     if (pTmgrTls->isOverflowFlagTainted()) 
     {
         _LOGTAINT("CMOVNO");
-        pFormula->addConstraint_OVERFLOW(pTmgrTls, insAddress, !(isPredicatTrue));
+        g_pFormula->addConstraint_OVERFLOW(pTmgrTls, insAddress, !(isPredicatTrue));
     }
 }// sCMOVNO
 
 void CMOV::sCMOVP (THREADID tid, bool isPredicatTrue, ADDRINT insAddress)
 { 
     // CMOVP/CMOVPE       PF = 1          Parity/parity even
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     if (pTmgrTls->isParityFlagTainted()) 
     {
         _LOGTAINT("CMOVP");
-        pFormula->addConstraint_PARITY(pTmgrTls, insAddress, isPredicatTrue);
+        g_pFormula->addConstraint_PARITY(pTmgrTls, insAddress, isPredicatTrue);
     }
 }// sCMOVP
 
 void CMOV::sCMOVNP(THREADID tid, bool isPredicatTrue, ADDRINT insAddress)
 { 
     // CMOVNP/CMOVPO      PF = 0          Not parity/parity odd
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     if (pTmgrTls->isParityFlagTainted()) 
     {
         _LOGTAINT("CMOVNP");
-        pFormula->addConstraint_PARITY(pTmgrTls, insAddress, !(isPredicatTrue));
+        g_pFormula->addConstraint_PARITY(pTmgrTls, insAddress, !(isPredicatTrue));
     }
 }// sCMOVNP
 
 void CMOV::sCMOVZ (THREADID tid, bool isPredicatTrue, ADDRINT insAddress)
 { 
     // CMOVE/CMOVZ        ZF = 1          Equal/zero
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     if (pTmgrTls->isZeroFlagTainted()) 
     {
         _LOGTAINT("CMOVZ");
-        pFormula->addConstraint_ZERO(pTmgrTls, insAddress, isPredicatTrue);
+        g_pFormula->addConstraint_ZERO(pTmgrTls, insAddress, isPredicatTrue);
     }
 }// sCMOVZ
 
 void CMOV::sCMOVNZ(THREADID tid, bool isPredicatTrue, ADDRINT insAddress)
 {
     // CMOVNE/CMOVNZ      ZF = 0          Not equal/not zero
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     if (pTmgrTls->isZeroFlagTainted()) 
     {
         _LOGTAINT("CMOVNZ");
-        pFormula->addConstraint_ZERO(pTmgrTls, insAddress, !(isPredicatTrue));
+        g_pFormula->addConstraint_ZERO(pTmgrTls, insAddress, !(isPredicatTrue));
     }
 }// sCMOVNZ
 
 void CMOV::sCMOVBE(THREADID tid, bool isPredicatTrue, ADDRINT regEflagsValue, ADDRINT insAddress)
 {
     // (CF or ZF) = 1  Below or equal/not above
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     if (pTmgrTls->isZeroFlagTainted() || pTmgrTls->isCarryFlagTainted() ) 
     {
         _LOGTAINT("CMOVBE");
-        pFormula->addConstraint_BELOW_OR_EQUAL(pTmgrTls, insAddress, isPredicatTrue, regEflagsValue);
+        g_pFormula->addConstraint_BELOW_OR_EQUAL(pTmgrTls, insAddress, isPredicatTrue, regEflagsValue);
     }
 }// sCMOVBE
 
 void CMOV::sCMOVNBE(THREADID tid, bool isPredicatTrue, ADDRINT regEflagsValue, ADDRINT insAddress)
 {
     // CMOVA/CMOVNBE      (CF or ZF) = 0  Above/not below or equal
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     if (pTmgrTls->isZeroFlagTainted() || pTmgrTls->isCarryFlagTainted() ) 
     {
         _LOGTAINT("CMOVNBE");
-        pFormula->addConstraint_BELOW_OR_EQUAL(pTmgrTls, insAddress, !(isPredicatTrue), regEflagsValue);
+        g_pFormula->addConstraint_BELOW_OR_EQUAL(pTmgrTls, insAddress, !(isPredicatTrue), regEflagsValue);
     }
 }// sCMOVNBE
 
 void CMOV::sCMOVL(THREADID tid, bool isPredicatTrue, ADDRINT regEflagsValue, ADDRINT insAddress)
 {
     // CMOVL/CMOVNGE      (SF xor OF) = 1 Less/not greater or equal
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     if (pTmgrTls->isSignFlagTainted() || pTmgrTls->isOverflowFlagTainted() ) 
     {
         _LOGTAINT("CMOVL");
-        pFormula->addConstraint_LESS(pTmgrTls, insAddress, isPredicatTrue, regEflagsValue);
+        g_pFormula->addConstraint_LESS(pTmgrTls, insAddress, isPredicatTrue, regEflagsValue);
     }
 }// sCMOVL
 
 void CMOV::sCMOVNL(THREADID tid, bool isPredicatTrue, ADDRINT regEflagsValue, ADDRINT insAddress)
 { 
     // CMOVGE/CMOVNL      (SF xor OF) = 0 Greater or equal/not less
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     if (pTmgrTls->isSignFlagTainted() || pTmgrTls->isOverflowFlagTainted() ) 
     {
         _LOGTAINT("CMOVNL");
-        pFormula->addConstraint_LESS(pTmgrTls, insAddress, !(isPredicatTrue), regEflagsValue);
+        g_pFormula->addConstraint_LESS(pTmgrTls, insAddress, !(isPredicatTrue), regEflagsValue);
     }
 }// sCMOVNL
 
 void CMOV::sCMOVLE(THREADID tid, bool isPredicatTrue, ADDRINT regEflagsValue, ADDRINT insAddress) 
 { 
     // CMOVLE/CMOVNG      ((SF xor OF) or ZF) = 1 Less or equal/not greater
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     if (pTmgrTls->isZeroFlagTainted() 
         || pTmgrTls->isSignFlagTainted() 
         || pTmgrTls->isOverflowFlagTainted() ) 
     {
         _LOGTAINT("CMOVLE");
-        pFormula->addConstraint_LESS_OR_EQUAL(pTmgrTls, insAddress, isPredicatTrue, regEflagsValue);
+        g_pFormula->addConstraint_LESS_OR_EQUAL(pTmgrTls, insAddress, isPredicatTrue, regEflagsValue);
     }
 }// sCMOVLE
 
 void CMOV::sCMOVNLE(THREADID tid, bool isPredicatTrue, ADDRINT regEflagsValue, ADDRINT insAddress) 
 {
     // CMOVG/CMOVNLE      ((SF xor OF) or ZF) = 0 Greater/not less or equal
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     if (pTmgrTls->isZeroFlagTainted() 
         || pTmgrTls->isSignFlagTainted() 
         || pTmgrTls->isOverflowFlagTainted() ) 
     {
         _LOGTAINT("CMOVNLE");
-        pFormula->addConstraint_LESS_OR_EQUAL(pTmgrTls, insAddress, !(isPredicatTrue), regEflagsValue);
+        g_pFormula->addConstraint_LESS_OR_EQUAL(pTmgrTls, insAddress, !(isPredicatTrue), regEflagsValue);
     }
 }// sCMOVNLE

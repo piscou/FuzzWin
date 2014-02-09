@@ -10,7 +10,7 @@ template<UINT32 len> void DATAXFER::sMOV_RR(THREADID tid, REG regSrc, REG regDes
     // et le marquage est également testé octet par octet dans la boucle for ci dessous
     REGINDEX regIndexDest = getRegIndex(regDest);	
     REGINDEX regIndexSrc  = getRegIndex(regSrc);
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     
     for (UINT32 regPart = 0 ; regPart < (len >> 3) ; ++regPart) 
     {	
@@ -31,7 +31,7 @@ template<UINT32 len> void DATAXFER::sMOV_RM(THREADID tid, REG regSrc, ADDRINT wr
     // car isRegisterTainted va faire une boucle pour tester le marquage, 
     // et le marquage est également testé octet par octet dans la boucle for ci dessous
     REGINDEX regIndex = getRegIndex(regSrc);
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     
     for (UINT32 regPart = 0 ; regPart < (len >> 3) ; ++regPart, ++writeAddress) 
     {	
@@ -49,7 +49,7 @@ template<UINT32 len> void DATAXFER::sMOV_RM(THREADID tid, REG regSrc, ADDRINT wr
 template<UINT32 len> void DATAXFER::sMOV_MR(THREADID tid, ADDRINT readAddress, REG regDest ADDRESS_DEBUG) 
 {
     REGINDEX regIndex = getRegIndex(regDest);	
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     
     for (UINT32 regPart = 0 ; regPart < (len >> 3) ; ++regPart, ++readAddress)
     {
@@ -71,7 +71,7 @@ template<UINT32 len> void DATAXFER::sMOV_MR(THREADID tid, ADDRINT readAddress, R
 // SIMULATE
 template<UINT32 len> void DATAXFER::sXCHG_M(THREADID tid, REG reg, ADDRINT address ADDRESS_DEBUG) 
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     
     TaintBytePtr tbTempPtr; // variable de mise en cache
     REGINDEX regIndex = getRegIndex(reg);
@@ -96,7 +96,7 @@ template<UINT32 len> void DATAXFER::sXCHG_M(THREADID tid, REG reg, ADDRINT addre
 
 template<UINT32 len> void DATAXFER::sXCHG_R(THREADID tid, REG regSrc, REG regDest ADDRESS_DEBUG) 
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     
     TaintBytePtr tbTempPtr; // variable de mise en cache
     REGINDEX regIndexSrc = getRegIndex(regSrc);
@@ -129,7 +129,7 @@ template<UINT32 len> void DATAXFER::sXCHG_R(THREADID tid, REG regSrc, REG regDes
 template<UINT32 lenSrc, UINT32 lenDest> 
 void DATAXFER::sMOVSX_RR(THREADID tid, REG regSrc, ADDRINT regSrcValue, REG regDest ADDRESS_DEBUG)
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     
     if ( !pTmgrTls->isRegisterTainted<lenSrc>(regSrc)) pTmgrTls->unTaintRegister<lenDest>(regDest);
     else 
@@ -147,7 +147,7 @@ void DATAXFER::sMOVSX_RR(THREADID tid, REG regSrc, ADDRINT regSrcValue, REG regD
 template<UINT32 lenSrc, UINT32 lenDest>
 void DATAXFER::sMOVSX_MR(THREADID tid, ADDRINT readAddress, REG regDest ADDRESS_DEBUG) 
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     
     if ( !pTmgrGlobal->isMemoryTainted<lenSrc>(readAddress)) pTmgrTls->unTaintRegister<lenDest>(regDest);
     else 
@@ -170,7 +170,7 @@ void DATAXFER::sMOVSX_MR(THREADID tid, ADDRINT readAddress, REG regDest ADDRESS_
 template<UINT32 lenSrc, UINT32 lenDest>
 void DATAXFER::sMOVZX_RR(THREADID tid, REG regSrc, REG regDest ADDRESS_DEBUG) 
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     
     // quoi qu'il arrive, effacement du marquage de la destination
     // en effet partie basse sera marquée (ou non) par le registre source 
@@ -199,7 +199,7 @@ void DATAXFER::sMOVZX_RR(THREADID tid, REG regSrc, REG regDest ADDRESS_DEBUG)
 
 template<UINT32 lenDest> void DATAXFER::sMOVZX_8R(THREADID tid, REG regSrc, REG regDest ADDRESS_DEBUG) 
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     
     // quoi qu'il arrive, effacement du marquage de la destination
     // en effet octet faible sera marqué (ou non) et octets forts mis à zéro
@@ -218,7 +218,7 @@ template<UINT32 lenDest> void DATAXFER::sMOVZX_8R(THREADID tid, REG regSrc, REG 
 template<UINT32 lenSrc, UINT32 lenDest> 
 void DATAXFER::sMOVZX_MR(THREADID tid, ADDRINT readAddress, REG regDest ADDRESS_DEBUG) 
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     
     // quoi qu'il arrive, effacement du marquage de la destination
     // en effet partie basse sera marquée (ou non) par la mémoire source
@@ -248,7 +248,7 @@ void DATAXFER::sMOVZX_MR(THREADID tid, ADDRINT readAddress, REG regDest ADDRESS_
 
 template<UINT32 len> void DATAXFER::sBSWAP(THREADID tid, REG reg ADDRESS_DEBUG) 
 {  
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     
     REGINDEX regIndex = getRegIndex(reg);
     // variable tampon

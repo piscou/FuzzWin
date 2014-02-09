@@ -426,7 +426,6 @@ del "$(TargetDir)$(TargetName).exp"</Command>
     <ClInclude Include="ret.h" />
     <ClInclude Include="rotate.h" />
     <ClInclude Include="rotate.hpp" />
-    <ClInclude Include="routine.h" />
     <ClInclude Include="semaphore.h" />
     <ClInclude Include="semaphore.hpp" />
     <ClInclude Include="shift.hpp" />
@@ -469,7 +468,7 @@ del "$(TargetDir)$(TargetName).exp"</Command>
     <ClCompile Include="conditional_branch.cpp" />
     <ClCompile Include="convert.cpp" />
     <ClCompile Include="dataxfer.cpp" />
-    <ClCompile Include="fuzzwinInit.cpp" />
+    <ClCompile Include="initialize.cpp" />
     <ClCompile Include="instrumentation.cpp" />
     <ClCompile Include="logical.cpp" />
     <ClCompile Include="main.cpp" />
@@ -479,7 +478,6 @@ del "$(TargetDir)$(TargetName).exp"</Command>
     <ClCompile Include="push.cpp" />
     <ClCompile Include="ret.cpp" />
     <ClCompile Include="rotate.cpp" />
-    <ClCompile Include="Routine.cpp" />
     <ClCompile Include="semaphore.cpp" />
     <ClCompile Include="shift.cpp" />
     <ClCompile Include="stringop.cpp" />

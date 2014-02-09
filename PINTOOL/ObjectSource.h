@@ -21,8 +21,4 @@ public:
     bool    isSrcTainted() const;
     ADDRINT getValue() const;
     const   TaintPtr& getTaintedSource() const;
-    
-#if DEBUG
-    UINT32 getId() const;
-#endif
 };

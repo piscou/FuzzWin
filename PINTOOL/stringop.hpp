@@ -53,7 +53,7 @@ template<UINT32 len> void STRINGOP::sSTOS
 {
     // déplacement de "count" octets/mot/dble mots de AL/AX/EAX/RAX -> [EDI] 
     
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
         
     // 1) recupération du marquage du registre, et stockage dans un vecteur.
     // et stockage dans un tableau d'objets (ou nullPtr)
@@ -95,7 +95,7 @@ template<UINT32 len> void STRINGOP::sStoreTaintSCAS(
     // procédure appelée lors de la première itération (callback IF/THEN)
     // sert à stocker dans TaintManager les arguments (marquage, adresse)
     
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     StringOpInfo strInfo = {0};
 
     // mise en cache de la valeur du préfixe (true = REPZ/E, false = REPNZ/E)
@@ -124,7 +124,7 @@ template<UINT32 len> void STRINGOP::sSCAS(THREADID tid, ADDRINT address)
     // + ajout d'une contrainte sur ZFLAG, indiquant une répétition ou non
     // métohde identique à CMP_MR, reprise ici intégralement afin d'insérer la contrainte sur le ZFLAG
     
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     StringOpInfo strInfo = pTmgrTls->getStoredStringOpInfo();
     
     bool isSrcDestTainted = strInfo.isRegTainted;
@@ -147,7 +147,7 @@ template<UINT32 len> void STRINGOP::sSCAS(THREADID tid, ADDRINT address)
         // marquage flags 
         BINARY::fTaintCMP<len>(pTmgrTls, srcDest, src);
         // déclaration de la contrainte
-        pFormula->addConstraint_ZERO(pTmgrTls, insAddress, strInfo.isREPZ);
+        g_pFormula->addConstraint_ZERO(pTmgrTls, insAddress, strInfo.isREPZ);
     }
 } // sSCAS
 
@@ -157,7 +157,7 @@ template<UINT32 len> void STRINGOP::sCMPS
     bool isSrcTainted =		pTmgrGlobal->isMemoryTainted<len>(esiAddr);
     bool isSrcDestTainted = pTmgrGlobal->isMemoryTainted<len>(ediAddr);	
     
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     
     if ( !(isSrcDestTainted || isSrcTainted)) pTmgrTls->unTaintAllFlags();
     else 
@@ -176,6 +176,6 @@ template<UINT32 len> void STRINGOP::sCMPS
         BINARY::fTaintCMP<len>(pTmgrTls, srcDest, src);	
         
         // déclaration de la contrainte s'il y avait un préfixe REP (codes 1 REPE = 0 et 2)
-        if (repCode)  pFormula->addConstraint_ZERO(pTmgrTls, insAddress, (repCode == 1) ? true : false); 
+        if (repCode)  g_pFormula->addConstraint_ZERO(pTmgrTls, insAddress, (repCode == 1) ? true : false); 
     }
 } // sCMPS

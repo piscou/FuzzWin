@@ -308,59 +308,6 @@ inline UINT32 getRegSize(REG r)
     return (size);
 }
 #endif
-
-/****************************************/
-/* macros globales et metaprogrammation */
-/****************************************/
-
-// Renvoie le registre d'accumulation utilisé par certaines instructions
-template<UINT32 len> class registerACC 
-{ public:  static inline REG getReg() { return REG_INVALID_ ; }};
-template<> class registerACC<8> 
-{ public:  static inline REG getReg() { return REG_AL; }};
-template<> class registerACC<16> 
-{ public:  static inline REG getReg() { return REG_AX; }};
-template<> class registerACC<32>
-{ public:  static inline REG getReg() { return REG_EAX; }};
-#if TARGET_IA32E
-template<> class registerACC<64> 
-{ public:  static inline REG getReg() { return REG_RAX; }};
-#endif
-
-// Renvoie le registre I/O (AH/DX/EDX/RDX) utilisé par certaines instructions
-template<UINT32 len> class registerIO 
-{ public:  static inline REG getReg() { return REG_INVALID_ ; }};
-template<> class registerIO<8> 
-{ public:  static inline REG getReg() { return REG_AH; }}; // tricky mais c'est comme cela que MUL est implémenté par Intel
-template<> class registerIO<16> 
-{ public:  static inline REG getReg() { return REG_DX; }};
-template<> class registerIO<32>
-{ public:  static inline REG getReg() { return REG_EDX; }};
-#if TARGET_IA32E
-template<> class registerIO<64> 
-{ public:  static inline REG getReg() { return REG_RDX; }};
-#endif
-
-// détermination de la valeur "ff" en fonction de la taille fournie (en bits)
-// utilisé par les fonctions d'analyse traitant les instructions LOGICAL::OR et STRINGOP::SCAS
-// 8b =  0xff ; 16b = 0xffff ; 32b = 0xffffffff; 64b = (__int64)(-1)
-template<UINT32 len> class minusOne 
-{ public:  static inline const ADDRINT get() { return (0xffffffff >> (32 - len)); }};
-#if TARGET_IA32E
-template<> class minusOne<64> 
-{ public:  static inline const ADDRINT get() { return (0xffffffffffffffff); }};
-#endif
-
-// déréférencement de la mémoire pour récupérer la valeur. 
-// utilisé dans les fonctions d'analyse pour créer des objets lorsque la mémoire n'est pas marquée
-template<UINT32 len> ADDRINT getMemoryValue(ADDRINT address)
-{
-    ADDRINT returnValue = 0;
-    // déréférencement de 'len>>3' octets à partir de 'address'. Equivalent à Memcpy pour PIN
-    PIN_SafeCopy(&returnValue, reinterpret_cast<ADDRINT*>(address), len >> 3);
-    return (returnValue);
-}
-
 } // namespace ARCHITECTURE
 
 // une fois pour toutes

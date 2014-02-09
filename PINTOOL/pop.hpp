@@ -1,7 +1,7 @@
 template<UINT32 len> 
 void POP::sPOP_M(THREADID tid, ADDRINT writeAddress, ADDRINT stackAddress ADDRESS_DEBUG) 
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     
     ADDRINT savedStackAddress = stackAddress; // elle servira pour le test du marquage ESP
 
@@ -48,7 +48,7 @@ void POP::sPOP_M(THREADID tid, ADDRINT writeAddress, ADDRINT stackAddress ADDRES
 template<UINT32 len> 
 void POP::sPOP_R(THREADID tid, REG regDest, ADDRINT stackAddress ADDRESS_DEBUG) 
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     
     ADDRINT savedStackAddress = stackAddress; // elle servira pour le test du marquage ESP
 

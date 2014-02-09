@@ -53,4 +53,5 @@ public:
     void final();
 };
 
-extern SolverFormula *pFormula;
+// pointeur global vers classe de gestion de la traduction SMT-LIB
+extern SolverFormula *g_pFormula;

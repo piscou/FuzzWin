@@ -180,7 +180,7 @@ void UNCONDITIONAL_BR::sJMP_BISD_32(THREADID tid, ADDRINT ea, REG baseReg, ADDRI
 
 void UNCONDITIONAL_BR::sJMP_R(THREADID tid, REG reg, ADDRINT regValue ADDRESS_DEBUG) 
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     
     if (pTmgrTls->isRegisterTainted<32>(reg))
     {
@@ -208,7 +208,7 @@ void UNCONDITIONAL_BR::sJMP_BISD_64(THREADID tid, ADDRINT ea, REG baseReg, ADDRI
 
 void UNCONDITIONAL_BR::sJMP_R(THREADID tid, REG reg, ADDRINT regValue ADDRESS_DEBUG) 
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     
     if (pTmgrTls->isRegisterTainted<64>(reg)) 
     {

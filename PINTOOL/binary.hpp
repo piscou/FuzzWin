@@ -5,7 +5,7 @@
 // SIMULATE
 template<UINT32 len> void BINARY::sNEG_M(THREADID tid, ADDRINT writeAddress ADDRESS_DEBUG) 
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     
     if ( !pTmgrGlobal->isMemoryTainted<len>(writeAddress))  pTmgrTls->unTaintAllFlags(); // OSZAPC
     else 
@@ -26,7 +26,7 @@ template<UINT32 len> void BINARY::sNEG_M(THREADID tid, ADDRINT writeAddress ADDR
 
 template<UINT32 len> void BINARY::sNEG_R(THREADID tid, REG reg, ADDRINT regValue ADDRESS_DEBUG) 
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     
     if ( !pTmgrTls->isRegisterTainted<len>(reg)) pTmgrTls->unTaintAllFlags(); // OSZAPC
     else 
@@ -52,7 +52,7 @@ template<UINT32 len> void BINARY::sNEG_R(THREADID tid, REG reg, ADDRINT regValue
 // SIMULATE
 template<UINT32 len> void BINARY::sINC_M(THREADID tid, ADDRINT writeAddress ADDRESS_DEBUG) 
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     
     if ( !pTmgrGlobal->isMemoryTainted<len>(writeAddress)) fUnTaintINCDEC(pTmgrTls);
     else 
@@ -73,7 +73,7 @@ template<UINT32 len> void BINARY::sINC_M(THREADID tid, ADDRINT writeAddress ADDR
 
 template<UINT32 len> void BINARY::sINC_R(THREADID tid, REG reg, ADDRINT regValue ADDRESS_DEBUG) 
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     
     if ( !pTmgrTls->isRegisterTainted<len>(reg)) fUnTaintINCDEC(pTmgrTls);
     else 
@@ -99,7 +99,7 @@ template<UINT32 len> void BINARY::sINC_R(THREADID tid, REG reg, ADDRINT regValue
 // SIMULATE
 template<UINT32 len> void BINARY::sDEC_M(THREADID tid, ADDRINT writeAddress ADDRESS_DEBUG)
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     
     if ( !pTmgrGlobal->isMemoryTainted<len>(writeAddress))  fUnTaintINCDEC(pTmgrTls);
     else 
@@ -120,7 +120,7 @@ template<UINT32 len> void BINARY::sDEC_M(THREADID tid, ADDRINT writeAddress ADDR
 
 template<UINT32 len> void BINARY::sDEC_R(THREADID tid, REG reg, ADDRINT regValue ADDRESS_DEBUG) 
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     
     if ( !pTmgrTls->isRegisterTainted<len>(reg))  fUnTaintINCDEC(pTmgrTls);
     else 
@@ -146,7 +146,7 @@ template<UINT32 len> void BINARY::sDEC_R(THREADID tid, REG reg, ADDRINT regValue
 // SIMULATE
 template<UINT32 len> void BINARY::sADD_IR(THREADID tid, ADDRINT value, REG reg, ADDRINT regValue ADDRESS_DEBUG) 
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     
     if ( !pTmgrTls->isRegisterTainted<len>(reg) )	pTmgrTls->unTaintAllFlags();
     else 
@@ -169,7 +169,7 @@ template<UINT32 len> void BINARY::sADD_IR(THREADID tid, ADDRINT value, REG reg, 
 
 template<UINT32 len> void BINARY::sADD_IM(THREADID tid, ADDRINT value, ADDRINT writeAddress ADDRESS_DEBUG)
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     
     if ( !pTmgrGlobal->isMemoryTainted<len>(writeAddress)) pTmgrTls->unTaintAllFlags();
     else 
@@ -193,7 +193,7 @@ template<UINT32 len> void BINARY::sADD_IM(THREADID tid, ADDRINT value, ADDRINT w
 template<UINT32 len> 
 void BINARY::sADD_MR(THREADID tid, ADDRINT readAddress, REG regSrcDest, ADDRINT regSrcDestValue ADDRESS_DEBUG) 
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     
     bool isSrcDestTainted = pTmgrTls->isRegisterTainted<len>(regSrcDest);
     bool isSrcTainted =		pTmgrGlobal->isMemoryTainted<len>(readAddress);
@@ -225,7 +225,7 @@ void BINARY::sADD_MR(THREADID tid, ADDRINT readAddress, REG regSrcDest, ADDRINT 
 template<UINT32 len> 
 void BINARY::sADD_RM(THREADID tid, REG regSrc, ADDRINT regSrcValue, ADDRINT writeAddress ADDRESS_DEBUG)
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     
     bool isSrcDestTainted = pTmgrGlobal->isMemoryTainted<len>(writeAddress); 
     bool isSrcTainted =		pTmgrTls->isRegisterTainted<len>(regSrc);
@@ -257,7 +257,7 @@ void BINARY::sADD_RM(THREADID tid, REG regSrc, ADDRINT regSrcValue, ADDRINT writ
 template<UINT32 len> void BINARY::sADD_RR
     (THREADID tid, REG regSrc, ADDRINT regSrcValue, REG regSrcDest, ADDRINT regSrcDestValue ADDRESS_DEBUG) 
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     
     bool isSrcDestTainted = pTmgrTls->isRegisterTainted<len>(regSrcDest);
     bool isSrcTainted =		pTmgrTls->isRegisterTainted<len>(regSrc);
@@ -293,7 +293,7 @@ template<UINT32 len> void BINARY::sADD_RR
 // SIMULATE
 template<UINT32 len> void BINARY::sSUB_IR(THREADID tid, ADDRINT value, REG reg, ADDRINT regValue ADDRESS_DEBUG) 
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     
     if ( !pTmgrTls->isRegisterTainted<len>(reg) )	pTmgrTls->unTaintAllFlags();
     else 
@@ -316,7 +316,7 @@ template<UINT32 len> void BINARY::sSUB_IR(THREADID tid, ADDRINT value, REG reg, 
 
 template<UINT32 len> void BINARY::sSUB_IM(THREADID tid, ADDRINT value, ADDRINT writeAddress ADDRESS_DEBUG)
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     
     if ( !pTmgrGlobal->isMemoryTainted<len>(writeAddress)) pTmgrTls->unTaintAllFlags();
     else 
@@ -340,7 +340,7 @@ template<UINT32 len> void BINARY::sSUB_IM(THREADID tid, ADDRINT value, ADDRINT w
 template<UINT32 len> 
 void BINARY::sSUB_MR(THREADID tid, ADDRINT readAddress, REG regSrcDest, ADDRINT regSrcDestValue ADDRESS_DEBUG) 
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     
     bool isSrcDestTainted = pTmgrTls->isRegisterTainted<len>(regSrcDest);
     bool isSrcTainted =		pTmgrGlobal->isMemoryTainted<len>(readAddress);
@@ -372,7 +372,7 @@ void BINARY::sSUB_MR(THREADID tid, ADDRINT readAddress, REG regSrcDest, ADDRINT 
 template<UINT32 len> 
 void BINARY::sSUB_RM(THREADID tid, REG regSrc, ADDRINT regSrcValue, ADDRINT writeAddress ADDRESS_DEBUG)
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     
     bool isSrcDestTainted = pTmgrGlobal->isMemoryTainted<len>(writeAddress); 
     bool isSrcTainted =		pTmgrTls->isRegisterTainted<len>(regSrc);
@@ -404,7 +404,7 @@ void BINARY::sSUB_RM(THREADID tid, REG regSrc, ADDRINT regSrcValue, ADDRINT writ
 template<UINT32 len> void BINARY::sSUB_RR
     (THREADID tid, REG regSrc, ADDRINT regSrcValue, REG regSrcDest, ADDRINT regSrcDestValue ADDRESS_DEBUG) 
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     
     bool isSrcDestTainted = pTmgrTls->isRegisterTainted<len>(regSrcDest);
     bool isSrcTainted =		pTmgrTls->isRegisterTainted<len>(regSrc);
@@ -440,7 +440,7 @@ template<UINT32 len> void BINARY::sSUB_RR
 // SIMULATE
 template<UINT32 len> void BINARY::sCMP_IR(THREADID tid, ADDRINT value, REG reg, ADDRINT regValue ADDRESS_DEBUG) 
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     
     if ( !pTmgrTls->isRegisterTainted<len>(reg) )	pTmgrTls->unTaintAllFlags();
     else 
@@ -454,7 +454,7 @@ template<UINT32 len> void BINARY::sCMP_IR(THREADID tid, ADDRINT value, REG reg, 
 
 template<UINT32 len> void BINARY::sCMP_IM(THREADID tid, ADDRINT value, ADDRINT writeAddress ADDRESS_DEBUG)
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     
     if ( !pTmgrGlobal->isMemoryTainted<len>(writeAddress)) pTmgrTls->unTaintAllFlags();
     else 
@@ -469,7 +469,7 @@ template<UINT32 len> void BINARY::sCMP_IM(THREADID tid, ADDRINT value, ADDRINT w
 template<UINT32 len> 
 void BINARY::sCMP_MR(THREADID tid, ADDRINT readAddress, REG regSrcDest, ADDRINT regSrcDestValue ADDRESS_DEBUG) 
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     
     bool isSrcDestTainted = pTmgrTls->isRegisterTainted<len>(regSrcDest);
     bool isSrcTainted =		pTmgrGlobal->isMemoryTainted<len>(readAddress);
@@ -495,7 +495,7 @@ void BINARY::sCMP_MR(THREADID tid, ADDRINT readAddress, REG regSrcDest, ADDRINT 
 template<UINT32 len> 
 void BINARY::sCMP_RM(THREADID tid, REG regSrc, ADDRINT regSrcValue, ADDRINT writeAddress ADDRESS_DEBUG)
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     
     bool isSrcDestTainted = pTmgrGlobal->isMemoryTainted<len>(writeAddress); 
     bool isSrcTainted =		pTmgrTls->isRegisterTainted<len>(regSrc);
@@ -521,7 +521,7 @@ void BINARY::sCMP_RM(THREADID tid, REG regSrc, ADDRINT regSrcValue, ADDRINT writ
 template<UINT32 len> void BINARY::sCMP_RR
     (THREADID tid, REG regSrc, ADDRINT regSrcValue, REG regSrcDest, ADDRINT regSrcDestValue ADDRESS_DEBUG) 
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     
     bool isSrcDestTainted = pTmgrTls->isRegisterTainted<len>(regSrcDest);
     bool isSrcTainted =		pTmgrTls->isRegisterTainted<len>(regSrc);
@@ -570,7 +570,7 @@ template<UINT32 len> void BINARY::fTaintCMP
 template<UINT32 len> void BINARY::sIMUL_1M
     (THREADID tid, ADDRINT readAddress, ADDRINT implicitRegValue ADDRESS_DEBUG) 
 { 
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     
     // valeurs fixes calculées à la compilation (métaprogrammation)
     REG regACC = registerACC<len>::getReg(); // 1ere opérande et registre destination partie basse (AL/AX/EAX/RAX)
@@ -631,7 +631,7 @@ template<UINT32 len> void BINARY::sIMUL_1M
 template<UINT32 len> void BINARY::sIMUL_1R
     (THREADID tid, REG regSrc, ADDRINT regSrcValue, ADDRINT implicitRegValue ADDRESS_DEBUG) 
 { 
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     
     // valeurs fixes calculées à la compilation (métaprogrammation)
     REG regACC = registerACC<len>::getReg(); // 1ere opérande et registre destination partie basse (AL/AX/EAX/RAX)
@@ -693,7 +693,7 @@ template<UINT32 len> void BINARY::sIMUL_1R
 template<UINT32 len> void BINARY::sIMUL_2MR
     (THREADID tid, ADDRINT readAddress, REG regSrcDest, ADDRINT regSrcDestValue ADDRESS_DEBUG) 
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     
     // IMUL2MR <=> regSrcDest = mem * regSrcDest
     bool isSrcDestTainted = pTmgrTls->isRegisterTainted<len>(regSrcDest);
@@ -744,7 +744,7 @@ template<UINT32 len> void BINARY::sIMUL_2MR
 template<UINT32 len> void BINARY::sIMUL_2RR
     (THREADID tid, REG regSrc, ADDRINT regSrcValue, REG regSrcDest, ADDRINT regSrcDestValue ADDRESS_DEBUG)
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     
     // IMUL2RR <=> regSrcDest = regSrc * regSrcDest
     bool isSrcDestTainted = pTmgrTls->isRegisterTainted<len>(regSrcDest);
@@ -795,7 +795,7 @@ template<UINT32 len> void BINARY::sIMUL_2RR
 template<UINT32 len> 
 void BINARY::sIMUL_3M(THREADID tid, ADDRINT value, ADDRINT readAddress, REG regDest ADDRESS_DEBUG)
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     
     if (!pTmgrGlobal->isMemoryTainted<len>(readAddress)) 
     {
@@ -834,7 +834,7 @@ void BINARY::sIMUL_3M(THREADID tid, ADDRINT value, ADDRINT readAddress, REG regD
 template<UINT32 len> 
 void BINARY::sIMUL_3R(THREADID tid, ADDRINT value, REG regSrc, ADDRINT regSrcValue, REG regDest ADDRESS_DEBUG)
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     
     if (!pTmgrTls->isRegisterTainted<len>(regSrc)) 
     {
@@ -885,7 +885,7 @@ void BINARY::sIMUL_3R(THREADID tid, ADDRINT value, REG regSrc, ADDRINT regSrcVal
     REG regACC = registerACC<len>::getReg(); 
     REG regIO  = registerIO<len>::getReg();  
     
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     
     bool isDivisorTainted =      pTmgrGlobal->isMemoryTainted<len>(readAddress);
     bool isLowDividendTainted  = pTmgrTls->isRegisterTainted<len>(regACC);
@@ -937,7 +937,7 @@ template<UINT32 len> void BINARY::sDIVISION_R(THREADID tid, REG regSrc, ADDRINT 
     REG regACC = registerACC<len>::getReg(); 
     REG regIO  = registerIO<len>::getReg();  
     
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     
     bool isDivisorTainted      = pTmgrTls->isRegisterTainted<len>(regSrc, regSrcValue);
     bool isLowDividendTainted  = pTmgrTls->isRegisterTainted<len>(regACC);

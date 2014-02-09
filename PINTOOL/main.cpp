@@ -35,8 +35,6 @@ END_LEGAL */
 #include "TaintManager.h"
 #include "buildFormula.h"
 
-#include <locale> // pour prise en compte des paramètres régionaux locaux
-
 /* ================================================================== */
 // Doxygen MainPage
 /* ================================================================== */
@@ -50,28 +48,45 @@ END_LEGAL */
 // Global variables
 /* ================================================================== */
 
+// pointeur global vers classe de gestion du marquage mémoire
 TaintManager_Global *pTmgrGlobal;
-SolverFormula       *pFormula;
+// pointeur global vers classe de gestion de la traduction SMT-LIB
+SolverFormula       *g_pFormula;
 
-TLS_KEY             tlsKeyTaint;
-TLS_KEY             tlsKeySyscallData;
+// Clef de la TLS pour la classe de gestion du marquage registres
+TLS_KEY             g_tlsKeyTaint;
+// Clef de la TLS pour la classe de gestion des arguments des appels systèmes
+TLS_KEY             g_tlsKeySyscallData;
 
-PIN_LOCK            lock;      // structures de blocage inter-thread
+// structure de verrou, utilisée pour accéder aux variables globales
+// en multithread
+PIN_LOCK            g_lock;      
 
-std::string         inputFile; // fichier d'entrée pour le programme fuzzé
-WINDOWS::HANDLE     hPipe;     // handle du pipe de communication (ou STDOUT en mode DEBUG)
+// handle du pipe de communication avec l'extérieur
+// en MODE DEBUG : correspond à STDOUT
+WINDOWS::HANDLE     g_hPipe;     
 
-bool    beginInstrumentation; // VRAI lorque les premiers octets auront été lus dans le fichier cible
-UINT32  maxConstraints;
-UINT32  maxTime;
+// variable déterminant l'instrumentation ou non des instructions
+bool                g_beginInstrumentationOfInstructions; 
 
-//bool isInsideRoutine      = false;
+/** VARIABLES FOURNIES VIA PIPE OU LIGNE DE COMMANDE (DEBUG) **/
+// chemin vers le fichier d'entrée pour le programme fuzzé
+std::string         g_inputFile;
+// nombre maximal de contraintes à récupérer (illimité si nul) 
+UINT32              g_maxConstraints;
+// temps maximal d'exécution du pintool (en secondes)
+UINT32              g_maxTime;
+
+/** OPTION CHECKSCORE **/
+// nombre d'instructions exécutées
+UINT64              g_nbIns;
+// variable déterminant si le progranne a soulevé une exception
+bool                g_foundException; 
 
 #if DEBUG
-ofstream    debug;
-ofstream    taint;
-clock_t     timeBegin;
-UINT64      nbIns;
+ofstream    g_debug;      // fichier de log de dessassemblage
+ofstream    g_taint;      // fichier de log du marquage
+clock_t     g_timeBegin;  // temps d'exécution du pintool pour statistiques
 #endif
 
 /* ===================================================================== */
@@ -79,10 +94,11 @@ UINT64      nbIns;
 /* ===================================================================== */
 
 #if DEBUG
-KNOB<string> KnobInputFile(KNOB_MODE_WRITEONCE, "pintool", "i", "", "fichier d'entree");
-KNOB<UINT32> KnobMaxExecutionTime(KNOB_MODE_WRITEONCE, "pintool", "m", "0", "temps maximal d'execution");
-KNOB<string> KnobBytesToTaint(KNOB_MODE_WRITEONCE, "pintool", "b", "all", "intervelles d'octets à surveiller");
-KNOB<UINT32> KnobMaxConstraints(KNOB_MODE_WRITEONCE, "pintool", "c", "0", "nombre maximal de contraintes");
+KNOB<std::string> KnobInputFile(KNOB_MODE_WRITEONCE,        "pintool", "i", "",    "fichier d'entree");
+KNOB<UINT32>      KnobMaxExecutionTime(KNOB_MODE_WRITEONCE, "pintool", "m", "0",   "temps maximal d'execution");
+KNOB<std::string> KnobBytesToTaint(KNOB_MODE_WRITEONCE,     "pintool", "b", "all", "intervelles d'octets à surveiller");
+KNOB<UINT32>      KnobMaxConstraints(KNOB_MODE_WRITEONCE,   "pintool", "c", "0",   "nombre maximal de contraintes");
+KNOB<std::string> KnobOption(KNOB_MODE_WRITEONCE,           "pintool", "o", "",    "option 'taint' ou 'checkscore'");
 #endif
 
 /* ===================================================================== */
@@ -91,42 +107,48 @@ KNOB<UINT32> KnobMaxConstraints(KNOB_MODE_WRITEONCE, "pintool", "c", "0", "nombr
 
 int main(int argc, char *argv[]) 
 {
-    // Initialisation du traitement des symboles (pour les routines)
-    //PIN_InitSymbols();
-   
     // Initialisation de PIN. Renvoie TRUE si erreur trouvée
-    if (PIN_Init(argc, argv)) PIN_ExitProcess(-1); 
+    if (PIN_Init(argc, argv)) PIN_ExitProcess(EXIT_FAILURE); 
 
-    // initialisation des arguments (différents selon debug ou release)
-    // en mode debug, il ne faut pas d'accents dans le nom du fichier étudié passé via la ligne de comande
-    if (!fuzzwinInit()) PIN_ExitProcess(-2);
+    // initialisation des arguments passés au pintool
+    // et traitement de l'instrumentation correspondante
+    int initStatus = pintoolInit();
+    if (OPTION_TAINT == initStatus)
+    {
+        // fonctions d'instrumentation des appels systèmes
+        PIN_AddSyscallEntryFunction(SYSCALLS::syscallEntry, 0);
+        PIN_AddSyscallExitFunction(SYSCALLS::syscallExit, 0);
 
-    // fonctions d'instrumentation des appels systèmes
-    PIN_AddSyscallEntryFunction(SYSCALLS::syscallEntry, 0);
-    PIN_AddSyscallExitFunction(SYSCALLS::syscallExit, 0);
-
-    // fonction d'instrumentation de chaque instruction
-    INS_AddInstrumentFunction(INSTRUMENTATION::Instruction, 0);
+        // fonction d'instrumentation de chaque instruction
+        INS_AddInstrumentFunction(INSTRUMENTATION::Instruction, 0);
     
-    // fonction d'instrumentation du chargement des images (DLL) 
-    // IMG_AddInstrumentFunction(INSTRUMENTATION::Image, 0);
+        // Fonction appelée lors de la fin du programme
+        // version spécifique pour le multithreading
+        PIN_AddFiniUnlockedFunction(INSTRUMENTATION::FiniTaint, 0);
 
-    // fonction d'instrumentation des routines (pour tester exploit retour)
-    // RTN_AddInstrumentFunction(INSTRUMENTATION::Routine, 0);
-    
-    // Fonction appelée lors de la fin du programme
-    // version spécifique pour le multithreading
-    PIN_AddFiniUnlockedFunction(INSTRUMENTATION::Fini, 0);
+        // Fonctions de notification de la creation et de la
+        // suppression des threads de l'application
+        PIN_AddThreadStartFunction(INSTRUMENTATION::threadStart, 0);
+        PIN_AddThreadFiniFunction (INSTRUMENTATION::threadFini, 0);
+    }
+    else if (OPTION_CHECKSCORE == initStatus)
+    {
+        // fonction de notification des changements de contexte
+        PIN_AddContextChangeFunction(INSTRUMENTATION::changeCtx, 0);
 
-    // Fonctions de notification de la creation et de la
-    // suppression des threads de l'application
-    PIN_AddThreadStartFunction(INSTRUMENTATION::threadStart, 0);
-    PIN_AddThreadFiniFunction (INSTRUMENTATION::threadFini, 0);
+        // fonction d'instrumentation de chaque trace d'exécution
+        TRACE_AddInstrumentFunction(INSTRUMENTATION::insCount, 0);
+
+        // Fonction de notification lors de la fin du programme
+        // version spécifique pour le multithreading
+        PIN_AddFiniUnlockedFunction(INSTRUMENTATION::FiniCheckScore, 0);
+    }
+    else PIN_ExitProcess(EXIT_FAILURE);
 
     // Démarrage de l'instrumentation, ne retourne jamais
     PIN_StartProgram();
 
-    return 1; // valeur "normale" (timeout non dépassé)
+    return (EXIT_SUCCESS); 
 }
 
 /* ===================================================================== */

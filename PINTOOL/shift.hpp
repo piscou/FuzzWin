@@ -5,7 +5,7 @@
 template<UINT32 len> 
 void SHIFT::sSHL_IM(THREADID tid, UINT32 maskedDepl, ADDRINT writeAddr ADDRESS_DEBUG) 
 {  
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     
     // opérande non marquée => démarquage flags
     if (!pTmgrGlobal->isMemoryTainted<len>(writeAddr)) pTmgrTls->unTaintAllFlags();
@@ -85,7 +85,7 @@ void SHIFT::sSHL_IM(THREADID tid, UINT32 maskedDepl, ADDRINT writeAddr ADDRESS_D
 template<UINT32 len> 
 void SHIFT::sSHL_IR(THREADID tid, UINT32 maskedDepl, REG reg, ADDRINT regValue ADDRESS_DEBUG) 
 {  
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     
     // opérande non marquée => démarquage flags
     if (!pTmgrTls->isRegisterTainted<len>(reg)) pTmgrTls->unTaintAllFlags();
@@ -166,7 +166,7 @@ void SHIFT::sSHL_IR(THREADID tid, UINT32 maskedDepl, REG reg, ADDRINT regValue A
 template<UINT32 len> 
 void SHIFT::sSHL_RM(THREADID tid, ADDRINT regCLValue, ADDRINT writeAddress ADDRESS_DEBUG) 
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     
     bool isCountTainted = pTmgrTls->isRegisterTainted<8>(REG_CL);
     bool isDestTainted  = pTmgrGlobal->isMemoryTainted<len>(writeAddress);
@@ -207,7 +207,7 @@ void SHIFT::sSHL_RM(THREADID tid, ADDRINT regCLValue, ADDRINT writeAddress ADDRE
 template<UINT32 len> 
 void SHIFT::sSHL_RR(THREADID tid, ADDRINT regCLValue, REG reg, ADDRINT regValue ADDRESS_DEBUG) 
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     
     bool isCountTainted = pTmgrTls->isRegisterTainted<8>(REG_CL);
     bool isDestTainted  = pTmgrTls->isRegisterTainted<len>(reg);
@@ -252,7 +252,7 @@ void SHIFT::sSHL_RR(THREADID tid, ADDRINT regCLValue, REG reg, ADDRINT regValue 
 template<UINT32 len> 
 void SHIFT::sSHR_IM(THREADID tid, UINT32 maskedDepl, ADDRINT writeAddr ADDRESS_DEBUG) 
 {  
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     
     // opérande non marquée => démarquage flags
     if (!pTmgrGlobal->isMemoryTainted<len>(writeAddr)) pTmgrTls->unTaintAllFlags();
@@ -334,7 +334,7 @@ void SHIFT::sSHR_IM(THREADID tid, UINT32 maskedDepl, ADDRINT writeAddr ADDRESS_D
 template<UINT32 len> 
 void SHIFT::sSHR_IR(THREADID tid, UINT32 maskedDepl, REG reg, ADDRINT regValue ADDRESS_DEBUG) 
 {  
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     
     // opérande non marquée => démarquage flags
     if (!pTmgrTls->isRegisterTainted<len>(reg)) pTmgrTls->unTaintAllFlags();
@@ -414,7 +414,7 @@ void SHIFT::sSHR_IR(THREADID tid, UINT32 maskedDepl, REG reg, ADDRINT regValue A
 template<UINT32 len> 
 void SHIFT::sSHR_RM(THREADID tid, ADDRINT regCLValue, ADDRINT writeAddress ADDRESS_DEBUG) 
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     
     bool isCountTainted = pTmgrTls->isRegisterTainted<8>(REG_CL);
     bool isDestTainted  = pTmgrGlobal->isMemoryTainted<len>(writeAddress);
@@ -455,7 +455,7 @@ void SHIFT::sSHR_RM(THREADID tid, ADDRINT regCLValue, ADDRINT writeAddress ADDRE
 template<UINT32 len> 
 void SHIFT::sSHR_RR(THREADID tid, ADDRINT regCLValue, REG reg, ADDRINT regValue ADDRESS_DEBUG) 
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     
     bool isCountTainted = pTmgrTls->isRegisterTainted<8>(REG_CL);
     bool isDestTainted  = pTmgrTls->isRegisterTainted<len>(reg);
@@ -500,7 +500,7 @@ void SHIFT::sSHR_RR(THREADID tid, ADDRINT regCLValue, REG reg, ADDRINT regValue 
 template<UINT32 len> 
 void SHIFT::sSAR_IM(THREADID tid, UINT32 maskedDepl, ADDRINT writeAddr ADDRESS_DEBUG) 
 {  
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     
     // opérande non marquée => démarquage flags
     if (!pTmgrGlobal->isMemoryTainted<len>(writeAddr)) pTmgrTls->unTaintAllFlags();
@@ -544,7 +544,7 @@ void SHIFT::sSAR_IM(THREADID tid, UINT32 maskedDepl, ADDRINT writeAddr ADDRESS_D
 template<UINT32 len> 
 void SHIFT::sSAR_IR(THREADID tid, UINT32 maskedDepl, REG reg, ADDRINT regValue ADDRESS_DEBUG) 
 {  
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     
     // opérande non marquée => démarquage flags
     if (!pTmgrTls->isRegisterTainted<len>(reg)) pTmgrTls->unTaintAllFlags();
@@ -590,7 +590,7 @@ void SHIFT::sSAR_IR(THREADID tid, UINT32 maskedDepl, REG reg, ADDRINT regValue A
 template<UINT32 len> 
 void SHIFT::sSAR_RM(THREADID tid, ADDRINT regCLValue, ADDRINT writeAddress ADDRESS_DEBUG) 
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     
     bool isCountTainted = pTmgrTls->isRegisterTainted<8>(REG_CL);
     bool isDestTainted  = pTmgrGlobal->isMemoryTainted<len>(writeAddress);
@@ -631,7 +631,7 @@ void SHIFT::sSAR_RM(THREADID tid, ADDRINT regCLValue, ADDRINT writeAddress ADDRE
 template<UINT32 len> 
 void SHIFT::sSAR_RR(THREADID tid, ADDRINT regCLValue, REG reg, ADDRINT regValue ADDRESS_DEBUG) 
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     
     bool isCountTainted = pTmgrTls->isRegisterTainted<8>(REG_CL);
     bool isDestTainted  = pTmgrTls->isRegisterTainted<len>(reg);
@@ -679,7 +679,7 @@ void SHIFT::sSAR_RR(THREADID tid, ADDRINT regCLValue, REG reg, ADDRINT regValue 
 template<UINT32 len> void SHIFT::sSHLD_IM
     (THREADID tid, UINT32 maskedDepl, REG regSrc, ADDRINT regSrcValue, ADDRINT writeAddr ADDRESS_DEBUG)
 { 
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     
     bool isSrcDestTainted = pTmgrGlobal->isMemoryTainted<len>(writeAddr);
     bool isRegSrcTainted  = pTmgrTls->isRegisterTainted<len>(regSrc);
@@ -740,7 +740,7 @@ template<UINT32 len> void SHIFT::sSHLD_IM
 template<UINT32 len> void SHIFT::sSHLD_IR
     (THREADID tid, UINT32 maskedDepl, REG regSrc, ADDRINT regSrcValue, REG regSrcDest, ADDRINT regSrcDestValue ADDRESS_DEBUG)
 { 
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     
     bool isSrcDestTainted = pTmgrTls->isRegisterTainted<len>(regSrcDest);
     bool isRegSrcTainted  = pTmgrTls->isRegisterTainted<len>(regSrc);
@@ -802,7 +802,7 @@ template<UINT32 len> void SHIFT::sSHLD_IR
 template<UINT32 len> void SHIFT::sSHLD_RM
     (THREADID tid, ADDRINT regCLValue, REG regSrc, ADDRINT regSrcValue, ADDRINT writeAddress ADDRESS_DEBUG)
 { 
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     
     bool isCountTainted   = pTmgrTls->isRegisterTainted<8>(REG_CL);
     bool isSrcDestTainted = pTmgrGlobal->isMemoryTainted<len>(writeAddress);
@@ -855,7 +855,7 @@ template<UINT32 len> void SHIFT::sSHLD_RM
 template<UINT32 len> void SHIFT::sSHLD_RR
     (THREADID tid, ADDRINT regCLValue, REG regSrc, ADDRINT regSrcValue, REG regSrcDest, ADDRINT regSrcDestValue ADDRESS_DEBUG)
 { 
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     
     bool isCountTainted   = pTmgrTls->isRegisterTainted<8>(REG_CL);
     bool isSrcDestTainted = pTmgrTls->isRegisterTainted<len>(regSrcDest);
@@ -913,7 +913,7 @@ template<UINT32 len> void SHIFT::sSHLD_RR
 template<UINT32 len> void SHIFT::sSHRD_IM
     (THREADID tid, UINT32 maskedDepl, REG regSrc, ADDRINT regSrcValue, ADDRINT writeAddr ADDRESS_DEBUG)
 { 
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     
     bool isSrcDestTainted = pTmgrGlobal->isMemoryTainted<len>(writeAddr);
     bool isRegSrcTainted  = pTmgrTls->isRegisterTainted<len>(regSrc);
@@ -977,7 +977,7 @@ template<UINT32 len> void SHIFT::sSHRD_IM
 template<UINT32 len> void SHIFT::sSHRD_IR
     (THREADID tid, UINT32 maskedDepl, REG regSrc, ADDRINT regSrcValue, REG regSrcDest, ADDRINT regSrcDestValue ADDRESS_DEBUG)
 { 
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     
     bool isSrcDestTainted = pTmgrTls->isRegisterTainted<len>(regSrcDest);
     bool isRegSrcTainted  = pTmgrTls->isRegisterTainted<len>(regSrc);
@@ -1042,7 +1042,7 @@ template<UINT32 len> void SHIFT::sSHRD_IR
 template<UINT32 len> void SHIFT::sSHRD_RM
     (THREADID tid, ADDRINT regCLValue, REG regSrc, ADDRINT regSrcValue, ADDRINT writeAddress ADDRESS_DEBUG)
 { 
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     
     bool isCountTainted   = pTmgrTls->isRegisterTainted<8>(REG_CL);
     bool isSrcDestTainted = pTmgrGlobal->isMemoryTainted<len>(writeAddress);
@@ -1098,7 +1098,7 @@ template<UINT32 len> void SHIFT::sSHRD_RM
 template<UINT32 len> void SHIFT::sSHRD_RR
     (THREADID tid, ADDRINT regCLValue, REG regSrc, ADDRINT regSrcValue, REG regSrcDest, ADDRINT regSrcDestValue ADDRESS_DEBUG)
 { 
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     
     bool isCountTainted   = pTmgrTls->isRegisterTainted<8>(REG_CL);
     bool isSrcDestTainted = pTmgrTls->isRegisterTainted<len>(regSrcDest);

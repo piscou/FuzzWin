@@ -2,7 +2,7 @@
 
 template<UINT32 len> void PUSH::sPUSH_M(THREADID tid, ADDRINT readAddress, ADDRINT stackAddressBeforePush ADDRESS_DEBUG) 
 {   
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
 
     // adresse d'écriture sur la pile (on décrémente avant de "pusher")
     ADDRINT espAddress = stackAddressBeforePush - (len >> 3); 
@@ -46,7 +46,7 @@ template<UINT32 len> void PUSH::sPUSH_M(THREADID tid, ADDRINT readAddress, ADDRI
 
 template<UINT32 len> void PUSH::sPUSH_R(THREADID tid, REG reg, ADDRINT stackAddressBeforePush ADDRESS_DEBUG) 
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));    
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));    
     
     // adresse d'écriture sur la pile (on décrémente avant de "pusher")
     ADDRINT espAddress = stackAddressBeforePush - (len >> 3); 
@@ -92,7 +92,7 @@ template<UINT32 len> void PUSH::sPUSH_I(THREADID tid, ADDRINT stackAddressBefore
 { 
     pTmgrGlobal->unTaintMemory<len>(stackAddressBeforePush - (len >> 3));
 
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(tlsKeyTaint, tid));    
+    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));    
    
      // ajustement du marquage du REGISTRE ESP/RSP, dans le cas où il est marqué
 #if TARGET_IA32
