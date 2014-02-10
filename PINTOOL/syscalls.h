@@ -83,33 +83,33 @@ public:
     WINDOWS::PSIZE_T pViewSize;
 };
 
-// codes définissant le type d'OS pour la détermination des numéros d'appels systèmes
-// Le type d'OS est déterminé par fuzzwin.exe et passé en argument au pintool
+// codes définissant le type d'OS 32bits pour la détermination des 
+// numéros d'appels systèmes, inspiré de l'exemple fourni sur MSDN
+// http://msdn.microsoft.com/en-us/library/ms724429(v=vs.85).aspx
+// pour les OS 64bits, les numéros des syscalls sont identiques
+// quelque soit la version de Windows
 enum OSTYPE 
 {
-    HOST_X86_2000,
-    HOST_X86_XP,
-    HOST_X86_2003,
+    HOST_2000,
+    HOST_XP,
+    HOST_2003,
 
-    HOST_X86_VISTA_SP0, // pour cette version, le syscall 'setinformationfile' n'est pas le meme que pour les autres SP...
-    HOST_X86_VISTA,
-    HOST_X86_2008 = HOST_X86_VISTA,   // les index des syscalls sont les mêmes
-    HOST_X86_2008_R2 = HOST_X86_2008, // les index des syscalls sont les mêmes
+    HOST_VISTA_SP0, // pour cette version, le syscall 'setinformationfile' n'est pas le meme que pour les autres SP...
+    HOST_VISTA,
+    HOST_2008 = HOST_VISTA,   // les index des syscalls sont les mêmes
+    HOST_2008_R2 = HOST_2008, // les index des syscalls sont les mêmes
   
-    HOST_X86_SEVEN,
+    HOST_SEVEN,
     
-    HOST_X86_WIN80,
-    HOST_X86_2012 = HOST_X86_WIN80, 
+    HOST_8_0,
+    HOST_2012 = HOST_8_0,   // a priori ce sont les memes
     
-    HOST_X86_WIN81,
-    HOST_X86_2012_R2 = HOST_X86_WIN81, // a priori ce sont les memes
+    HOST_8_1,
+    HOST_2012_R2 = HOST_8_1,// a priori ce sont les memes
     
-    BEGIN_HOST_64BITS,
-    HOST_X64_BEFORE_WIN8 = BEGIN_HOST_64BITS,
-    HOST_X64_WIN80,
-    HOST_X64_WIN81,
-    HOST_UNKNOWN,
-    HOST_END = HOST_UNKNOWN
+    HOST_WOW64_OR_64BITS,
+    HOST_UNSUPPORTED,
+    HOST_END = HOST_UNSUPPORTED
 };
 
 // types de syscalls qui sont suivis dans le pintool
@@ -130,32 +130,23 @@ enum INDEX_SYSCALL
 // mis à jour avec Windows 8.1, le 03/01/2014
 static const UINT32 syscallTable[HOST_END][INDEX_SYSCALLS_END] = 
 {
-    // dans l'ordre : 
-    // NtClose, NtCreateFile, NtCreateSection, NtMapViewOfSection,
-    // NtOpenFile, NtReadFile, NtSetInformationFile  
-    // 1) OS 32bits
+    // NtClose, NtCreateFile, NtCreateSection, NtMapViewOfSection, NtOpenFile, NtReadFile, NtSetInformationFile  
     {0x0018, 0x0020, 0x002b, 0x005d, 0x0064, 0x00a1, 0x00c2}, // Windows 2000
     {0x0019, 0x0025, 0x0032, 0x006c, 0x0074, 0x00b7, 0x00e0}, // Windows XP
     {0x001b, 0x0027, 0x0034, 0x0071, 0x007a, 0x00bf, 0x00e9}, // Windows 2003 server
-    {0x0030, 0x003c, 0x004b, 0x00b1, 0x00ba, 0x0102, 0x0131}, // Vista SP0
+    {0x0030, 0x003c, 0x004b, 0x00b1, 0x00ba, 0x0102, 0x0131}, // Vista SPO (NtSetInformationFile Différent)
     {0x0030, 0x003c, 0x004b, 0x00b1, 0x00ba, 0x0102, 0x012d}, // Windows 2008 server ou Vista 
     {0x0032, 0x0042, 0x0054, 0x00a8, 0x00b3, 0x0111, 0x0149}, // Windows Seven
     {0x0174, 0x0163, 0x0150, 0x00f3, 0x00e8, 0x0087, 0x004e}, // Windows 8.0
     {0x0179, 0x0168, 0x0154, 0x00f6, 0x00eb, 0x008a, 0x0051}, // Windows 8.1
-    // 2) OS 64bits
-    {0x000c, 0x0052, 0x0047, 0x0025, 0x0030, 0x0003, 0x0024},  // Windows XP à Seven en x64
-    {0x000d, 0x0053, 0x0048, 0x0026, 0x0031, 0x0004, 0x0025},  // Windows 8 x64
-    {0x000e, 0x0054, 0x0049, 0x0027, 0x0032, 0x0005, 0x0026}   // Windows 8.1 x64
+    {0x000c, 0x0052, 0x0047, 0x0025, 0x0030, 0x0003, 0x0024}  // 64 bits, y compris WOW64. A REVOIR CAR DIFFERENTS FINALEMENT A PARTIR DE 8 et 8.1!!!!!
 };
 
 // prototype des fonctions
 namespace SYSCALLS 
 {
-    void defineSyscallsNumbers(OSTYPE osVersion);
+    void defineSyscallsNumbers();
     std::string unicodeToAscii(const std::wstring &input);
     void syscallEntry(THREADID tid, CONTEXT *ctxt, SYSCALL_STANDARD std, void *v);
     void syscallExit (THREADID tid, CONTEXT *ctxt, SYSCALL_STANDARD std, void *v);
 }
-
-// variable globale type d'OS hote. Sert à déterminer les numéros de syscalls
-extern OSTYPE       g_osType;

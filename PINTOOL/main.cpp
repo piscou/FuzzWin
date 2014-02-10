@@ -64,7 +64,7 @@ PIN_LOCK            g_lock;
 
 // handle du pipe de communication avec l'extérieur
 // en MODE DEBUG : correspond à STDOUT
-HANDLE              g_hPipe;     
+WINDOWS::HANDLE     g_hPipe;     
 
 // variable déterminant l'instrumentation ou non des instructions
 bool                g_beginInstrumentationOfInstructions; 
@@ -77,12 +77,11 @@ UINT32              g_maxConstraints;
 // temps maximal d'exécution du pintool (en secondes)
 UINT32              g_maxTime;
 
-// type d'OS hote. Sert à déterminer les numéros de syscalls
-OSTYPE              g_osType;
-
 /** OPTION CHECKSCORE **/
 // nombre d'instructions exécutées
 UINT64              g_nbIns;
+// variable déterminant si le progranne a soulevé une exception
+bool                g_foundException; 
 
 #if DEBUG
 ofstream    g_debug;      // fichier de log de dessassemblage
@@ -99,25 +98,17 @@ KNOB<std::string> KnobInputFile(KNOB_MODE_WRITEONCE,        "pintool", "i", "", 
 KNOB<UINT32>      KnobMaxExecutionTime(KNOB_MODE_WRITEONCE, "pintool", "m", "0",   "temps maximal d'execution");
 KNOB<std::string> KnobBytesToTaint(KNOB_MODE_WRITEONCE,     "pintool", "b", "all", "intervelles d'octets à surveiller");
 KNOB<UINT32>      KnobMaxConstraints(KNOB_MODE_WRITEONCE,   "pintool", "c", "0",   "nombre maximal de contraintes");
-KNOB<std::string> KnobOption(KNOB_MODE_WRITEONCE, "pintool", "o", "",  "option 'taint' ou 'checkscore'");
-KNOB<UINT32>      KnobOsType(KNOB_MODE_WRITEONCE, "pintool", "k", "11", "OS hote (de 1 à 10)");
+KNOB<std::string> KnobOption(KNOB_MODE_WRITEONCE,           "pintool", "o", "",    "option 'taint' ou 'checkscore'");
 #endif
 
 /* ===================================================================== */
 // Main procedure
 /* ===================================================================== */
 
-INT32 Usage()
-{
-    std::cerr << "FuzzWin : erreur d'initialisation\n";
-    std::cerr << KNOB_BASE::StringKnobSummary() << endl;
-    return (EXIT_FAILURE);
-}
-
 int main(int argc, char *argv[]) 
 {
     // Initialisation de PIN. Renvoie TRUE si erreur trouvée
-    if (PIN_Init(argc, argv))  return (Usage()); 
+    if (PIN_Init(argc, argv)) PIN_ExitProcess(EXIT_FAILURE); 
 
     // initialisation des arguments passés au pintool
     // et traitement de l'instrumentation correspondante
@@ -152,7 +143,7 @@ int main(int argc, char *argv[])
         // version spécifique pour le multithreading
         PIN_AddFiniUnlockedFunction(INSTRUMENTATION::FiniCheckScore, 0);
     }
-    else return (Usage());
+    else PIN_ExitProcess(EXIT_FAILURE);
 
     // Démarrage de l'instrumentation, ne retourne jamais
     PIN_StartProgram();
