@@ -315,7 +315,11 @@ void INSTRUMENTATION::changeCtx
 {
     if (reason == CONTEXT_CHANGE_REASON_EXCEPTION) 
     {
-        g_foundException = true;
+        // remise à zéro du nombre d'instructions => erreur
+        PIN_GetLock(&g_lock, PIN_GetTid());
+        g_nbIns = 0;
+        PIN_ReleaseLock(&g_lock);
+
         // appel de la fonction "FiniCheckscore" avant de quitter le programme
         PIN_ExitApplication(EXIT_EXCEPTION); 
     }
@@ -327,10 +331,9 @@ void INSTRUMENTATION::FiniCheckScore(INT32 code, void* )
     WINDOWS::DWORD cbWritten;
     std::string message;
 
-    // si exception, le message sera le caractère '@'
+    // si exception, le message sera '0'
     // sinon ce sera le nombre d'instructions exécutées
-    if (g_foundException) message = '@';
-    else                  message = decstr(g_nbIns);
+    message = decstr(g_nbIns);
 
     // envoi du resultat en entier dans le pipe  (= stdout en mode debug)
     WINDOWS::WriteFile(g_hPipe, 
@@ -348,8 +351,10 @@ void INSTRUMENTATION::FiniCheckScore(INT32 code, void* )
 // ajout du nombre d'instructions de la trace au total
 void INSTRUMENTATION::insCount(TRACE trace, VOID *) 
 {
+    PIN_GetLock(&g_lock, PIN_GetTid());
     for (BBL bbl = TRACE_BblHead(trace) ; BBL_Valid(bbl) ; bbl = BBL_Next(bbl))
     {
         g_nbIns += BBL_NumIns(bbl);
     }
+    PIN_ReleaseLock(&g_lock);
 }

@@ -1,5 +1,4 @@
 #include "fuzzwin.h"
-#include "initialize.h"
 #include "algorithmeSearch.h"
 
 #include <ctime>
@@ -8,16 +7,20 @@ CGlobals *pGlobals;
 
 int main(int argc, char *argv[]) 
 {
+    // passage en Francais !!!!
+    std::locale locFrench("French_France.1252");
+    std::locale::global(locFrench);
+
     // initialisation des variables globales
     pGlobals = new CGlobals;
   
-    if (!pGlobals) return EXIT_FAILURE;
+    if (!pGlobals) return (EXIT_FAILURE);
 
     // initialisation du programme (arguments, etc...)
     // vaut "OK" si tout s'est bien passé, ou le message d'erreur sinon
     std::string initResult(initialize(argc, argv));
 
-    if (initResult == "OK")   
+    if ("OK" == initResult)   
     {
         // stockage du top départ du fuzzing
         clock_t timeBegin = clock();
@@ -27,10 +30,12 @@ int main(int argc, char *argv[])
 
         clock_t timeEnd = clock();
 
+        delete (pGlobals);
+
         std::cout << std::endl;
-        std::cout << "; ****************************\n";
-        std::cout << "; ---> FIN DE L'ANALYSE <-----\n";
-        std::cout << "; ****************************\n";
+        std::cout << "******************************\n";
+        std::cout << "* ---> FIN DE L'ANALYSE <--- *\n";
+        std::cout << "******************************\n";
 
         if (nbFautes) // si une faute a été trouvée
         { 
@@ -47,11 +52,12 @@ int main(int argc, char *argv[])
         fflush(stdin);
         getchar();
 
-        return EXIT_SUCCESS;
+        return (EXIT_SUCCESS);
     }
     else
     {
         std::cout << initResult << " --> ABANDON !!!" << std::endl;
-        return EXIT_FAILURE;
+        delete (pGlobals);
+        return (EXIT_FAILURE);
     }
 }

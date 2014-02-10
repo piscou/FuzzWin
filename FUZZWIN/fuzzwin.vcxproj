@@ -176,7 +176,6 @@
     <ClInclude Include="CInput.h" />
     <ClInclude Include="getopt_pp.h" />
     <ClInclude Include="fuzzwin.h" />
-    <ClInclude Include="initialize.h" />
     <ClInclude Include="solver.h" />
   </ItemGroup>
   <ItemGroup>

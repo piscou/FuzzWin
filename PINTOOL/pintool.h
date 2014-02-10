@@ -34,6 +34,8 @@ namespace WINDOWS
 // le type DWORD n'est pas défini par PIN
 typedef unsigned long DWORD; 
 
+typedef WINDOWS::HANDLE HANDLE;
+
 /*********************/
 /* Constantes utiles */
 /*********************/
@@ -50,34 +52,29 @@ typedef unsigned long DWORD;
 /*********************************************************/
 
 // handle du pipe de communication des resultats (STDOUT en DEBUG, pipe avec SAGE en RELEASE)
-extern WINDOWS::HANDLE g_hPipe;
+extern HANDLE       g_hPipe;
 
 // fichier d'entrée du programme fuzzé
-extern std::string     g_inputFile; 
+extern std::string  g_inputFile; 
 
 // nombre maximal de contraintes
-extern UINT32          g_maxConstraints;
+extern UINT32       g_maxConstraints;
 // temps maximal d'execution
-extern UINT32          g_maxTime;
+extern UINT32       g_maxTime;
 
 // vrai dès que les premières données seront lues dans la source
-extern bool            g_beginInstrumentationOfInstructions;
-
-// variable déterminant si le progranne a soulevé une exception
-extern bool            g_foundException; 
+extern bool         g_beginInstrumentationOfInstructions;
 
 // clefs de stockage locales pour chaque thread
-extern TLS_KEY         g_tlsKeyTaint; 
-extern TLS_KEY         g_tlsKeySyscallData;
+extern TLS_KEY      g_tlsKeyTaint; 
+extern TLS_KEY      g_tlsKeySyscallData;
 
 // structure de blocage inter-thread    
-extern PIN_LOCK        g_lock;   
+extern PIN_LOCK     g_lock;  
 
 /** OPTION CHECKSCORE **/
 // nombre d'instructions exécutées
-extern UINT64          g_nbIns;
-// variable déterminant si le progranne a soulevé une exception
-extern bool            g_foundException; 
+extern UINT64       g_nbIns;
 
 /*******************************************************************/
 /* procedure d'initialisation des variables globales et paramètres */

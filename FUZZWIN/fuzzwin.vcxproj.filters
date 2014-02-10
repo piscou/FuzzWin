@@ -39,9 +39,6 @@
     <ClInclude Include="getopt_pp.h">
       <Filter>Fichiers d%27en-tête</Filter>
     </ClInclude>
-    <ClInclude Include="initialize.h">
-      <Filter>Fichiers d%27en-tête</Filter>
-    </ClInclude>
     <ClInclude Include="solver.h">
       <Filter>Fichiers d%27en-tête</Filter>
     </ClInclude>

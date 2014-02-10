@@ -22,13 +22,13 @@ static void maxTimeThread(void *nothing)
 static int openPipe()
 {
     g_hPipe = WINDOWS::CreateFile(
-            "\\\\.\\pipe\\fuzzwin", // pipe name 
-            GENERIC_WRITE | GENERIC_READ, // acces en lecture/ecriture
-            0,             // pas de partage 
-            nullptr,       // attributs de sécurité par défaut
-            OPEN_EXISTING, // pipe existant
-            0,             // attributs par défaut
-            nullptr);	   // pas de modèle
+        "\\\\.\\pipe\\fuzzwin", // pipe name 
+        GENERIC_WRITE | GENERIC_READ, // acces en lecture/ecriture
+        0,             // pas de partage 
+        nullptr,       // attributs de sécurité par défaut
+        OPEN_EXISTING, // pipe existant
+        0,             // attributs par défaut
+        nullptr);	   // pas de modèle
 
     if ((HANDLE)(WINDOWS::LONG_PTR) (-1) == g_hPipe)  return (EXIT_FAILURE);
     
@@ -83,6 +83,7 @@ static int initOptionTaint()
     g_maxTime        = KnobMaxExecutionTime.Value();
     g_maxConstraints = KnobMaxConstraints.Value();
     bytesToTaint     = KnobBytesToTaint.Value(); 
+    g_osType         = static_cast<OS_TYPE>(KnobOsType.Value());
 
     // 2) création des fichiers de déssasemblage et de suivi du marquage
     std::string logfile  (g_inputFile + "_dis.txt");
@@ -104,6 +105,8 @@ static int initOptionTaint()
     g_maxTime = LEVEL_BASE::Uint32FromString(readFromPipe());
     // 4) offset des entrees a etudier
     bytesToTaint = readFromPipe();
+    // 5) type d'OS sur lequel fonctionne fuzzwin
+    g_osType = static_cast<OSTYPE>(LEVEL_BASE::Uint32FromString(readFromPipe()));
 #endif
 
     /*** INITIALISATION VARIABLES GLOBALES ET INSTANCIATIONS ***/
@@ -127,7 +130,8 @@ static int initOptionTaint()
     g_tlsKeySyscallData = PIN_CreateThreadDataKey(nullptr);
 
     // détermination des numéros de syscalls à monitorer (dépend de l'OS)
-    SYSCALLS::defineSyscallsNumbers();
+    if (HOST_UNKNOWN == g_osType) return (EXIT_FAILURE);
+    else SYSCALLS::defineSyscallsNumbers(g_osType);
 
     // initialisation réussie
     return (EXIT_SUCCESS);
@@ -168,17 +172,16 @@ int pintoolInit()
     /*** OPTION CHECKSCORE ***/
     else if (pintoolOption == "checkscore")
     {
+        returnValue = OPTION_CHECKSCORE;
+
         #if DEBUG
         g_maxTime = KnobMaxExecutionTime.Value();
         #else
         g_maxTime = LEVEL_BASE::Uint32FromString(readFromPipe());
         #endif
 
-        // INITIALISATION VARIABLES GLOBALES
-        g_nbIns          = 0;
-        g_foundException = false;
-
-        returnValue = OPTION_CHECKSCORE;  
+        // INITIALISATION VARIABLE GLOBALE
+        g_nbIns = 0;      
     }
     // Option inconnue
     else return (EXIT_FAILURE);

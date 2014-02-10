@@ -15,7 +15,7 @@ bool createSolverProcess(const std::string &solverPath)
     saAttr.lpSecurityDescriptor = NULL; 
 
     // INITIALISATION DE PROCESSINFO
-    ZeroMemory(&piProcInfo, sizeof(PROCESS_INFORMATION) );
+    ZeroMemory(&piProcInfo, sizeof(PROCESS_INFORMATION));
 
     // 1) handle de lecture, 2) handle d'écriture pour STDOUT de Z3. 
     // 3) handle de lecture, 4) handle d'écriture pour STDIN de Z3.
@@ -84,7 +84,7 @@ bool checkSatFromSolver()
     else 
     {
         std::string bufferString(bufferRead);
-        if (bufferString.substr(0,3) == "sat") result = true;
+        if ("sat" == bufferString.substr(0,3)) result = true;
     }
 
     return result;
@@ -106,7 +106,7 @@ std::string getModelFromSolver()
         line = std::string(bufferRead, nbBytesRead);
         if( !fSuccess) 
         {
-            std::cout << "erreur de lecture de la reponse du solveur\n";
+            std::cout << "erreur de lecture de la réponse du solveur\n";
             break;
         }
         else result.append(bufferRead, nbBytesRead);
@@ -114,7 +114,7 @@ std::string getModelFromSolver()
         // si les derniers caactères sont )) alors fin du modele
         // méthode un peu 'tricky' de savoir ou cela se termine, mais ca fonctionne !!!
        std::string last6chars = result.substr(result.size() - 6, 6);
-       if (last6chars == ")\r\n)\r\n") break; 
+       if (")\r\n)\r\n" == last6chars) break; 
     }
     return result;
 } 

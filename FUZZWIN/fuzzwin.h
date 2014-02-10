@@ -8,53 +8,97 @@
 #include <cstdio>   // remove (effacement fichier)
 #include <cstdint>  // uint8_t etc...
 #include <fstream>	// ofstream / ifstream
-#include <list>		// liste de travail contenant les fichiers	
+    
 #include <string>	
 #include <vector>
 #include <regex>
 #include <set> // table de hachage
+#include <clocale>  // pour passage de la ligne de commande en francais
 
-static const std::string infoHeader(   
+static const std::string infoHeader
+    (   
     "; **************************************************\n" 
     "; *  FUZZWIN : FUZZER AUTOMATIQUE SOUS WINDOWS     *\n" 
     "; *  v1.0 (c) SEBASTIEN LECOMTE 09/01/2014         *\n"
     "; *  PIN Version 2.13 kit 62732 et Z3 version 4.3  *\n"
-    "; **************************************************\n" );
+    "; **************************************************\n" 
+    );
 
-#if _DEBUG
-#define VERBOSE(x) x
-#else
-#define VERBOSE(x)
-#endif
-
-class CGlobals;
-class CInput;
+static const std::string helpMessage
+    (
+    "\n"
+    "FuzzWin - Fuzzer automatique sous plateforme Windows\n"
+    "\n"
+    "Usage:  fuzzwin.exe -t <targetExe> - i <firstInput> [options]\n"
+    "\n"
+    "Options:\n"
+    "--help        \t -h : affiche ce message\n"
+    "--keepfiles   \t -k : conserve les fichiers intermédiaires\n"
+    "--range       \t -r : intervalles d'octets à marquer (ex: 1-10;15;17-51)\n"
+    "--dir         \t -d : répertoire de sortie (défaut : './results/')\n"
+    "--maxconstraints -c : nombre maximal de contraintes à récuperer\n"
+    "--maxtime     \t -m : temps limite d'exécution de l'exécutable étudie\n"
+    "--score       \t -s : calcul du score de chaque fichier\n"
+    "--verbose     \t -v : mode verbeux\n"
+    );
 
 typedef uint8_t		UINT8;
 typedef uint32_t	UINT32;
 typedef uint64_t	UINT64;
-
-typedef std::list<CInput*>      ListOfInputs;
-typedef std::hash<std::string>  HashValue; // hachage de chaines de caracteres : renvoie un size_t
-typedef std::set<size_t>        HashTable; // stockage des hashes des fichiers déjà générés
+typedef std::set<size_t> HashTable; // stockage des hashes des fichiers déjà générés
 
 // solutions fournies par le solveur sont du type
-// define OFF?? (_BitVec 8) 
-//   #x??     
+/* define OFF?? (_BitVec 8) 
+      #x??    */ 
 #define parseZ3ResultRegex "OFF(\\d+).*\r\n.*([0-9a-f]{2})"
+
+// codes définissant le type d'OS pour la détermination des numéros d'appels systèmes
+// Le type d'OS est déterminé par fuzzwin.exe et passé en argument au pintool
+enum OSTYPE 
+{
+    HOST_X86_2000,
+    HOST_X86_XP,
+    HOST_X86_2003,
+
+    HOST_X86_VISTA_SP0, // pour cette version, le syscall 'setinformationfile' n'est pas le meme que pour les autres SP...
+    HOST_X86_VISTA,
+    HOST_X86_2008 = HOST_X86_VISTA,   // les index des syscalls sont les mêmes
+    HOST_X86_2008_R2 = HOST_X86_2008, // les index des syscalls sont les mêmes
+  
+    HOST_X86_SEVEN,
+    
+    HOST_X86_WIN80,
+    HOST_X86_2012 = HOST_X86_WIN80, 
+    
+    HOST_X86_WIN81,
+    HOST_X86_2012_R2 = HOST_X86_WIN81, // a priori ce sont les memes
+    
+    BEGIN_HOST_64BITS,
+    HOST_X64_BEFORE_WIN8 = BEGIN_HOST_64BITS,
+    HOST_X64_WIN80,
+    HOST_X64_WIN81,
+    HOST_UNKNOWN
+};
 
 class CGlobals 
 {
 public:   
-    std::string resultDir;
-    std::string faultFile;
-    std::string targetFile;
-    std::string bytesToTaint;
+    std::string resultDir;      // dossier de résultats
+    std::string faultFile;      // fichier texte retracant les fautes trouvées
+    std::string targetPath;     // exécutable fuzzé
+    std::string bytesToTaint;   // intervelles d'octets à surveiller
+    std::string firstInputPath; // entrée initiale
 
-    std::string cmdLinePin;	    // ligne de commande du pintool 
+    std::string cmdLinePin;	    // ligne de commande du pintool, pré-rédigée 
 
-    bool keepFiles;          // les formules SMT2 sont enregistrées dans le dossier de resultat (option --keepfiles ou -k)
-    double maxExecutionTime; // temps maximal d'execution (option --maxtime ou -m)
+    OSTYPE osType;
+    
+    bool keepFiles;         // les fichiers sont gardés dans le dossier de resultat
+    bool computeScore;      // option pour calculer le score de chaque entrée
+    bool verbose;           // mode verbeux
+    
+    UINT32 maxExecutionTime; // temps maximal d'execution 
+    UINT32 maxConstraints;   // nombre maximal de contraintes à récupérer
 
     HANDLE hZ3_process;	// handle du process Z3
     HANDLE hZ3_thread;	// handle du thread Z3
@@ -65,20 +109,15 @@ public:
 
     HANDLE hPintoolPipe; // handle du named pipe avec le pintool Fuzzwin,
 
-    const std::regex regexModel; // expression réguliere pour parser les resultats du solveur
+    const std::regex regexModel; // pour parser les resultats du solveur
 
-    std::vector<int> tokens;     // tokens utilisés dans les 2 REGEX
+    std::hash<std::string> fileHash ; // hash d'une string : opérateur () renvoie un size_t    
 
     CGlobals() : 
         regexModel(parseZ3ResultRegex, std::regex::ECMAScript),
-        
-        hZ3_process(nullptr), hZ3_thread(nullptr), hZ3_stdout(nullptr),	hZ3_stdin(nullptr),
-        hReadFromZ3(nullptr), hWriteToZ3(nullptr), hPintoolPipe(nullptr),
-        maxExecutionTime(0)   // aucun maximum de temps
-        {
-            // tokens des sous-chaines à chercher pour les regexs
-            this->tokens.push_back(1); 	this->tokens.push_back(2);
-        }
+        maxExecutionTime(0), // aucun maximum de temps
+        maxConstraints(0)    // pas de limite dans le nombre de contraintes
+        {}
 
     ~CGlobals() 
     {
@@ -94,4 +133,4 @@ public:
 
 extern CGlobals *pGlobals;
 
-#include "CInput.h"
+std::string initialize(int argc, char** argv);

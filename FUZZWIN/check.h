@@ -1,4 +1,4 @@
 #pragma once
-#include "fuzzwin.h"
+#include "CInput.h"
 
 DWORD debugTarget(CInput *input);

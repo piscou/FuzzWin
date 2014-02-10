@@ -419,6 +419,7 @@ del "$(TargetDir)$(TargetName).exp"</Command>
     <ClInclude Include="bitbyte.h" />
     <ClInclude Include="bitbyte.hpp" />
     <ClInclude Include="convert.h" />
+    <ClInclude Include="enumOsType.h" />
     <ClInclude Include="misc.hpp" />
     <ClInclude Include="pintool.h" />
     <ClInclude Include="pop.hpp" />

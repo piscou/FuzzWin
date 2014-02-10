@@ -1,20 +1,31 @@
-#include "fuzzwin.h"
-#include "initialize.h"
-#include "solver.h"
+#include "solver.h" 
 
 // PARSE COMMAND LINE : GETOPT_PP
 // documentation : https://code.google.com/p/getoptpp/wiki/Documentation?tm=6
 // seule modiifcation apportée au code : désactivation du warning 4290
 #include "getopt_pp.h"
 
-static std::string getExePath() // renvoie le répertoire de l'executable
+// renvoie le répertoire ou se trouve l'executable
+static std::string getExePath() 
 {
     char buffer[MAX_PATH];
-    GetModuleFileName(NULL, buffer, MAX_PATH );
+    GetModuleFileName(NULL, buffer, MAX_PATH);
     std::string::size_type pos = std::string(buffer).find_last_of("\\/");
     return (std::string(buffer).substr(0, pos + 1)); // antislash inclus
 }
 
+// test du type d'exécutable (32 ou 64bits). Si non supporté => quitter
+static int getKindOfExecutable(const std::string &targetPath)
+{
+    DWORD kindOfExe = 0;
+    BOOL  result = GetBinaryType((LPCSTR) targetPath.c_str(), &kindOfExe);
+    
+    // erreur si fichier non exécutable ou si non trouvé
+    if (!result) return (-1);
+    else         return (kindOfExe);
+}
+
+// test de l'existence d'un fichier
 static inline bool testFileExists(const std::string &name)
 {
     std::ifstream f(name.c_str());
@@ -24,6 +35,7 @@ static inline bool testFileExists(const std::string &name)
     return (isExists);
 }
 
+// chemin complet d'un fichier (sans référence au dossier de travail)
 static std::string getAbsoluteFilePath(const std::string &s)
 {
     char absolutepath[MAX_PATH];
@@ -35,32 +47,102 @@ static std::string getAbsoluteFilePath(const std::string &s)
     return (std::string(absolutepath));
 }
 
-static int getNativeArchitecture()
+// détermination de l'OS dynamiquement, inspiré de l'exemple fourni sur MSDN
+// le type d'OS sera passé en argument au pintool
+// pour la surveillance des appels systèmes
+// NB : la version 8.1 du Windows Kit a désormais des fonctions spécifiques
+// mais ne sera pas utilisé ici
+static OSTYPE getNativeArchitecture()
 {
-    BOOL isX64 = true; // par défaut on considère qu'on est en 64 bits
+    OSTYPE osType = HOST_UNKNOWN;
 
-#if !(_WIN64)
-    // en 32 bits, tester via isWow64 (source MSDN)
-    typedef BOOL (WINAPI *LPFN_ISWOW64PROCESS) (HANDLE, PBOOL);
-    LPFN_ISWOW64PROCESS fnIsWow64Process;
+    // la fonction GetNativeSystemInfo retourne une structure avec notamment
+    // 'wProcessorArchitecture' qui détermine si OS 32 ou 64bits 
+    SYSTEM_INFO si;
+    ZeroMemory(&si, sizeof(SYSTEM_INFO));
+    GetSystemInfo(&si);
 
-    fnIsWow64Process = (LPFN_ISWOW64PROCESS) GetProcAddress(
-        GetModuleHandle(TEXT("kernel32")),"IsWow64Process");
+    // GetVersionEx récupère la version de l'OS pour fixer le numéro des syscalls
+    // la structure OSVERSIONINFOEX contient ce que l'on cherche à savoir
+    OSVERSIONINFOEX osvi;
+    ZeroMemory(&osvi, sizeof(osvi));
+    osvi.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEX);
+    GetVersionEx(reinterpret_cast<OSVERSIONINFO*>(&osvi));
+    // version = 10*major + minor ; permet de comparer tout de suite les nombres
+    int osVersion = (10 * osvi.dwMajorVersion) + osvi.dwMinorVersion;
+    
+    // isWow64Process détermine si fuzzwin fonctionne en émulation 64bits.
+    BOOL bIsWow64 = FALSE;
+    IsWow64Process(GetCurrentProcess(), &bIsWow64);
 
-    if (NULL != fnIsWow64Process) fnIsWow64Process(GetCurrentProcess(),&isX64);
-#endif  
+    // Architecture de l'OS = 64 bits, ou bien émulation (Wow64)
+    if ((PROCESSOR_ARCHITECTURE_AMD64 == si.wProcessorArchitecture)	|| bIsWow64)
+    {
+        // Avant Windows 8 (version 6.2), tous les OS 64bits
+        // ont les mêmes tables pour les syscalls
+        if (osVersion < 62)         osType = HOST_X64_BEFORE_WIN8;
 
-    return (isX64);
-}
+        // Windows 8 : version 6.2
+        else if (62 == osVersion)   osType = HOST_X64_WIN80;
 
+        // pour Windows 8.1, getVersionEx est déprécié => TODO FAIRE AUTREMENT
+        else if (63 == osVersion)   osType = HOST_X64_WIN81;
+    }
+    else if (PROCESSOR_ARCHITECTURE_INTEL == si.wProcessorArchitecture)	
+    {
+        switch (osVersion)	
+        {
+        case 50:  // Version 5.0 = Windows 2000
+            osType = HOST_X86_2000;
+            break;
+
+        case 51:  // Version 5.1 = Windows XP
+            osType = HOST_X86_XP;
+            break;
+
+        case 52:  // Version 5.2 = Server 2003. XP 64bits n'est pas considéré car on est en 32bits
+            osType = HOST_X86_2003;
+            break;
+
+        case 60:  // Version 6.0 = Vista ou Server 2008
+            if (VER_NT_WORKSTATION == osvi.wProductType) // Vista => tester le cas SP0
+            {
+                // le syscall 'NtSetInformationFile' diffère entre SP0 et les autres SP
+                // on teste donc si un service pack est présent
+                osType = (osvi.wServicePackMajor) ? HOST_X86_VISTA : HOST_X86_VISTA_SP0;
+            }
+            else osType = HOST_X86_2008;
+            break;
+       
+        case 61:  // Version 6.1 = Seven ou Server 2008 R2
+            osType = (VER_NT_WORKSTATION == osvi.wProductType) ? HOST_X86_SEVEN : HOST_X86_2008_R2;
+            break;
+     
+        case 62:  // Version 6.2 = Windows 8 ou Server 2012
+            osType = (VER_NT_WORKSTATION == osvi.wProductType) ? HOST_X86_WIN80 : HOST_X86_2012;
+            break;
+
+        case 63:  // Version 6.3 = Windows 8.1 ou Server 2012R2 (à voir car GetVersionEx dépréciée)
+            osType = (VER_NT_WORKSTATION == osvi.wProductType) ? HOST_X86_WIN81 : HOST_X86_2012_R2;
+            break;
+      
+        default:  // OS non reconnu donc non supporté 
+            break; 
+        }
+    }
+    return (osType);
+} // getNativeArchitecture
+
+// Usage
 void showHelp()
 {
-    std::cout << "FuzzWin - Fuzzer automatique sous plateforme Windows\n";
-    std::cout << " Usage : fuzzwin -t -i [-k] [-m] etc....";
+    std::cout << helpMessage;
 }
 
-//Effacement du contenu d'un répertoire sans l'effacer lui meme (source StackOverflow)
-static int deleteDirectory(const std::string &refcstrRootDirectory, bool bDeleteSubdirectories = true)
+//Effacement du contenu d'un répertoire sans l'effacer lui meme
+// source StackOverflow : http://stackoverflow.com/questions/734717/how-to-delete-a-folder-in-c
+static int deleteDirectory
+    (const std::string &refcstrRootDirectory, bool bDeleteSubdirectories = true)
 {
     bool            bSubdirectory = false;  // Flag, indicating whether subdirectories have been found
     HANDLE          hFile;                  // Handle to directory
@@ -94,13 +176,12 @@ static int deleteDirectory(const std::string &refcstrRootDirectory, bool bDelete
                 else
                 {
                     // Set file attributes
-                    if (SetFileAttributes(strFilePath.c_str(), FILE_ATTRIBUTE_NORMAL) == FALSE) return GetLastError();
-
+                    if (FALSE == SetFileAttributes(strFilePath.c_str(), FILE_ATTRIBUTE_NORMAL)) return GetLastError();
                     // Delete file
-                    if (DeleteFile(strFilePath.c_str()) == FALSE) return GetLastError();
+                    if (FALSE == DeleteFile(strFilePath.c_str())) return GetLastError();
                 }
             }
-        } while(FindNextFile(hFile, &FileInformation) == TRUE);
+        } while (TRUE == FindNextFile(hFile, &FileInformation));
 
         // Close handle
         FindClose(hFile);
@@ -111,173 +192,204 @@ static int deleteDirectory(const std::string &refcstrRootDirectory, bool bDelete
     return 0;
 }
 
+// Procédure d'initialisation de FuzzWin
+// parse la ligne de commande, lance le solveur, créé le pipe, etc...
 std::string initialize(int argc, char** argv) 
 {
     /********************************************************/
     /** récupération des arguments de la ligne de commande **/
     /********************************************************/
+    
+    // repertoire du launcher
+    std::string exePath = getExePath(); 
+    
     GetOpt::GetOpt_pp ops(argc, argv);
 
-    // Option -h // --help : affichage de l'aide et de l'usage, et retour immédiat
+    // Option -h / --help : affichage de l'usage et retour immédiat
     if (ops >> GetOpt::OptionPresent('h', "help"))
     {
         showHelp();
         exit(0);
     }
+
+    // argument -t / --target : exécutable cible
+    ops >> GetOpt::Option('t', "target", pGlobals->targetPath);  
+
+    // argument -i // --initial : premier fichier d'entrée
+    ops >> GetOpt::Option('i', "initial", pGlobals->firstInputPath);
     
-    // afifchage du bandeau d'information
+    // option -r / --range : liste type impression des octets a tester
+    ops >> GetOpt::Option('r', "range", pGlobals->bytesToTaint); 
+        
+    // option -k / --keepfiles : conservation de tous les fichiers. Option présente = activée
+    ops >> GetOpt::OptionPresent('k', "keepfiles", pGlobals->keepFiles); 
+   
+    // option -s / --score : calcul du score de chaque nouveau fichier. Option présente = activée
+    ops >> GetOpt::OptionPresent('s', "score", pGlobals->computeScore);
+
+    // option -v / --verbose : mode verbeux. Option présente = activée
+    ops >> GetOpt::OptionPresent('v', "verbose", pGlobals->verbose);
+
+    // option -d // --destination : dossier de destination.
+    ops >> GetOpt::Option('d', "dir", pGlobals->resultDir);
+
+    // option -c // --maxconstraints : nombre maximal de contraintes
+    ops >> GetOpt::Option('c', "maxconstraints", pGlobals->maxExecutionTime);
+    
+    // option -m // --maxtime : temps maximal d'execution d'une entree
+    ops >> GetOpt::Option('m', "maxtime", pGlobals->maxExecutionTime);
+
+    // affichage du bandeau d'information
     std::cout << infoHeader << std::endl;
 
+    /********************************************************/
+    /** exploitation des arguments de la ligne de commande **/
+    /********************************************************/
+    
+    // test de la compatibilité de l'OS
+    pGlobals->osType = getNativeArchitecture();
+    if (HOST_UNKNOWN == pGlobals->osType) return ("OS non supporté");
+    
+    // "range" : si option non présente, tous les octets du fichier seront marqués
+    if (pGlobals->bytesToTaint.empty())  pGlobals->bytesToTaint = "all";
+
+    // "target" : exécutable cible
+    pGlobals->targetPath = getAbsoluteFilePath(pGlobals->targetPath);
+    if (pGlobals->targetPath.empty())  return ("argument -t (exécutable cible) absente");
+
+    // test du type d'exécutable (32 ou 64 bits)
+    int kindOfExe = getKindOfExecutable(pGlobals->targetPath);
+    if (kindOfExe < 0)  return (pGlobals->targetPath + " : fichier introuvable ou non exécutable");
+    // exécutable 64bits sur OS 32bits => problème
+    else if ((SCS_64BIT_BINARY == kindOfExe) && (pGlobals->osType < BEGIN_HOST_64BITS))
+    {
+        return ("exécutable 64bits incompatible avec OS 32bits");
+    }
+
+    // "initial" : premier fichier d'entrée : test de son existence
+    if (!testFileExists(pGlobals->firstInputPath))  return ("fichier initial non trouvé");
+
+    // "destination" Si option non présente : choisir par défaut le dossier "results"
+    std::string resultDir;
+    bool isDirectoryOptionPresent = (ops >> GetOpt::Option('d', "dir", resultDir));
+    if (pGlobals->resultDir.empty()) resultDir = exePath + "results";
+    else pGlobals->resultDir = getAbsoluteFilePath(pGlobals->resultDir);
+
+    // création du dossier de résultats. 
+    BOOL createDirResult = CreateDirectory(resultDir.c_str(), NULL);
+    if (!createDirResult && (ERROR_ALREADY_EXISTS == GetLastError()))
+    {
+        char c;
+        
+        std::cout << "Le dossier de résultat existe deja\n";
+        std::cout << "effacer son contenu et continuer ? (o/n)";
+
+        do { std::cin >> c;	} while ((c != 'o') && (c != 'n'));
+
+        if ('n' == tolower(c))	return ("");
+
+        int eraseDir = deleteDirectory(resultDir);
+        if (eraseDir) return ("erreur création du dossier de résultats");
+    }  
+
+    // copie du fichier initial dans ce dossier (sans extension, avec le nom 'input0')
+    std::string firstFileName(resultDir + "\\input0");
+    CopyFile(pGlobals->firstInputPath.c_str(), firstFileName.c_str(), false);
+    pGlobals->firstInputPath = firstFileName;
+
+    // chemin prérempli pour le fichier de fautes (non créé pour l'instant)
+    pGlobals->faultFile = pGlobals->resultDir + "\\fault.txt";
+    
     /**********************************************************************/
     /** Construction des chemins d'accès aux outils externes (PIN et Z3) **/
     /**********************************************************************/
     
     std::string pin_X86, pin_X86_VmDll, pintool_X86;
     std::string pin_X64, pin_X64_VmDll, pintool_X64;
-    std::string z3Path;
     
-    // repertoire 'root' du launcher
-    std::string exePath = getExePath(); 
-    // repertoire 'root' de PIN
-    std::string pinPath(getenv("PIN_ROOT"));
+    // repertoire 'root' de PIN, soit en variable d'environnement
+    // sinon prendre le répertoire de fuzzwin
+    std::string pinPath;
+    char* pinRoot = getenv("PIN_ROOT");
+    if (nullptr == pinRoot) pinPath = exePath;
+    else                    pinPath = std::string(pinRoot);
+    // repertoire 'root' de Z3. Idem
+    std::string z3Path;
+    char* z3Root = getenv("Z3_ROOT");
+    if (nullptr == z3Root) z3Path = exePath;
+    else                   z3Path = std::string(z3Root);
 
     // modules 32 bits 
     pin_X86       = pinPath + "ia32\\bin\\pin.exe";
     pin_X86_VmDll = pinPath + "ia32\\bin\\pinvm.dll";
     pintool_X86   = exePath + "fuzzwinX86.dll";
 
+    // modules 64 bits
     pin_X64       = pinPath + "intel64\\bin\\pin.exe";
     pin_X64_VmDll = pinPath + "intel64\\bin\\pinvm.dll";
     pintool_X64   = exePath + "fuzzwinX64.dll";
     
+    // chemin vers Z3
+    z3Path += "\\bin\\z3.exe";
+    
+    // test de la présence des fichiers adéquats
+    if (!testFileExists(z3Path))        return "solveur z3 absent";
+    
     if (!testFileExists(pin_X86))       return "executable PIN 32bits absent";
     if (!testFileExists(pin_X86_VmDll)) return "librairie PIN_VM 32bits absente";
     if (!testFileExists(pintool_X86))   return "pintool FuzzWin 32bits absent";
-    if (!testFileExists(pin_X64))       return "executable PIN 64bits absent";
-    if (!testFileExists(pin_X64_VmDll)) return "librairie PIN_VM 64bits absente";
-    if (!testFileExists(pintool_X64))   return "pintool FuzzWin 64bits absent";
-    
-    // détermination de la plateforme pour Z3
+    // OS 32 bits : pas besoin des modules 64bits
+    if (pGlobals->osType >= BEGIN_HOST_64BITS) 
+    {
+        if (!testFileExists(pin_X64))       return "executable PIN 64bits absent";
+        if (!testFileExists(pin_X64_VmDll)) return "librairie PIN_VM 64bits absente";
+        if (!testFileExists(pintool_X64))   return "pintool FuzzWin 64bits absent";
+    }
   
-    int isHost64bits = getNativeArchitecture();
-    
-    z3Path = exePath + ((isHost64bits) ? "z3_x64.exe" : "z3_x86.exe");
-    if (!testFileExists(z3Path))     return "solveur z3 absent";
-
-    /********************************************************/
-    /** exploitation des arguments de la ligne de commande **/
-    /********************************************************/
-    
-    // option -r / --range : liste type impression des octets a tester
-    // si option non présente : tous les octets du fichier seront marqués
-    if (! (ops >> GetOpt::Option('r', "range", pGlobals->bytesToTaint))) 
-    {
-        pGlobals->bytesToTaint = "all";
-    }
-    
-    // option -k / --keepfiles
-    // conservation de tous les fichiers (entrées générées et formules issues du pintool)
-    ops >> GetOpt::OptionPresent('k', "keepfiles", pGlobals->keepFiles);
-    
-    // option -t / --target : executable cible
-    std::string targetPath;
-    if (! (ops >> GetOpt::Option('t', "target", targetPath)))   return "option -t (executable cible) absente";
-    if (! testFileExists(targetPath)) return "Executable cible non trouvé";
-
-    // test du type d'exécutable. Si non supporté => quitter
-    DWORD kindOfExe = 0;
-    BOOL result = GetBinaryType((LPCSTR) targetPath.c_str(), &kindOfExe);
-    if (!result) return ("le fichier" + targetPath + " n'est pas executable");
-
-#if _WIN64 
-    // SAGE en x64=> l'executable doit être en 64bits
-    if (kindOfExe != SCS_64BIT_BINARY) return (targetPath + " n'est pas executable 64bits");
-#else
-    // SAGE en x86=> l'executable doit être en 32bits
-   if (kindOfExe != SCS_32BIT_BINARY) return (targetPath + " n'est pas executable 32bits");
-   #endif
-
-    // option -i // --initial : premier fichier d'entrée
-    std::string initialInputPath;
-    if (! (ops >> GetOpt::Option('i', "initial", initialInputPath))) 
-    {
-        return "option -i (fichier initial) absente";
-    }
-    if (! testFileExists(initialInputPath))  return "Fichier initial non trouvé";
-
-    // option -d // --destination : dossier de destination.
-    // Si option non présente : choisir par défaut "results"
-    std::string resultDir;
-    bool isDirectoryOptionPresent = (ops >> GetOpt::Option('d', "destination", resultDir));
-    if (!isDirectoryOptionPresent) resultDir = exePath + "results";
-
-    // option -m // --maxtime : temps maximal d'execution d'une entree
-    ops >> GetOpt::Option('m', "maxtime", pGlobals->maxExecutionTime);
-   
-    /********************************************/
-    /** initialisation du dossier de resultats **/
-    /********************************************/
-
-    // création du dossier de résultats. 
-    BOOL createDirResult = CreateDirectory(resultDir.c_str(), NULL);
-    if (!createDirResult && (GetLastError() == ERROR_ALREADY_EXISTS))
-    {
-        char c;
-        
-        std::cout << "Le dossier de resultat existe deja\n";
-        std::cout << "effacer son contenu et continuer ? (o/n)";
-
-        do { std::cin >> c;	} while ((c != 'o') && (c != 'n'));
-        if (tolower(c) == 'n')	return "";
-        else if (deleteDirectory(resultDir)) return "erreur creation dossier resultats";
-    }  
-
-    // copie du fichier initial dans ce dossier (sans extension, avec le nom 'input0')
-    std::string firstFileName = resultDir + "\\input0";
-    CopyFile(initialInputPath.c_str(), firstFileName.c_str(), false);
-
     /**********************************************/
     /** création des tubes nommé avec le Pintool **/
     /**********************************************/
     pGlobals->hPintoolPipe = CreateNamedPipe("\\\\.\\pipe\\fuzzwin",	
         PIPE_ACCESS_DUPLEX,	// accès en lecture/écriture 
-        PIPE_TYPE_MESSAGE | PIPE_READMODE_MESSAGE | PIPE_WAIT, // mode byte, bloquant
+        PIPE_TYPE_MESSAGE | PIPE_READMODE_MESSAGE | PIPE_WAIT, // mode message, bloquant
         1,		// une seule instance
         4096,	// buffer de sortie 
         4096,	// buffer d'entrée
         0,		// time-out du client = defaut
         NULL);	// attributs de securité par defaut
 
-    if (pGlobals->hPintoolPipe == INVALID_HANDLE_VALUE) 
+    if (INVALID_HANDLE_VALUE == pGlobals->hPintoolPipe)
     {
-        return "Erreur de creation du pipe fuzzWin\n";
+        return ("Erreur de création du pipe fuzzWin\n");
     }
 
     /**********************************************************/
     /** création du process Z3 avec redirection stdin/stdout **/ 
     /**********************************************************/
-    if (!createSolverProcess(z3Path)) 	return "erreur creation processus Z3";
+    if (!createSolverProcess(z3Path)) 	return ("erreur création processus Z3");
 
-    /******************************************/
-    /** stockage dans les variables globales **/ 
-    /******************************************/
+    /***************************************/
+    /** Ligne de commande pour le pintool **/ 
+    /***************************************/
 
-    pGlobals->resultDir  = getAbsoluteFilePath(resultDir);
-    pGlobals->targetFile = getAbsoluteFilePath(targetPath);
-    pGlobals->faultFile  = pGlobals->resultDir + "\\fault.txt"; 
-
-    // création de la ligne de commande pour le processus pin/fuzzwin
-    /* $(pin_X86) 
-        -p64 $(pin_X64) 
-        -t64 $(pintool_X64) 
-        -t $(pintool_X86) 
-        -- $(targetPath) %INPUT% (ajouté a chaque fichier testé) */
-    
-    pGlobals->cmdLinePin = '"' + pin_X86  \
+    // si OS 32 bits, pas la peine de spécifier les modules 64bits
+    if (pGlobals->osType < BEGIN_HOST_64BITS) 
+    {
+        /* $(pin_X86) -t $(pintool_X86) -- $(targetFile) %INPUT% (ajouté a chaque fichier testé) */
+        pGlobals->cmdLinePin = '"' + pin_X86 \
+            + "\" -t \"" + pintool_X86       \
+            + "\" -- \"" + pGlobals->targetPath + "\" ";
+    }
+    else
+    {
+        /* $(pin_X86) -p64 $(pin_X64) -t64 $(pintool_X64) -t $(pintool_X86) 
+        -- $(targetFile) %INPUT% (ajouté a chaque fichier testé) */
+        pGlobals->cmdLinePin = '"' + pin_X86  \
             + "\" -p64 \"" + pin_X64      \
             + "\" -t64 \"" + pintool_X64  \
             + "\" -t \""   + pintool_X86  \
-            + "\" -- \"" + pGlobals->targetFile + "\" ";
-
-    return "OK";
+            + "\" -- \""   + pGlobals->targetPath + "\" ";
+    }
+    
+    return ("OK");
 }

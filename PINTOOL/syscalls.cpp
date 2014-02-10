@@ -28,106 +28,13 @@ static std::string SYSCALLS::unicodeToAscii(const std::wstring &input)
     return (result);
 }
 
-void SYSCALLS::defineSyscallsNumbers() 
+void SYSCALLS::defineSyscallsNumbers(OSTYPE osVersion) 
 {
-    OSTYPE osVersion = HOST_UNSUPPORTED; // par défaut 'OS non supporté'
-    
-    // détermination des numéros des appels systèmes selon l'OS 
-    // uniquement nécessaire en 32bits (en 64 bits ils sont les memes qq soit la version de l'OS)
-#if TARGET_IA32 
-
-    typedef BOOL (WINAPI *LPFN_ISWOW64PROCESS) (HANDLE, BOOL*);  
-    BOOL bIsWow64 = false;	// par défaut, pas d'émulation 32 bits  
-
-    LPFN_ISWOW64PROCESS fnIsWow64Process = reinterpret_cast<LPFN_ISWOW64PROCESS>
-        (WINDOWS::GetProcAddress(WINDOWS::GetModuleHandle(TEXT("kernel32")),"IsWow64Process"));
-
-    if (nullptr != fnIsWow64Process)  fnIsWow64Process(WINDOWS::GetCurrentProcess(),&bIsWow64);
-
-    // si mode 32bits sur OS 64bits (WOW64) => syscalls 64bits, fin des tests
-    if (bIsWow64)	osVersion = HOST_WOW64_OR_64BITS;
-    // sinon poursuite des tests
-    else
-    {
-        // la fonction GetSystemInfo retourne une structure avec notamment wProcessorArchitecture. 
-        // Si AMD64 => syscalls 64bits
-        // on ne fait pas appel à GetNativeSystemInfo, car le cas WOW64 a déja été testé
-        WINDOWS::SYSTEM_INFO si = {0};
-        WINDOWS::GetSystemInfo(&si);
-
-        if ( PROCESSOR_ARCHITECTURE_AMD64 == si.wProcessorArchitecture)	
-        {
-            // ce cas arrive si IsWow64Process n'est pas dispo
-            osVersion = HOST_WOW64_OR_64BITS;	
-        }
-        else if (PROCESSOR_ARCHITECTURE_INTEL == si.wProcessorArchitecture)	
-        {
-            // OS 32bits, obligé d'appeler GetVersionEx pour determiner 
-            // la version de l'OS 32bits pour fixer le numéro des syscalls
-            // la structure OSVERSIONINFOEX contient ce que l'on cherche à savoir
-            WINDOWS::OSVERSIONINFOEX osvi;
-            ZeroMemory(&osvi, sizeof(osvi));
-            osvi.dwOSVersionInfoSize = sizeof(WINDOWS::OSVERSIONINFOEX);
-            WINDOWS::GetVersionEx(reinterpret_cast<WINDOWS::OSVERSIONINFO*>(&osvi));
-
-            // Test for the specific product.
-            switch (osvi.dwMajorVersion)	
-            {
-            case 6:
-                switch (osvi.dwMinorVersion) 
-                {
-                case 0:	// Version 6.0 = Vista ou Server 2008
-                    if( osvi.wProductType == VER_NT_WORKSTATION )
-                    {
-                        osVersion = HOST_VISTA;
-                        // TESTER ICI LE CAS SP0
-                    }
-                    else osVersion = HOST_2008;
-                    break;
-                case 1:	// Version 6.1 = Seven ou Server 2008 R2
-                    if  (osvi.wProductType == VER_NT_WORKSTATION )	osVersion = HOST_SEVEN;
-                    else osVersion = HOST_2008_R2;
-                    break;
-                case 2:
-                    if (osvi.wProductType == VER_NT_WORKSTATION )	osVersion = HOST_8_0;
-                    else osVersion = HOST_2012; 
-                    break;
-                case 3:
-                    if (osvi.wProductType == VER_NT_WORKSTATION )	osVersion = HOST_8_1;
-                    else osVersion = HOST_2012_R2; 
-                    break;
-                default: break;
-                }
-                break;
-            case 5:
-                switch (osvi.dwMinorVersion) 
-                {
-                    case 0:	// Version 5.0 = Windows 2000
-                        osVersion = HOST_2000;
-                        break;
-                    case 1:	// Version 5.1 = Windows XP
-                        osVersion = HOST_XP;
-                        break;
-                    case 2: // Version 5.2 = Server 2003
-                        osVersion = HOST_2003; 
-                        break;
-                    default: break;
-                }
-                break;
-            default: break; 
-            }
-        }
-    }
-
-#else   
-    osVersion = HOST_WOW64_OR_64BITS; // pintool 64bits A MODIFIER AVEC WIN8/8.1
-#endif
-    
-    PIN_NtClose         = syscallTable[osVersion][INDEX_NTCLOSE];
-    PIN_NtCreateFile    = syscallTable[osVersion][INDEX_NTCREATEFILE];
-    PIN_NtOpenFile      = syscallTable[osVersion][INDEX_NTOPENFILE];
-    PIN_NtReadFile      = syscallTable[osVersion][INDEX_NTREADFILE];
-    PIN_NtCreateSection = syscallTable[osVersion][INDEX_NTCREATESECTION];
+    PIN_NtClose              = syscallTable[osVersion][INDEX_NTCLOSE];
+    PIN_NtCreateFile         = syscallTable[osVersion][INDEX_NTCREATEFILE];
+    PIN_NtOpenFile           = syscallTable[osVersion][INDEX_NTOPENFILE];
+    PIN_NtReadFile           = syscallTable[osVersion][INDEX_NTREADFILE];
+    PIN_NtCreateSection      = syscallTable[osVersion][INDEX_NTCREATESECTION];
     PIN_NtSetInformationFile = syscallTable[osVersion][INDEX_NTSETINFORMATIONFILE];
     PIN_NtMapViewOfSection   = syscallTable[osVersion][INDEX_NTMAPVIEWOFSECTION];
 }
@@ -144,9 +51,7 @@ void SYSCALLS::syscallEntry(THREADID tid, CONTEXT *ctxt, SYSCALL_STANDARD std, v
     // stockage du numéro du syscall concerné
     ADDRINT syscallNumber = PIN_GetSyscallNumber(ctxt, std);
     
-    // traitement selon le numéro du syscall ; un switch aurait été
-    // l'ideal mais les numéros de syscalls sont déterminés dynamiquement...
-
+    // traitement selon le numéro du syscall 
     /******** READFILE ********/
     if (syscallNumber == PIN_NtReadFile)  
     {

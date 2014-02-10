@@ -11,11 +11,10 @@ static DWORD WINAPI timerThread(LPVOID lpParam)
     // si timeout atteint, terminer le processus de debuggage
     DWORD result = WaitForSingleObject(hTimoutEvent, (DWORD) (pGlobals->maxExecutionTime * 1000));
 
-    if (result == WAIT_TIMEOUT) TerminateProcess(hProcess, 0);    // revoir le code de fin ???
+    if (WAIT_TIMEOUT == result) TerminateProcess(hProcess, 0);    // revoir le code de fin ???
   
     return (result);
 }
-
 
 // cette fonction teste si l'entrée fait planter le programme
 DWORD debugTarget(CInput *pInput) 
@@ -40,12 +39,12 @@ DWORD debugTarget(CInput *pInput)
         nullptr, nullptr,   // attributs de processus et de thread par défaut
         FALSE,              // pas d'héritage des handles
         DEBUG_ONLY_THIS_PROCESS | CREATE_NO_WINDOW, // mode DEBUG, pas de fenetres
-        nullptr, nullptr,   // Environnement et repertoire d etravail par défaut
+        nullptr, nullptr,   // Environnement et repertoire de travail par défaut
         &si, &pi);          // Infos en entrée et en sortie
     
     if (!bSuccess)
     {
-        VERBOSE(std::cout << "erreur createProcess Debug\n";)
+        if (pGlobals->verbose) std::cout << "erreur createProcess Debug\n";
         return 0; // fin de la procédure prématurément
     }
 
@@ -58,7 +57,7 @@ DWORD debugTarget(CInput *pInput)
         0,              // attributs de creation par défaut
         nullptr);       // pas besoin du threadId de ce thread
 
-    // création de l'évenement de fin de debuggage
+    // création de l'évenement de fin de debuggage à cause du temps
     hTimoutEvent = CreateEvent( 
         nullptr,  // attributs de sécurité par défaut
         TRUE,     // evenement géré manuellement
@@ -73,7 +72,7 @@ DWORD debugTarget(CInput *pInput)
         // si erreur dans le debuggage : tout stopper et quitter la boucle
         if (!WaitForDebugEvent(&e, INFINITE)) 
         {
-            VERBOSE(std::cout << "erreur WaitDebugEvent\n";)
+            if (pGlobals->verbose) std::cout << "erreur WaitDebugEvent\n";
             continueDebug = false;
             break; 
         }
@@ -98,7 +97,7 @@ DWORD debugTarget(CInput *pInput)
             // = fin du programme. Il s'agit soit la fin normale
             // soit la fin provoqué par le thread "gardien du temps"
             case EXIT_PROCESS_DEBUG_EVENT:
-                VERBOSE(std::cout << "pas d'erreur trouvée\n";)
+                if (pGlobals->verbose) std::cout << " - no crash ;(\n";
                 continueDebug = false;	
                 // quitter la boucle break;
         }

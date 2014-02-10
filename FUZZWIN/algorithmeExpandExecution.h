@@ -1,4 +1,4 @@
 #pragma once
-#include "fuzzwin.h"
+#include "CInput.h"
 
 ListOfInputs expandExecution(CInput *input, HashTable &h, UINT32 *nbFautes);

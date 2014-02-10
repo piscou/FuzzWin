@@ -6,15 +6,6 @@
 
 static UINT32 numberOfChilds = 0;	// numérotation des fichiers dérivés
 
-class CPinCommandsParameters
-{
-public:
-    const char* _filePath;
-    DWORD _filePathLength;
-    CPinCommandsParameters(const char* f, DWORD l) : _filePath(f), _filePathLength(l) {}
-    ~CPinCommandsParameters() {}
-};
-
 /*********************************/
 /**  ALGORITHME EXPANDEXECUTION **/
 /*********************************/
@@ -49,7 +40,9 @@ static size_t sendNonInvertedConstraints(const std::string &formula, UINT32 boun
     return (posEndOfLine); // position de la fin de la dernière contrainte dans la formule
 }
 
-static std::string invertConstraint(std::string constraint) // copie locale de la contrainte originale
+// renvoie l'inverse de la contrainte fournie en argument
+// la contrainte originale (argument fourni) reste inchangée
+static std::string invertConstraint(std::string constraint) 
 {
     size_t pos = constraint.find("true");
     
@@ -61,11 +54,6 @@ static std::string invertConstraint(std::string constraint) // copie locale de l
 
 static int sendArgumentsToPintool(const std::string &command)
 {
-    // 1) chemin vers l'entrée étudiée
-    // 2) nombre maximal de contraintes (TODO)
-    // 3) temps limite d'execution en secomdes (TODO)
-    // 4) offset des entrees à etudier (TODO)
-    
     DWORD commandLength = static_cast<DWORD>(command.size());
     DWORD cbWritten = 0;
 
@@ -79,11 +67,10 @@ static int sendArgumentsToPintool(const std::string &command)
     if (!fSuccess || cbWritten != commandLength)	
     {   
         std::cout << "erreur envoi arguments au Pintool" << std::endl;
-        return 1;   // erreur
+        return (EXIT_FAILURE);   // erreur
     }
-    else return 0;  // OK
+    else return (EXIT_SUCCESS);  // OK
 }
-
 
 static std::string callFuzzwin(CInput* pInput) 
 {
@@ -103,8 +90,7 @@ static std::string callFuzzwin(CInput* pInput)
         /***********************/
         /** CONNEXION AU PIPE **/
         /***********************/
-        BOOL fSuccess;
-        fSuccess = ConnectNamedPipe(pGlobals->hPintoolPipe, NULL);
+        BOOL fSuccess = ConnectNamedPipe(pGlobals->hPintoolPipe, NULL);
         if (!fSuccess && GetLastError() != ERROR_PIPE_CONNECTED) 
         {	
             std::cout << "erreur de connexion au pipe FuzzWin" << GetLastError() << std::endl;
@@ -116,14 +102,18 @@ static std::string callFuzzwin(CInput* pInput)
         /************************************/
 
         int resultOfSend;
+        // 0) Option ici = 'taint'
+        resultOfSend = sendArgumentsToPintool("taint");
         // 1) chemin vers l'entrée étudiée
         resultOfSend = sendArgumentsToPintool(pInput->getFilePath());
         // 2) nombre maximal de contraintes (TODO)
-        // 3) temps limite d'execution en secomdes (TODO)
-        std::string maxTime(std::to_string(pGlobals->maxExecutionTime));
-        resultOfSend = sendArgumentsToPintool(maxTime);
-        // 4) offset des entrees à etudier (TODO)
+        resultOfSend = sendArgumentsToPintool(std::to_string(pGlobals->maxConstraints));
+        // 3) temps limite d'execution en secomdes
+        resultOfSend = sendArgumentsToPintool(std::to_string(pGlobals->maxExecutionTime));
+        // 4) offset des entrees à etudier
         resultOfSend = sendArgumentsToPintool(pGlobals->bytesToTaint);
+        // 5) type d'OS hote
+        resultOfSend = sendArgumentsToPintool(std::to_string(pGlobals->osType));
 
         /********************************************************/
         /** ATTENTE DE L'ARRIVEE DES DONNEES DEPUIS LE PINTOOL **/
@@ -142,11 +132,11 @@ static std::string callFuzzwin(CInput* pInput)
                 &cbBytesRead,   // number of bytes read 
                 NULL);          // not overlapped 
  
-            if ( ! fSuccess && GetLastError() != ERROR_MORE_DATA )  break; 
+            if ( ! fSuccess && (GetLastError() != ERROR_MORE_DATA) )  break; 
             // ajout des données lues au resultat
             smtFormula.append(&buffer[0], cbBytesRead);
 
-         } while ( ! fSuccess);  // repetition si ERROR_MORE_DATA 
+        } while (!fSuccess);  // repetition si ERROR_MORE_DATA 
 
         // deconnexion du pipe
         DisconnectNamedPipe(pGlobals->hPintoolPipe);
@@ -154,7 +144,8 @@ static std::string callFuzzwin(CInput* pInput)
         // attente de la fermeture de l'application
         WaitForSingleObject(pi.hProcess, INFINITE);
         
-        // recupération du code de retour du pinttol (pour éventuel debug)
+        // recupération du code de retour du pintool
+        // (NON ENCORE IMPLEMENTE)
         DWORD exitCode = 0;
         GetExitCodeProcess(pi.hProcess, &exitCode);
 
@@ -175,7 +166,7 @@ static std::string callFuzzwin(CInput* pInput)
     }	
     else // si erreur de CreateProcess
     {
-        VERBOSE(std::cout << "erreur process FuzzWin" << GetLastError() << std::endl;)
+        if (pGlobals->verbose) std::cout << "erreur process FuzzWin" << GetLastError() << std::endl;
     }
     
     return (smtFormula); // retour de la formule SMT2
@@ -186,27 +177,31 @@ ListOfInputs expandExecution(CInput *pInput, HashTable &h, UINT32 *nbFautes)
     ListOfInputs result;	                // liste de nouveaux objets de type CInput générées
     UINT32	bound = pInput->getBound();     // bound du fichier actuellement étudié
     size_t pos = 0, posLastConstraint = 0;  // indexs de position dans une chaine de caractères
-    std::string inputContent;               // contenu du fichier étudié
+    
+    std::string formula;                // formule fournie en sortie par le pintool
+    std::string inputContent;           // contenu du fichier étudié
     std::string	constraintJ;	        // partie de formule associée à la contrainte J
     std::string constraintJ_inverted;   // la même contrainte, inversée
-    std::string formula;            // formule fournie par le pintool lors de l'exécution du fichier 'pInput'
-    static HashValue   fileHash;    // structure pour calculer le hash d'un fichier
 
     /********************************************************/
     /** Execution du pintool et récupération de la formule **/
     /********************************************************/
     formula = callFuzzwin(pInput);
-    if (formula.size() == 0) return result; // aucune formule ou erreur
+    if (formula.empty())
+    {
+        if (pGlobals->verbose)  std::cout << "\tAucune formule recue du pintool !!\n";
+        return result; // aucune formule ou erreur
+    }
 
     // récupération du nombre de contraintes dans la formule
     pos = formula.find_last_of('@');
-    if (pos == std::string::npos) return result;
+    if (std::string::npos == pos) return result;
     UINT32 nbContraintes = std::stoi(formula.substr(pos + 1));
 
     // si le "bound" est supérieur aux nombre de contraintes => aucune nouvelle entrée, retour
     if (bound >= nbContraintes) 	
     {
-        std::cout << "\tPas de nouvelles contraintes inversibles" << std::endl;
+        if (pGlobals->verbose)  std::cout << "\tPas de nouvelles contraintes inversibles\n";
         return result;
     }
     
@@ -224,7 +219,7 @@ ListOfInputs expandExecution(CInput *pInput, HashTable &h, UINT32 *nbFautes)
     // => boucle sur les contraintes de "bound + 1" à "nbContraintes" inversées et resolues successivement
     for (UINT32 j = bound + 1 ; j <= nbContraintes ; ++j) 
     {	
-        VERBOSE(std::cout << "\tinversion contrainte " << j);
+        if (pGlobals->verbose)   std::cout << "\tinversion contrainte " << j;
             
         // recherche de la prochaine contrainte dans la formule, à partir de la position de la précédente contrainte 
         pos = formula.find("(assert (=", posLastConstraint);          
@@ -253,7 +248,8 @@ ListOfInputs expandExecution(CInput *pInput, HashTable &h, UINT32 *nbFautes)
             solutions = getModelFromSolver();
                 
             // modification des octets concernés dans le contenu du nouveau fichier
-            std::sregex_token_iterator it (solutions.begin(), solutions.end(), pGlobals->regexModel, pGlobals->tokens);
+            int tokens[2] = {1, 2};
+            std::sregex_token_iterator it (solutions.begin(), solutions.end(), pGlobals->regexModel, tokens);
             std::sregex_token_iterator end;
             while (it != end) 
             {
@@ -264,7 +260,7 @@ ListOfInputs expandExecution(CInput *pInput, HashTable &h, UINT32 *nbFautes)
 
             // calcul du hash du nouveau contenu et insertion dans la table de hachage. 
             // Si duplicat (retour 'false'), ne pas créer le fichier
-            auto insertResult = h.insert(fileHash(newInputContent));
+            auto insertResult = h.insert(pGlobals->fileHash(newInputContent));
             if (insertResult.second != false)
             {
                 // fabrication du nouvel objet "fils" à partir du père
@@ -275,23 +271,33 @@ ListOfInputs expandExecution(CInput *pInput, HashTable &h, UINT32 *nbFautes)
                 newFile.write(newInputContent.c_str(), newInputContent.size());
                 newFile.close();
 
-                VERBOSE(std::cout << "-> nouveau fichier " << newChild->getFileName() << std::endl);
+                if (pGlobals->verbose)
+                {
+                    std::cout << "-> nouveau fichier " << newChild->getFileName();
+                }
 
                 // test du fichier de suite; si retour nul le fichier est valide, donc l'insérer dans la liste
                 DWORD checkError = debugTarget(newChild);
                 if (!checkError) result.push_back(newChild);
                 else ++*nbFautes;
 
-            }	// fin de la boucle de test sur le hash du contenu
-            else 	VERBOSE(std::cout << "-> deja genere\n");
-        } // end "hasSolution"
-        else VERBOSE(std::cout << " : aucune solution\n");   
+            }	
+            else // le fichier a déjà été généré (hash présent ou ... collision)
+            {
+                if (pGlobals->verbose) std::cout << "-> deja généré\n";
+            }
+        }
+        else // pas de solution trouvée par le solveur
+        {
+           if (pGlobals->verbose)  std::cout << " : aucune solution\n";   
+        }
        
         // enlever la contrainte inversée de la pile du solveur, et remettre l'originale
-        sendToSolver("(pop 1)\n" + constraintJ);
+        sendToSolver("(pop 1)\n" + constraintJ + '\n');
     } // end for
        
-    // effacement de toutes les formules pour laisser une pile vierge pour le prochain fichier
+    // effacement de toutes les formules pour laisser une pile vierge
+    // pour le prochain fichier d'entrée qui sera testé
     sendToSolver("(reset)\n");
 
     return (result);
