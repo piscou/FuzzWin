@@ -114,15 +114,15 @@ void INSTRUMENTATION::Instruction(INS ins, void* )
     case XED_ICLASS_TEST: LOGICAL::cTEST(ins); break;
 
     // PUSH:
-    case XED_ICLASS_PUSH:   PUSH::cPUSH(ins);  break;
-    #if TARGET_IA32
-    case XED_ICLASS_PUSHA:  PUSH::cPUSHA(ins); break;
-    case XED_ICLASS_PUSHAD: PUSH::cPUSHAD(ins); break;
-    #endif
-    //case XED_ICLASS_PUSHF:    PUSH::PUSHF(ins);  break;
-    //case XED_ICLASS_PUSHFD:   PUSH::PUSHFD(ins);  break;
-    //case XED_ICLASS_PUSHFQ:   PUSH::PUSHFQ(ins);  break;
-       
+    case XED_ICLASS_PUSH:   PUSH::cPUSH(ins);     break;
+    case XED_ICLASS_PUSHF:  PUSH::cPUSHF(ins, 2); break;
+    case XED_ICLASS_PUSHFD: PUSH::cPUSHF(ins, 4); break;
+#if TARGET_IA32
+    case XED_ICLASS_PUSHA:  PUSH::cPUSHA(ins);    break;
+    case XED_ICLASS_PUSHAD: PUSH::cPUSHAD(ins);   break;
+    case XED_ICLASS_PUSHFQ: PUSH::cPUSHF(ins, 8); break;
+#endif
+     
     // POP:  
     case XED_ICLASS_POP:   POP::cPOP(ins);   break;
     #if TARGET_IA32

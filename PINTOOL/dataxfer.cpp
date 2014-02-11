@@ -430,7 +430,7 @@ void DATAXFER::cMOVZX(INS &ins)
     {	
         // identifiant du registre source
         REG regSrc = INS_OperandReg(ins, 1);
-        // taille du regsitre source
+        // taille du registre source
         UINT32 readSize = getRegSize(regSrc);
 
         // si le registre source est sur 8bits, appel du template spécifique sMOVZX_8R

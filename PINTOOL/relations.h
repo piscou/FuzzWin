@@ -11,11 +11,11 @@ enum Relation
     //! EXTRACT : Source 1 = source, Source 2 = index d'extraction (valeur 8bits)
     EXTRACT,
     //! CONCAT : concaténation des sources (longueurs différentes acceptées)
-    // 1ere source = poids fort, dernière source : poids faible
+    // 1ere source = poids faible, dernière source : poids fort
     CONCAT,
 
     /********************************************************/
-    /**** Relations de modelisation des instructions x86 ****/
+    /**** Relations de modélisation des instructions x86 ****/
     /********************************************************/
     
     /** DATAXFER **/

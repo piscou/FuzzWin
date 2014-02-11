@@ -12,16 +12,19 @@ void PUSH::cPUSH(INS &ins)
     if (INS_OperandIsReg(ins, 0)) // mise d'un registre sur la pile
     {     
         REG reg = INS_OperandReg(ins, 0);
+        
+        // cas particulier du PUSH E/RSP traité à part
+        bool isStackReg = ((REG_SP == reg) | (REG_STACK_PTR == reg));
+
         switch (getRegSize(reg)) 
         {
-            
             // case 1:  impossible
-            case 2: callback = (AFUNPTR) sPUSH_R<16>;   break;
-            case 4: callback = (AFUNPTR) sPUSH_R<32>;   break;
+            case 2: callback = (AFUNPTR) ((isStackReg) ? sPUSH_R_STACK<16> : sPUSH_R<16>) ; break;
+            case 4: callback = (AFUNPTR) ((isStackReg) ? sPUSH_R_STACK<32> : sPUSH_R<32>) ; break;
             #if TARGET_IA32E
-            case 8: callback = (AFUNPTR) sPUSH_R<64>;   break;
+            case 8: callback = (AFUNPTR) (isStackReg ? sPUSH_R_STACK<64> : sPUSH_R<64>) ; break;
             #endif
-            default: return; // registre non suivi en marquage
+           // default: return; // registre non suivi en marquage
         }
         INS_InsertCall (ins, IPOINT_BEFORE, callback,  
             IARG_THREAD_ID,
@@ -68,6 +71,26 @@ void PUSH::cPUSH(INS &ins)
     }
 } // cPUSH
 
+void PUSH::cPUSHF(INS &ins, UINT32 size)
+{  
+    void (*callback)(); // pointeur sur la fonction à appeler
+    switch (size)
+    {
+        case 2: callback = (AFUNPTR) sPUSHF<16>; break;
+        case 4: callback = (AFUNPTR) sPUSHF<32>; break;
+        case 8: callback = (AFUNPTR) sPUSHF<64>; break;
+        default: return;
+    }
+
+    // mise sur la pile de (E/R)FLAGS, selon la taille
+    INS_InsertCall (ins, IPOINT_BEFORE, callback,
+        IARG_THREAD_ID,
+        IARG_REG_VALUE, REG_GFLAGS,     // valeur des flags 
+        IARG_REG_VALUE, REG_STACK_PTR,  // valeur d'ESP avant le PUSH
+        CALLBACK_DEBUG IARG_END);
+} // cPUSHF
+
+// SIMULATE
 #if TARGET_IA32 // PUSHA et PUSHAD valables uniquement en 32bits
 void PUSH::cPUSHA(INS &ins)
 {  
@@ -179,17 +202,3 @@ void PUSH::sPUSHAD(THREADID tid, ADDRINT stackAddressBeforePush ADDRESS_DEBUG)
     }
 } // sPUSHAD
 #endif
-
-void PUSH::cPUSHF(INS &ins)
-{  
-    INS_InsertCall (ins, IPOINT_BEFORE, (AFUNPTR) sPUSHF,
-        IARG_THREAD_ID,
-        IARG_REG_VALUE, REG_STACK_PTR,          // valeur d'ESP à ce moment là
-        CALLBACK_DEBUG IARG_END);
-} // cPUSHF
-
-void PUSH::sPUSHF(THREADID tid, ADDRINT espAddress ADDRESS_DEBUG) 
-{  
-    // Eflags mis sur la pile (on ne s'intéresse qu'aux bits 0 à 15)
-
-}

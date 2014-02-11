@@ -13,7 +13,7 @@
 //! elle insère un "InsertPredicatedCall", appelant un MOVMR ou RR si
 //! le predicat est vrai (simulation exacte du comportement de CMOV)
 //!
-//! Pas la peine de tester le marquage du regsitre source en amont
+//! Pas la peine de tester le marquage du registre source en amont
 //! seul importe la valeur du predicat
 void CMOV::cIfPredicated_CMOVcc(INS &ins) 
 {
