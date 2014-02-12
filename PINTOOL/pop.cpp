@@ -1,6 +1,5 @@
 #include "POP.h"
 #include "DATAXFER.h" // POP_R
-#include "TaintManager.h"
 
 /////////
 // POP //
@@ -26,7 +25,7 @@ void POP::cPOP(INS &ins)
 
         INS_InsertCall (ins, IPOINT_BEFORE, callback,
             IARG_THREAD_ID,
-            IARG_UINT32,    reg,  // registre destination
+            IARG_UINT32,    reg,            // registre destination
             IARG_REG_VALUE, REG_STACK_PTR,  // valeur d'(E/RS)P à ce moment là
             CALLBACK_DEBUG IARG_END);
     }
@@ -44,7 +43,6 @@ void POP::cPOP(INS &ins)
             default: return;
         }
 
-        // l'un des rares callback ou on n'a pas besoin d'identifier le thread
         INS_InsertCall (ins, IPOINT_BEFORE, callback,
             IARG_THREAD_ID,
             IARG_MEMORYWRITE_EA,            // adresse réelle de lecture
@@ -53,11 +51,21 @@ void POP::cPOP(INS &ins)
     }
 } // cPOP
 
-void POP::cPOPF(INS &ins)
+void POP::cPOPF(INS &ins, UINT32 size)
 {  
-    INS_InsertCall (ins, IPOINT_BEFORE, (AFUNPTR) sPOPF,  
+    void (*callback)(); // pointeur sur la fonction à appeler
+    switch (size)
+    {
+        case 2: callback = (AFUNPTR) sPOPF<16>; break;
+        case 4: callback = (AFUNPTR) sPOPF<32>; break;
+        case 8: callback = (AFUNPTR) sPOPF<64>; break;
+        default: return;
+    }
+
+    // mise sur la pile de (E/R)FLAGS, selon la taille
+    INS_InsertCall (ins, IPOINT_BEFORE, callback,
         IARG_THREAD_ID,
-        IARG_REG_VALUE, REG_STACK_PTR,          // valeur d'ESP à ce moment là
+        IARG_REG_VALUE, REG_STACK_PTR,  // valeur d'ESP avant le POP
         CALLBACK_DEBUG IARG_END);
 }
 
@@ -80,7 +88,7 @@ void POP::cPOPAD(INS &ins)
 
 void POP::sPOPA(THREADID tid, ADDRINT spAddress ADDRESS_DEBUG) 
 {
-    // désempilage dans l'ordre DI, SI, BP, SP(ignoré doncSP += 2), BX, DX, CX, et AX
+    // désempilage dans l'ordre DI, SI, BP, SP (ignoré donc SP += 2), BX, DX, CX, et AX
     // du point de vue marquage, equivalent à un MOVMR sp, reg
     REG regsToPop[8] = {REG_DI, REG_SI, REG_BP, REG_SP, REG_BX, REG_DX, REG_CX, REG_AX};
 
@@ -89,17 +97,16 @@ void POP::sPOPA(THREADID tid, ADDRINT spAddress ADDRESS_DEBUG)
         REG reg = regsToPop[tabIndex];
         
         // SP est ignoré
-        if (reg == REG_SP) continue;
+        if (REG_SP == reg) continue;
 
         // simulation du POP vers le registre
         DATAXFER::sMOV_MR<16>(tid, spAddress, reg INSADDRESS); 
     }
-
-}
+} // sPOPA
 
 void POP::sPOPAD(THREADID tid, ADDRINT espAddress ADDRESS_DEBUG) 
 {
-    // désempilage dans l'ordre EDI, ESI, EBP, ESP(ignoré donc SP += 4), EBX, EDX, ECX, et EAX
+    // désempilage dans l'ordre EDI, ESI, EBP, ESP (ignoré donc SP += 4), EBX, EDX, ECX, et EAX
     // du point de vue marquage, equivalent à un MOVMR esp, reg
     REG regsToPop[8] = {REG_EDI, REG_ESI, REG_EBP, REG_ESP, REG_EBX, REG_EDX, REG_ECX, REG_EAX};
 
@@ -108,17 +115,10 @@ void POP::sPOPAD(THREADID tid, ADDRINT espAddress ADDRESS_DEBUG)
         REG reg = regsToPop[tabIndex];
         
         // ESP est ignoré
-        if (reg == REG_ESP) continue;
+        if (REG_ESP == reg) continue;
 
         // simulation du POP vers le registre
         DATAXFER::sMOV_MR<32>(tid, espAddress, reg INSADDRESS); 
     }
-
-}
+} // sPOPAD
 #endif
-
-void POP::sPOPF(THREADID tid, ADDRINT espAddress ADDRESS_DEBUG) 
-{
-    // 
-
-}

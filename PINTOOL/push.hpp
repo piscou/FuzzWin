@@ -1,4 +1,4 @@
-
+// déclaration des templates du namespace PUSH
 
 template<UINT32 len> void PUSH::sUpdateEspTaint(TaintManager_Thread *pTmgrTls, ADDRINT stackAddressBeforePush)
 {
@@ -14,7 +14,7 @@ template<UINT32 len> void PUSH::sUpdateEspTaint(TaintManager_Thread *pTmgrTls, A
 #else
     if (pTmgrTls->isRegisterTainted<64>(REG_RSP))
     {
-        // nouvel objet = ESP - (longueur pushée)
+        // nouvel objet = RSP - (longueur pushée)
         pTmgrTls->updateTaintRegister<64>(REG_RSP, std::make_shared<TaintQword>(X_SUB, 
             ObjectSource(pTmgrTls->getRegisterTaint<64>(REG_ESP, stackAddressBeforePush)),
             ObjectSource(64, len >> 3)));
@@ -22,12 +22,13 @@ template<UINT32 len> void PUSH::sUpdateEspTaint(TaintManager_Thread *pTmgrTls, A
 #endif
 }
 
-template<UINT32 len> void PUSH::sPUSH_M(THREADID tid, ADDRINT readAddress, ADDRINT stackAddressBeforePush ADDRESS_DEBUG) 
+template<UINT32 len> 
+void PUSH::sPUSH_M(THREADID tid, ADDRINT readAddress, ADDRINT stackAddressBeforePush ADDRESS_DEBUG) 
 {   
     TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
 
     // ajustement du marquage d'ESP si besoin
-    sUpdateEspTaint<len>(pTmgrTls, stackAddressBeforePush);
+    PUSH::sUpdateEspTaint<len>(pTmgrTls, stackAddressBeforePush);
 
     // adresse d'écriture sur la pile (on décrémente avant de "pusher")
     ADDRINT espAddress = stackAddressBeforePush - (len >> 3); 
@@ -45,7 +46,7 @@ template<UINT32 len> void PUSH::sPUSH_M(THREADID tid, ADDRINT readAddress, ADDRI
                     X_ASSIGN,
                     ObjectSource(pTmgrGlobal->getMemoryTaint<8>(readAddress))));    
             }
-            else    pTmgrGlobal->unTaintMemory<8>(espAddress);    // sinon démarquage
+            else  pTmgrGlobal->unTaintMemory<8>(espAddress);    // sinon démarquage
             ++readAddress;
         } while (++espAddress < stackAddressBeforePush); 
     }
@@ -56,7 +57,7 @@ template<UINT32 len> void PUSH::sPUSH_R(THREADID tid, REG reg, ADDRINT stackAddr
     TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));    
     
     // ajustement du marquage d'ESP si besoin
-    sUpdateEspTaint<len>(pTmgrTls, stackAddressBeforePush);
+    PUSH::sUpdateEspTaint<len>(pTmgrTls, stackAddressBeforePush);
     
     // adresse d'écriture sur la pile (on décrémente avant de "pusher")
     ADDRINT espAddress = stackAddressBeforePush - (len >> 3); 
@@ -118,7 +119,7 @@ template<UINT32 len> void PUSH::sPUSH_I(THREADID tid, ADDRINT stackAddressBefore
     TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));    
    
     // ajustement du marquage du REGISTRE ESP/RSP, dans le cas où il est marqué
-    sUpdateEspTaint<len>(pTmgrTls, stackAddressBeforePush);
+    PUSH::sUpdateEspTaint<len>(pTmgrTls, stackAddressBeforePush);
 
     // PUSH valeur => démarquage
     pTmgrGlobal->unTaintMemory<len>(stackAddressBeforePush - (len >> 3));
@@ -130,7 +131,8 @@ void PUSH::sPUSHF(THREADID tid, ADDRINT regFlagsValue, ADDRINT stackAddressBefor
     // len == 16 <-> PUSHF, len == 32 <-> PUSHFD, len == 64 <-> PUSHFQ
     TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));    
      
-    // correction du marquage du registre ESP/RSP, si celui-ci est marqué
+    // ajustement du marquage du REGISTRE ESP/RSP, dans le cas où il est marqué
+    PUSH::sUpdateEspTaint<len>(pTmgrTls, stackAddressBeforePush);
 
     // mise sur la pile du registre des flags
     // dans le cadre du marquage, on va construire un TaintWord formé par la concaténation
@@ -164,4 +166,3 @@ void PUSH::sPUSHF(THREADID tid, ADDRINT regFlagsValue, ADDRINT stackAddressBefor
     while (startAddress < stackAddressBeforePush)   pTmgrGlobal->unTaintMemory<8>(startAddress++);
 
 } // sPUSHF
-

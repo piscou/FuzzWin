@@ -81,7 +81,7 @@ public:
             // séparation par virgules, pas d'espaces entre chiffres (sinon fait planter le parsing de argv)
             // syntaxe de la regex: ,(présent ou non)'nb'-(présent ou non)'nb'
             const std::regex bytesModel(",?(\\d+)-?([0-9]+)?", std::regex::ECMAScript); 
-            int tokens[2]={1,2};
+            int tokens[2] = {1,2};
             
             // itérateur de type string sur chaque groupe d'octets qui matche
             std::sregex_token_iterator it(bytesString.begin(), bytesString.end(), bytesModel, tokens);
@@ -153,7 +153,7 @@ public:
     /******************************/
 
     // renvoie un objet représentant le marquage de la plage d'adresses
-    template<UINT32 len> shared_ptr<TaintObject<len>> getMemoryTaint(ADDRINT address) const
+    template<UINT32 len> std::shared_ptr<TaintObject<len>> getMemoryTaint(ADDRINT address) const
     { 
         static_assert((len % 8 == 0), "taille non multiple de 8 bits");
         TaintObject<len> result(CONCAT);
@@ -440,7 +440,7 @@ public:
     // renvoie un objet représentant le marquage d'un registre 
     // template entièrement spécialisé pour prendre en compte
     // les registres 8/16/32/64bits "entiers"
-    template<UINT32 len> shared_ptr<TaintObject<len>> getRegisterTaint(REG reg, ADDRINT regValue) 
+    template<UINT32 len> std::shared_ptr<TaintObject<len>> getRegisterTaint(REG reg, ADDRINT regValue) 
     {
         static_assert((len % 8 == 0), "registre non multiple de 8 bits");
     }
@@ -610,7 +610,8 @@ public:
 
     // mise à jour du marquage du registre avec l'objet fourni
     // spécialisation complete du template pour marquer les registres "entiers"
-    template<UINT32 len> void updateTaintRegister(REG reg, const shared_ptr<TaintObject<len>> &tPtr)
+    template<UINT32 len> 
+    void updateTaintRegister(REG reg, const std::shared_ptr<TaintObject<len>> &tPtr)
     {  static_assert((len % 8 == 0), "registre non valide");  }
 
     // cas 8bits

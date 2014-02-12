@@ -8,7 +8,6 @@
 void PUSH::cPUSH(INS &ins)
 {
     void (*callback)() = nullptr;
-
     if (INS_OperandIsReg(ins, 0)) // mise d'un registre sur la pile
     {     
         REG reg = INS_OperandReg(ins, 0);

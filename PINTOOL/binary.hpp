@@ -211,7 +211,7 @@ void BINARY::sADD_MR(THREADID tid, ADDRINT readAddress, REG regSrcDest, ADDRINT 
             ? ObjectSource(pTmgrGlobal->getMemoryTaint<len>(readAddress))
             : ObjectSource(len, getMemoryValue<len>(readAddress));
 
-        shared_ptr<TaintObject<len>> resultPtr = std::make_shared<TaintObject<len>>(
+        std::shared_ptr<TaintObject<len>> resultPtr = std::make_shared<TaintObject<len>>(
             X_ADD,
             objSrcDest,
             objSrc);
@@ -358,7 +358,7 @@ void BINARY::sSUB_MR(THREADID tid, ADDRINT readAddress, REG regSrcDest, ADDRINT 
             ? ObjectSource(pTmgrGlobal->getMemoryTaint<len>(readAddress))
             : ObjectSource(len, getMemoryValue<len>(readAddress));
 
-        shared_ptr<TaintObject<len>> resultPtr = std::make_shared<TaintObject<len>>(
+        std::shared_ptr<TaintObject<len>> resultPtr = std::make_shared<TaintObject<len>>(
             X_SUB,
             objSrcDest,
             objSrc);

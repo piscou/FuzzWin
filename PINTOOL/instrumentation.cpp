@@ -120,19 +120,21 @@ void INSTRUMENTATION::Instruction(INS ins, void* )
 #if TARGET_IA32
     case XED_ICLASS_PUSHA:  PUSH::cPUSHA(ins);    break;
     case XED_ICLASS_PUSHAD: PUSH::cPUSHAD(ins);   break;
+#else
     case XED_ICLASS_PUSHFQ: PUSH::cPUSHF(ins, 8); break;
 #endif
      
     // POP:  
-    case XED_ICLASS_POP:   POP::cPOP(ins);   break;
-    #if TARGET_IA32
-    case XED_ICLASS_POPA:  POP::cPOPA(ins);  break;
-    case XED_ICLASS_POPAD: POP::cPOPAD(ins); break;
-    #endif
-    //case XED_ICLASS_POPF:    POP::POPF(ins);  break;
-    //case XED_ICLASS_POPFD:   POP::POPFD(ins); break;
-    //case XED_ICLASS_POPFQ:   POP::POPFQ(ins); break;
-        
+    case XED_ICLASS_POP:   POP::cPOP(ins);     break;
+    case XED_ICLASS_POPF:  POP::cPOPF(ins, 2); break;
+    case XED_ICLASS_POPFD: POP::cPOPF(ins, 4); break;
+#if TARGET_IA32
+    case XED_ICLASS_POPA:  POP::cPOPA(ins);    break;
+    case XED_ICLASS_POPAD: POP::cPOPAD(ins);   break;
+#else
+    case XED_ICLASS_POPFQ: POP::cPOPF(ins, 8); break;
+#endif
+
     // MISC: LEA, LEAVE (RET Far considéré niveau marquage comme ret)
     case XED_ICLASS_LEA:    MISC::cLEA(ins);      break;
     case XED_ICLASS_LEAVE:  MISC::cLEAVE(ins);    break;
