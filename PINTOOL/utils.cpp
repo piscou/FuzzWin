@@ -56,6 +56,42 @@ void UTILS::cUNHANDLED(INS &ins)
     } 
 } // cUNHANDLED
 
+/************************/
+/** ADRESSAGE INDIRECT **/
+/************************/
+
+// renvoie le type d'adressage indirect utilisé par l'instruction
+KIND_OF_EFFECTIVE_ADDRESS UTILS::getKindOfEA(const INS &ins)
+{
+    bool hasBaseReg  = (INS_MemoryBaseReg(ins) != REG_INVALID());  // Registre de base (ou REG_INVALID)
+    bool hasIndexReg = (INS_MemoryIndexReg(ins) != REG_INVALID()); // Registre d'index (ou REG_INVALID)
+    bool hasDispl    = (INS_MemoryDisplacement(ins) != 0);         // déplacement 
+    UINT32 hasScale  = (INS_MemoryScale(ins) != 1);         // scale (considéré si différent de 1)
+
+    // construction d'un masque : cela évite les multiples IF...ELSE
+    // ici un seul switch/case suffira pour définir le type d'EA
+    // BASE : INDEX : SCALE : DISPL
+    UINT32 mask = (hasBaseReg << 3) + (hasIndexReg << 2) + (hasScale << 1) + hasDispl; 
+    
+    KIND_OF_EFFECTIVE_ADDRESS result;
+
+    switch (mask)
+    {
+    case 15: result = EA_BASE_INDEX_SCALE_DISPL; break; // 0b1111 => |BISD|
+    case 14: result = EA_BASE_INDEX_SCALE;       break; // 0b1110 => |BIS |
+    case 13: result = EA_BASE_INDEX_DISPL;       break; // 0b1101 => |BI D|
+    case 12: result = EA_BASE_INDEX;             break; // 0b1100 => |BI  |
+    case 9:  result = EA_BASE_DISPL;             break; // 0b1001 => |B  D|
+    case 8:  result = EA_BASE;                   break; // 0b1000 => |B   |
+    case 7:  result = EA_INDEX_SCALE_DISPL;      break; // 0b0111 => | ISD|
+    case 6:  result = EA_INDEX_SCALE;            break; // 0b0110 => | IS |        
+    default: result = EA_IMMEDIATE;              break;
+    }
+
+    return (result);   
+} // getKindOfEA
+
+
 /*****************************************************************************/
 /** UTILITAIRE DE CREATION DE L'OBJET CORRESPONDANT A UN ADRESSAGE INDIRECT **/
 /*****************************************************************************/
@@ -66,7 +102,7 @@ void UTILS::cUNHANDLED(INS &ins)
 
 // elles font partie des fonctions d'analyse (appelées par un callback)
 // avec une priorité haute (1er callback appelé pour une instruction)
-// lorsque l'isntruction accède à la mémoire, en lecture ou écriture
+// lorsque l'instruction accède à la mémoire, en lecture ou écriture
 
 // Chaque fonction va vérifier si la valeur de l'adresse calculée est marquée
 // (NB : on teste la valeur de l'adresse, pas la valeur pointée par l'adresse !!)

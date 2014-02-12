@@ -7,7 +7,7 @@
 // CALLBACKS
 void MISC::cLEA(INS &ins) 
 {
-    REG regDest =  INS_RegW(ins, 0);            // registre de destination
+    REG regDest = INS_RegW(ins, 0);            // registre de destination
     UINT32 regDestSize = getRegSize(regDest);   // taille du registre dest ("OperandSize") 
     if (!regDestSize) return;                   // registre destination non géré
 
@@ -17,7 +17,7 @@ void MISC::cLEA(INS &ins)
     void (*callback)() = nullptr;                     // pointeur sur la fonction a appeler
 
     // afin d'optimiser les arguments passés aux fonctions d'analyse, 3 cas sont distingués
-    // Base mais pas d'Index (seul => CAS B ou MOV ou MOVZX,  ou avec déplacement => CAS BD) 
+    // Base mais pas d'Index (seul => CAS B ou MOV ou MOVZX, ou avec déplacement => CAS BD) 
     // Index mais pas de Base : LEA_ISD avec déplacement nul ou non et scale nul ou non
     // Index et BAse : LEA_BISD avec déplacement nul ou non et scale nul ou non
 

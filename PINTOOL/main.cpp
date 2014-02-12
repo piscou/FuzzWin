@@ -64,7 +64,7 @@ PIN_LOCK            g_lock;
 
 // handle du pipe de communication avec l'extérieur
 // en MODE DEBUG : correspond à STDOUT
-HANDLE     g_hPipe;     
+HANDLE              g_hPipe;     
 
 // variable déterminant l'instrumentation ou non des instructions
 bool                g_beginInstrumentationOfInstructions; 

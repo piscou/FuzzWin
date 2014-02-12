@@ -6,6 +6,9 @@ namespace UTILS
 // Callbacks pour les instructions non gérées => démarquage destination(s)
 void cUNHANDLED(INS &ins);
 
+// renvoie le type d'adressage indirect utilisé par l'instruction
+KIND_OF_EFFECTIVE_ADDRESS getKindOfEA(const INS &ins);
+
 // démarquage rapide registre par callback 
 template<UINT32 len> void PIN_FAST_ANALYSIS_CALL uREG(THREADID tid, REG reg)
 {  

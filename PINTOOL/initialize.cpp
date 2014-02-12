@@ -83,7 +83,7 @@ static int initOptionTaint()
     g_maxTime        = KnobMaxExecutionTime.Value();
     g_maxConstraints = KnobMaxConstraints.Value();
     bytesToTaint     = KnobBytesToTaint.Value(); 
-    g_osType         = static_cast<OS_TYPE>(KnobOsType.Value());
+    g_osType         = static_cast<OSTYPE>(KnobOsType.Value());
 
     // 2) création des fichiers de déssasemblage et de suivi du marquage
     std::string logfile  (g_inputFile + "_dis.txt");

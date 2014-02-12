@@ -96,6 +96,7 @@ extern KNOB<std::string> KnobInputFile;
 extern KNOB<UINT32>      KnobMaxExecutionTime;
 extern KNOB<std::string> KnobBytesToTaint;
 extern KNOB<UINT32>      KnobMaxConstraints;
+extern KNOB<UINT32>      KnobOsType;
 extern KNOB<std::string> KnobOption;
 
 extern std::ofstream g_debug; // fichier de log du desassemblage

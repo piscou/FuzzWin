@@ -136,6 +136,9 @@
     <ClInclude Include="enumOsType.h">
       <Filter>Fichiers d%27en-tête</Filter>
     </ClInclude>
+    <ClInclude Include="utils.hpp">
+      <Filter>Fichiers Templates %28hpp%29</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="instrumentation.cpp">

@@ -20,6 +20,22 @@ enum FLAGS_INDEX
     OVERFLOW_FLAG   = 11,   /*!< Overflow Flag */
 };
 
+// type d'adressage indirect utilisé dans une instruction
+// sert a déterminer les arguments passés aux fonctions d'analyse
+enum KIND_OF_EFFECTIVE_ADDRESS
+{
+    EA_IMMEDIATE,         /*!< cas ou l'adresse est juste une valeur : peu interessant */
+    EA_BASE,              /*!< base, sans index ni déplacement    */
+    EA_BASE_DISPL,        /*!< base, sans index, déplacement non nul  */
+    // les cas INDEX et INDEX_DISPL sont impossibles (dans ce cas c'est un registre de base)
+    EA_INDEX_SCALE,       /*!< index, scale != 1, sans base ni déplacement */
+    EA_INDEX_SCALE_DISPL, /*!< index, scale != 1, sans base, déplacement non nul */
+    EA_BASE_INDEX,        /*!< base, index, pas de scale ni déplacement */
+    EA_BASE_INDEX_DISPL,  /*!< base, index, pas de scale, déplacement non nul */
+    EA_BASE_INDEX_SCALE,  /*!< base, index, scale != 1, pas de scale ni déplacement */
+    EA_BASE_INDEX_SCALE_DISPL,  /*!< base, index, scale != 1, déplacement non nul */
+};
+
 // extraction de l'octet n° "index" de la valeur "value"
 static inline UINT32 EXTRACTBYTE(ADDRINT value, UINT32 index) 
 {
@@ -338,7 +354,8 @@ private:
     // Stockage des informations récurrentes lors des opérations de chaines ("STRINGOP")
     StringOpInfo _strInfo; 
 
-    // stockage de l'objet permettant de calculer une addresse effective (taille selon architecture)
+    // stockage de l'objet permettant de calculer une addresse effective 
+    // (taille selon architecture)
 #if TARGET_IA32
     TaintDwordPtr _effectiveAddressPtr; // 32bits
 #else
