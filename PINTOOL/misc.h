@@ -11,22 +11,8 @@ void cLEA(INS &ins);
 void cLEAVE(INS &ins);
 
 // SIMULATE 
-template<UINT32 lenEA, UINT32 lenDest> void sLEA_BD
-    (THREADID tid, REG regDest, REG baseReg, ADDRINT baseRegValue, INT32 displ ADDRESS_DEBUG);
+template< UINT32 lenDest, UINT32 lenEA> void sLEA(THREADID tid, REG regDest ADDRESS_DEBUG);
 
-template<UINT32 lenEA, UINT32 lenDest> void sLEA_ISD
-    (THREADID tid, REG regDest, REG indexReg, ADDRINT indexRegValue, UINT32 scale, INT32 displ ADDRESS_DEBUG);
-
-template<UINT32 lenEA, UINT32 lenDest> void sLEA_BISD
-    (THREADID tid, REG regDest, REG baseReg, ADDRINT baseRegValue, REG indexReg, ADDRINT indexRegValue, 
-    UINT32 scale, INT32 displ ADDRESS_DEBUG);
-
-// marquage de la destination, dépendant des longueurs source et destination
-#if TARGET_IA32
-void taintLEA(TaintManager_Thread *pTmgrTls, REG regDest, UINT32 lenEA, UINT32 lenDest, const TaintDwordPtr &tPtr);
-#else
-void taintLEA(TaintManager_Thread *pTmgrTls, REG regDest, UINT32 lenEA, UINT32 lenDest, const TaintQwordPtr &tPtr);
-#endif
 } // namespace MISC
 
 #include "misc.hpp"

@@ -375,6 +375,7 @@ public:
     // récupération de l'objet mis en cache
     TaintDwordPtr getTaintEffectiveAddress()
     { return (this->_effectiveAddressPtr); }
+
 #else
     // mise en cache d'un objet calculant une addresse effective (64bits)
     void storeTaintEffectiveAddress(TaintQwordPtr tqwPtr)
@@ -383,7 +384,12 @@ public:
     // récupération de l'objet mis en cache
     TaintQwordPtr getTaintEffectiveAddress()
     { return (this->_effectiveAddressPtr); }
+
 #endif
+
+    // test si un objet a été mis en cache
+    bool isEffectiveAddressTainted() const
+    { return (this->_effectiveAddressPtr != nullptr); }
 
     // spécifie que la valeur de l'adresse effective n'est pas marquée
     // fonction appelée systématiquement après le traitement de l'instruction
