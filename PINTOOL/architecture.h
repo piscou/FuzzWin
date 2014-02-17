@@ -7,14 +7,16 @@
 
 namespace ARCHITECTURE
 {
-
+/******************************/
 /*************************/
 /** ARCHITECTURE 32BITS **/
 /*************************/
 #if TARGET_IA32 
 
 // les registres sont découpes en 4 sous registres de 8 bits
-#define BYTEPARTS 4 
+#define BYTEPARTS 4
+// taille des adresses et des registres généraux entiers : 32bits
+#define ADDRLENGTH 32
 
 // liste des registres "entiers" suivis dans le marquage
 // en x86, 8 registres de 32bits, 8 registres de 16 bits
@@ -116,6 +118,8 @@ inline UINT32 getRegSize(REG r)
 
 // les registres sont découpes en 8 sous registres de 8 bits
 #define BYTEPARTS 8
+// taille des adresses et des registres généraux entiers : 32bits
+#define ADDRLENGTH 64
 
 // liste des registres "entiers" suivis dans le marquage
 enum REGINDEX 
