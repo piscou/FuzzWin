@@ -14,21 +14,21 @@ void cPUSHAD(INS &ins);
 #endif
 
 // SIMULATE 
-template<UINT32 len> 
+template<UINT32 lengthInBits> 
 void sUpdateEspTaint(TaintManager_Thread *pTmgrTls, ADDRINT stackAddressBeforePush);
 
-template<UINT32 len> 
+template<UINT32 lengthInBits> 
 void sPUSH_M(THREADID tid, ADDRINT readAddress, ADDRINT stackAddressBeforePush ADDRESS_DEBUG);
 
-template<UINT32 len> 
+template<UINT32 lengthInBits> 
 void sPUSH_R(THREADID tid, REG reg, ADDRINT stackAddressBeforePush ADDRESS_DEBUG);
-template<UINT32 len> 
+template<UINT32 lengthInBits> 
 void sPUSH_R_STACK(THREADID tid, REG reg, ADDRINT stackAddressBeforePush ADDRESS_DEBUG);
 
-template<UINT32 len> 
+template<UINT32 lengthInBits> 
 void sPUSH_I(THREADID tid, ADDRINT stackAddressBeforePush ADDRESS_DEBUG);
 
-template<UINT32 len> 
+template<UINT32 lengthInBits> 
 void sPUSHF(THREADID tid, ADDRINT regFlagsValue, ADDRINT stackAddressBeforePush ADDRESS_DEBUG);
 
 #if TARGET_IA32

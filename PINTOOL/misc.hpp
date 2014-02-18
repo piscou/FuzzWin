@@ -2,7 +2,7 @@
 
 #if TARGET_IA32
 // BASE + DISPL : BD
-template<UINT32 lenEA, UINT32 lenDest> 
+template<UINT32 lengthInBitsEA, UINT32 lengthInBitsDest> 
 void MISC::sLEA_BD(THREADID tid, REG regDest, REG baseReg, ADDRINT baseRegValue, INT32 displ ADDRESS_DEBUG) 
 {  
     TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
@@ -22,15 +22,15 @@ void MISC::sLEA_BD(THREADID tid, REG regDest, REG baseReg, ADDRINT baseRegValue,
                 ObjectSource(32, abs(displ)));
         }
         
-        _LOGTAINT("leaBD EA" << lenEA << "bits Destination " << lenDest << "bits valeur displ " << displ);
-        taintLEA(pTmgrTls, regDest, lenEA, lenDest, eaPtr);
+        _LOGTAINT("leaBD EA" << lengthInBitsEA << "bits Destination " << lengthInBitsDest << "bits valeur displ " << displ);
+        taintLEA(pTmgrTls, regDest, lengthInBitsEA, lengthInBitsDest, eaPtr);
     }
     // si registre de base non marqué, démarquer la destination
-    else pTmgrTls->unTaintRegister<lenDest>(regDest);
+    else pTmgrTls->unTaintRegister<lengthInBitsDest>(regDest);
 } // sLEA_BD
 
 // INDEX + SCALE + DISPL : ISD
-template<UINT32 lenEA, UINT32 lenDest> 
+template<UINT32 lengthInBitsEA, UINT32 lengthInBitsDest> 
 void MISC::sLEA_ISD(THREADID tid, REG regDest, REG indexReg, ADDRINT indexRegValue, 
                     UINT32 scale, INT32 displ ADDRESS_DEBUG) 
 {
@@ -72,15 +72,15 @@ void MISC::sLEA_ISD(THREADID tid, REG regDest, REG indexReg, ADDRINT indexRegVal
         }
  
         // marquage de la destination
-        _LOGTAINT("leaISD EA" << lenEA << "bits Destination " << lenDest << "bits");
-        taintLEA(pTmgrTls, regDest, lenEA, lenDest, eaPtr);
+        _LOGTAINT("leaISD EA" << lengthInBitsEA << "bits Destination " << lengthInBitsDest << "bits");
+        taintLEA(pTmgrTls, regDest, lengthInBitsEA, lengthInBitsDest, eaPtr);
     }
     // sinon démarquage de la destination
-    else pTmgrTls->unTaintRegister<lenDest>(regDest);
+    else pTmgrTls->unTaintRegister<lengthInBitsDest>(regDest);
 } // sLEA_ISD
 
 // BASE + INDEX + SCALE + DISPL : BISD
-template<UINT32 lenEA, UINT32 lenDest> 
+template<UINT32 lengthInBitsEA, UINT32 lengthInBitsDest> 
 void MISC::sLEA_BISD(THREADID tid, REG regDest, REG baseReg, ADDRINT baseRegValue, 
                      REG indexReg, ADDRINT indexRegValue, UINT32 scale, INT32 displ ADDRESS_DEBUG) 
 {
@@ -135,17 +135,17 @@ void MISC::sLEA_BISD(THREADID tid, REG regDest, REG baseReg, ADDRINT baseRegValu
         else taintEA.addConstantAsASource<32>(indexRegValue * scale + displ);
 
         // marquage de la destination
-        _LOGTAINT("leaBISD EA" << lenEA << "bits Destination " << lenDest << "bits");
-        taintLEA(pTmgrTls, regDest, lenEA, lenDest, std::make_shared<TaintDword>(taintEA));
+        _LOGTAINT("leaBISD EA" << lengthInBitsEA << "bits Destination " << lengthInBitsDest << "bits");
+        taintLEA(pTmgrTls, regDest, lengthInBitsEA, lengthInBitsDest, std::make_shared<TaintDword>(taintEA));
     }   
     // sinon démarquage de la destination
-    else pTmgrTls->unTaintRegister<lenDest>(regDest);
+    else pTmgrTls->unTaintRegister<lengthInBitsDest>(regDest);
 } // sLEA_BISD
 
 #else
 
 // BASE + DISPL : BD
-template<UINT32 lenEA, UINT32 lenDest> 
+template<UINT32 lengthInBitsEA, UINT32 lengthInBitsDest> 
 void MISC::sLEA_BD(THREADID tid, REG regDest, REG baseReg, ADDRINT baseRegValue, INT32 displ ADDRESS_DEBUG) 
 {  
     TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
@@ -165,15 +165,15 @@ void MISC::sLEA_BD(THREADID tid, REG regDest, REG baseReg, ADDRINT baseRegValue,
                 ObjectSource(64, abs(displ)));
         }
         
-        _LOGTAINT("leaBD EA" << lenEA << "bits Destination " << lenDest << "bits valeur displ " << displ);
-        taintLEA(pTmgrTls, regDest, lenEA, lenDest, eaPtr);
+        _LOGTAINT("leaBD EA" << lengthInBitsEA << "bits Destination " << lengthInBitsDest << "bits valeur displ " << displ);
+        taintLEA(pTmgrTls, regDest, lengthInBitsEA, lengthInBitsDest, eaPtr);
     }
     // si registre de base non marqué, démarquer la destination
-    else pTmgrTls->unTaintRegister<lenDest>(regDest);
+    else pTmgrTls->unTaintRegister<lengthInBitsDest>(regDest);
 } // sLEA_BD
 
 // INDEX + SCALE + DISPL : ISD
-template<UINT32 lenEA, UINT32 lenDest> 
+template<UINT32 lengthInBitsEA, UINT32 lengthInBitsDest> 
 void MISC::sLEA_ISD(THREADID tid, REG regDest, REG indexReg, ADDRINT indexRegValue, 
                     UINT32 scale, INT32 displ ADDRESS_DEBUG) 
 {
@@ -215,15 +215,15 @@ void MISC::sLEA_ISD(THREADID tid, REG regDest, REG indexReg, ADDRINT indexRegVal
         }
  
         // marquage de la destination
-        _LOGTAINT("leaISD EA" << lenEA << "bits Destination " << lenDest << "bits");
-        taintLEA(pTmgrTls, regDest, lenEA, lenDest, eaPtr);
+        _LOGTAINT("leaISD EA" << lengthInBitsEA << "bits Destination " << lengthInBitsDest << "bits");
+        taintLEA(pTmgrTls, regDest, lengthInBitsEA, lengthInBitsDest, eaPtr);
     }
     // sinon démarquage de la destination
-    else pTmgrTls->unTaintRegister<lenDest>(regDest);
+    else pTmgrTls->unTaintRegister<lengthInBitsDest>(regDest);
 } // sLEA_ISD
 
 // BASE + INDEX + SCALE + DISPL : BISD
-template<UINT32 lenEA, UINT32 lenDest> 
+template<UINT32 lengthInBitsEA, UINT32 lengthInBitsDest> 
 void MISC::sLEA_BISD(THREADID tid, REG regDest, REG baseReg, ADDRINT baseRegValue, 
                      REG indexReg, ADDRINT indexRegValue, UINT32 scale, INT32 displ ADDRESS_DEBUG) 
 {
@@ -278,10 +278,10 @@ void MISC::sLEA_BISD(THREADID tid, REG regDest, REG baseReg, ADDRINT baseRegValu
         else taintEA.addConstantAsASource<64>(indexRegValue * scale + displ);
 
         // marquage de la destination
-        _LOGTAINT("leaBISD EA" << lenEA << "bits Destination " << lenDest << "bits");
-        taintLEA(pTmgrTls, regDest, lenEA, lenDest, std::make_shared<TaintQword>(taintEA));
+        _LOGTAINT("leaBISD EA" << lengthInBitsEA << "bits Destination " << lengthInBitsDest << "bits");
+        taintLEA(pTmgrTls, regDest, lengthInBitsEA, lengthInBitsDest, std::make_shared<TaintQword>(taintEA));
     }   
     // sinon démarquage de la destination
-    else pTmgrTls->unTaintRegister<lenDest>(regDest);
+    else pTmgrTls->unTaintRegister<lengthInBitsDest>(regDest);
 } // sLEA_BISD
 #endif

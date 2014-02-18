@@ -161,7 +161,7 @@ void SHIFT::fSHL(TaintManager_Thread *pTmgrTls, const TaintPtr &resultPtr, const
     pTmgrTls->updateTaintZeroFlag(std::make_shared<TaintBit>(F_IS_NULL, objResult));
     pTmgrTls->updateTaintSignFlag(std::make_shared<TaintBit>(F_MSB,     objResult));
 
-    // marquage Carry : bit (length-depl) de la source
+    // marquage Carry : bit (lengthInBits - depl) de la source
     // peut quand meme provoquer un surmarquage si l'octet concerné n'est pas marqué
     // mais le test de marquage serait trop gourmand en temps d'execution
     pTmgrTls->updateTaintCarryFlag(std::make_shared<TaintBit>(
@@ -665,7 +665,7 @@ void SHIFT::fSHLD(TaintManager_Thread *pTmgrTls, const TaintPtr &resultPtr, cons
     // marquage PF dans tous les cas (contrairement à SHL ou on le faisait si depl < 8)
     pTmgrTls->updateTaintParityFlag(std::make_shared<TaintBit>(F_PARITY, objResult));
 
-    // marquage Carry : bit (length-depl) de la source
+    // marquage Carry : bit (lengthInBits - depl) de la source
     // peut quand meme provoquer un surmarquage si l'octet concerné n'est pas marqué
     // mais le test de marquage serait trop gourmand en temps d'execution
     pTmgrTls->updateTaintCarryFlag(std::make_shared<TaintBit>(

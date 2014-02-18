@@ -136,6 +136,9 @@
     <ClInclude Include="enumOsType.h">
       <Filter>Fichiers d%27en-tête</Filter>
     </ClInclude>
+    <ClInclude Include="flagop.h">
+      <Filter>Fichiers d%27en-tête</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="instrumentation.cpp">
@@ -211,6 +214,9 @@
       <Filter>Fichiers sources</Filter>
     </ClCompile>
     <ClCompile Include="initialize.cpp">
+      <Filter>Fichiers sources</Filter>
+    </ClCompile>
+    <ClCompile Include="flagop.cpp">
       <Filter>Fichiers sources</Filter>
     </ClCompile>
   </ItemGroup>

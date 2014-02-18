@@ -117,10 +117,10 @@ public:
     /*******************************/
 
     // renvoie TRUE si tout ou partie de la plage [address, address+size] est marquée
-    template<UINT32 len> bool isMemoryTainted(ADDRINT address) const 
+    template<UINT32 lengthInBits> bool isMemoryTainted(ADDRINT address) const 
     {
         bool result = false;
-        ADDRINT lastAddress = address + (len >> 3);
+        ADDRINT lastAddress = address + (lengthInBits >> 3);
 
         PIN_GetLock(&g_lock, 0); // obligatoire car classe globale
         while (address < lastAddress)
@@ -153,11 +153,11 @@ public:
     /******************************/
 
     // renvoie un objet représentant le marquage de la plage d'adresses
-    template<UINT32 len> std::shared_ptr<TaintObject<len>> getMemoryTaint(ADDRINT address) const
+    template<UINT32 lengthInBits> std::shared_ptr<TaintObject<lengthInBits>> getMemoryTaint(ADDRINT address) const
     { 
-        static_assert((len % 8 == 0), "taille non multiple de 8 bits");
-        TaintObject<len> result(CONCAT);
-        ADDRINT lastAddress = address + (len >> 3);
+        static_assert((lengthInBits % 8 == 0), "taille non multiple de 8 bits");
+        TaintObject<lengthInBits> result(CONCAT);
+        ADDRINT lastAddress = address + (lengthInBits >> 3);
         
         PIN_GetLock(&g_lock, 0); // obligatoire car classe globale
         auto itEnd = this->_memoryPtrs.end();
@@ -174,7 +174,7 @@ public:
             address++;
         }
         PIN_ReleaseLock(&g_lock);
-        return (std::make_shared<TaintObject<len>>(result));
+        return (std::make_shared<TaintObject<lengthInBits>>(result));
     }
 
     // spécialisation pour le cas 8 bits
@@ -257,20 +257,20 @@ public:
     /** FONCTIONS DE MARQUAGE DE LA MEMOIRE **/
     /*****************************************/
 
-    // marquage de 'len' octets avec l'objet 'tPtr' à partir de l'adresse 'address'
-    // si 'tPtr' est nullptr, provoque le démarquage des 'len' octets
-    template<UINT32 len> void updateMemoryTaint
-        (ADDRINT address, const std::shared_ptr<TaintObject<len>> &tPtr) 
+    // marquage de 'lengthInBits' octets avec l'objet 'tPtr' à partir de l'adresse 'address'
+    // si 'tPtr' est nullptr, provoque le démarquage des 'lengthInBits' octets
+    template<UINT32 lengthInBits> void updateMemoryTaint
+        (ADDRINT address, const std::shared_ptr<TaintObject<lengthInBits>> &tPtr) 
     {
-        static_assert((len & 0x7) == 0, "taille memoire non valide");           
+        static_assert((lengthInBits & 0x7) == 0, "taille memoire non valide");           
         PIN_GetLock(&g_lock, 0); // obligatoire car classe globale
         
-        if (!tPtr) this->unTaintMemory<len>(address);
+        if (!tPtr) this->unTaintMemory<lengthInBits>(address);
         else
         {
             ObjectSource objSrc(tPtr);
             // création des taintBytes extraits de l'objet pour affectation
-            for (UINT32 i = 0 ; i < (len >> 3) ; ++i, ++address) 
+            for (UINT32 i = 0 ; i < (lengthInBits >> 3) ; ++i, ++address) 
             { 
                 // extraction de 'objSrc' de l'octet (8bits) n°i et affectation à l'adresse adéquate
                 this->_memoryPtrs[address] = std::make_shared<TaintByte>
@@ -294,10 +294,10 @@ public:
     /** FONCTION DE DEMARQUAGE **/
     /****************************/
    
-    // Efface le marquage de la plage [address, address + len];
-    template<UINT32 len> void unTaintMemory(ADDRINT address) 
+    // Efface le marquage de la plage [address, address + lengthInBits];
+    template<UINT32 lengthInBits> void unTaintMemory(ADDRINT address) 
     {            
-        ADDRINT lastAddress = address + (len >> 3);
+        ADDRINT lastAddress = address + (lengthInBits >> 3);
         PIN_GetLock(&g_lock, 0); // obligatoire car classe globale
         while (address < lastAddress) this->_memoryPtrs.erase(address++);
         PIN_ReleaseLock(&g_lock);
@@ -312,7 +312,7 @@ class TaintManager_Thread
 
 private:
     // Marquage des registres d'usage général (GP) représentés en sous-registres de 8 bits
-    TaintBytePtr _registers8Ptr[rLAST + 1][BYTEPARTS];
+    TaintBytePtr _registers8Ptr[regIndexLAST + 1][BYTEPARTS];
 
     // marquage des registres "entiers" de 16, 32 (et 64bits)
     // lors de la récupération du marquage d'un registre de plus de 8bits
@@ -320,10 +320,10 @@ private:
     // afin de ne pas recréer une concaténation d'objets 8 bits alors que l'objet existe
     // l'index dans le tableau est celui du registre "plein" (32 ou 64bits)
     // ex : le marquage de R10W se trouvera à registres64[rR10]
-    TaintWordPtr  _registers16Ptr[rLAST + 1];
-    TaintDwordPtr _registers32Ptr[rLAST + 1];
+    TaintWordPtr  _registers16Ptr[regIndexLAST + 1];
+    TaintDwordPtr _registers32Ptr[regIndexLAST + 1];
 #if TARGET_IA32E
-    TaintQwordPtr _registers64Ptr[rLAST + 1];
+    TaintQwordPtr _registers64Ptr[regIndexLAST + 1];
 #endif
 
     // cas du registre Eflags : marquage niveau bit 
@@ -378,11 +378,11 @@ public:
     /*******************************/
 
     // renvoie TRUE tout ou partie du registre reg (de type PIN) est marqué
-    template<UINT32 len> bool isRegisterTainted(REG reg) const
+    template<UINT32 lengthInBits> bool isRegisterTainted(REG reg) const
     {
         REGINDEX regIndex = getRegIndex(reg);
         #if DEBUG
-        if (regIndex == rINVALID)
+        if (regIndex == regIndexINVALID)
         {
             g_debug << "Erreur isRegisterTainted non géré" << std::endl;
             PIN_ExitApplication(-1);
@@ -390,7 +390,7 @@ public:
         #endif
 
         bool result = false;
-        for (UINT32 i = 0 ; i < (len >> 3) ; ++i) 
+        for (UINT32 i = 0 ; i < (lengthInBits >> 3) ; ++i) 
         { 
             if ((bool) this->_registers8Ptr[regIndex][i])
             {
@@ -407,7 +407,7 @@ public:
     {
         REGINDEX regIndex = getRegIndex(reg);
         #if DEBUG
-        if (regIndex == rINVALID)
+        if (regIndex == regIndexINVALID)
         {
             g_debug << "Erreur isRegisterTainted non géré" << std::endl;
             PIN_ExitApplication(-1);
@@ -440,9 +440,9 @@ public:
     // renvoie un objet représentant le marquage d'un registre 
     // template entièrement spécialisé pour prendre en compte
     // les registres 8/16/32/64bits "entiers"
-    template<UINT32 len> std::shared_ptr<TaintObject<len>> getRegisterTaint(REG reg, ADDRINT regValue) 
+    template<UINT32 lengthInBits> std::shared_ptr<TaintObject<lengthInBits>> getRegisterTaint(REG reg, ADDRINT regValue) 
     {
-        static_assert((len % 8 == 0), "registre non multiple de 8 bits");
+        static_assert((lengthInBits % 8 == 0), "registre non multiple de 8 bits");
     }
 
     // cas 8bits : appel de la fonction surchargée à 1 seul paramètre
@@ -458,7 +458,7 @@ public:
         REGINDEX regIndex = getRegIndex(reg16);
         
         #if DEBUG
-        if (regIndex == rINVALID)
+        if (regIndex == regIndexINVALID)
         {
             g_debug << "Erreur getRegisterTainted non géré" << std::endl;
             PIN_ExitApplication(-1);
@@ -492,7 +492,7 @@ public:
         REGINDEX regIndex = getRegIndex(reg32);      
         
         #if DEBUG
-        if (regIndex == rINVALID)
+        if (regIndex == regIndexINVALID)
         {
             g_debug << "Erreur getRegisterTainted non géré" << std::endl;
             PIN_ExitApplication(-1);
@@ -530,7 +530,7 @@ public:
         REGINDEX regIndex = getRegIndex(reg64);
 
         #if DEBUG
-        if (regIndex == rINVALID)
+        if (regIndex == regIndexINVALID)
         {
             g_debug << "Erreur getRegisterTainted non géré" << std::endl;
             PIN_ExitApplication(-1);
@@ -568,7 +568,7 @@ public:
         REGINDEX regIndex = getRegIndex(reg);
 
         #if DEBUG
-        if (regIndex == rINVALID)
+        if (regIndex == regIndexINVALID)
         {
             g_debug << "Erreur getRegisterTainted non géré" << std::endl;
             PIN_ExitApplication(-1);
@@ -610,9 +610,9 @@ public:
 
     // mise à jour du marquage du registre avec l'objet fourni
     // spécialisation complete du template pour marquer les registres "entiers"
-    template<UINT32 len> 
-    void updateTaintRegister(REG reg, const std::shared_ptr<TaintObject<len>> &tPtr)
-    {  static_assert((len % 8 == 0), "registre non valide");  }
+    template<UINT32 lengthInBits> 
+    void updateTaintRegister(REG reg, const std::shared_ptr<TaintObject<lengthInBits>> &tPtr)
+    {  static_assert((lengthInBits % 8 == 0), "registre non valide");  }
 
     // cas 8bits
     template<> void updateTaintRegister<8>(REG reg8, const TaintBytePtr &tbPtr) 
@@ -620,7 +620,7 @@ public:
         REGINDEX regIndex = getRegIndex(reg8);
 
         #if DEBUG
-        if (regIndex == rINVALID)
+        if (regIndex == regIndexINVALID)
         {
             g_debug << "Erreur updateTaintRegister non géré" << std::endl;
             PIN_ExitApplication(-1);
@@ -644,7 +644,7 @@ public:
         REGINDEX regIndex = getRegIndex(reg16);
 
         #if DEBUG
-        if (regIndex == rINVALID)
+        if (regIndex == regIndexINVALID)
         {
             g_debug << "Erreur updateTaintRegister non géré" << std::endl;
             PIN_ExitApplication(-1);
@@ -676,7 +676,7 @@ public:
         REGINDEX regIndex = getRegIndex(reg32);
         
         #if DEBUG
-        if (regIndex == rINVALID)
+        if (regIndex == regIndexINVALID)
         {
             g_debug << "Erreur updateTaintRegister non géré" << std::endl;
             PIN_ExitApplication(-1);
@@ -709,7 +709,7 @@ public:
         REGINDEX regIndex = getRegIndex(reg64);
         
         #if DEBUG
-        if (regIndex == rINVALID)
+        if (regIndex == regIndexINVALID)
         {
             g_debug << "Erreur updateTaintRegister non géré" << std::endl;
             PIN_ExitApplication(-1);
@@ -763,12 +763,12 @@ public:
     }
     
     // Efface le marquage du registre fourni en argument
-    template<UINT32 len> void unTaintRegister(REG reg)  
+    template<UINT32 lengthInBits> void unTaintRegister(REG reg)  
     { 
         REGINDEX regIndex = getRegIndex(reg);
         
         #if DEBUG
-        if (regIndex == rINVALID)
+        if (regIndex == regIndexINVALID)
         {
             g_debug << "Erreur unTaintRegister non géré" << std::endl;
             PIN_ExitApplication(-1);
@@ -776,7 +776,7 @@ public:
         #endif
 
         // effacement des parties 8 bits 
-        for (UINT32 i = 0 ; i < (len >> 3) ; ++i)   this->_registers8Ptr[regIndex][i].reset();
+        for (UINT32 i = 0 ; i < (lengthInBits >> 3) ; ++i)   this->_registers8Ptr[regIndex][i].reset();
         
         // effacement forcement des registres 16/32/64
         this->_registers16Ptr[regIndex].reset();
@@ -793,7 +793,7 @@ public:
         UINT32 regPart =  REG_is_Upper8((REG)reg) ? 1 : 0;
         
         #if DEBUG
-        if (regIndex == rINVALID)
+        if (regIndex == regIndexINVALID)
         {
             g_debug << "Erreur unTaintRegister non géré" << std::endl;
             PIN_ExitApplication(-1);

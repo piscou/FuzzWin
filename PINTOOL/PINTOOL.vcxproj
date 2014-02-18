@@ -420,6 +420,7 @@ del "$(TargetDir)$(TargetName).exp"</Command>
     <ClInclude Include="bitbyte.hpp" />
     <ClInclude Include="convert.h" />
     <ClInclude Include="enumOsType.h" />
+    <ClInclude Include="flagop.h" />
     <ClInclude Include="misc.hpp" />
     <ClInclude Include="pintool.h" />
     <ClInclude Include="pop.hpp" />
@@ -469,6 +470,7 @@ del "$(TargetDir)$(TargetName).exp"</Command>
     <ClCompile Include="conditional_branch.cpp" />
     <ClCompile Include="convert.cpp" />
     <ClCompile Include="dataxfer.cpp" />
+    <ClCompile Include="flagop.cpp" />
     <ClCompile Include="initialize.cpp" />
     <ClCompile Include="instrumentation.cpp" />
     <ClCompile Include="logical.cpp" />

@@ -11,7 +11,7 @@ void POP::cPOP(INS &ins)
     void (*callback)() = nullptr;
     if (INS_OperandIsReg(ins, 0)) 
     {     
-        // désempilement vers registre, équivalent à MOVMR
+        // désempilement vers registre, équivalengthInBitst à MOVMR
         REG reg = INS_OperandReg(ins, 0);
         switch (getRegSize(reg)) 
         {
@@ -53,7 +53,7 @@ void POP::cPOP(INS &ins)
 
 void POP::cPOPF(INS &ins, UINT32 size)
 {  
-    void (*callback)(); // pointeur sur la fonction à appeler
+    void (*callback)() = nullptr; // pointeur sur la fonction à appeler
     switch (size)
     {
         case 2: callback = (AFUNPTR) sPOPF<16>; break;

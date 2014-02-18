@@ -2,21 +2,21 @@
 /** SHL **/
 /*********/
 
-template<UINT32 len> 
+template<UINT32 lengthInBits> 
 void SHIFT::sSHL_IM(THREADID tid, UINT32 maskedDepl, ADDRINT writeAddr ADDRESS_DEBUG) 
 {  
     TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     
     // opérande non marquée => démarquage flags
-    if (!pTmgrGlobal->isMemoryTainted<len>(writeAddr)) pTmgrTls->unTaintAllFlags();
+    if (!pTmgrGlobal->isMemoryTainted<lengthInBits>(writeAddr)) pTmgrTls->unTaintAllFlags();
     // déplacement >= taille destination => démarquage flags et dest
-    else if (maskedDepl >= len) 
+    else if (maskedDepl >= lengthInBits) 
     {  
         fUnTaintOZSAP(pTmgrTls); // démarquage OZASP
             
         // marquage CF si dplt = à la taille de la destination
         // dans ce cas, le carryFlag contiendra le bit 0 de la source (si octet faible marqué) 
-        if ((maskedDepl == len) && pTmgrGlobal->isMemoryTainted<8>(writeAddr))
+        if ((maskedDepl == lengthInBits) && pTmgrGlobal->isMemoryTainted<8>(writeAddr))
         {
             pTmgrTls->updateTaintCarryFlag(std::make_shared<TaintBit>(
                 F_LSB,
@@ -24,16 +24,16 @@ void SHIFT::sSHL_IM(THREADID tid, UINT32 maskedDepl, ADDRINT writeAddr ADDRESS_D
         }
         else pTmgrTls->unTaintCarryFlag();
 
-        pTmgrGlobal->unTaintMemory<len>(writeAddr);  // démarquage destination
+        pTmgrGlobal->unTaintMemory<lengthInBits>(writeAddr);  // démarquage destination
     }
     // dans les autres cas : marquage par SHL
     else 
     {
-        _LOGTAINT("SHLIM " << len << " ");
-        ObjectSource objSrcMem(pTmgrGlobal->getMemoryTaint<len>(writeAddr));
+        _LOGTAINT("SHLIM " << lengthInBits << " ");
+        ObjectSource objSrcMem(pTmgrGlobal->getMemoryTaint<lengthInBits>(writeAddr));
 
         // construction du résultat
-        std::shared_ptr<TaintObject<len>> resultPtr = std::make_shared<TaintObject<len>>(
+        std::shared_ptr<TaintObject<lengthInBits>> resultPtr = std::make_shared<TaintObject<lengthInBits>>(
             X_SHL,
             objSrcMem,
             ObjectSource(8, maskedDepl));
@@ -50,7 +50,7 @@ void SHIFT::sSHL_IM(THREADID tid, UINT32 maskedDepl, ADDRINT writeAddr ADDRESS_D
             // 1ERE BOUCLE : octet fort marqué avec oct (fort - deplBytes) et ainsi de suite en décroissant les addresses
             // jusqu'à ce que adresse source = adresse de base (writeAddr)
             // pas de création d'objet, juste un déplacement
-            ADDRINT toAddr   = writeAddr + (len >> 3) ; // octet fort +1 (1er octet de destination)
+            ADDRINT toAddr   = writeAddr + (lengthInBits >> 3) ; // octet fort +1 (1er octet de destination)
             ADDRINT fromAddr = toAddr - deplBytes;      // 1er octet de départ + 1
             while (fromAddr > writeAddr) 
             {
@@ -73,7 +73,7 @@ void SHIFT::sSHL_IM(THREADID tid, UINT32 maskedDepl, ADDRINT writeAddr ADDRESS_D
         // 3) cas général : marquage destination, puis demarquage octets faibles en fonction de l'intervalle de déplacement
         else 
         {  
-            pTmgrGlobal->updateMemoryTaint<len>(writeAddr, resultPtr);
+            pTmgrGlobal->updateMemoryTaint<lengthInBits>(writeAddr, resultPtr);
             for (ADDRINT lastAddr = writeAddr + deplBytes ; writeAddr < lastAddr ; ++writeAddr)
             {
                 pTmgrGlobal->unTaintMemory<8>(writeAddr); 
@@ -82,22 +82,22 @@ void SHIFT::sSHL_IM(THREADID tid, UINT32 maskedDepl, ADDRINT writeAddr ADDRESS_D
     }
 } // sSHL_IM
 
-template<UINT32 len> 
+template<UINT32 lengthInBits> 
 void SHIFT::sSHL_IR(THREADID tid, UINT32 maskedDepl, REG reg, ADDRINT regValue ADDRESS_DEBUG) 
 {  
     TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     
     // opérande non marquée => démarquage flags
-    if (!pTmgrTls->isRegisterTainted<len>(reg)) pTmgrTls->unTaintAllFlags();
+    if (!pTmgrTls->isRegisterTainted<lengthInBits>(reg)) pTmgrTls->unTaintAllFlags();
     // déplacement >= taille destination => démarquage flags et dest 
-    else if (maskedDepl >= len) 
+    else if (maskedDepl >= lengthInBits) 
     {  
         fUnTaintOZSAP(pTmgrTls); // démarquage OZASP
             
         // marquage CF si dplt = à la taille de la destination
         // dans ce cas, le carryFlag contiendra le bit 0 de la source (si octet faible marqué)
         REGINDEX regIndex = getRegIndex(reg);
-        if ((maskedDepl == len) && pTmgrTls->isRegisterPartTainted(regIndex, 0))
+        if ((maskedDepl == lengthInBits) && pTmgrTls->isRegisterPartTainted(regIndex, 0))
         {
             pTmgrTls->updateTaintCarryFlag(std::make_shared<TaintBit>(
                 F_LSB,
@@ -105,17 +105,17 @@ void SHIFT::sSHL_IR(THREADID tid, UINT32 maskedDepl, REG reg, ADDRINT regValue A
         }
         else pTmgrTls->unTaintCarryFlag();
 
-        pTmgrTls->unTaintRegister<len>(reg);  // démarquage destination
+        pTmgrTls->unTaintRegister<lengthInBits>(reg);  // démarquage destination
     }
     // dans les autres cas : marquage par SHL
     else 
     {
-        _LOGTAINT("SHLIR " << len << " ");
-        ObjectSource objSrcReg(pTmgrTls->getRegisterTaint<len>(reg, regValue));
+        _LOGTAINT("SHLIR " << lengthInBits << " ");
+        ObjectSource objSrcReg(pTmgrTls->getRegisterTaint<lengthInBits>(reg, regValue));
         REGINDEX regIndex = getRegIndex(reg);
 
         // construction du résultat
-        std::shared_ptr<TaintObject<len>> resultPtr = std::make_shared<TaintObject<len>>(
+        std::shared_ptr<TaintObject<lengthInBits>> resultPtr = std::make_shared<TaintObject<lengthInBits>>(
             X_SHL,
             objSrcReg,
             ObjectSource(8, maskedDepl));
@@ -134,7 +134,7 @@ void SHIFT::sSHL_IR(THREADID tid, UINT32 maskedDepl, REG reg, ADDRINT regValue A
 
             // 1ERE BOUCLE : octet fort marqué avec oct (fort - deplBytes) et ainsi de suite en décroissant les indexs
             // jusqu'à ce que index source = 0 ; pas de création d'objet, juste un déplacement
-            for (UINT32 regPartFrom = (len >> 3) - deplBytes, regPartTo = (len >> 3) ; regPartFrom >= 0 ; --regPartFrom, --regPartTo)
+            for (UINT32 regPartFrom = (lengthInBits >> 3) - deplBytes, regPartTo = (lengthInBits >> 3) ; regPartFrom >= 0 ; --regPartFrom, --regPartTo)
             {
                 // déplacement de l'octet "faible" (from) vers l'octet "fort" (to)
                 if (pTmgrTls->isRegisterPartTainted(regIndex, regPartFrom))
@@ -154,7 +154,7 @@ void SHIFT::sSHL_IR(THREADID tid, UINT32 maskedDepl, REG reg, ADDRINT regValue A
         // 3) cas général : marquage destination, puis demarquage octets faibles en fonction de l'intervalle de déplacement
         else 
         {  
-            pTmgrTls->updateTaintRegister<len>(reg, resultPtr);  
+            pTmgrTls->updateTaintRegister<lengthInBits>(reg, resultPtr);  
             for (UINT32 regPart = 0 ; regPart < deplBytes ; ++regPart)
             {
                 pTmgrTls->unTaintRegisterPart(regIndex, regPart);
@@ -163,21 +163,21 @@ void SHIFT::sSHL_IR(THREADID tid, UINT32 maskedDepl, REG reg, ADDRINT regValue A
     }
 } // sSHL_IR
 
-template<UINT32 len> 
+template<UINT32 lengthInBits> 
 void SHIFT::sSHL_RM(THREADID tid, ADDRINT regCLValue, ADDRINT writeAddress ADDRESS_DEBUG) 
 {
     TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     
     bool isCountTainted = pTmgrTls->isRegisterTainted<8>(REG_CL);
-    bool isDestTainted  = pTmgrGlobal->isMemoryTainted<len>(writeAddress);
+    bool isDestTainted  = pTmgrGlobal->isMemoryTainted<lengthInBits>(writeAddress);
     
     if ( !(isDestTainted || isCountTainted)) pTmgrTls->unTaintAllFlags();
     // déplacement non marqué (mais mémoire oui) => cas SHL_IM
     else if (!isCountTainted) 
     {
         // masquage du déplacement avant appel de SHL_IM
-        UINT32 maskDepl = (len == 64) ? (regCLValue & 0x3f) : (regCLValue & 0x1f);
-        sSHL_IM<len>(tid, maskDepl, writeAddress INSADDRESS); 
+        UINT32 maskDepl = (lengthInBits == 64) ? (regCLValue & 0x3f) : (regCLValue & 0x1f);
+        sSHL_IM<lengthInBits>(tid, maskDepl, writeAddress INSADDRESS); 
     }
     // forcément déplacement marqué
     else
@@ -188,11 +188,11 @@ void SHIFT::sSHL_RM(THREADID tid, ADDRINT regCLValue, ADDRINT writeAddress ADDRE
         ObjectSource objTbCount(pTmgrTls->getRegisterTaint(REG_CL));
         // création de l'objet correspondant à la mémoire shiftée
         ObjectSource objSrcMem = (isDestTainted)
-            ? ObjectSource(pTmgrGlobal->getMemoryTaint<len>(writeAddress))
-            : ObjectSource(len, getMemoryValue<len>(writeAddress));
+            ? ObjectSource(pTmgrGlobal->getMemoryTaint<lengthInBits>(writeAddress))
+            : ObjectSource(lengthInBits, getMemoryValue<lengthInBits>(writeAddress));
        
         // création de l'objet resultat de l'opération
-        std::shared_ptr<TaintObject<len>> resultPtr = std::make_shared<TaintObject<len>>(
+        std::shared_ptr<TaintObject<lengthInBits>> resultPtr = std::make_shared<TaintObject<lengthInBits>>(
             X_SHL,
             objSrcMem,
             objTbCount);    
@@ -200,25 +200,25 @@ void SHIFT::sSHL_RM(THREADID tid, ADDRINT regCLValue, ADDRINT writeAddress ADDRE
         // marquage flags
         fSHL(pTmgrTls, resultPtr, objSrcMem, objTbCount);
         // marquage destination
-        pTmgrGlobal->updateMemoryTaint<len>(writeAddress, resultPtr);
+        pTmgrGlobal->updateMemoryTaint<lengthInBits>(writeAddress, resultPtr);
     }
 } // sSHL_RM
 
-template<UINT32 len> 
+template<UINT32 lengthInBits> 
 void SHIFT::sSHL_RR(THREADID tid, ADDRINT regCLValue, REG reg, ADDRINT regValue ADDRESS_DEBUG) 
 {
     TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     
     bool isCountTainted = pTmgrTls->isRegisterTainted<8>(REG_CL);
-    bool isDestTainted  = pTmgrTls->isRegisterTainted<len>(reg);
+    bool isDestTainted  = pTmgrTls->isRegisterTainted<lengthInBits>(reg);
     
     if ( !(isDestTainted || isCountTainted) ) pTmgrTls->unTaintAllFlags();
     // déplacement non marqué (mais registre oui) => cas SHL_IR
     else if (!isCountTainted)
     {
         // masquage du déplacement avant appel de SHL_IR
-        UINT32 maskDepl = (len == 64) ? (regCLValue & 0x3f) : (regCLValue & 0x1f);
-        sSHL_IR<len>(tid, maskDepl, reg, regValue INSADDRESS); 
+        UINT32 maskDepl = (lengthInBits == 64) ? (regCLValue & 0x3f) : (regCLValue & 0x1f);
+        sSHL_IR<lengthInBits>(tid, maskDepl, reg, regValue INSADDRESS); 
     }
     // forcément déplacement marqué
     else 
@@ -229,11 +229,11 @@ void SHIFT::sSHL_RR(THREADID tid, ADDRINT regCLValue, REG reg, ADDRINT regValue 
         ObjectSource objTbCount(pTmgrTls->getRegisterTaint(REG_CL));
         // création de l'objet Source correspondant au registre shifté
         ObjectSource objSrcReg = (isDestTainted)
-            ? ObjectSource(pTmgrTls->getRegisterTaint<len>(reg, regValue))
-            : ObjectSource(len, regValue);
+            ? ObjectSource(pTmgrTls->getRegisterTaint<lengthInBits>(reg, regValue))
+            : ObjectSource(lengthInBits, regValue);
         
         // création de l'objet resultat de l'opération
-        std::shared_ptr<TaintObject<len>> resultPtr = std::make_shared<TaintObject<len>>(
+        std::shared_ptr<TaintObject<lengthInBits>> resultPtr = std::make_shared<TaintObject<lengthInBits>>(
             X_SHL,
             objSrcReg,
             objTbCount);    
@@ -241,7 +241,7 @@ void SHIFT::sSHL_RR(THREADID tid, ADDRINT regCLValue, REG reg, ADDRINT regValue 
         // marquage flags
         fSHL(pTmgrTls, resultPtr, objSrcReg, objTbCount);
         // marquage destination
-        pTmgrTls->updateTaintRegister<len>(reg, resultPtr);
+        pTmgrTls->updateTaintRegister<lengthInBits>(reg, resultPtr);
     }
 } // sSHL_RR
 
@@ -249,22 +249,22 @@ void SHIFT::sSHL_RR(THREADID tid, ADDRINT regCLValue, REG reg, ADDRINT regValue 
 /** SHR **/
 /*********/
 
-template<UINT32 len> 
+template<UINT32 lengthInBits> 
 void SHIFT::sSHR_IM(THREADID tid, UINT32 maskedDepl, ADDRINT writeAddr ADDRESS_DEBUG) 
 {  
     TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     
     // opérande non marquée => démarquage flags
-    if (!pTmgrGlobal->isMemoryTainted<len>(writeAddr)) pTmgrTls->unTaintAllFlags();
+    if (!pTmgrGlobal->isMemoryTainted<lengthInBits>(writeAddr)) pTmgrTls->unTaintAllFlags();
     // déplacement >= taille destination => démarquage flags et dest
-    else if (maskedDepl >= len) 
+    else if (maskedDepl >= lengthInBits) 
     {  
         fUnTaintOZSAP(pTmgrTls); // démarquage OZASP
             
         // marquage CF si dplt = à la taille de la destination
         // dans ce cas, le carryFlag contiendra le MSB de la source (si octet fort marqué)
-        ADDRINT highAddress = writeAddr + (len >> 3) - 1;
-        if ((maskedDepl == len) && pTmgrGlobal->isMemoryTainted<8>(highAddress))
+        ADDRINT highAddress = writeAddr + (lengthInBits >> 3) - 1;
+        if ((maskedDepl == lengthInBits) && pTmgrGlobal->isMemoryTainted<8>(highAddress))
         {
             pTmgrTls->updateTaintCarryFlag(std::make_shared<TaintBit>(
                 F_MSB,
@@ -272,15 +272,15 @@ void SHIFT::sSHR_IM(THREADID tid, UINT32 maskedDepl, ADDRINT writeAddr ADDRESS_D
         }
         else pTmgrTls->unTaintCarryFlag();
 
-        pTmgrGlobal->unTaintMemory<len>(writeAddr);  // démarquage destination 
+        pTmgrGlobal->unTaintMemory<lengthInBits>(writeAddr);  // démarquage destination 
     }
     else // dans les autres cas : marquage par SHR
     {
-        _LOGTAINT("SHRIM " << len << " ");
-        ObjectSource objSrcMem(pTmgrGlobal->getMemoryTaint<len>(writeAddr));
+        _LOGTAINT("SHRIM " << lengthInBits << " ");
+        ObjectSource objSrcMem(pTmgrGlobal->getMemoryTaint<lengthInBits>(writeAddr));
 
         // construction du résultat
-        std::shared_ptr<TaintObject<len>> resultPtr = std::make_shared<TaintObject<len>>(
+        std::shared_ptr<TaintObject<lengthInBits>> resultPtr = std::make_shared<TaintObject<lengthInBits>>(
             X_SHR,
             objSrcMem,
             ObjectSource(8, maskedDepl));
@@ -295,10 +295,10 @@ void SHIFT::sSHR_IM(THREADID tid, UINT32 maskedDepl, ADDRINT writeAddr ADDRESS_D
         if (!(maskedDepl & 0x7))
         {
             // 1ERE BOUCLE : octet faible marqué avec oct (faible + deplBytes) et ainsi de suite en accroissant les addresses
-            // jusqu'à ce que adresse source = adresse haute (writeAddr + (len>>3) - 1
+            // jusqu'à ce que adresse source = adresse haute (writeAddr + (lengthInBits>>3) - 1
             ADDRINT fromAddr = writeAddr + deplBytes - 1;   // 1er octet source (-1)
             ADDRINT toAddr   = writeAddr - 1;               // 1er octet de destination (-1)
-            ADDRINT highAddress = writeAddr + (len >> 3);   // dernière adresse traitée = adresse haute exclue
+            ADDRINT highAddress = writeAddr + (lengthInBits >> 3);   // dernière adresse traitée = adresse haute exclue
 
             while (fromAddr < highAddress)
             {
@@ -312,7 +312,7 @@ void SHIFT::sSHR_IM(THREADID tid, UINT32 maskedDepl, ADDRINT writeAddr ADDRESS_D
                 else pTmgrGlobal->unTaintMemory<8>(toAddr);
             }
 
-            // 2EME BOUCLE : demarquage des 'deplBytes' octets forts: [wA + (len >> 3) - deplBytes; wA + (len >> 3) [
+            // 2EME BOUCLE : demarquage des 'deplBytes' octets forts: [wA + (lengthInBits >> 3) - deplBytes; wA + (lengthInBits >> 3) [
             for (ADDRINT unTaintAddr = highAddress - deplBytes ; unTaintAddr < highAddress ; ++unTaintAddr)
             {
                 pTmgrGlobal->unTaintMemory<8>(unTaintAddr);
@@ -321,8 +321,8 @@ void SHIFT::sSHR_IM(THREADID tid, UINT32 maskedDepl, ADDRINT writeAddr ADDRESS_D
         // 3) cas général : marquage destination, puis demarquage octets forts en fonction de l'intervalle de déplacement
         else 
         {           
-            pTmgrGlobal->updateMemoryTaint<len>(writeAddr, resultPtr);
-            ADDRINT highAddress = writeAddr + (len >> 3);   // dernière adresse traitée = adresse haute exclue
+            pTmgrGlobal->updateMemoryTaint<lengthInBits>(writeAddr, resultPtr);
+            ADDRINT highAddress = writeAddr + (lengthInBits >> 3);   // dernière adresse traitée = adresse haute exclue
             for (ADDRINT unTaintAddr = highAddress - deplBytes ; unTaintAddr < highAddress ; ++unTaintAddr)
             {
                 pTmgrGlobal->unTaintMemory<8>(unTaintAddr);
@@ -331,23 +331,23 @@ void SHIFT::sSHR_IM(THREADID tid, UINT32 maskedDepl, ADDRINT writeAddr ADDRESS_D
     }
 } // sSHR_IM
 
-template<UINT32 len> 
+template<UINT32 lengthInBits> 
 void SHIFT::sSHR_IR(THREADID tid, UINT32 maskedDepl, REG reg, ADDRINT regValue ADDRESS_DEBUG) 
 {  
     TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     
     // opérande non marquée => démarquage flags
-    if (!pTmgrTls->isRegisterTainted<len>(reg)) pTmgrTls->unTaintAllFlags();
+    if (!pTmgrTls->isRegisterTainted<lengthInBits>(reg)) pTmgrTls->unTaintAllFlags();
     // déplacement >= taille destination => démarquage flags et dest 
-    else if (maskedDepl >= len) 
+    else if (maskedDepl >= lengthInBits) 
     {  
         fUnTaintOZSAP(pTmgrTls); // démarquage OZASP
   
         // marquage CF si dplt = à la taille de la destination
         // dans ce cas, le carryFlag contiendra le MSB de la source (si octet fort marqué)
-        UINT32 highPart = (len >> 3) - 1;
+        UINT32 highPart = (lengthInBits >> 3) - 1;
         REGINDEX regIndex = getRegIndex(reg);
-        if ((maskedDepl == len) && pTmgrTls->isRegisterPartTainted(regIndex, highPart))
+        if ((maskedDepl == lengthInBits) && pTmgrTls->isRegisterPartTainted(regIndex, highPart))
         {
             pTmgrTls->updateTaintCarryFlag(std::make_shared<TaintBit>(
                 F_MSB,
@@ -355,16 +355,16 @@ void SHIFT::sSHR_IR(THREADID tid, UINT32 maskedDepl, REG reg, ADDRINT regValue A
         }
         else pTmgrTls->unTaintCarryFlag();
         
-        pTmgrTls->unTaintRegister<len>(reg);  // démarquage destination
+        pTmgrTls->unTaintRegister<lengthInBits>(reg);  // démarquage destination
     }
     else // dans les autres cas : marquage par SHR
     {
-        _LOGTAINT("SHRIR " << len << " ");
-        ObjectSource objSrcReg(pTmgrTls->getRegisterTaint<len>(reg, regValue));
+        _LOGTAINT("SHRIR " << lengthInBits << " ");
+        ObjectSource objSrcReg(pTmgrTls->getRegisterTaint<lengthInBits>(reg, regValue));
         REGINDEX regIndex = getRegIndex(reg);
 
         // construction du résultat
-        std::shared_ptr<TaintObject<len>> resultPtr = std::make_shared<TaintObject<len>>(
+        std::shared_ptr<TaintObject<lengthInBits>> resultPtr = std::make_shared<TaintObject<lengthInBits>>(
             X_SHR,
             objSrcReg,
             ObjectSource(8, maskedDepl));
@@ -379,11 +379,11 @@ void SHIFT::sSHR_IR(THREADID tid, UINT32 maskedDepl, REG reg, ADDRINT regValue A
         if (!(maskedDepl & 0x7)) 
         {
             // 1ERE BOUCLE : octet faible marqué avec oct (faible + deplBytes) et ainsi de suite en accroissant les indexes
-            // jusqu'à ce que index source = index fort (len>>3 - 1) ; pas de création d'objet, juste un déplacement
+            // jusqu'à ce que index source = index fort (lengthInBits>>3 - 1) ; pas de création d'objet, juste un déplacement
             UINT32 fromIndex = deplBytes;  // index source
             UINT32 toIndex = 0; // index de destination
                 
-            for (UINT32 regPartFrom = deplBytes, regPartTo = 0 ; regPartFrom < (len >> 3) ; ++regPartFrom, ++regPartTo) 
+            for (UINT32 regPartFrom = deplBytes, regPartTo = 0 ; regPartFrom < (lengthInBits >> 3) ; ++regPartFrom, ++regPartTo) 
             {
                 if (pTmgrTls->isRegisterPartTainted(regIndex, regPartFrom))
                 {
@@ -393,8 +393,8 @@ void SHIFT::sSHR_IR(THREADID tid, UINT32 maskedDepl, REG reg, ADDRINT regValue A
                 else pTmgrTls->unTaintRegisterPart(regIndex, regPartTo);
             }
 
-            // 2EME BOUCLE : demarquage des 'deplBytes' octets forts: [(len >> 3) - deplBytes; (len >> 3) [
-            for (UINT32 regPart = (len >> 3) - deplBytes ; regPart < (len >> 3) ; ++regPart)
+            // 2EME BOUCLE : demarquage des 'deplBytes' octets forts: [(lengthInBits >> 3) - deplBytes; (lengthInBits >> 3) [
+            for (UINT32 regPart = (lengthInBits >> 3) - deplBytes ; regPart < (lengthInBits >> 3) ; ++regPart)
             {
                 pTmgrTls->unTaintRegisterPart(regIndex, regPart);
             }
@@ -402,8 +402,8 @@ void SHIFT::sSHR_IR(THREADID tid, UINT32 maskedDepl, REG reg, ADDRINT regValue A
         // 3) cas général : marquage destination, puis demarquage octets forts en fonction de l'intervalle de déplacement
         else 
         {
-            pTmgrTls->updateTaintRegister<len>(reg, resultPtr);
-            for (UINT32 regPart = (len >> 3) - deplBytes ; regPart < (len >> 3) ; ++regPart)
+            pTmgrTls->updateTaintRegister<lengthInBits>(reg, resultPtr);
+            for (UINT32 regPart = (lengthInBits >> 3) - deplBytes ; regPart < (lengthInBits >> 3) ; ++regPart)
             {
                 pTmgrTls->unTaintRegisterPart(regIndex, regPart);
             }
@@ -411,21 +411,21 @@ void SHIFT::sSHR_IR(THREADID tid, UINT32 maskedDepl, REG reg, ADDRINT regValue A
     }
 } // sSHR_IR
 
-template<UINT32 len> 
+template<UINT32 lengthInBits> 
 void SHIFT::sSHR_RM(THREADID tid, ADDRINT regCLValue, ADDRINT writeAddress ADDRESS_DEBUG) 
 {
     TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     
     bool isCountTainted = pTmgrTls->isRegisterTainted<8>(REG_CL);
-    bool isDestTainted  = pTmgrGlobal->isMemoryTainted<len>(writeAddress);
+    bool isDestTainted  = pTmgrGlobal->isMemoryTainted<lengthInBits>(writeAddress);
     
     if ( !(isDestTainted || isCountTainted)) pTmgrTls->unTaintAllFlags();
     // déplacement non marqué (mais mémoire oui) => cas SHR_IM
     else if (!isCountTainted) 
     {
         // masquage du déplacement avant appel de SHR_IM
-        UINT32 maskDepl = (len == 64) ? (regCLValue & 0x3f) : (regCLValue & 0x1f);
-        sSHR_IM<len>(tid, maskDepl, writeAddress INSADDRESS); 
+        UINT32 maskDepl = (lengthInBits == 64) ? (regCLValue & 0x3f) : (regCLValue & 0x1f);
+        sSHR_IM<lengthInBits>(tid, maskDepl, writeAddress INSADDRESS); 
     }
     // forcément déplacement marqué
     else
@@ -436,11 +436,11 @@ void SHIFT::sSHR_RM(THREADID tid, ADDRINT regCLValue, ADDRINT writeAddress ADDRE
         ObjectSource objTbCount(pTmgrTls->getRegisterTaint(REG_CL));
         // création de l'objet correspondant à la mémoire shiftée
         ObjectSource objSrcMem = (isDestTainted)
-            ? ObjectSource(pTmgrGlobal->getMemoryTaint<len>(writeAddress))
-            : ObjectSource(len, getMemoryValue<len>(writeAddress));
+            ? ObjectSource(pTmgrGlobal->getMemoryTaint<lengthInBits>(writeAddress))
+            : ObjectSource(lengthInBits, getMemoryValue<lengthInBits>(writeAddress));
 
         // création de l'objet resultat de l'opération
-        std::shared_ptr<TaintObject<len>> resultPtr = std::make_shared<TaintObject<len>>(
+        std::shared_ptr<TaintObject<lengthInBits>> resultPtr = std::make_shared<TaintObject<lengthInBits>>(
             X_SHR,
             objSrcMem,
             objTbCount);    
@@ -448,25 +448,25 @@ void SHIFT::sSHR_RM(THREADID tid, ADDRINT regCLValue, ADDRINT writeAddress ADDRE
         // marquage flags
         fSHR(pTmgrTls, resultPtr, objSrcMem, objTbCount);
         // marquage destination
-        pTmgrGlobal->updateMemoryTaint<len>(writeAddress, resultPtr);
+        pTmgrGlobal->updateMemoryTaint<lengthInBits>(writeAddress, resultPtr);
     }
 } // sSHR_RM
 
-template<UINT32 len> 
+template<UINT32 lengthInBits> 
 void SHIFT::sSHR_RR(THREADID tid, ADDRINT regCLValue, REG reg, ADDRINT regValue ADDRESS_DEBUG) 
 {
     TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     
     bool isCountTainted = pTmgrTls->isRegisterTainted<8>(REG_CL);
-    bool isDestTainted  = pTmgrTls->isRegisterTainted<len>(reg);
+    bool isDestTainted  = pTmgrTls->isRegisterTainted<lengthInBits>(reg);
     
     if ( !(isDestTainted || isCountTainted) ) pTmgrTls->unTaintAllFlags();
     // déplacement non marqué (mais registre oui) => cas SHR_IR
     else if (!isCountTainted)
     {
         // masquage du déplacement avant appel de SHR_IR
-        UINT32 maskDepl = (len == 64) ? (regCLValue & 0x3f) : (regCLValue & 0x1f);
-        sSHR_IR<len>(tid, maskDepl, reg, regValue INSADDRESS); 
+        UINT32 maskDepl = (lengthInBits == 64) ? (regCLValue & 0x3f) : (regCLValue & 0x1f);
+        sSHR_IR<lengthInBits>(tid, maskDepl, reg, regValue INSADDRESS); 
     }
     // forcément déplacement marqué
     else
@@ -477,11 +477,11 @@ void SHIFT::sSHR_RR(THREADID tid, ADDRINT regCLValue, REG reg, ADDRINT regValue 
         ObjectSource objTbCount(pTmgrTls->getRegisterTaint(REG_CL));
         // création de l'objet Source correspondant au registre shifté
         ObjectSource objSrcReg = (isDestTainted)
-            ? ObjectSource(pTmgrTls->getRegisterTaint<len>(reg, regValue))
-            : ObjectSource(len, regValue);
+            ? ObjectSource(pTmgrTls->getRegisterTaint<lengthInBits>(reg, regValue))
+            : ObjectSource(lengthInBits, regValue);
         
         // création de l'objet resultat de l'opération
-        std::shared_ptr<TaintObject<len>> resultPtr = std::make_shared<TaintObject<len>>(
+        std::shared_ptr<TaintObject<lengthInBits>> resultPtr = std::make_shared<TaintObject<lengthInBits>>(
             X_SHR,
             objSrcReg,
             objTbCount);    
@@ -489,7 +489,7 @@ void SHIFT::sSHR_RR(THREADID tid, ADDRINT regCLValue, REG reg, ADDRINT regValue 
         // marquage flags
         fSHR(pTmgrTls, resultPtr, objSrcReg, objTbCount);
         // marquage destination
-        pTmgrTls->updateTaintRegister<len>(reg, resultPtr);
+        pTmgrTls->updateTaintRegister<lengthInBits>(reg, resultPtr);
     }
 } // sSHR_RR
 
@@ -497,22 +497,22 @@ void SHIFT::sSHR_RR(THREADID tid, ADDRINT regCLValue, REG reg, ADDRINT regValue 
 /** SAR **/
 /*********/
 
-template<UINT32 len> 
+template<UINT32 lengthInBits> 
 void SHIFT::sSAR_IM(THREADID tid, UINT32 maskedDepl, ADDRINT writeAddr ADDRESS_DEBUG) 
 {  
     TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     
     // opérande non marquée => démarquage flags
-    if (!pTmgrGlobal->isMemoryTainted<len>(writeAddr)) pTmgrTls->unTaintAllFlags();
+    if (!pTmgrGlobal->isMemoryTainted<lengthInBits>(writeAddr)) pTmgrTls->unTaintAllFlags();
     // déplacement >= taille destination => démarquage flags et dest
-    else if (maskedDepl >= len) 
+    else if (maskedDepl >= lengthInBits) 
     {  
         fUnTaintOZSAP(pTmgrTls); // démarquage OZASP
             
         // marquage CF si dplt = à la taille de la destination
         // dans ce cas, le carryFlag contiendra le MSB de la source (si octet fort marqué)
-        ADDRINT highAddress = writeAddr + (len >> 3) - 1;
-        if ((maskedDepl == len) && pTmgrGlobal->isMemoryTainted<8>(highAddress))
+        ADDRINT highAddress = writeAddr + (lengthInBits >> 3) - 1;
+        if ((maskedDepl == lengthInBits) && pTmgrGlobal->isMemoryTainted<8>(highAddress))
         {
             pTmgrTls->updateTaintCarryFlag(std::make_shared<TaintBit>(
                 F_MSB,
@@ -520,15 +520,15 @@ void SHIFT::sSAR_IM(THREADID tid, UINT32 maskedDepl, ADDRINT writeAddr ADDRESS_D
         }
         else pTmgrTls->unTaintCarryFlag();
 
-        pTmgrGlobal->unTaintMemory<len>(writeAddr);  // démarquage destination 
+        pTmgrGlobal->unTaintMemory<lengthInBits>(writeAddr);  // démarquage destination 
     }
     else // dans les autres cas : marquage par SAR
     {
-        _LOGTAINT("SARIM " << len << " ");
-        ObjectSource objSrcMem(pTmgrGlobal->getMemoryTaint<len>(writeAddr));
+        _LOGTAINT("SARIM " << lengthInBits << " ");
+        ObjectSource objSrcMem(pTmgrGlobal->getMemoryTaint<lengthInBits>(writeAddr));
 
         // construction du résultat
-        std::shared_ptr<TaintObject<len>> resultPtr = std::make_shared<TaintObject<len>>(
+        std::shared_ptr<TaintObject<lengthInBits>> resultPtr = std::make_shared<TaintObject<lengthInBits>>(
             X_SAR,
             objSrcMem,
             ObjectSource(8, maskedDepl));
@@ -537,27 +537,27 @@ void SHIFT::sSAR_IM(THREADID tid, UINT32 maskedDepl, ADDRINT writeAddr ADDRESS_D
         fSAR(pTmgrTls, resultPtr, objSrcMem, maskedDepl);
 
         // MARQUAGE DESTINATION 
-        pTmgrGlobal->updateMemoryTaint<len>(writeAddr, resultPtr);
+        pTmgrGlobal->updateMemoryTaint<lengthInBits>(writeAddr, resultPtr);
     }
 } // sSAR_IM
 
-template<UINT32 len> 
+template<UINT32 lengthInBits> 
 void SHIFT::sSAR_IR(THREADID tid, UINT32 maskedDepl, REG reg, ADDRINT regValue ADDRESS_DEBUG) 
 {  
     TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     
     // opérande non marquée => démarquage flags
-    if (!pTmgrTls->isRegisterTainted<len>(reg)) pTmgrTls->unTaintAllFlags();
+    if (!pTmgrTls->isRegisterTainted<lengthInBits>(reg)) pTmgrTls->unTaintAllFlags();
     // déplacement >= taille destination => démarquage flags et dest 
-    else if (maskedDepl >= len) 
+    else if (maskedDepl >= lengthInBits) 
     {  
         fUnTaintOZSAP(pTmgrTls); // démarquage OZASP
   
         // marquage CF si dplt = à la taille de la destination
         // dans ce cas, le carryFlag contiendra le MSB de la source (si octet fort marqué)
-        UINT32 highPart = (len >> 3) - 1;
+        UINT32 highPart = (lengthInBits >> 3) - 1;
         REGINDEX regIndex = getRegIndex(reg);
-        if ((maskedDepl == len) && pTmgrTls->isRegisterPartTainted(regIndex, highPart))
+        if ((maskedDepl == lengthInBits) && pTmgrTls->isRegisterPartTainted(regIndex, highPart))
         {
             pTmgrTls->updateTaintCarryFlag(std::make_shared<TaintBit>(
                 F_MSB,
@@ -565,16 +565,16 @@ void SHIFT::sSAR_IR(THREADID tid, UINT32 maskedDepl, REG reg, ADDRINT regValue A
         }
         else pTmgrTls->unTaintCarryFlag();
         
-        pTmgrTls->unTaintRegister<len>(reg);  // démarquage destination
+        pTmgrTls->unTaintRegister<lengthInBits>(reg);  // démarquage destination
     }
     else // dans les autres cas : marquage par SAR
     {
-        _LOGTAINT("SARIR " << len << " ");
-        ObjectSource objSrcReg(pTmgrTls->getRegisterTaint<len>(reg, regValue));
+        _LOGTAINT("SARIR " << lengthInBits << " ");
+        ObjectSource objSrcReg(pTmgrTls->getRegisterTaint<lengthInBits>(reg, regValue));
         REGINDEX regIndex = getRegIndex(reg);
 
         // construction du résultat
-        std::shared_ptr<TaintObject<len>> resultPtr = std::make_shared<TaintObject<len>>(
+        std::shared_ptr<TaintObject<lengthInBits>> resultPtr = std::make_shared<TaintObject<lengthInBits>>(
             X_SAR,
             objSrcReg,
             ObjectSource(8, maskedDepl));
@@ -583,25 +583,25 @@ void SHIFT::sSAR_IR(THREADID tid, UINT32 maskedDepl, REG reg, ADDRINT regValue A
         fSAR(pTmgrTls, resultPtr, objSrcReg, maskedDepl);
 
         // MARQUAGE DESTINATION 
-        pTmgrTls->updateTaintRegister<len>(reg, resultPtr);
+        pTmgrTls->updateTaintRegister<lengthInBits>(reg, resultPtr);
     }
 } // sSAR_IR
 
-template<UINT32 len> 
+template<UINT32 lengthInBits> 
 void SHIFT::sSAR_RM(THREADID tid, ADDRINT regCLValue, ADDRINT writeAddress ADDRESS_DEBUG) 
 {
     TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     
     bool isCountTainted = pTmgrTls->isRegisterTainted<8>(REG_CL);
-    bool isDestTainted  = pTmgrGlobal->isMemoryTainted<len>(writeAddress);
+    bool isDestTainted  = pTmgrGlobal->isMemoryTainted<lengthInBits>(writeAddress);
     
     if ( !(isDestTainted || isCountTainted)) pTmgrTls->unTaintAllFlags();
     // déplacement non marqué (mais mémoire oui) => cas SAR_IM
     else if (!isCountTainted) 
     {
         // masquage du déplacement avant appel de SAR_IM
-        UINT32 maskDepl = (len == 64) ? (regCLValue & 0x3f) : (regCLValue & 0x1f);
-        sSAR_IM<len>(tid, maskDepl, writeAddress INSADDRESS); 
+        UINT32 maskDepl = (lengthInBits == 64) ? (regCLValue & 0x3f) : (regCLValue & 0x1f);
+        sSAR_IM<lengthInBits>(tid, maskDepl, writeAddress INSADDRESS); 
     }
     // forcément déplacement marqué
     else
@@ -612,11 +612,11 @@ void SHIFT::sSAR_RM(THREADID tid, ADDRINT regCLValue, ADDRINT writeAddress ADDRE
         ObjectSource objTbCount(pTmgrTls->getRegisterTaint(REG_CL));
         // création de l'objet correspondant à la mémoire shiftée
         ObjectSource objSrcMem = (isDestTainted)
-            ? ObjectSource(pTmgrGlobal->getMemoryTaint<len>(writeAddress))
-            : ObjectSource(len, getMemoryValue<len>(writeAddress));
+            ? ObjectSource(pTmgrGlobal->getMemoryTaint<lengthInBits>(writeAddress))
+            : ObjectSource(lengthInBits, getMemoryValue<lengthInBits>(writeAddress));
 
         // création de l'objet resultat de l'opération
-        std::shared_ptr<TaintObject<len>> resultPtr = std::make_shared<TaintObject<len>>(
+        std::shared_ptr<TaintObject<lengthInBits>> resultPtr = std::make_shared<TaintObject<lengthInBits>>(
             X_SAR,
             objSrcMem,
             objTbCount);    
@@ -624,25 +624,25 @@ void SHIFT::sSAR_RM(THREADID tid, ADDRINT regCLValue, ADDRINT writeAddress ADDRE
         // marquage flags
         fSAR(pTmgrTls, resultPtr, objSrcMem, objTbCount);
         // marquage destination
-        pTmgrGlobal->updateMemoryTaint<len>(writeAddress, resultPtr);
+        pTmgrGlobal->updateMemoryTaint<lengthInBits>(writeAddress, resultPtr);
     }
 } // sSAR_RM
 
-template<UINT32 len> 
+template<UINT32 lengthInBits> 
 void SHIFT::sSAR_RR(THREADID tid, ADDRINT regCLValue, REG reg, ADDRINT regValue ADDRESS_DEBUG) 
 {
     TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     
     bool isCountTainted = pTmgrTls->isRegisterTainted<8>(REG_CL);
-    bool isDestTainted  = pTmgrTls->isRegisterTainted<len>(reg);
+    bool isDestTainted  = pTmgrTls->isRegisterTainted<lengthInBits>(reg);
     
     if ( !(isDestTainted || isCountTainted) ) pTmgrTls->unTaintAllFlags();
     // déplacement non marqué (mais registre oui) => cas SAR_IR
     else if (!isCountTainted)
     {
         // masquage du déplacement avant appel de SAR_IR
-        UINT32 maskDepl = (len == 64) ? (regCLValue & 0x3f) : (regCLValue & 0x1f);
-        sSAR_IR<len>(tid, maskDepl, reg, regValue INSADDRESS); 
+        UINT32 maskDepl = (lengthInBits == 64) ? (regCLValue & 0x3f) : (regCLValue & 0x1f);
+        sSAR_IR<lengthInBits>(tid, maskDepl, reg, regValue INSADDRESS); 
     }
     // forcément déplacement marqué
     else
@@ -653,11 +653,11 @@ void SHIFT::sSAR_RR(THREADID tid, ADDRINT regCLValue, REG reg, ADDRINT regValue 
         ObjectSource objTbCount(pTmgrTls->getRegisterTaint(REG_CL));
         // création de l'objet Source correspondant au registre shifté
         ObjectSource objSrcReg = (isDestTainted)
-            ? ObjectSource(pTmgrTls->getRegisterTaint<len>(reg, regValue))
-            : ObjectSource(len, regValue);
+            ? ObjectSource(pTmgrTls->getRegisterTaint<lengthInBits>(reg, regValue))
+            : ObjectSource(lengthInBits, regValue);
         
         // création de l'objet resultat de l'opération
-        std::shared_ptr<TaintObject<len>> resultPtr = std::make_shared<TaintObject<len>>(
+        std::shared_ptr<TaintObject<lengthInBits>> resultPtr = std::make_shared<TaintObject<lengthInBits>>(
             X_SAR,
             objSrcReg,
             objTbCount);    
@@ -665,7 +665,7 @@ void SHIFT::sSAR_RR(THREADID tid, ADDRINT regCLValue, REG reg, ADDRINT regValue 
         // marquage flags
         fSAR(pTmgrTls, resultPtr, objSrcReg, objTbCount);
         // marquage destination
-        pTmgrTls->updateTaintRegister<len>(reg, resultPtr);
+        pTmgrTls->updateTaintRegister<lengthInBits>(reg, resultPtr);
     }
 } // sSAR_RR
 
@@ -676,23 +676,23 @@ void SHIFT::sSAR_RR(THREADID tid, ADDRINT regCLValue, REG reg, ADDRINT regValue 
 // TODO : tester le marquage octet par octet du 'bit pattern' (seconde opérande)
 // afin d'affiner le démarquage éventuel de la destination. Valable surtout pour le marquage bit par bit
 
-template<UINT32 len> void SHIFT::sSHLD_IM
+template<UINT32 lengthInBits> void SHIFT::sSHLD_IM
     (THREADID tid, UINT32 maskedDepl, REG regSrc, ADDRINT regSrcValue, ADDRINT writeAddr ADDRESS_DEBUG)
 { 
     TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     
-    bool isSrcDestTainted = pTmgrGlobal->isMemoryTainted<len>(writeAddr);
-    bool isRegSrcTainted  = pTmgrTls->isRegisterTainted<len>(regSrc);
+    bool isSrcDestTainted = pTmgrGlobal->isMemoryTainted<lengthInBits>(writeAddr);
+    bool isRegSrcTainted  = pTmgrTls->isRegisterTainted<lengthInBits>(regSrc);
     // opérandes non marquées => démarquage flags
     if (!(isSrcDestTainted || isRegSrcTainted))  pTmgrTls->unTaintAllFlags();
     // déplacement >= taille destination => démarquage flags et dest
-    else if (maskedDepl >= len) 
+    else if (maskedDepl >= lengthInBits) 
     {  
         fUnTaintOZSAP(pTmgrTls); // démarquage OZASP
             
         // marquage CF si dplt = à la taille de la destination
         // dans ce cas, le carryFlag contiendra le bit 0 de la source (si octet faible marqué) 
-        if ((maskedDepl == len) && pTmgrGlobal->isMemoryTainted<8>(writeAddr))
+        if ((maskedDepl == lengthInBits) && pTmgrGlobal->isMemoryTainted<8>(writeAddr))
         {
             pTmgrTls->updateTaintCarryFlag(std::make_shared<TaintBit>(
                 F_LSB,
@@ -700,61 +700,61 @@ template<UINT32 len> void SHIFT::sSHLD_IM
         }
         else pTmgrTls->unTaintCarryFlag();
 
-        pTmgrGlobal->unTaintMemory<len>(writeAddr);  // démarquage destination
+        pTmgrGlobal->unTaintMemory<lengthInBits>(writeAddr);  // démarquage destination
     }
     // dans les autres cas : marquage par SHL
     else 
     {
-        _LOGTAINT("SHLDIM " << len << " ");
+        _LOGTAINT("SHLDIM " << lengthInBits << " ");
 
         ObjectSource objMemSrcDest = (isSrcDestTainted) 
-            ? ObjectSource(pTmgrGlobal->getMemoryTaint<len>(writeAddr))
-            : ObjectSource(len, getMemoryValue<len>(writeAddr));
+            ? ObjectSource(pTmgrGlobal->getMemoryTaint<lengthInBits>(writeAddr))
+            : ObjectSource(lengthInBits, getMemoryValue<lengthInBits>(writeAddr));
         ObjectSource objRegSrc = (isRegSrcTainted)
-            ? ObjectSource(pTmgrTls->getRegisterTaint<len>(regSrc, regSrcValue))
-            : ObjectSource(len, regSrcValue);
+            ? ObjectSource(pTmgrTls->getRegisterTaint<lengthInBits>(regSrc, regSrcValue))
+            : ObjectSource(lengthInBits, regSrcValue);
         
         // concaténation de la source et du bit pattern
-        TaintObject<(2*len)> concatenatedSrc(CONCAT, objMemSrcDest, objRegSrc);
+        TaintObject<(2*lengthInBits)> concatenatedSrc(CONCAT, objMemSrcDest, objRegSrc);
 
-        // déplacement avec SHL sur (len*2) bits
-        TaintObject<(2*len)> shiftOperation(X_SHL,
-            ObjectSource(std::make_shared<TaintObject<(2*len)>>(concatenatedSrc)),
+        // déplacement avec SHL sur (lengthInBits*2) bits
+        TaintObject<(2*lengthInBits)> shiftOperation(X_SHL,
+            ObjectSource(std::make_shared<TaintObject<(2*lengthInBits)>>(concatenatedSrc)),
             ObjectSource(8, maskedDepl));
 
         // construction du résultat : extraction de la partie forte de shiftOperation
-        std::shared_ptr<TaintObject<len>> resultPtr = std::make_shared<TaintObject<len>>(
+        std::shared_ptr<TaintObject<lengthInBits>> resultPtr = std::make_shared<TaintObject<lengthInBits>>(
             EXTRACT,
-            ObjectSource(std::make_shared<TaintObject<(2*len)>>(shiftOperation)),
-            ObjectSource(8, 1)); // extract de longueur 'len' : 0 = partie faible, 1 = partie forte 
+            ObjectSource(std::make_shared<TaintObject<(2*lengthInBits)>>(shiftOperation)),
+            ObjectSource(8, 1)); // extract de longueur 'lengthInBits' : 0 = partie faible, 1 = partie forte 
 
         // marquage flags; SEUL la source originale (ici mémoire) est utilisée pour le marquage des flags
         // cf implémentation de fSHL (le 'bit pattern' est inutile)
         fSHLD(pTmgrTls, resultPtr, objMemSrcDest, maskedDepl);
 
         // MARQUAGE DESTINATION
-        pTmgrGlobal->updateMemoryTaint<len>(writeAddr, resultPtr);
+        pTmgrGlobal->updateMemoryTaint<lengthInBits>(writeAddr, resultPtr);
     }
 } // sSHLD_IM
 
-template<UINT32 len> void SHIFT::sSHLD_IR
+template<UINT32 lengthInBits> void SHIFT::sSHLD_IR
     (THREADID tid, UINT32 maskedDepl, REG regSrc, ADDRINT regSrcValue, REG regSrcDest, ADDRINT regSrcDestValue ADDRESS_DEBUG)
 { 
     TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     
-    bool isSrcDestTainted = pTmgrTls->isRegisterTainted<len>(regSrcDest);
-    bool isRegSrcTainted  = pTmgrTls->isRegisterTainted<len>(regSrc);
+    bool isSrcDestTainted = pTmgrTls->isRegisterTainted<lengthInBits>(regSrcDest);
+    bool isRegSrcTainted  = pTmgrTls->isRegisterTainted<lengthInBits>(regSrc);
     // opérandes non marquées => démarquage flags
     if (!(isSrcDestTainted || isRegSrcTainted))  pTmgrTls->unTaintAllFlags();
     // déplacement >= taille destination => démarquage flags et dest 
-    else if (maskedDepl >= len) 
+    else if (maskedDepl >= lengthInBits) 
     {  
         fUnTaintOZSAP(pTmgrTls); // démarquage OZASP
             
         // marquage CF si dplt = à la taille de la destination
         // dans ce cas, le carryFlag contiendra le bit 0 de la source (si octet faible marqué)
         REGINDEX regSrcDestIndex = getRegIndex(regSrcDest);
-        if ((maskedDepl == len) && pTmgrTls->isRegisterPartTainted(regSrcDestIndex, 0))
+        if ((maskedDepl == lengthInBits) && pTmgrTls->isRegisterPartTainted(regSrcDestIndex, 0))
         {
             pTmgrTls->updateTaintCarryFlag(std::make_shared<TaintBit>(
                 F_LSB,
@@ -762,147 +762,147 @@ template<UINT32 len> void SHIFT::sSHLD_IR
         }
         else pTmgrTls->unTaintCarryFlag();
 
-        pTmgrTls->unTaintRegister<len>(regSrcDest);  // démarquage destination
+        pTmgrTls->unTaintRegister<lengthInBits>(regSrcDest);  // démarquage destination
     }
     // dans les autres cas : marquage par SHL
     else
     {
-        _LOGTAINT("SHLD_IR " << len << " ");
+        _LOGTAINT("SHLD_IR " << lengthInBits << " ");
                
         ObjectSource objRegSrcDest = (isSrcDestTainted) 
-            ? ObjectSource(pTmgrTls->getRegisterTaint<len>(regSrcDest, regSrcDestValue))
-            : ObjectSource(len, regSrcDestValue);
+            ? ObjectSource(pTmgrTls->getRegisterTaint<lengthInBits>(regSrcDest, regSrcDestValue))
+            : ObjectSource(lengthInBits, regSrcDestValue);
         ObjectSource objRegSrc = (isRegSrcTainted)
-            ? ObjectSource(pTmgrTls->getRegisterTaint<len>(regSrc, regSrcValue))
-            : ObjectSource(len, regSrcValue);
+            ? ObjectSource(pTmgrTls->getRegisterTaint<lengthInBits>(regSrc, regSrcValue))
+            : ObjectSource(lengthInBits, regSrcValue);
         
         // concaténation de la source et du bit pattern
-        TaintObject<(2*len)> concatenatedSrc(CONCAT, objRegSrcDest, objRegSrc);
+        TaintObject<(2*lengthInBits)> concatenatedSrc(CONCAT, objRegSrcDest, objRegSrc);
 
-        // déplacement avec SHL sur (len*2) bits
-        TaintObject<(2*len)> shiftOperation(X_SHL,
-            ObjectSource(std::make_shared<TaintObject<(2*len)>>(concatenatedSrc)),
+        // déplacement avec SHL sur (lengthInBits*2) bits
+        TaintObject<(2*lengthInBits)> shiftOperation(X_SHL,
+            ObjectSource(std::make_shared<TaintObject<(2*lengthInBits)>>(concatenatedSrc)),
             ObjectSource(8, maskedDepl));
 
         // construction du résultat : extraction de la partie forte de shiftOperation
-        std::shared_ptr<TaintObject<len>> resultPtr = std::make_shared<TaintObject<len>>(
+        std::shared_ptr<TaintObject<lengthInBits>> resultPtr = std::make_shared<TaintObject<lengthInBits>>(
             EXTRACT,
-            ObjectSource(std::make_shared<TaintObject<(2*len)>>(shiftOperation)),
-            ObjectSource(8, 1)); // extract de longueur 'len' : 0 = partie faible, 1 = partie forte 
+            ObjectSource(std::make_shared<TaintObject<(2*lengthInBits)>>(shiftOperation)),
+            ObjectSource(8, 1)); // extract de longueur 'lengthInBits' : 0 = partie faible, 1 = partie forte 
 
         // marquage flags; SEUL la source originale (ici registre srcDest) est utilisée pour le marquage des flags
         // cf implémentation de fSHL (le 'bit pattern' est inutile)
         fSHLD(pTmgrTls, resultPtr, objRegSrcDest, maskedDepl);
 
         // MARQUAGE DESTINATION
-        pTmgrTls->updateTaintRegister<len>(regSrcDest, resultPtr);
+        pTmgrTls->updateTaintRegister<lengthInBits>(regSrcDest, resultPtr);
     }
 } // sSHLD_IR
 
-template<UINT32 len> void SHIFT::sSHLD_RM
+template<UINT32 lengthInBits> void SHIFT::sSHLD_RM
     (THREADID tid, ADDRINT regCLValue, REG regSrc, ADDRINT regSrcValue, ADDRINT writeAddress ADDRESS_DEBUG)
 { 
     TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     
     bool isCountTainted   = pTmgrTls->isRegisterTainted<8>(REG_CL);
-    bool isSrcDestTainted = pTmgrGlobal->isMemoryTainted<len>(writeAddress);
-    bool isRegSrcTainted  = pTmgrTls->isRegisterTainted<len>(regSrc);
+    bool isSrcDestTainted = pTmgrGlobal->isMemoryTainted<lengthInBits>(writeAddress);
+    bool isRegSrcTainted  = pTmgrTls->isRegisterTainted<lengthInBits>(regSrc);
     
     if ( !(isCountTainted || isSrcDestTainted || isRegSrcTainted)) pTmgrTls->unTaintAllFlags();
     // déplacement non marqué (mais mémoire oui) => cas SHLD_IM
     else if (!isCountTainted) 
     {
         // masquage du déplacement avant appel de SHLD_IM
-        UINT32 maskDepl = (len == 64) ? (regCLValue & 0x3f) : (regCLValue & 0x1f);
-        sSHLD_IM<len>(tid, maskDepl, regSrc, regSrcValue, writeAddress INSADDRESS); 
+        UINT32 maskDepl = (lengthInBits == 64) ? (regCLValue & 0x3f) : (regCLValue & 0x1f);
+        sSHLD_IM<lengthInBits>(tid, maskDepl, regSrc, regSrcValue, writeAddress INSADDRESS); 
     }
     else // déplacement marqué. Mémoire et Bit Pattern marqués ou non  
     {
-        _LOGTAINT("SHLD_RM " << len << " ");
+        _LOGTAINT("SHLD_RM " << lengthInBits << " ");
         
         ObjectSource objMemSrcDest = (isSrcDestTainted) 
-            ? ObjectSource(pTmgrGlobal->getMemoryTaint<len>(writeAddress))
-            : ObjectSource(len, getMemoryValue<len>(writeAddress));
+            ? ObjectSource(pTmgrGlobal->getMemoryTaint<lengthInBits>(writeAddress))
+            : ObjectSource(lengthInBits, getMemoryValue<lengthInBits>(writeAddress));
         ObjectSource objRegSrc = (isRegSrcTainted)
-            ? ObjectSource(pTmgrTls->getRegisterTaint<len>(regSrc, regSrcValue))
-            : ObjectSource(len, regSrcValue);
+            ? ObjectSource(pTmgrTls->getRegisterTaint<lengthInBits>(regSrc, regSrcValue))
+            : ObjectSource(lengthInBits, regSrcValue);
 
         // concaténation de la source et du bit pattern
-        TaintObject<(2*len)> concatenatedSrc(CONCAT, objMemSrcDest, objRegSrc);
+        TaintObject<(2*lengthInBits)> concatenatedSrc(CONCAT, objMemSrcDest, objRegSrc);
         // récupération du déplacement marqué
         ObjectSource objTbCount(pTmgrTls->getRegisterTaint(REG_CL));
 
-        // déplacement avec SHL sur (len*2) bits, déplacement marqué
-        TaintObject<(2*len)> shiftOperation(X_SHL,
-            ObjectSource(std::make_shared<TaintObject<(2*len)>>(concatenatedSrc)),
+        // déplacement avec SHL sur (lengthInBits*2) bits, déplacement marqué
+        TaintObject<(2*lengthInBits)> shiftOperation(X_SHL,
+            ObjectSource(std::make_shared<TaintObject<(2*lengthInBits)>>(concatenatedSrc)),
             objTbCount);
 
         // construction du résultat : extraction de la partie forte de shiftOperation
-        std::shared_ptr<TaintObject<len>> resultPtr = std::make_shared<TaintObject<len>>(
+        std::shared_ptr<TaintObject<lengthInBits>> resultPtr = std::make_shared<TaintObject<lengthInBits>>(
             EXTRACT,
-            ObjectSource(std::make_shared<TaintObject<(2*len)>>(shiftOperation)),
-            ObjectSource(8, 1)); // extract de longueur 'len' : 0 = partie faible, 1 = partie forte 
+            ObjectSource(std::make_shared<TaintObject<(2*lengthInBits)>>(shiftOperation)),
+            ObjectSource(8, 1)); // extract de longueur 'lengthInBits' : 0 = partie faible, 1 = partie forte 
 
         // marquage flags; SEUL la source originale (ici mémoire) est utilisée pour le marquage des flags
         // cf implémentation de fSHL (le 'bit pattern' est inutile)
         fSHLD(pTmgrTls, resultPtr, objMemSrcDest, objTbCount);
 
         // MARQUAGE DESTINATION
-        pTmgrGlobal->updateMemoryTaint<len>(writeAddress, resultPtr);
+        pTmgrGlobal->updateMemoryTaint<lengthInBits>(writeAddress, resultPtr);
     }
 } // sSHLD_RM
 
-template<UINT32 len> void SHIFT::sSHLD_RR
+template<UINT32 lengthInBits> void SHIFT::sSHLD_RR
     (THREADID tid, ADDRINT regCLValue, REG regSrc, ADDRINT regSrcValue, REG regSrcDest, ADDRINT regSrcDestValue ADDRESS_DEBUG)
 { 
     TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     
     bool isCountTainted   = pTmgrTls->isRegisterTainted<8>(REG_CL);
-    bool isSrcDestTainted = pTmgrTls->isRegisterTainted<len>(regSrcDest);
-    bool isRegSrcTainted  = pTmgrTls->isRegisterTainted<len>(regSrc);
+    bool isSrcDestTainted = pTmgrTls->isRegisterTainted<lengthInBits>(regSrcDest);
+    bool isRegSrcTainted  = pTmgrTls->isRegisterTainted<lengthInBits>(regSrc);
     
     if ( !(isCountTainted || isSrcDestTainted || isRegSrcTainted)) pTmgrTls->unTaintAllFlags();
     // déplacement non marqué (mais mémoire oui) => cas SHLD_IR
     else if (!isCountTainted) 
     {
         // masquage du déplacement avant appel de SHLD_IR
-        UINT32 maskDepl = (len == 64) ? (regCLValue & 0x3f) : (regCLValue & 0x1f);
-        sSHLD_IR<len>(tid, maskDepl, regSrc, regSrcValue, regSrcDest, regSrcDestValue INSADDRESS); 
+        UINT32 maskDepl = (lengthInBits == 64) ? (regCLValue & 0x3f) : (regCLValue & 0x1f);
+        sSHLD_IR<lengthInBits>(tid, maskDepl, regSrc, regSrcValue, regSrcDest, regSrcDestValue INSADDRESS); 
     }
     else // déplacement marqué ; Registre et Bit Pattern marqués ou non  
     {
-        _LOGTAINT("SHLD_RR " << len << " ");
+        _LOGTAINT("SHLD_RR " << lengthInBits << " ");
         
         // récupération du déplacement marqué
         ObjectSource objTbCount(pTmgrTls->getRegisterTaint(REG_CL));
 
         ObjectSource objRegSrcDest = (isSrcDestTainted) 
-            ? ObjectSource(pTmgrTls->getRegisterTaint<len>(regSrcDest, regSrcDestValue))
-            : ObjectSource(len, regSrcDestValue);
+            ? ObjectSource(pTmgrTls->getRegisterTaint<lengthInBits>(regSrcDest, regSrcDestValue))
+            : ObjectSource(lengthInBits, regSrcDestValue);
         ObjectSource objRegSrc = (isRegSrcTainted)
-            ? ObjectSource(pTmgrTls->getRegisterTaint<len>(regSrc, regSrcValue))
-            : ObjectSource(len, regSrcValue);
+            ? ObjectSource(pTmgrTls->getRegisterTaint<lengthInBits>(regSrc, regSrcValue))
+            : ObjectSource(lengthInBits, regSrcValue);
         
         // concaténation de la source et du bit pattern
-        TaintObject<(2*len)> concatenatedSrc(CONCAT, objRegSrcDest, objRegSrc);
+        TaintObject<(2*lengthInBits)> concatenatedSrc(CONCAT, objRegSrcDest, objRegSrc);
 
-        // déplacement avec SHL sur (len*2) bits, déplacement marqué
-        TaintObject<(2*len)> shiftOperation(X_SHL,
-            ObjectSource(std::make_shared<TaintObject<(2*len)>>(concatenatedSrc)),
+        // déplacement avec SHL sur (lengthInBits*2) bits, déplacement marqué
+        TaintObject<(2*lengthInBits)> shiftOperation(X_SHL,
+            ObjectSource(std::make_shared<TaintObject<(2*lengthInBits)>>(concatenatedSrc)),
             objTbCount);
 
         // construction du résultat : extraction de la partie forte de shiftOperation
-        std::shared_ptr<TaintObject<len>> resultPtr = std::make_shared<TaintObject<len>>(
+        std::shared_ptr<TaintObject<lengthInBits>> resultPtr = std::make_shared<TaintObject<lengthInBits>>(
             EXTRACT,
-            ObjectSource(std::make_shared<TaintObject<(2*len)>>(shiftOperation)),
-            ObjectSource(8, 1)); // extract de longueur 'len' : 0 = partie faible, 1 = partie forte 
+            ObjectSource(std::make_shared<TaintObject<(2*lengthInBits)>>(shiftOperation)),
+            ObjectSource(8, 1)); // extract de longueur 'lengthInBits' : 0 = partie faible, 1 = partie forte 
 
         // marquage flags; SEUL la source originale (ici registre srcDest) est utilisée pour le marquage des flags
         // cf implémentation de fSHL (le 'bit pattern' est inutile)
         fSHLD(pTmgrTls, resultPtr, objRegSrcDest, objTbCount);
 
         // MARQUAGE DESTINATION
-        pTmgrTls->updateTaintRegister<len>(regSrcDest, resultPtr);
+        pTmgrTls->updateTaintRegister<lengthInBits>(regSrcDest, resultPtr);
     }
 } // sSHLD_RR
  
@@ -910,24 +910,24 @@ template<UINT32 len> void SHIFT::sSHLD_RR
 /** SHRD **/
 /**********/
 
-template<UINT32 len> void SHIFT::sSHRD_IM
+template<UINT32 lengthInBits> void SHIFT::sSHRD_IM
     (THREADID tid, UINT32 maskedDepl, REG regSrc, ADDRINT regSrcValue, ADDRINT writeAddr ADDRESS_DEBUG)
 { 
     TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     
-    bool isSrcDestTainted = pTmgrGlobal->isMemoryTainted<len>(writeAddr);
-    bool isRegSrcTainted  = pTmgrTls->isRegisterTainted<len>(regSrc);
+    bool isSrcDestTainted = pTmgrGlobal->isMemoryTainted<lengthInBits>(writeAddr);
+    bool isRegSrcTainted  = pTmgrTls->isRegisterTainted<lengthInBits>(regSrc);
     // opérandes non marquées => démarquage flags
     if (!(isSrcDestTainted || isRegSrcTainted))  pTmgrTls->unTaintAllFlags();
     // déplacement >= taille destination => démarquage flags et dest
-    else if (maskedDepl >= len) 
+    else if (maskedDepl >= lengthInBits) 
     {  
         fUnTaintOZSAP(pTmgrTls); // démarquage OZASP
             
         // marquage CF si dplt = à la taille de la destination
         // dans ce cas, le carryFlag contiendra le MSB de la source (si octet fort marque)
-        ADDRINT highAddress = writeAddr + (len >> 3) - 1;
-        if ((maskedDepl == len) && pTmgrGlobal->isMemoryTainted<8>(highAddress))
+        ADDRINT highAddress = writeAddr + (lengthInBits >> 3) - 1;
+        if ((maskedDepl == lengthInBits) && pTmgrGlobal->isMemoryTainted<8>(highAddress))
         {
             pTmgrTls->updateTaintCarryFlag(std::make_shared<TaintBit>(
                 F_MSB,
@@ -935,64 +935,64 @@ template<UINT32 len> void SHIFT::sSHRD_IM
         }
         else pTmgrTls->unTaintCarryFlag();
 
-        pTmgrGlobal->unTaintMemory<len>(writeAddr);  // démarquage destination 
+        pTmgrGlobal->unTaintMemory<lengthInBits>(writeAddr);  // démarquage destination 
     }
     else // dans les autres cas : marquage par SHR
     {
-        _LOGTAINT("SHRD_IM " << len << " ");
+        _LOGTAINT("SHRD_IM " << lengthInBits << " ");
             
         ObjectSource objMemSrcDest = (isSrcDestTainted) 
-            ? ObjectSource(pTmgrGlobal->getMemoryTaint<len>(writeAddr))
-            : ObjectSource(len, getMemoryValue<len>(writeAddr));
+            ? ObjectSource(pTmgrGlobal->getMemoryTaint<lengthInBits>(writeAddr))
+            : ObjectSource(lengthInBits, getMemoryValue<lengthInBits>(writeAddr));
         ObjectSource objRegSrc = (isRegSrcTainted)
-            ? ObjectSource(pTmgrTls->getRegisterTaint<len>(regSrc, regSrcValue))
-            : ObjectSource(len, regSrcValue);
+            ? ObjectSource(pTmgrTls->getRegisterTaint<lengthInBits>(regSrc, regSrcValue))
+            : ObjectSource(lengthInBits, regSrcValue);
         
         // concaténation de la source et du bit pattern
-        TaintObject<(2*len)> concatenatedSrc(
+        TaintObject<(2*lengthInBits)> concatenatedSrc(
             CONCAT, 
             objMemSrcDest, 
             objRegSrc);
-        ObjectSource objConcatenatedSrc(std::make_shared<TaintObject<(2*len)>>(concatenatedSrc));
+        ObjectSource objConcatenatedSrc(std::make_shared<TaintObject<(2*lengthInBits)>>(concatenatedSrc));
 
-        // déplacement avec SHR sur (len*2) bits
-        TaintObject<(2*len)> shiftOperation(X_SHR,
+        // déplacement avec SHR sur (lengthInBits*2) bits
+        TaintObject<(2*lengthInBits)> shiftOperation(X_SHR,
             objConcatenatedSrc,
             ObjectSource(8, maskedDepl));
 
         // construction du résultat : extraction de la partie forte de shiftOperation
-        std::shared_ptr<TaintObject<len>> resultPtr = std::make_shared<TaintObject<len>>(
+        std::shared_ptr<TaintObject<lengthInBits>> resultPtr = std::make_shared<TaintObject<lengthInBits>>(
             EXTRACT,
-            ObjectSource(std::make_shared<TaintObject<(2*len)>>(shiftOperation)),
-            ObjectSource(8, 1)); // extract de longueur 'len' : 0 = partie faible, 1 = partie forte
+            ObjectSource(std::make_shared<TaintObject<(2*lengthInBits)>>(shiftOperation)),
+            ObjectSource(8, 1)); // extract de longueur 'lengthInBits' : 0 = partie faible, 1 = partie forte
 
         // marquage flags
         fSHRD(pTmgrTls, resultPtr, objConcatenatedSrc, maskedDepl);
 
         // MARQUAGE DESTINATION
-        pTmgrGlobal->updateMemoryTaint<len>(writeAddr, resultPtr);
+        pTmgrGlobal->updateMemoryTaint<lengthInBits>(writeAddr, resultPtr);
     }
 } // sSHRD_IM
 
-template<UINT32 len> void SHIFT::sSHRD_IR
+template<UINT32 lengthInBits> void SHIFT::sSHRD_IR
     (THREADID tid, UINT32 maskedDepl, REG regSrc, ADDRINT regSrcValue, REG regSrcDest, ADDRINT regSrcDestValue ADDRESS_DEBUG)
 { 
     TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     
-    bool isSrcDestTainted = pTmgrTls->isRegisterTainted<len>(regSrcDest);
-    bool isRegSrcTainted  = pTmgrTls->isRegisterTainted<len>(regSrc);
+    bool isSrcDestTainted = pTmgrTls->isRegisterTainted<lengthInBits>(regSrcDest);
+    bool isRegSrcTainted  = pTmgrTls->isRegisterTainted<lengthInBits>(regSrc);
 
     // opérandes non marquées => démarquage flags
     if (!(isSrcDestTainted || isRegSrcTainted))  pTmgrTls->unTaintAllFlags();
     // déplacement >= taille destination => démarquage flags et dest 
-    else if (maskedDepl >= len) 
+    else if (maskedDepl >= lengthInBits) 
     {  
         fUnTaintOZSAP(pTmgrTls); // démarquage OZASP
             
         // marquage CF si dplt = à la taille de la destination
         // dans ce cas, le carryFlag contiendra le bit 0 de la source (si octet faible marqué)
         REGINDEX regSrcDestIndex = getRegIndex(regSrcDest);
-        if ((maskedDepl == len) && pTmgrTls->isRegisterPartTainted(regSrcDestIndex, 0))
+        if ((maskedDepl == lengthInBits) && pTmgrTls->isRegisterPartTainted(regSrcDestIndex, 0))
         {
             pTmgrTls->updateTaintCarryFlag(std::make_shared<TaintBit>(
                 F_LSB,
@@ -1000,154 +1000,154 @@ template<UINT32 len> void SHIFT::sSHRD_IR
         }
         else pTmgrTls->unTaintCarryFlag();
 
-        pTmgrTls->unTaintRegister<len>(regSrcDest);  // démarquage destination
+        pTmgrTls->unTaintRegister<lengthInBits>(regSrcDest);  // démarquage destination
     }
     else // dans les autres cas : marquage par SHR
     {
-        _LOGTAINT("SHRD_IR " << len << " ");
+        _LOGTAINT("SHRD_IR " << lengthInBits << " ");
             
         ObjectSource objRegSrcDest = (isSrcDestTainted) 
-            ? ObjectSource(pTmgrTls->getRegisterTaint<len>(regSrcDest, regSrcDestValue))
-            : ObjectSource(len, regSrcDestValue);
+            ? ObjectSource(pTmgrTls->getRegisterTaint<lengthInBits>(regSrcDest, regSrcDestValue))
+            : ObjectSource(lengthInBits, regSrcDestValue);
         ObjectSource objRegSrc = (isRegSrcTainted)
-            ? ObjectSource(pTmgrTls->getRegisterTaint<len>(regSrc, regSrcValue))
-            : ObjectSource(len, regSrcValue);
+            ? ObjectSource(pTmgrTls->getRegisterTaint<lengthInBits>(regSrc, regSrcValue))
+            : ObjectSource(lengthInBits, regSrcValue);
         
         // concaténation de la source et du bit pattern
-        TaintObject<(2*len)> concatenatedSrc(
+        TaintObject<(2*lengthInBits)> concatenatedSrc(
             CONCAT, 
             objRegSrcDest, 
             objRegSrc);
-        ObjectSource objConcatenatedSrc(std::make_shared<TaintObject<(2*len)>>(concatenatedSrc));
+        ObjectSource objConcatenatedSrc(std::make_shared<TaintObject<(2*lengthInBits)>>(concatenatedSrc));
 
-        // déplacement avec SHL sur (len*2) bits
-        TaintObject<(2*len)> shiftOperation(X_SHR,
+        // déplacement avec SHL sur (lengthInBits*2) bits
+        TaintObject<(2*lengthInBits)> shiftOperation(X_SHR,
             objConcatenatedSrc,
             ObjectSource(8, maskedDepl));
 
         // construction du résultat : extraction de la partie forte de shiftOperation
-        std::shared_ptr<TaintObject<len>> resultPtr = std::make_shared<TaintObject<len>>(
+        std::shared_ptr<TaintObject<lengthInBits>> resultPtr = std::make_shared<TaintObject<lengthInBits>>(
             EXTRACT,
-            ObjectSource(std::make_shared<TaintObject<(2*len)>>(shiftOperation)),
-            ObjectSource(8, 1)); // extract de longueur 'len' : 0 = partie faible, 1 = partie forte 
+            ObjectSource(std::make_shared<TaintObject<(2*lengthInBits)>>(shiftOperation)),
+            ObjectSource(8, 1)); // extract de longueur 'lengthInBits' : 0 = partie faible, 1 = partie forte 
 
         // marquage flags
         fSHRD(pTmgrTls, resultPtr, objConcatenatedSrc, maskedDepl);
 
         // MARQUAGE DESTINATION
-        pTmgrTls->updateTaintRegister<len>(regSrcDest, resultPtr);
+        pTmgrTls->updateTaintRegister<lengthInBits>(regSrcDest, resultPtr);
     }
 } // sSHRD_IR
 
-template<UINT32 len> void SHIFT::sSHRD_RM
+template<UINT32 lengthInBits> void SHIFT::sSHRD_RM
     (THREADID tid, ADDRINT regCLValue, REG regSrc, ADDRINT regSrcValue, ADDRINT writeAddress ADDRESS_DEBUG)
 { 
     TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     
     bool isCountTainted   = pTmgrTls->isRegisterTainted<8>(REG_CL);
-    bool isSrcDestTainted = pTmgrGlobal->isMemoryTainted<len>(writeAddress);
-    bool isRegSrcTainted  = pTmgrTls->isRegisterTainted<len>(regSrc);
+    bool isSrcDestTainted = pTmgrGlobal->isMemoryTainted<lengthInBits>(writeAddress);
+    bool isRegSrcTainted  = pTmgrTls->isRegisterTainted<lengthInBits>(regSrc);
     
     if ( !(isCountTainted || isSrcDestTainted || isRegSrcTainted)) pTmgrTls->unTaintAllFlags();
     // déplacement non marqué (mais mémoire oui) => cas SHRD_IM
     else if (!isCountTainted) 
     {
         // masquage du déplacement avant appel de SHRD_IM
-        UINT32 maskDepl = (len == 64) ? (regCLValue & 0x3f) : (regCLValue & 0x1f);
-        sSHRD_IM<len>(tid, maskDepl, regSrc, regSrcValue, writeAddress INSADDRESS); 
+        UINT32 maskDepl = (lengthInBits == 64) ? (regCLValue & 0x3f) : (regCLValue & 0x1f);
+        sSHRD_IM<lengthInBits>(tid, maskDepl, regSrc, regSrcValue, writeAddress INSADDRESS); 
     }
     else // déplacement marqué. Mémoire et Bit Pattern marqués ou non  
     {
-        _LOGTAINT("SHRD_RM " << len << " ");
+        _LOGTAINT("SHRD_RM " << lengthInBits << " ");
         
         ObjectSource objMemSrcDest = (isSrcDestTainted) 
-            ? ObjectSource(pTmgrGlobal->getMemoryTaint<len>(writeAddress))
-            : ObjectSource(len, getMemoryValue<len>(writeAddress));
+            ? ObjectSource(pTmgrGlobal->getMemoryTaint<lengthInBits>(writeAddress))
+            : ObjectSource(lengthInBits, getMemoryValue<lengthInBits>(writeAddress));
         ObjectSource objRegSrc = (isRegSrcTainted)
-            ? ObjectSource(pTmgrTls->getRegisterTaint<len>(regSrc, regSrcValue))
-            : ObjectSource(len, regSrcValue);
+            ? ObjectSource(pTmgrTls->getRegisterTaint<lengthInBits>(regSrc, regSrcValue))
+            : ObjectSource(lengthInBits, regSrcValue);
 
         // concaténation de la source et du bit pattern
-        TaintObject<(2*len)> concatenatedSrc(
+        TaintObject<(2*lengthInBits)> concatenatedSrc(
             CONCAT, 
             objMemSrcDest, 
             objRegSrc);
-        ObjectSource objConcatenatedSrc(std::make_shared<TaintObject<(2*len)>>(concatenatedSrc));
+        ObjectSource objConcatenatedSrc(std::make_shared<TaintObject<(2*lengthInBits)>>(concatenatedSrc));
         // récupération du déplacement marqué
         ObjectSource objTbCount(pTmgrTls->getRegisterTaint(REG_CL));
 
-        // déplacement avec SHR sur (len*2) bits, déplacement marqué
-        TaintObject<(2*len)> shiftOperation(X_SHR,
+        // déplacement avec SHR sur (lengthInBits*2) bits, déplacement marqué
+        TaintObject<(2*lengthInBits)> shiftOperation(X_SHR,
             objConcatenatedSrc,
             objTbCount);
 
         // construction du résultat : extraction de la partie forte de shiftOperation
-        std::shared_ptr<TaintObject<len>> resultPtr = std::make_shared<TaintObject<len>>(
+        std::shared_ptr<TaintObject<lengthInBits>> resultPtr = std::make_shared<TaintObject<lengthInBits>>(
             EXTRACT,
-            ObjectSource(std::make_shared<TaintObject<(2*len)>>(shiftOperation)),
-            ObjectSource(8, 1)); // extract de longueur 'len' : 0 = partie faible, 1 = partie forte 
+            ObjectSource(std::make_shared<TaintObject<(2*lengthInBits)>>(shiftOperation)),
+            ObjectSource(8, 1)); // extract de longueur 'lengthInBits' : 0 = partie faible, 1 = partie forte 
 
         // marquage flags
         fSHRD(pTmgrTls, resultPtr, objConcatenatedSrc, objTbCount);
 
         // MARQUAGE DESTINATION
-        pTmgrGlobal->updateMemoryTaint<len>(writeAddress, resultPtr);
+        pTmgrGlobal->updateMemoryTaint<lengthInBits>(writeAddress, resultPtr);
     }
 } // sSHRD_RM
 
-template<UINT32 len> void SHIFT::sSHRD_RR
+template<UINT32 lengthInBits> void SHIFT::sSHRD_RR
     (THREADID tid, ADDRINT regCLValue, REG regSrc, ADDRINT regSrcValue, REG regSrcDest, ADDRINT regSrcDestValue ADDRESS_DEBUG)
 { 
     TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     
     bool isCountTainted   = pTmgrTls->isRegisterTainted<8>(REG_CL);
-    bool isSrcDestTainted = pTmgrTls->isRegisterTainted<len>(regSrcDest);
-    bool isRegSrcTainted  = pTmgrTls->isRegisterTainted<len>(regSrc);
+    bool isSrcDestTainted = pTmgrTls->isRegisterTainted<lengthInBits>(regSrcDest);
+    bool isRegSrcTainted  = pTmgrTls->isRegisterTainted<lengthInBits>(regSrc);
     
     if ( !(isCountTainted || isSrcDestTainted || isRegSrcTainted)) pTmgrTls->unTaintAllFlags();
     // déplacement non marqué (mais mémoire oui) => cas SHRD_IR
     else if (!isCountTainted) 
     {
         // masquage du déplacement avant appel de SHRD_IR
-        UINT32 maskDepl = (len == 64) ? (regCLValue & 0x3f) : (regCLValue & 0x1f);
-        sSHRD_IR<len>(tid, maskDepl, regSrc, regSrcValue, regSrcDest, regSrcDestValue INSADDRESS); 
+        UINT32 maskDepl = (lengthInBits == 64) ? (regCLValue & 0x3f) : (regCLValue & 0x1f);
+        sSHRD_IR<lengthInBits>(tid, maskDepl, regSrc, regSrcValue, regSrcDest, regSrcDestValue INSADDRESS); 
     }
     else // déplacement marqué ; Registre et Bit Pattern marqués ou non  
     {
-        _LOGTAINT("SHRD_RR " << len << " ");
+        _LOGTAINT("SHRD_RR " << lengthInBits << " ");
 
         ObjectSource objRegSrcDest = (isSrcDestTainted) 
-            ? ObjectSource(pTmgrTls->getRegisterTaint<len>(regSrcDest, regSrcDestValue))
-            : ObjectSource(len, regSrcDestValue);
+            ? ObjectSource(pTmgrTls->getRegisterTaint<lengthInBits>(regSrcDest, regSrcDestValue))
+            : ObjectSource(lengthInBits, regSrcDestValue);
         ObjectSource objRegSrc = (isRegSrcTainted)
-            ? ObjectSource(pTmgrTls->getRegisterTaint<len>(regSrc, regSrcValue))
-            : ObjectSource(len, regSrcValue);
+            ? ObjectSource(pTmgrTls->getRegisterTaint<lengthInBits>(regSrc, regSrcValue))
+            : ObjectSource(lengthInBits, regSrcValue);
         
         // concaténation de la source et du bit pattern
-        TaintObject<(2*len)> concatenatedSrc(
+        TaintObject<(2*lengthInBits)> concatenatedSrc(
             CONCAT, 
             objRegSrcDest, 
             objRegSrc);
-        ObjectSource objConcatenatedSrc(std::make_shared<TaintObject<(2*len)>>(concatenatedSrc));
+        ObjectSource objConcatenatedSrc(std::make_shared<TaintObject<(2*lengthInBits)>>(concatenatedSrc));
         // récupération du déplacement marqué
         ObjectSource objTbCount(pTmgrTls->getRegisterTaint(REG_CL));
         
-        // déplacement avec SHR sur (len*2) bits, déplacement marqué
-        TaintObject<(2*len)> shiftOperation(X_SHR,
+        // déplacement avec SHR sur (lengthInBits*2) bits, déplacement marqué
+        TaintObject<(2*lengthInBits)> shiftOperation(X_SHR,
             objConcatenatedSrc,
             objTbCount);
 
         // construction du résultat : extraction de la partie forte de shiftOperation
-        std::shared_ptr<TaintObject<len>> resultPtr = std::make_shared<TaintObject<len>>(
+        std::shared_ptr<TaintObject<lengthInBits>> resultPtr = std::make_shared<TaintObject<lengthInBits>>(
             EXTRACT,
-            ObjectSource(std::make_shared<TaintObject<(2*len)>>(shiftOperation)),
-            ObjectSource(8, 1)); // extract de longueur 'len' : 0 = partie faible, 1 = partie forte 
+            ObjectSource(std::make_shared<TaintObject<(2*lengthInBits)>>(shiftOperation)),
+            ObjectSource(8, 1)); // extract de longueur 'lengthInBits' : 0 = partie faible, 1 = partie forte 
 
         // marquage flags
         fSHRD(pTmgrTls, resultPtr, objConcatenatedSrc, objTbCount);
 
         // MARQUAGE DESTINATION
-        pTmgrTls->updateTaintRegister<len>(regSrcDest, resultPtr);
+        pTmgrTls->updateTaintRegister<lengthInBits>(regSrcDest, resultPtr);
     }
 } // sSHRD_RR
  

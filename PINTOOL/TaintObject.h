@@ -12,8 +12,8 @@ class   ObjectSource;
 // classe "mère", décrivant un objet représentant un marquage
 class   Taint; 
 
-// classe "fille", représentant un objet de taille définie (sur 'len' bits)
-template<UINT32 len> class TaintObject;         
+// classe "fille", représentant un objet de taille définie (sur 'lengthInBits' bits)
+template<UINT32 lengthInBits> class TaintObject;         
 
 typedef TaintObject<1> TaintBit;    // objet marqué de taille 1 bit (= Flag)
 typedef TaintObject<8> TaintByte;   // objet marqué de taille 8 bits
@@ -34,27 +34,30 @@ class Taint
 {
 protected:                        
     // taille de l'objet marqué, en bits
-    UINT32 m_len;
+    UINT32 _lengthInBits;
 
     // type de relation qui aboutit à l'existence de cet objet
     // Si BYTESOURCE : l'objet est issu du fichier-cible (offset en source)
-    const Relation m_sourceRelation;  
+    const Relation _sourceRelation;  
 
     // vrai si l'objet figure dans la formule pour le solveur
-    bool m_isDeclaredFlag;
+    bool _isDeclaredFlag;
 
     // chaine de caractères représentant l'objet dans la formule
-    std::string m_objectName;         
+    std::string _objectName;         
 
     // sources de cet objet
-    std::vector<ObjectSource> m_sources;  
+    std::vector<ObjectSource> _sources;  
     
     // constructeurs privés : classe non instanciable
     // obligation de passer par les classes filles
-    Taint(Relation rel, UINT32 len);
-    Taint(Relation rel, UINT32 len, const ObjectSource &os1);
-    Taint(Relation rel, UINT32 len, const ObjectSource &os1, const ObjectSource &os2);
-    Taint(Relation rel, UINT32 len, const ObjectSource &os1, const ObjectSource &os2, const ObjectSource &os3);
+    Taint(Relation rel, UINT32 lengthInBits);
+    Taint(Relation rel, UINT32 lengthInBits, const ObjectSource &os1);
+    Taint(Relation rel, UINT32 lengthInBits, const ObjectSource &os1, const ObjectSource &os2);
+    Taint(Relation rel, UINT32 lengthInBits, const ObjectSource &os1, const ObjectSource &os2, 
+                                    const ObjectSource &os3);
+    Taint(Relation rel, UINT32 lengthInBits, const ObjectSource &os1, const ObjectSource &os2,
+                                    const ObjectSource &os3, const ObjectSource &os4);
 
 public:   
     ~Taint();  
@@ -87,20 +90,23 @@ public:
     // ajoute la structure ObjectSource 'src' en tant que source à l'objet
     void addSource(const ObjectSource &src);
 
-    // ajoute la valeur constante 'value' sur 'length' bits en tant que source à l'objet
-    template<UINT32 length> inline void addConstantAsASource(ADDRINT value) 
+    // ajoute la valeur constante 'value' sur 'lengthInBitsgth' bits en tant que source à l'objet
+    template<UINT32 lengthInBitsgth> inline void addConstantAsASource(ADDRINT value) 
     { 
-        this->m_sources.push_back(ObjectSource(length, value)); 
+        this->_sources.push_back(ObjectSource(lengthInBitsgth, value)); 
     }
 };
 
-template<UINT32 length> class TaintObject : public Taint 
+template<UINT32 lengthInBitsgth> class TaintObject : public Taint 
 {
 public:
     explicit TaintObject(Relation rel);
     TaintObject(Relation rel, const ObjectSource &os1);
     TaintObject(Relation rel, const ObjectSource &os1, const ObjectSource &os2);
-    TaintObject(Relation rel, const ObjectSource &os1, const ObjectSource &os2, const ObjectSource &os3);
+    TaintObject(Relation rel, const ObjectSource &os1, const ObjectSource &os2, 
+                              const ObjectSource &os3);
+    TaintObject(Relation rel, const ObjectSource &os1, const ObjectSource &os2, 
+                              const ObjectSource &os3, const ObjectSource &os4);
     ~TaintObject();
 };
 

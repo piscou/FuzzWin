@@ -2,9 +2,9 @@
 
 // CONSTRUCTEUR
 SolverFormula::SolverFormula(): 
-    m_iAssert(0), // valeur nulle mais la première contrainte sera la n°1 (cf fonction declareHeader)
-    m_iTbit(0), m_iTb(0), m_iTw(0), m_iTdw(0), m_iTqw(0), m_iTdqw(0),
-    m_formula(std::ostringstream::ate)
+    _iAssert(0), // valeur nulle mais la première contrainte sera la n°1 (cf fonction declareHeader)
+    _iTbit(0), _iTb(0), _iTw(0), _iTdw(0), _iTqw(0), _iTdqw(0),
+    _formula(std::ostringstream::ate)
 {}
 
 // nom de variable pour les objets, utilisées dans les formules SMTLIB
@@ -70,7 +70,7 @@ void SolverFormula::declareObject(const TaintPtr &tPtr)
             tPtr->setName(objectName);
 
             // enregistrement dans la formule
-            this->m_formula << "(declare-const " << objectName << " (_ BitVec 8))\n";
+            this->_formula << "(declare-const " << objectName << " (_ BitVec 8))\n";
         }
        
         // relation née d'une instruction x86 ou d'un marquage de flag
@@ -84,26 +84,26 @@ void SolverFormula::declareObject(const TaintPtr &tPtr)
 
 void SolverFormula::declareRelation(const TaintPtr &tPtr, const vector<ObjectSource> &sources)
 {
-    UINT32 lengthOfResult = tPtr->getLength();  // longueur du résultat 
+    UINT32 lengthInBitsOfResult = tPtr->getLength();  // longueur du résultat 
     Relation rel = tPtr->getSourceRelation();   // relation résultat <-> sources
     
     // fabrication du nom de variable unique selon la taille du resultat
     std::string name; 
-    switch (lengthOfResult) 
+    switch (lengthInBitsOfResult) 
     {
-    case 1:	 name = "TBIT"  + decstr(++(this->m_iTbit));  break;
-    case 8:	 name = "TB"    + decstr(++(this->m_iTb));  break;
-    case 16: name = "TW"    + decstr(++(this->m_iTw));  break;
-    case 32: name = "TDW"   + decstr(++(this->m_iTdw)); break;
-    case 64: name = "TQW"   + decstr(++(this->m_iTqw)); break;
-    case 128: name = "TDQW" + decstr(++(this->m_iTdqw)); break;
+    case 1:	 name = "TBIT"  + decstr(++(this->_iTbit));  break;
+    case 8:	 name = "TB"    + decstr(++(this->_iTb));  break;
+    case 16: name = "TW"    + decstr(++(this->_iTw));  break;
+    case 32: name = "TDW"   + decstr(++(this->_iTdw)); break;
+    case 64: name = "TQW"   + decstr(++(this->_iTqw)); break;
+    case 128: name = "TDQW" + decstr(++(this->_iTdqw)); break;
     default : name = "error"; break;
     }
     // Affectation du nom à l'objet
     tPtr->setName(name);
 
     // declaration de l'entête de ligne : nom de variable
-    std::string out("(define-fun " + name + " () (_ BitVec " + decstr(lengthOfResult) + ") ");
+    std::string out("(define-fun " + name + " () (_ BitVec " + decstr(lengthInBitsOfResult) + ") ");
 
     // insertion des arguments selon la relation
     /****** MEGA BIG SWITCH ;););););); *****/
@@ -115,9 +115,9 @@ void SolverFormula::declareRelation(const TaintPtr &tPtr, const vector<ObjectSou
         UINT32 indexOfExtraction = static_cast<UINT32>(sources[1].getValue());
 
         // borne min = index d'extraction * longueur
-        UINT32 lowerLimit = indexOfExtraction * lengthOfResult;
+        UINT32 lowerLimit = indexOfExtraction * lengthInBitsOfResult;
         // borne max = borne min + (longueur - 1)
-        UINT32 higherLimit = lowerLimit + (lengthOfResult - 1);
+        UINT32 higherLimit = lowerLimit + (lengthInBitsOfResult - 1);
 
         out += "((_ extract ";
         out += decstr(higherLimit);
@@ -146,10 +146,10 @@ void SolverFormula::declareRelation(const TaintPtr &tPtr, const vector<ObjectSou
     case X_SIGNEXTEND:	
     {
         // nombre de bits à ajouter = longueur resultat - longueur source
-        UINT32 lengthExtension = lengthOfResult - sources.front().getLength();
+        UINT32 lengthInBitsgthExtension = lengthInBitsOfResult - sources.front().getLength();
 
         out += "((_ sign_extend ";
-        out += decstr(lengthExtension);
+        out += decstr(lengthInBitsgthExtension);
         out += ") ";
 
         // insertion du nom de l'objet
@@ -201,7 +201,7 @@ void SolverFormula::declareRelation(const TaintPtr &tPtr, const vector<ObjectSou
     {
         out += (rel == X_INC) ? "(bvadd " : "(bvsub ";
         out += sources.front().getTaintedSource()->getName();
-        out += " (_ bv1 " + decstr(lengthOfResult) + ')';
+        out += " (_ bv1 " + decstr(lengthInBitsOfResult) + ')';
         break;
     }
     case X_NEG:	
@@ -226,22 +226,22 @@ void SolverFormula::declareRelation(const TaintPtr &tPtr, const vector<ObjectSou
             out += "(_ bv";
             out += decstr(sources[1].getValue());
             out += ' ';
-            out += decstr(lengthOfResult);
+            out += decstr(lengthInBitsOfResult);
             out += ')';
         } 
         else // si décalage marqué (8bits) : masquage à 0x1f (ou 0x3f si 64 bits)
         {
-            if (lengthOfResult != 8) // ajustement à la longueur de la source décalée
+            if (lengthInBitsOfResult != 8) // ajustement à la longueur de la source décalée
             {  
                 out += "((_ zero_extend ";
-                out += decstr(lengthOfResult - 8);
+                out += decstr(lengthInBitsOfResult - 8);
                 out += ") ";
             }
             out += "(bvand ";
             out += sources[1].getTaintedSource()->getName();
-            out += (lengthOfResult == 64) ? " #x3f)" : " #x1f)";
+            out += (lengthInBitsOfResult == 64) ? " #x3f)" : " #x1f)";
             // si utilisation de zero_ext : parenthèse fermante en +
-            if (lengthOfResult != 8)   out += ')'; 
+            if (lengthInBitsOfResult != 8)   out += ')'; 
         }
         break;
     }
@@ -263,13 +263,13 @@ void SolverFormula::declareRelation(const TaintPtr &tPtr, const vector<ObjectSou
             // _rotr(val, depl) = (val >> depl) | (val << (sizeof(val) * 8 - depl))
             // comme pour shift, obligation de mettre l'objet "depl" (sur 8 bits) 
             // à la meme longueur que l'objet déplacé : utilisation de ZeroExtend si necessaire
-            const std::string adjustLengthForShift = (lengthOfResult == 8) 
-                ? "" : ("((_ zero_extend " + decstr(lengthOfResult - 8) + ") ");
+            const std::string adjustLengthForShift = (lengthInBitsOfResult == 8) 
+                ? "" : ("((_ zero_extend " + decstr(lengthInBitsOfResult - 8) + ") ");
 
             // masquage du déplacement à 0x1f (ou 0x3f en 64 bits)
-            out += "(let ((m_depl (bvand ";
+            out += "(let ((l_depl (bvand ";
             out += sources[1].getTaintedSource()->getName();  // objet représentant le déplacement
-            out += (lengthOfResult == 64) ? " #x3f" : " #x1f";
+            out += (lengthInBitsOfResult == 64) ? " #x3f" : " #x1f";
 
             // (val >> s) |
             out += "))) (bvor (bvlshr ";
@@ -277,15 +277,15 @@ void SolverFormula::declareRelation(const TaintPtr &tPtr, const vector<ObjectSou
             this->insertSourceName(out, sources.front()); 
             out += ' ';
             out += adjustLengthForShift;
-            out += "m_depl)) (bvshl ";
+            out += "l_depl)) (bvshl ";
 
-            // (val << (sizeof(val) * 8 - s)) <=> bvshl(rotSrc((_ ze bvsub (lengthOfResult deplSrc)) 
+            // (val << (sizeof(val) * 8 - s)) <=> bvshl(rotSrc((_ ze bvsub (lengthInBitsOfResult deplSrc)) 
             this->insertSourceName(out, sources.front());
             out += ' ';
             out += adjustLengthForShift;
             out += "(bvsub (_ bv";
-            out += decstr(lengthOfResult);
-            out += " 8) m_depl))))";
+            out += decstr(lengthInBitsOfResult);
+            out += " 8) l_depl))))";
         }
         break;
     }
@@ -307,13 +307,13 @@ void SolverFormula::declareRelation(const TaintPtr &tPtr, const vector<ObjectSou
             // _rotl(val, s) = (val << s) | (val >> (sizeof(val) * 8 - s))
             // comme pour shift, obligation de mettre l'objet "depl" (sur 8 bits) 
             // à la meme longueur que l'objet déplacé : utilisation de ZeroExtend si nécessaire
-            const std::string adjustLengthForShift = (lengthOfResult == 8) 
-                ? "" : ("((_ zero_extend " + decstr(lengthOfResult - 8) + ") ");
+            const std::string adjustLengthForShift = (lengthInBitsOfResult == 8) 
+                ? "" : ("((_ zero_extend " + decstr(lengthInBitsOfResult - 8) + ") ");
 
             // masquage du déplacement à 0x1f (ou 0x3f en 64 bits)
-            out += "(let ((m_depl (bvand ";
+            out += "(let ((l_depl (bvand ";
             out += sources[1].getTaintedSource()->getName();  // objet représentant le déplacement
-            out += (lengthOfResult == 64) ? " #x3f" : " #x1f";
+            out += (lengthInBitsOfResult == 64) ? " #x3f" : " #x1f";
 
             // (val >> s) |
             out += "))) (bvor (bvshl ";
@@ -321,15 +321,15 @@ void SolverFormula::declareRelation(const TaintPtr &tPtr, const vector<ObjectSou
             this->insertSourceName(out, sources.front());
             out += ' ';
             out += adjustLengthForShift;
-            out += "m_depl)) (bvlshr ";
+            out += "l_depl)) (bvlshr ";
 
-            // (val << (sizeof(val) * 8 - s)) <=> bvshl(rotSrc((_ ze bvsub (lengthOfResult deplSrc)) 
+            // (val << (sizeof(val) * 8 - s)) <=> bvshl(rotSrc((_ ze bvsub (lengthInBitsOfResult deplSrc)) 
             this->insertSourceName(out, sources.front());
             out += ' ';
             out += adjustLengthForShift;
             out += "(bvsub (_ bv";
-            out += decstr(lengthOfResult);
-            out += " 8) m_depl))))";
+            out += decstr(lengthInBitsOfResult);
+            out += " 8) l_depl))))";
         }
         break;
     }
@@ -337,11 +337,11 @@ void SolverFormula::declareRelation(const TaintPtr &tPtr, const vector<ObjectSou
     {
         // idem dans l'approche que pour ROR, sauf que la source est ici la concaténation 
         // de sources[0](source) avec sources[1](CarryFlag) 
-        // => obligation de faire toutes les operations (bvshl, bvsub, ... ) sur (len + 1 bits)
-        // et au final d'extraire les 'len' bits forts
+        // => obligation de faire toutes les operations (bvshl, bvsub, ... ) sur (lengthInBits + 1 bits)
+        // et au final d'extraire les 'lengthInBits' bits forts
 
         out += "((_ extract ";
-        out += decstr(lengthOfResult);
+        out += decstr(lengthInBitsOfResult);
         out += " 1)";
 
         // si déplacement non marqué : utilisation de l'instruction SMTLIB '_ rotate_right'
@@ -362,14 +362,14 @@ void SolverFormula::declareRelation(const TaintPtr &tPtr, const vector<ObjectSou
         {
             // _rotr(val, s) = (val >> s) | (val << (sizeof(val) * 8 - s))
             // comme pour shift, obligation de mettre l'objet "depl" (sur 8 bits) 
-            // à la meme longueur que l'objet déplacé : utilisation de ZeroExtend à len+1 bits
+            // à la meme longueur que l'objet déplacé : utilisation de ZeroExtend à lengthInBits+1 bits
             const std::string adjustLengthForShift
-                ("((_ zero_extend " + decstr(lengthOfResult - 7) + ") ");
+                ("((_ zero_extend " + decstr(lengthInBitsOfResult - 7) + ") ");
 
             // masquage du déplacement à 0x1f (ou 0x3f en 64 bits)
-            out += "(let ((m_depl (bvand ";
+            out += "(let ((l_depl (bvand ";
             out += sources[2].getTaintedSource()->getName();  // objet représentant le déplacement
-            out += (lengthOfResult == 64) ? " #x3f" : " #x1f";
+            out += (lengthInBitsOfResult == 64) ? " #x3f" : " #x1f";
 
             // construction de la concatenation source/carry Flag
             out += ")) (src_cf (concat ";
@@ -380,12 +380,12 @@ void SolverFormula::declareRelation(const TaintPtr &tPtr, const vector<ObjectSou
             // (val >> s) | (val << (sizeof(val) * 8 - s)) 
             out += "))) (bvor (bvlshr src_cf ";
             out += adjustLengthForShift;
-            out += "m_depl)) (bvshl src_cf ";
+            out += "l_depl)) (bvshl src_cf ";
 
             out += adjustLengthForShift;
             out += "(bvsub (_ bv";
-            out += decstr(lengthOfResult);
-            out += " 8) m_depl)))))";
+            out += decstr(lengthInBitsOfResult);
+            out += " 8) l_depl)))))";
         }
         break;
     }
@@ -393,11 +393,11 @@ void SolverFormula::declareRelation(const TaintPtr &tPtr, const vector<ObjectSou
     {
         // idem dans l'approche que pour ROL, sauf que la source est ici la concaténation 
         // de sources[0](source) avec sources[1](CarryFlag) : (CF)(Src0)
-        // => obligation de faire toutes les operations (bvshr, bvsub, ... ) sur (len + 1 bits)
-        // et au final d'extraire les 'len' bits faibles
+        // => obligation de faire toutes les operations (bvshr, bvsub, ... ) sur (lengthInBits + 1 bits)
+        // et au final d'extraire les 'lengthInBits' bits faibles
 
         out += "((_ extract ";
-        out += decstr(lengthOfResult - 1);
+        out += decstr(lengthInBitsOfResult - 1);
         out += " 0)";
 
         // si déplacement non marqué : utilisation de l'instruction SMTLIB '_ rotate_left'
@@ -420,12 +420,12 @@ void SolverFormula::declareRelation(const TaintPtr &tPtr, const vector<ObjectSou
             // comme pour shift, obligation de mettre l'objet "depl" (sur 8 bits) 
             // à la meme longueur que l'objet déplacé : utilisation de ZeroExtend
             const std::string adjustLengthForShift
-                ("((_ zero_extend " + decstr(lengthOfResult - 7) + ") ");
+                ("((_ zero_extend " + decstr(lengthInBitsOfResult - 7) + ") ");
 
             // masquage du déplacement à 0x1f (ou 0x3f en 64 bits)
-            out += "(let ((m_depl (bvand ";
+            out += "(let ((l_depl (bvand ";
             out += sources[2].getTaintedSource()->getName();  // objet représentant le déplacement
-            out += (lengthOfResult == 64) ? " #x3f" : " #x1f";
+            out += (lengthInBitsOfResult == 64) ? " #x3f" : " #x1f";
             
             // construction de la concatenation source/carry Flag
             out += ")) (src_cf (concat ";
@@ -436,12 +436,12 @@ void SolverFormula::declareRelation(const TaintPtr &tPtr, const vector<ObjectSou
             // (val << s) | (val >> (sizeof(val) * 8 - s)) 
             out += "))) (bvor (bvshl src_cf ";
             out += adjustLengthForShift;
-            out += "m_depl)) (bvlshr src_cf ";
+            out += "l_depl)) (bvlshr src_cf ";
             
             out += adjustLengthForShift;
             out += "(bvsub (_ bv";
-            out += decstr(lengthOfResult);
-            out += " 8) m_depl)))))";
+            out += decstr(lengthInBitsOfResult);
+            out += " 8) l_depl)))))";
         }
         break;
     }
@@ -464,7 +464,7 @@ void SolverFormula::declareRelation(const TaintPtr &tPtr, const vector<ObjectSou
         out += ") (bvand ";
         this->insertSourceName(out, sources[1]);
 
-        // nombre 15/31/64 sur 'len' bits
+        // nombre 15/31/64 sur 'lengthInBits' bits
         out += " (_ bv";
         out += decstr(srcLength - 1);
         out += ' ';
@@ -489,7 +489,7 @@ void SolverFormula::declareRelation(const TaintPtr &tPtr, const vector<ObjectSou
         out += ") (bvand ";
         this->insertSourceName(out, sources[1]);
 
-        // nombre 15/31/64 sur 'len' bits
+        // nombre 15/31/64 sur 'lengthInBits' bits
         out += " (_ bv";
         out += decstr(srcLength - 1);
         out += ' ';
@@ -503,7 +503,7 @@ void SolverFormula::declareRelation(const TaintPtr &tPtr, const vector<ObjectSou
         // donc necessite de mettre les opérandes à la longueur de
         // la destination ; le nombre de zéros à ajouter est égal à 
         // la longueur de la source (= moitié longueur du résultat)
-        const std::string zeroExtend("((_ zero_extend " + decstr(lengthOfResult >> 1) + ") ");
+        const std::string zeroExtend("((_ zero_extend " + decstr(lengthInBitsOfResult >> 1) + ") ");
 
         out += "(bvmul ";
         // 1ere source, zero-étendue
@@ -536,7 +536,7 @@ void SolverFormula::declareRelation(const TaintPtr &tPtr, const vector<ObjectSou
                     : "(bvsrem ")));
 
         out += "((_ extract ";
-        switch (lengthOfResult)
+        switch (lengthInBitsOfResult)
         {
         case 8: // resultat 8bits : dividende en src0, diviseur 8b en src 1
             out += "7 0) ";
@@ -665,19 +665,19 @@ void SolverFormula::declareRelation(const TaintPtr &tPtr, const vector<ObjectSou
     }
     case F_CARRY_SHL:
     {
-        // dernier bit ejecté vers la gauche = bit (length - count), count marqué (8 bits)
-        // récupération par LSB (src >> (length - count))
+        // dernier bit ejecté vers la gauche = bit (lengthInBitsgth - count), count marqué (8 bits)
+        // récupération par LSB (src >> (lengthInBitsgth - count))
         // ATTENTION : count doit etre auparavant masqué à 0x1f ou 0x3f
         out += "((_ extract 0 0) (bvlshr ";
         this->insertSourceName(out, sources.front());
 
         out += " (bvsub #x";
-        out += StringHex(lengthOfResult, 2, false); // length sur 2 digits, pas de prefixe
+        out += StringHex(lengthInBitsOfResult, 2, false); // lengthInBitsgth sur 2 digits, pas de prefixe
         
         // masquage du déplacement 0x1f ou 0x3f en 64bits 
         out += " (bvand ";
         this->insertSourceName(out, sources[1]);
-        out += (lengthOfResult == 64) ? " #x3f)))" : " #x1f)))";
+        out += (lengthInBitsOfResult == 64) ? " #x3f)))" : " #x1f)))";
 
         break;
     }
@@ -693,7 +693,7 @@ void SolverFormula::declareRelation(const TaintPtr &tPtr, const vector<ObjectSou
         out += " (bvsub (bvand ";
         this->insertSourceName(out, sources[1]);
         out += "(_ bv1 ";
-        out += decstr(lengthOfResult);
+        out += decstr(lengthInBitsOfResult);
         out += "))))";
 
         break;
@@ -708,7 +708,7 @@ void SolverFormula::declareRelation(const TaintPtr &tPtr, const vector<ObjectSou
         out += "(ite (= (_ bv0 ";
         out += srcLengthName; // nombre 0 sur x bits
         
-        // AND de source0 avec (bvshl (_bv1 'len') (bvand 'numero' (_bv15/31/63 'len')))
+        // AND de source0 avec (bvshl (_bv1 'lengthInBits') (bvand 'numero' (_bv15/31/63 'lengthInBits')))
         out += ") (bvand ";
         this->insertSourceName(out, sources.front());
         out += " (bvshl (_ bv1 ";
@@ -716,7 +716,7 @@ void SolverFormula::declareRelation(const TaintPtr &tPtr, const vector<ObjectSou
         out += ") (bvand ";
         this->insertSourceName(out, sources[1]);
 
-        // nombre 15/31/64 sur 'len' bitsq
+        // nombre 15/31/64 sur 'lengthInBits' bitsq
         out += " (_ bv";
         out += decstr(srcLength - 1);
         out += ' ';
@@ -748,7 +748,7 @@ void SolverFormula::declareRelation(const TaintPtr &tPtr, const vector<ObjectSou
     case F_CARRY_NEG:
     {
         UINT32 srcLength = sources.front().getLength();
-        // comparaison de la source au nombre 0 représenté sur "length" bits
+        // comparaison de la source au nombre 0 représenté sur "lengthInBitsgth" bits
         out += "(ite (= (_ bv0 ";
         out += decstr(srcLength);
         out += ") ";
@@ -893,9 +893,9 @@ void SolverFormula::declareRelation(const TaintPtr &tPtr, const vector<ObjectSou
     // Parenthèses fermantes puis enregistrement dans la formule
     // en mode debug, ajout de la relation en toutes lettres
     #if DEBUG
-    this->m_formula << out << "));" << enum_strings[rel] << '\n';
+    this->_formula << out << "));" << enum_strings[rel] << '\n';
     #else
-    this->m_formula << out << "));" << '\n';
+    this->_formula << out << "));" << '\n';
     #endif
 }
 
@@ -903,38 +903,38 @@ void SolverFormula::declareConstraintHeader(ADDRINT insAddress, PREDICATE p)
 {
     // entete de formule : insertion d'un commentaire
     // avec n° de contrainte, adresse et type de contrainte (si DEBUG)
-    this->m_formula << ";\n; contrainte " << std::dec << ++(this->m_iAssert);
-    this->m_formula << " (adresse " << hexstr(insAddress);
+    this->_formula << ";\n; contrainte " << std::dec << ++(this->_iAssert);
+    this->_formula << " (adresse " << hexstr(insAddress);
 
 #if DEBUG
     // on ne prend que les conditions "positives", les négatives
     // étant traitées par inversion du saut pris
     switch (p)
     {
-    case PREDICATE_BELOW :          this->m_formula << " - BELOW";          break;
-    case PREDICATE_BELOW_OR_EQUAL : this->m_formula << " - BELOW OR EQUAL"; break;
-    case PREDICATE_LESS :           this->m_formula << " - LESS";           break;
-    case PREDICATE_LESS_OR_EQUAL :  this->m_formula << " - LESS OR EQUAL";  break;
-    case PREDICATE_OVERFLOW :       this->m_formula << " - OVERFLOW";       break;
-    case PREDICATE_PARITY :         this->m_formula << " - PARITY";         break;
-    case PREDICATE_SIGN :           this->m_formula << " - SIGN";           break;
-    case PREDICATE_ZERO :           this->m_formula << " - ZERO";           break;
-    default:                        this->m_formula << " - INCONNU !!";     break;
+    case PREDICATE_BELOW :          this->_formula << " - BELOW";          break;
+    case PREDICATE_BELOW_OR_EQUAL : this->_formula << " - BELOW OR EQUAL"; break;
+    case PREDICATE_LESS :           this->_formula << " - LESS";           break;
+    case PREDICATE_LESS_OR_EQUAL :  this->_formula << " - LESS OR EQUAL";  break;
+    case PREDICATE_OVERFLOW :       this->_formula << " - OVERFLOW";       break;
+    case PREDICATE_PARITY :         this->_formula << " - PARITY";         break;
+    case PREDICATE_SIGN :           this->_formula << " - SIGN";           break;
+    case PREDICATE_ZERO :           this->_formula << " - ZERO";           break;
+    default:                        this->_formula << " - INCONNU !!";     break;
     }
 #endif
 
     // fin de ligne
-    this->m_formula << ")\n;\n";
+    this->_formula << ")\n;\n";
 }
 
 void SolverFormula::declareConstraintFooter(const std::string &number, bool taken)
 {
-    this->m_formula << "(assert (= C_" << number << (taken ? " true))\n" : " false))\n");
+    this->_formula << "(assert (= C_" << number << (taken ? " true))\n" : " false))\n");
 
     // Si le nombre maximal de contraintes est atteint : quitter le pintool via la fonction "Fini"
     // code = 3 (NOMBRE MAXIMAL DE CONTRAINTES)
     // si g_maxConstraints est nul, ce csa n'arrive jamais (la première contrainte est la n°1)
-    if (this->m_iAssert == g_maxConstraints)  PIN_ExitApplication(3);
+    if (this->_iAssert == g_maxConstraints)  PIN_ExitApplication(3);
 }
 
 void SolverFormula::addConstraint_OVERFLOW(TaintManager_Thread *pTmgrTls, ADDRINT insAddress, bool isTaken) 
@@ -947,7 +947,7 @@ void SolverFormula::addConstraint_OVERFLOW(TaintManager_Thread *pTmgrTls, ADDRIN
     this->declareObject(pTmgrTls->getTaintOverflowFlag());
     
     // declaration de la contrainte : declaration de l'objet
-    const std::string constraintNumber(decstr(this->m_iAssert));
+    const std::string constraintNumber(decstr(this->_iAssert));
     std::string constraint("(define-fun C_");
     constraint += constraintNumber; 
         
@@ -956,7 +956,7 @@ void SolverFormula::addConstraint_OVERFLOW(TaintManager_Thread *pTmgrTls, ADDRIN
     constraint += pTmgrTls->getTaintOverflowFlag()->getName();
     constraint += " #b1))\n";
 
-    this->m_formula << constraint;
+    this->_formula << constraint;
 
     // 3) déclaration de l'assertion en fin de contrainte
     // selon que la branche a été prise ou non
@@ -973,7 +973,7 @@ void SolverFormula::addConstraint_PARITY(TaintManager_Thread *pTmgrTls, ADDRINT 
     this->declareObject(pTmgrTls->getTaintParityFlag());
     
     // declaration de la contrainte : declaration de l'objet
-    const std::string constraintNumber(decstr(this->m_iAssert));
+    const std::string constraintNumber(decstr(this->_iAssert));
     std::string constraint("(define-fun C_");
     constraint += constraintNumber;  
         
@@ -982,7 +982,7 @@ void SolverFormula::addConstraint_PARITY(TaintManager_Thread *pTmgrTls, ADDRINT 
     constraint += pTmgrTls->getTaintParityFlag()->getName();
     constraint += " #b1))\n";
 
-    this->m_formula << constraint;
+    this->_formula << constraint;
 
     // 3) déclaration de l'assertion en fin de contrainte
     // selon que la branche a été prise ou non
@@ -999,7 +999,7 @@ void SolverFormula::addConstraint_SIGN(TaintManager_Thread *pTmgrTls, ADDRINT in
     this->declareObject(pTmgrTls->getTaintSignFlag());
     
     // declaration de la contrainte : declaration de l'objet
-    const std::string constraintNumber(decstr(this->m_iAssert));
+    const std::string constraintNumber(decstr(this->_iAssert));
     std::string constraint("(define-fun C_");
     constraint += constraintNumber; 
         
@@ -1008,7 +1008,7 @@ void SolverFormula::addConstraint_SIGN(TaintManager_Thread *pTmgrTls, ADDRINT in
     constraint += pTmgrTls->getTaintSignFlag()->getName();
     constraint += " #b1))\n";
 
-    this->m_formula << constraint;
+    this->_formula << constraint;
 
     // 3) déclaration de l'assertion en fin de contrainte
     // selon que la branche a été prise ou non
@@ -1025,7 +1025,7 @@ void SolverFormula::addConstraint_ZERO(TaintManager_Thread *pTmgrTls, ADDRINT in
     this->declareObject(pTmgrTls->getTaintZeroFlag());
     
     // declaration de la contrainte : declaration de l'objet
-    const std::string constraintNumber(decstr(this->m_iAssert));
+    const std::string constraintNumber(decstr(this->_iAssert));
     std::string constraint("(define-fun C_");
     constraint += constraintNumber;
         
@@ -1034,7 +1034,7 @@ void SolverFormula::addConstraint_ZERO(TaintManager_Thread *pTmgrTls, ADDRINT in
     constraint += pTmgrTls->getTaintZeroFlag()->getName();
     constraint += " #b1))\n";
 
-    this->m_formula << constraint;
+    this->_formula << constraint;
 
     // 3) déclaration de l'assertion en fin de contrainte
     // selon que la branche a été prise ou non
@@ -1051,7 +1051,7 @@ void SolverFormula::addConstraint_BELOW(TaintManager_Thread *pTmgrTls, ADDRINT i
     this->declareObject(pTmgrTls->getTaintCarryFlag());
     
     // declaration de la contrainte : declaration de l'objet
-    const std::string constraintNumber(decstr(this->m_iAssert));
+    const std::string constraintNumber(decstr(this->_iAssert));
     std::string constraint("(define-fun C_");
     constraint += constraintNumber;  
         
@@ -1060,7 +1060,7 @@ void SolverFormula::addConstraint_BELOW(TaintManager_Thread *pTmgrTls, ADDRINT i
     constraint += pTmgrTls->getTaintCarryFlag()->getName();
     constraint += " #b1))\n";
     
-    this->m_formula << constraint;
+    this->_formula << constraint;
 
     // 3) déclaration de l'assertion en fin de contrainte
     // selon que la branche a été prise ou non
@@ -1079,7 +1079,7 @@ void SolverFormula::addConstraint_BELOW_OR_EQUAL
     if (pTmgrTls->isZeroFlagTainted())  this->declareObject(pTmgrTls->getTaintZeroFlag());
 
     // declaration de la contrainte : declaration de l'objet
-    const std::string constraintNumber(decstr(this->m_iAssert));
+    const std::string constraintNumber(decstr(this->_iAssert));
     std::string constraint("(define-fun C_");
     constraint += constraintNumber;
         
@@ -1098,7 +1098,7 @@ void SolverFormula::addConstraint_BELOW_OR_EQUAL
 
     constraint += ") #b1))\n";
  
-    this->m_formula << constraint;
+    this->_formula << constraint;
 
     // 3) déclaration de l'assertion en fin de contrainte
     // selon que la branche a été prise ou non
@@ -1117,7 +1117,7 @@ void SolverFormula::addConstraint_LESS
     if (pTmgrTls->isOverflowFlagTainted()) this->declareObject(pTmgrTls->getTaintOverflowFlag());
 
     // declaration de la contrainte : declaration de l'objet
-    const std::string constraintNumber(decstr(this->m_iAssert));
+    const std::string constraintNumber(decstr(this->_iAssert));
     std::string constraint("(define-fun C_");
     constraint += constraintNumber;
         
@@ -1136,7 +1136,7 @@ void SolverFormula::addConstraint_LESS
 
     constraint += ") #b1))\n";
 
-    this->m_formula << constraint;
+    this->_formula << constraint;
 
     // 3) déclaration de l'assertion en fin de contrainte
     // selon que la branche a été prise ou non
@@ -1156,7 +1156,7 @@ void SolverFormula::addConstraint_LESS_OR_EQUAL
     if (pTmgrTls->isZeroFlagTainted())	    this->declareObject(pTmgrTls->getTaintZeroFlag());
 
     // declaration de la contrainte : declaration de l'objet
-    const std::string constraintNumber(decstr(this->m_iAssert));
+    const std::string constraintNumber(decstr(this->_iAssert));
     std::string constraint("(define-fun C_");
     constraint += constraintNumber;
         
@@ -1182,7 +1182,7 @@ void SolverFormula::addConstraint_LESS_OR_EQUAL
 
     constraint += ") #b1))\n";
     
-    this->m_formula << constraint;
+    this->_formula << constraint;
 
     // 3) déclaration de l'assertion en fin de contrainte
     // selon que la branche a été prise ou non
@@ -1195,12 +1195,12 @@ void SolverFormula::final()
     WINDOWS::DWORD cbWritten = 0;
     
     // insertion du nombre total de contraintes 
-    this->m_formula << "@" << std::dec << this->m_iAssert;
+    this->_formula << "@" << std::dec << this->_iAssert;
     
     // envoi de la formule en entier dans le pipe   (= stdout en mode debug)
     WINDOWS::WriteFile(g_hPipe, 
-        this->m_formula.str().c_str(), 
-        static_cast<WINDOWS::DWORD>(this->m_formula.str().size()), // pour eviter C4267 en x64 
+        this->_formula.str().c_str(), 
+        static_cast<WINDOWS::DWORD>(this->_formula.str().size()), // pour eviter C4267 en x64 
         &cbWritten, 
         NULL);
     WINDOWS::FlushFileBuffers(g_hPipe);

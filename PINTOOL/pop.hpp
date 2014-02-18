@@ -1,15 +1,15 @@
 // déclaration des templates du namespace POP
 
-template<UINT32 len> void POP::sUpdateEspTaint(TaintManager_Thread *pTmgrTls, ADDRINT stackAddressBeforePush)
+template<UINT32 lengthInBits> void POP::sUpdateEspTaint(TaintManager_Thread *pTmgrTls, ADDRINT stackAddressBeforePush)
 {
-    // le POP incrémente ESP/RSP de 'len >> 3'
+    // le POP incrémente ESP/RSP de 'lengthInBits >> 3'
 #if TARGET_IA32
     if (pTmgrTls->isRegisterTainted<32>(REG_ESP))
     {
         // nouvel objet = ESP + (longueur pushée)
         pTmgrTls->updateTaintRegister<32>(REG_ESP, std::make_shared<TaintDword>(X_ADD, 
             ObjectSource(pTmgrTls->getRegisterTaint<32>(REG_ESP, stackAddressBeforePush)),
-            ObjectSource(32, len >> 3)));
+            ObjectSource(32, lengthInBits >> 3)));
     }
 #else
     if (pTmgrTls->isRegisterTainted<64>(REG_RSP))
@@ -17,20 +17,20 @@ template<UINT32 len> void POP::sUpdateEspTaint(TaintManager_Thread *pTmgrTls, AD
         // nouvel objet = RSP + (longueur pushée)
         pTmgrTls->updateTaintRegister<64>(REG_RSP, std::make_shared<TaintQword>(X_ADD, 
             ObjectSource(pTmgrTls->getRegisterTaint<64>(REG_ESP, stackAddressBeforePush)),
-            ObjectSource(64, len >> 3)));
+            ObjectSource(64, lengthInBits >> 3)));
     }
 #endif
 }
 
-template<UINT32 len> 
+template<UINT32 lengthInBits> 
 void POP::sPOP_M(THREADID tid, ADDRINT writeAddress, ADDRINT stackAddress ADDRESS_DEBUG) 
 {
     TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     
     // ajustement du marquage d'ESP si besoin
-    POP::sUpdateEspTaint<len>(pTmgrTls, stackAddress);
+    POP::sUpdateEspTaint<lengthInBits>(pTmgrTls, stackAddress);
 
-    if ( !pTmgrGlobal->isMemoryTainted<len>(stackAddress)) pTmgrGlobal->unTaintMemory<len>(writeAddress); 
+    if ( !pTmgrGlobal->isMemoryTainted<lengthInBits>(stackAddress)) pTmgrGlobal->unTaintMemory<lengthInBits>(writeAddress); 
     else 
     {
         // numéro de l'octet traité
@@ -39,7 +39,7 @@ void POP::sPOP_M(THREADID tid, ADDRINT writeAddress, ADDRINT stackAddress ADDRES
         {
             if (pTmgrGlobal->isMemoryTainted<8>(stackAddress))  
             {
-                _LOGTAINT("popM" << len << " octet " << byteNumber);
+                _LOGTAINT("popM" << lengthInBits << " octet " << byteNumber);
                 // marquage de l'octet de la mémoire avec l'octet présent sur la pile
                 pTmgrGlobal->updateMemoryTaint<8>(writeAddress, std::make_shared<TaintByte>(
                     X_ASSIGN,
@@ -48,11 +48,11 @@ void POP::sPOP_M(THREADID tid, ADDRINT writeAddress, ADDRINT stackAddress ADDRES
             else pTmgrGlobal->unTaintMemory<8>(writeAddress);
             ++writeAddress;
             ++stackAddress; 
-        } while (++byteNumber < (len >> 3)); 
+        } while (++byteNumber < (lengthInBits >> 3)); 
     }
 } // sPOP_M
 
-template<UINT32 len> 
+template<UINT32 lengthInBits> 
 void POP::sPOP_R(THREADID tid, REG regDest, ADDRINT stackAddress ADDRESS_DEBUG) 
 {
     TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
@@ -63,23 +63,23 @@ void POP::sPOP_R(THREADID tid, REG regDest, ADDRINT stackAddress ADDRESS_DEBUG)
     // donc aucun ajustement après désempilage
     REGINDEX regIndex = getRegIndex(regDest);
 #if TARGET_IA32
-    if (rESP == regIndex)
+    if (regIndexESP == regIndex)
 #else
-    if (rRSP == regIndex)
+    if (regIndexRSP == regIndex)
 #endif
     {
-        POP::sUpdateEspTaint<len>(pTmgrTls, stackAddress);
+        POP::sUpdateEspTaint<lengthInBits>(pTmgrTls, stackAddress);
     }
 
-    if ( !pTmgrGlobal->isMemoryTainted<len>(stackAddress)) pTmgrTls->unTaintRegister<len>(regDest); 
+    if ( !pTmgrGlobal->isMemoryTainted<lengthInBits>(stackAddress)) pTmgrTls->unTaintRegister<lengthInBits>(regDest); 
     else 
     {
-        // copier coller de la procédure MOVMR<len>
-        for (UINT32 regPart = 0 ; regPart < (len >> 3) ; ++regPart, ++stackAddress)
+        // copier coller de la procédure MOVMR<lengthInBits>
+        for (UINT32 regPart = 0 ; regPart < (lengthInBits >> 3) ; ++regPart, ++stackAddress)
         {
             if (pTmgrGlobal->isMemoryTainted<8>(stackAddress))  // octet marqué ? 
             {	
-                _LOGTAINT("POPR" << len << " octet " << regPart);	
+                _LOGTAINT("POPR" << lengthInBits << " octet " << regPart);	
                 pTmgrTls->updateTaintRegisterPart(regIndex, regPart, std::make_shared<TaintByte>(
                     X_ASSIGN, 
                     ObjectSource(pTmgrGlobal->getMemoryTaint<8>(stackAddress))));
@@ -89,14 +89,14 @@ void POP::sPOP_R(THREADID tid, REG regDest, ADDRINT stackAddress ADDRESS_DEBUG)
     }
 } // sPOP_R
 
-template<UINT32 len>
+template<UINT32 lengthInBits>
 void POP::sPOPF(THREADID tid, ADDRINT stackAddress ADDRESS_DEBUG)
 {
-    // len == 16 <-> POPF, len == 32 <-> POPFD, len == 64 <-> POPFQ
+    // lengthInBits == 16 <-> POPF, lengthInBits == 32 <-> POPFD, lengthInBits == 64 <-> POPFQ
     TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));    
      
     // ajustement du marquage du REGISTRE ESP/RSP, dans le cas où il est marqué
-    POP::sUpdateEspTaint<len>(pTmgrTls, stackAddress);
+    POP::sUpdateEspTaint<lengthInBits>(pTmgrTls, stackAddress);
 
     // récupération du marquage des 8 bits faibles de la pile;  si non marqué,
     // alors démarquage CF/PF/AF/ZF/SF

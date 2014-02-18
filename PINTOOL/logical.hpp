@@ -4,28 +4,28 @@
 ///////////////
 
 // SIMULATE
-template<UINT32 len> void LOGICAL::sAND_IM(THREADID tid, ADDRINT value, ADDRINT writeAddress ADDRESS_DEBUG) 
+template<UINT32 lengthInBits> void LOGICAL::sAND_IM(THREADID tid, ADDRINT value, ADDRINT writeAddress ADDRESS_DEBUG) 
 {
     TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
 
-    if (!pTmgrGlobal->isMemoryTainted<len>(writeAddress)) pTmgrTls->unTaintAllFlags();
+    if (!pTmgrGlobal->isMemoryTainted<lengthInBits>(writeAddress)) pTmgrTls->unTaintAllFlags();
     else if (!value) // AND x, 0 = 0, donc démarquage destination et flags
     { 
         pTmgrTls->unTaintAllFlags();
-        pTmgrGlobal->unTaintMemory<len>(writeAddress);
+        pTmgrGlobal->unTaintMemory<lengthInBits>(writeAddress);
     }
     else 
     {
-        _LOGTAINT("andIM" << len << " ");
+        _LOGTAINT("andIM" << lengthInBits << " ");
 
         // MARQUAGE DES FLAGS, dépendant uniquement du résultat
-        fTaintLOGICAL(pTmgrTls, std::make_shared<TaintObject<len>>(
+        fTaintLOGICAL(pTmgrTls, std::make_shared<TaintObject<lengthInBits>>(
             X_AND,
-            ObjectSource(pTmgrGlobal->getMemoryTaint<len>(writeAddress)),
-            ObjectSource(len, value)));
+            ObjectSource(pTmgrGlobal->getMemoryTaint<lengthInBits>(writeAddress)),
+            ObjectSource(lengthInBits, value)));
 
         // MARQUAGE DE LA DESTINATION, par octet pour éviter surmarquage
-        for (UINT32 byteNbr = 0 ; byteNbr < (len >> 3) ; ++byteNbr, ++writeAddress)
+        for (UINT32 byteNbr = 0 ; byteNbr < (lengthInBits >> 3) ; ++byteNbr, ++writeAddress)
         {
             // dest non marquée : ne rien faire
             if (!pTmgrGlobal->isMemoryTainted<8>(writeAddress)) continue;
@@ -48,29 +48,29 @@ template<UINT32 len> void LOGICAL::sAND_IM(THREADID tid, ADDRINT value, ADDRINT 
     }
 } // sAND_IM
 
-template<UINT32 len> void LOGICAL::sAND_IR(THREADID tid, ADDRINT value, REG reg, ADDRINT regValue ADDRESS_DEBUG) 
+template<UINT32 lengthInBits> void LOGICAL::sAND_IR(THREADID tid, ADDRINT value, REG reg, ADDRINT regValue ADDRESS_DEBUG) 
 {
     TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
 
-    if (!pTmgrTls->isRegisterTainted<len>(reg)) pTmgrTls->unTaintAllFlags();
+    if (!pTmgrTls->isRegisterTainted<lengthInBits>(reg)) pTmgrTls->unTaintAllFlags();
     else if (!value)  // AND x, 0 = 0, donc démarquage destination et flags
     {
         pTmgrTls->unTaintAllFlags();
-        pTmgrTls->unTaintRegister<len>(reg);
+        pTmgrTls->unTaintRegister<lengthInBits>(reg);
     }
     else 
     {
-        _LOGTAINT("andIR" << len);
+        _LOGTAINT("andIR" << lengthInBits);
 
         // MARQUAGE DES FLAGS, dépendant uniquement du résultat
-        fTaintLOGICAL(pTmgrTls, std::make_shared<TaintObject<len>>(
+        fTaintLOGICAL(pTmgrTls, std::make_shared<TaintObject<lengthInBits>>(
             X_AND,
-            ObjectSource(pTmgrTls->getRegisterTaint<len>(reg, regValue)),
-            ObjectSource(len, value)));
+            ObjectSource(pTmgrTls->getRegisterTaint<lengthInBits>(reg, regValue)),
+            ObjectSource(lengthInBits, value)));
 
         // MARQUAGE DE LA DESTINATION
         REGINDEX regIndex = getRegIndex(reg);
-        for (UINT32 regPart = 0 ; regPart < (len >> 3) ; ++regPart) 
+        for (UINT32 regPart = 0 ; regPart < (lengthInBits >> 3) ; ++regPart) 
         {
             // dest non marquée : ne rien faire
             if (!pTmgrTls->isRegisterPartTainted(regIndex, regPart)) continue;
@@ -95,16 +95,16 @@ template<UINT32 len> void LOGICAL::sAND_IR(THREADID tid, ADDRINT value, REG reg,
     }
 } // sAND_IR
 
-template<UINT32 len> void LOGICAL::sAND_RM
+template<UINT32 lengthInBits> void LOGICAL::sAND_RM
     (THREADID tid, REG regSrc, ADDRINT srcValue, ADDRINT writeAddress ADDRESS_DEBUG)
 {   
     TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
 
-    ADDRINT destValue = getMemoryValue<len>(writeAddress);
+    ADDRINT destValue = getMemoryValue<lengthInBits>(writeAddress);
 
     // marquage de la totalité de la destination et de la source
-    bool isDestTainted = pTmgrGlobal->isMemoryTainted<len>(writeAddress);
-    bool isSrcTainted  = pTmgrTls->isRegisterTainted<len>(regSrc);
+    bool isDestTainted = pTmgrGlobal->isMemoryTainted<lengthInBits>(writeAddress);
+    bool isSrcTainted  = pTmgrTls->isRegisterTainted<lengthInBits>(regSrc);
     
     // cas particuliers du AND (cf tableau)
     //if (!isDestTainted && (!isSrcTainted || !destValue)) pTmgr->unTaintAllFlags(); => 5 opérations
@@ -112,26 +112,26 @@ template<UINT32 len> void LOGICAL::sAND_RM
     else if ( !(isSrcTainted || (srcValue != 0))) 
     {
         pTmgrTls->unTaintAllFlags();
-        if (isDestTainted) pTmgrGlobal->unTaintMemory<len>(writeAddress);
+        if (isDestTainted) pTmgrGlobal->unTaintMemory<lengthInBits>(writeAddress);
     }
     else 
     { 
         // dans tous les autres cas, marquage d'abord des flags puis de la destination octet par octet
-        _LOGTAINT("andRM" << len);
+        _LOGTAINT("andRM" << lengthInBits);
 
         // MARQUAGE DES FLAGS, dépendant uniquement du résultat 
 
         // source 1 : source
         ObjectSource objSrc = (isSrcTainted)
-            ? ObjectSource(pTmgrTls->getRegisterTaint<len>(regSrc, srcValue)) 
-            : ObjectSource(len, srcValue);
+            ? ObjectSource(pTmgrTls->getRegisterTaint<lengthInBits>(regSrc, srcValue)) 
+            : ObjectSource(lengthInBits, srcValue);
         
         // source 2 : source/destination
         ObjectSource objSrcDest = (isDestTainted)
-            ? ObjectSource(pTmgrGlobal->getMemoryTaint<len>(writeAddress)) 
-            : ObjectSource(len, destValue);
+            ? ObjectSource(pTmgrGlobal->getMemoryTaint<lengthInBits>(writeAddress)) 
+            : ObjectSource(lengthInBits, destValue);
 
-        fTaintLOGICAL(pTmgrTls, std::make_shared<TaintObject<len>>(
+        fTaintLOGICAL(pTmgrTls, std::make_shared<TaintObject<lengthInBits>>(
             X_AND,
             objSrc,
             objSrcDest));
@@ -140,7 +140,7 @@ template<UINT32 len> void LOGICAL::sAND_RM
         // plusieurs cas selon le marquage des opérandes, cf tableau AND
         
         REGINDEX regSrcIndex = getRegIndex(regSrc);
-        for (UINT32 byteNbr = 0 ; byteNbr < (len >> 3) ; ++byteNbr, ++writeAddress) 
+        for (UINT32 byteNbr = 0 ; byteNbr < (lengthInBits >> 3) ; ++byteNbr, ++writeAddress) 
         {   
             UINT32 src8bitsValue    = EXTRACTBYTE(srcValue, byteNbr);
             UINT32 dest8bitsValue   = EXTRACTBYTE(destValue, byteNbr);
@@ -199,16 +199,16 @@ template<UINT32 len> void LOGICAL::sAND_RM
     }
 } //sAND_RM
 
-template<UINT32 len> void LOGICAL::sAND_MR
+template<UINT32 lengthInBits> void LOGICAL::sAND_MR
     (THREADID tid, ADDRINT readAddress, REG regSrcDest, ADDRINT destValue ADDRESS_DEBUG) 
 {   
     TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
 
-    ADDRINT srcValue = getMemoryValue<len>(readAddress);
+    ADDRINT srcValue = getMemoryValue<lengthInBits>(readAddress);
 
     // marquage de la totalité de la destination et de la source
-    bool isDestTainted = pTmgrTls->isRegisterTainted<len>(regSrcDest);
-    bool isSrcTainted  = pTmgrGlobal->isMemoryTainted<len>(readAddress);
+    bool isDestTainted = pTmgrTls->isRegisterTainted<lengthInBits>(regSrcDest);
+    bool isSrcTainted  = pTmgrGlobal->isMemoryTainted<lengthInBits>(readAddress);
     
     // cas particuliers du AND (cf tableau)
     // if (!isDestTainted && (!isSrcTainted || !destValue)) pTmgr->unTaintAllFlags(); => 5 opérations
@@ -216,26 +216,26 @@ template<UINT32 len> void LOGICAL::sAND_MR
     else if ( !(isSrcTainted || (srcValue != 0))) 
     {
         pTmgrTls->unTaintAllFlags();
-        if (isDestTainted) pTmgrTls->unTaintRegister<len>(regSrcDest);
+        if (isDestTainted) pTmgrTls->unTaintRegister<lengthInBits>(regSrcDest);
     }
     else 
     { 
         // sinon, marquage d'abord des flags puis de la destination octet par octet
-        _LOGTAINT("andMR" << len << " ");
+        _LOGTAINT("andMR" << lengthInBits << " ");
 
         // MARQUAGE DES FLAGS, dépendant uniquement du résultat 
 
         // source 1 : source
         ObjectSource objSrc = (isSrcTainted)
-            ? ObjectSource(pTmgrGlobal->getMemoryTaint<len>(readAddress))
-            : ObjectSource(len, srcValue);
+            ? ObjectSource(pTmgrGlobal->getMemoryTaint<lengthInBits>(readAddress))
+            : ObjectSource(lengthInBits, srcValue);
         
         // source 2 : source/destination
         ObjectSource objSrcDest = (isDestTainted)
-            ? ObjectSource(pTmgrTls->getRegisterTaint<len>(regSrcDest, destValue)) 
-            : ObjectSource(len, destValue);
+            ? ObjectSource(pTmgrTls->getRegisterTaint<lengthInBits>(regSrcDest, destValue)) 
+            : ObjectSource(lengthInBits, destValue);
         
-        fTaintLOGICAL(pTmgrTls, std::make_shared<TaintObject<len>>(
+        fTaintLOGICAL(pTmgrTls, std::make_shared<TaintObject<lengthInBits>>(
             X_AND,
             objSrc,
             objSrcDest));
@@ -244,7 +244,7 @@ template<UINT32 len> void LOGICAL::sAND_MR
         // plusieurs cas selon le marquage des opérandes, cf tableau AND
         
         REGINDEX regSrcDestIndex = getRegIndex(regSrcDest);
-        for (UINT32 byteNbr = 0 ; byteNbr < (len >> 3) ; ++byteNbr, ++readAddress) 
+        for (UINT32 byteNbr = 0 ; byteNbr < (lengthInBits >> 3) ; ++byteNbr, ++readAddress) 
         {   
             UINT32 src8bitsValue    = EXTRACTBYTE(srcValue, byteNbr);
             UINT32 dest8bitsValue   = EXTRACTBYTE(destValue, byteNbr);
@@ -303,14 +303,14 @@ template<UINT32 len> void LOGICAL::sAND_MR
     }
 } // sAND_MR
 
-template<UINT32 len> void LOGICAL::sAND_RR
+template<UINT32 lengthInBits> void LOGICAL::sAND_RR
     (THREADID tid, REG regSrc, ADDRINT srcValue, REG regSrcDest, ADDRINT destValue ADDRESS_DEBUG) 
 {
     TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
 
     // marquage de la totalité de la destination et de la source
-    bool isDestTainted = pTmgrTls->isRegisterTainted<len>(regSrcDest);
-    bool isSrcTainted  = pTmgrTls->isRegisterTainted<len>(regSrc);
+    bool isDestTainted = pTmgrTls->isRegisterTainted<lengthInBits>(regSrcDest);
+    bool isSrcTainted  = pTmgrTls->isRegisterTainted<lengthInBits>(regSrc);
     
     // cas particuliers du AND (cf tableau)
     //if (!maskDest && (!maskSrc || !destValue)) pTmgr->unTaintAllFlags(); => 5 opérations
@@ -318,25 +318,25 @@ template<UINT32 len> void LOGICAL::sAND_RR
     else if ( !(isSrcTainted || (srcValue != 0))) 
     {
         pTmgrTls->unTaintAllFlags();
-        if (isDestTainted) pTmgrTls->unTaintRegister<len>(regSrcDest);
+        if (isDestTainted) pTmgrTls->unTaintRegister<lengthInBits>(regSrcDest);
     }
     else 
     {
-        _LOGTAINT("andRR" << len << " ");
+        _LOGTAINT("andRR" << lengthInBits << " ");
 
         // MARQUAGE DES FLAGS, dépendant uniquement du résultat 
 
         // source 1 : source
         ObjectSource objSrc = (isSrcTainted)
-            ? ObjectSource(pTmgrTls->getRegisterTaint<len>(regSrc, srcValue)) 
-            : ObjectSource(len, srcValue);
+            ? ObjectSource(pTmgrTls->getRegisterTaint<lengthInBits>(regSrc, srcValue)) 
+            : ObjectSource(lengthInBits, srcValue);
         
         // source 2 : source/destination
         ObjectSource objSrcDest = (isDestTainted)
-            ? ObjectSource(pTmgrTls->getRegisterTaint<len>(regSrcDest, destValue)) 
-            : ObjectSource(len, destValue);
+            ? ObjectSource(pTmgrTls->getRegisterTaint<lengthInBits>(regSrcDest, destValue)) 
+            : ObjectSource(lengthInBits, destValue);
         
-        fTaintLOGICAL(pTmgrTls, std::make_shared<TaintObject<len>>(
+        fTaintLOGICAL(pTmgrTls, std::make_shared<TaintObject<lengthInBits>>(
             X_AND,
             objSrc,
             objSrcDest));
@@ -346,7 +346,7 @@ template<UINT32 len> void LOGICAL::sAND_RR
         REGINDEX regSrcDestIndex = getRegIndex(regSrcDest);
         REGINDEX regSrcIndex     = getRegIndex(regSrc);
 
-        for (UINT32 regPart = 0 ; regPart < (len >> 3) ; ++regPart) 
+        for (UINT32 regPart = 0 ; regPart < (lengthInBits >> 3) ; ++regPart) 
         {  
             UINT32 src8bitsValue    = EXTRACTBYTE(srcValue, regPart);
             UINT32 dest8bitsValue   = EXTRACTBYTE(destValue, regPart);
@@ -410,29 +410,29 @@ template<UINT32 len> void LOGICAL::sAND_RR
 //////////////
 
 // SIMULATE
-template<UINT32 len> void LOGICAL::sOR_IM(THREADID tid, ADDRINT value, ADDRINT writeAddress ADDRESS_DEBUG) 
+template<UINT32 lengthInBits> void LOGICAL::sOR_IM(THREADID tid, ADDRINT value, ADDRINT writeAddress ADDRESS_DEBUG) 
 {
     TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
 
-    if (!pTmgrGlobal->isMemoryTainted<len>(writeAddress)) pTmgrTls->unTaintAllFlags();
-    else if (value == minusOne<len>::get()) 
+    if (!pTmgrGlobal->isMemoryTainted<lengthInBits>(writeAddress)) pTmgrTls->unTaintAllFlags();
+    else if (value == minusOne<lengthInBits>::get()) 
     { 
         // OR x, 0xff... = 0xff..., donc démarquage destination et flags
         pTmgrTls->unTaintAllFlags();
-        pTmgrGlobal->unTaintMemory<len>(writeAddress);
+        pTmgrGlobal->unTaintMemory<lengthInBits>(writeAddress);
     }
     else 
     {
-        _LOGTAINT("orIM" << len << " ");
+        _LOGTAINT("orIM" << lengthInBits << " ");
 
         // MARQUAGE DES FLAGS, dépendant uniquement du résultat
-        fTaintLOGICAL(pTmgrTls, std::make_shared<TaintObject<len>>(
+        fTaintLOGICAL(pTmgrTls, std::make_shared<TaintObject<lengthInBits>>(
             X_OR,
-            ObjectSource(pTmgrGlobal->getMemoryTaint<len>(writeAddress)),
-            ObjectSource(len, value)));
+            ObjectSource(pTmgrGlobal->getMemoryTaint<lengthInBits>(writeAddress)),
+            ObjectSource(lengthInBits, value)));
 
         // MARQUAGE DE LA DESTINATION, par octet pour éviter surmarquage
-        for (UINT32 byteNbr = 0 ; byteNbr < (len >> 3) ; ++byteNbr, ++writeAddress)
+        for (UINT32 byteNbr = 0 ; byteNbr < (lengthInBits >> 3) ; ++byteNbr, ++writeAddress)
         {
             // dest non marquée : ne rien faire
             if (!pTmgrGlobal->isMemoryTainted<8>(writeAddress)) continue;
@@ -454,29 +454,29 @@ template<UINT32 len> void LOGICAL::sOR_IM(THREADID tid, ADDRINT value, ADDRINT w
     }
 } // sOR_IM
 
-template<UINT32 len> void LOGICAL::sOR_IR(THREADID tid, ADDRINT value, REG reg, ADDRINT regValue ADDRESS_DEBUG)
+template<UINT32 lengthInBits> void LOGICAL::sOR_IR(THREADID tid, ADDRINT value, REG reg, ADDRINT regValue ADDRESS_DEBUG)
 {
     TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
 
-    if (!pTmgrTls->isRegisterTainted<len>(reg)) pTmgrTls->unTaintAllFlags();
-    else if (value == minusOne<len>::get()) // OR x, 0xff = 0xff, donc démarquage destination et flags
+    if (!pTmgrTls->isRegisterTainted<lengthInBits>(reg)) pTmgrTls->unTaintAllFlags();
+    else if (value == minusOne<lengthInBits>::get()) // OR x, 0xff = 0xff, donc démarquage destination et flags
     {
         pTmgrTls->unTaintAllFlags();
-        pTmgrTls->unTaintRegister<len>(reg);
+        pTmgrTls->unTaintRegister<lengthInBits>(reg);
     }
     else 
     {
         _LOGTAINT("orIR");
 
         // MARQUAGE DES FLAGS, dépendant uniquement du résultat
-        fTaintLOGICAL(pTmgrTls, std::make_shared<TaintObject<len>>(
+        fTaintLOGICAL(pTmgrTls, std::make_shared<TaintObject<lengthInBits>>(
             X_OR,
-            ObjectSource(pTmgrTls->getRegisterTaint<len>(reg, regValue)),
-            ObjectSource(len, value)));
+            ObjectSource(pTmgrTls->getRegisterTaint<lengthInBits>(reg, regValue)),
+            ObjectSource(lengthInBits, value)));
 
         // MARQUAGE DE LA DESTINATION
         REGINDEX regIndex = getRegIndex(reg);
-        for (UINT32 regPart = 0 ; regPart < (len >> 3) ; ++regPart) 
+        for (UINT32 regPart = 0 ; regPart < (lengthInBits >> 3) ; ++regPart) 
         {
             // dest non marquée : ne rien faire
             if (!pTmgrTls->isRegisterPartTainted(regIndex, regPart)) continue;
@@ -501,45 +501,45 @@ template<UINT32 len> void LOGICAL::sOR_IR(THREADID tid, ADDRINT value, REG reg, 
     }
 } // OR_IR
 
-template<UINT32 len> void LOGICAL::sOR_RM
+template<UINT32 lengthInBits> void LOGICAL::sOR_RM
     (THREADID tid, REG regSrc, ADDRINT srcValue, ADDRINT writeAddress ADDRESS_DEBUG)
 {
     TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
 
-    ADDRINT destValue = getMemoryValue<len>(writeAddress);
+    ADDRINT destValue = getMemoryValue<lengthInBits>(writeAddress);
 
     // marquage de la totalité de la destination et de la source
-    bool isDestTainted = pTmgrGlobal->isMemoryTainted<len>(writeAddress);
-    bool isSrcTainted  = pTmgrTls->isRegisterTainted<len>(regSrc);
+    bool isDestTainted = pTmgrGlobal->isMemoryTainted<lengthInBits>(writeAddress);
+    bool isSrcTainted  = pTmgrTls->isRegisterTainted<lengthInBits>(regSrc);
     
     // cf tableau démarquage Flags sur le OR
-    if (!isDestTainted && (!isSrcTainted || (destValue == minusOne<len>::get()))) 
+    if (!isDestTainted && (!isSrcTainted || (destValue == minusOne<lengthInBits>::get()))) 
     {
         pTmgrTls->unTaintAllFlags();
     }
-    else if ( !isSrcTainted && (srcValue == minusOne<len>::get()))
+    else if ( !isSrcTainted && (srcValue == minusOne<lengthInBits>::get()))
     {
         pTmgrTls->unTaintAllFlags();
-        if (isDestTainted) pTmgrGlobal->unTaintMemory<len>(writeAddress);
+        if (isDestTainted) pTmgrGlobal->unTaintMemory<lengthInBits>(writeAddress);
     }
     else 
     {
         // dans tous les autres cas, marquage d'abord des flags puis destination octet par octet
-        _LOGTAINT("orRM" << len << " ");
+        _LOGTAINT("orRM" << lengthInBits << " ");
 
         // MARQUAGE DES FLAGS, dépendant uniquement du résultat 
         
         // source 1 : source
         ObjectSource objSrc = (isSrcTainted)
-            ? ObjectSource(pTmgrTls->getRegisterTaint<len>(regSrc, srcValue)) 
-            : ObjectSource(len, srcValue);
+            ? ObjectSource(pTmgrTls->getRegisterTaint<lengthInBits>(regSrc, srcValue)) 
+            : ObjectSource(lengthInBits, srcValue);
         
         // source 2 : source/destination
         ObjectSource objSrcDest = (isDestTainted)
-            ? ObjectSource(pTmgrGlobal->getMemoryTaint<len>(writeAddress)) 
-            : ObjectSource(len, destValue);
+            ? ObjectSource(pTmgrGlobal->getMemoryTaint<lengthInBits>(writeAddress)) 
+            : ObjectSource(lengthInBits, destValue);
 
-        fTaintLOGICAL(pTmgrTls, std::make_shared<TaintObject<len>>(
+        fTaintLOGICAL(pTmgrTls, std::make_shared<TaintObject<lengthInBits>>(
             X_OR,
             objSrc,
             objSrcDest));
@@ -547,7 +547,7 @@ template<UINT32 len> void LOGICAL::sOR_RM
         // MARQUAGE DE LA DESTINATION
         // plusieurs cas selon le marquage des opérandes, cf tableau OR 
         REGINDEX regSrcIndex = getRegIndex(regSrc);
-        for (UINT32 byteNbr = 0 ; byteNbr < (len >> 3) ; ++byteNbr, ++writeAddress) 
+        for (UINT32 byteNbr = 0 ; byteNbr < (lengthInBits >> 3) ; ++byteNbr, ++writeAddress) 
         {   
             UINT32 src8bitsValue    = EXTRACTBYTE(srcValue, byteNbr);
             UINT32 dest8bitsValue   = EXTRACTBYTE(destValue, byteNbr);
@@ -605,45 +605,45 @@ template<UINT32 len> void LOGICAL::sOR_RM
     }
 } // sOR_RM
 
-template<UINT32 len> void LOGICAL::sOR_MR
+template<UINT32 lengthInBits> void LOGICAL::sOR_MR
     (THREADID tid, ADDRINT readAddress, REG regSrcDest, ADDRINT destValue ADDRESS_DEBUG) 
 {
     TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
 
-    ADDRINT srcValue = getMemoryValue<len>(readAddress);
+    ADDRINT srcValue = getMemoryValue<lengthInBits>(readAddress);
 
     // marquage de la totalité de la destination et de la source
-    bool isDestTainted = pTmgrTls->isRegisterTainted<len>(regSrcDest);
-    bool isSrcTainted  = pTmgrGlobal->isMemoryTainted<len>(readAddress);
+    bool isDestTainted = pTmgrTls->isRegisterTainted<lengthInBits>(regSrcDest);
+    bool isSrcTainted  = pTmgrGlobal->isMemoryTainted<lengthInBits>(readAddress);
     
     // cf tableau démarquage Flags sur le OR
-    if (!isDestTainted && (!isSrcTainted || (destValue == minusOne<len>::get()))) 
+    if (!isDestTainted && (!isSrcTainted || (destValue == minusOne<lengthInBits>::get()))) 
     {
         pTmgrTls->unTaintAllFlags();
     }
-    else if ( !isSrcTainted && (srcValue == minusOne<len>::get()))
+    else if ( !isSrcTainted && (srcValue == minusOne<lengthInBits>::get()))
     {
         pTmgrTls->unTaintAllFlags();
-        if (isDestTainted) pTmgrTls->unTaintRegister<len>(regSrcDest);
+        if (isDestTainted) pTmgrTls->unTaintRegister<lengthInBits>(regSrcDest);
     }
     else 
     {
         // dans tous les autres cas, marquage d'abord des flags, puis destination octet par octet
-        _LOGTAINT("orMR" << len << " ");
+        _LOGTAINT("orMR" << lengthInBits << " ");
 
         // MARQUAGE DES FLAGS, dépendant uniquement du résultat 
 
         // source 1 : source
         ObjectSource objSrc = (isSrcTainted)
-            ? ObjectSource(pTmgrGlobal->getMemoryTaint<len>(readAddress))
-            : ObjectSource(len, srcValue);
+            ? ObjectSource(pTmgrGlobal->getMemoryTaint<lengthInBits>(readAddress))
+            : ObjectSource(lengthInBits, srcValue);
         
         // source 2 : source/destination
         ObjectSource objSrcDest = (isDestTainted)
-            ? ObjectSource(pTmgrTls->getRegisterTaint<len>(regSrcDest, destValue)) 
-            : ObjectSource(len, destValue);
+            ? ObjectSource(pTmgrTls->getRegisterTaint<lengthInBits>(regSrcDest, destValue)) 
+            : ObjectSource(lengthInBits, destValue);
         
-        fTaintLOGICAL(pTmgrTls, std::make_shared<TaintObject<len>>(
+        fTaintLOGICAL(pTmgrTls, std::make_shared<TaintObject<lengthInBits>>(
             X_OR,
             objSrc,
             objSrcDest));
@@ -652,7 +652,7 @@ template<UINT32 len> void LOGICAL::sOR_MR
         // plusieurs cas selon le marquage des opérandes, cf tableau OR
         
         REGINDEX regSrcDestIndex = getRegIndex(regSrcDest);
-        for (UINT32 byteNbr = 0 ; byteNbr < (len >> 3) ; ++byteNbr, ++readAddress) 
+        for (UINT32 byteNbr = 0 ; byteNbr < (lengthInBits >> 3) ; ++byteNbr, ++readAddress) 
         {   
             UINT32 src8bitsValue    = EXTRACTBYTE(srcValue, byteNbr);
             UINT32 dest8bitsValue   = EXTRACTBYTE(destValue, byteNbr);
@@ -711,42 +711,42 @@ template<UINT32 len> void LOGICAL::sOR_MR
     }
 } // end sOR_MR
 
-template<UINT32 len> void LOGICAL::sOR_RR
+template<UINT32 lengthInBits> void LOGICAL::sOR_RR
     (THREADID tid, REG regSrc, ADDRINT srcValue, REG regSrcDest, ADDRINT destValue ADDRESS_DEBUG)
 {
     TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
 
     // marquage de la totalité de la destination et de la source
-    bool isDestTainted = pTmgrTls->isRegisterTainted<len>(regSrcDest);
-    bool isSrcTainted  = pTmgrTls->isRegisterTainted<len>(regSrc);
+    bool isDestTainted = pTmgrTls->isRegisterTainted<lengthInBits>(regSrcDest);
+    bool isSrcTainted  = pTmgrTls->isRegisterTainted<lengthInBits>(regSrc);
     
     // cf tableau démarquage Flags sur le OR
-    if (!isDestTainted && (!isSrcTainted || (destValue == minusOne<len>::get()))) 
+    if (!isDestTainted && (!isSrcTainted || (destValue == minusOne<lengthInBits>::get()))) 
     {
         pTmgrTls->unTaintAllFlags();
     }
-    else if ( !isSrcTainted && (srcValue == minusOne<len>::get()))
+    else if ( !isSrcTainted && (srcValue == minusOne<lengthInBits>::get()))
     {
         pTmgrTls->unTaintAllFlags();
-        if (isDestTainted) pTmgrTls->unTaintRegister<len>(regSrcDest);
+        if (isDestTainted) pTmgrTls->unTaintRegister<lengthInBits>(regSrcDest);
     }
     else 
     {
-        _LOGTAINT("orRR" << len << " ");
+        _LOGTAINT("orRR" << lengthInBits << " ");
 
         // MARQUAGE DES FLAGS, dépendant uniquement du résultat 
 
         // source 1 : source
         ObjectSource objSrc = (isSrcTainted)
-            ? ObjectSource(pTmgrTls->getRegisterTaint<len>(regSrc, srcValue)) 
-            : ObjectSource(len, srcValue);
+            ? ObjectSource(pTmgrTls->getRegisterTaint<lengthInBits>(regSrc, srcValue)) 
+            : ObjectSource(lengthInBits, srcValue);
         
              // source 2 : source/destination
         ObjectSource objSrcDest = (isDestTainted)
-            ? ObjectSource(pTmgrTls->getRegisterTaint<len>(regSrcDest, destValue)) 
-            : ObjectSource(len, destValue);
+            ? ObjectSource(pTmgrTls->getRegisterTaint<lengthInBits>(regSrcDest, destValue)) 
+            : ObjectSource(lengthInBits, destValue);
         
-        fTaintLOGICAL(pTmgrTls, std::make_shared<TaintObject<len>>(
+        fTaintLOGICAL(pTmgrTls, std::make_shared<TaintObject<lengthInBits>>(
             X_OR,
             objSrc,
             objSrcDest));
@@ -756,7 +756,7 @@ template<UINT32 len> void LOGICAL::sOR_RR
         REGINDEX regSrcDestIndex = getRegIndex(regSrcDest);
         REGINDEX regSrcIndex     = getRegIndex(regSrc);
 
-        for (UINT32 regPart = 0 ; regPart < (len >> 3) ; ++regPart) 
+        for (UINT32 regPart = 0 ; regPart < (lengthInBits >> 3) ; ++regPart) 
         {  
             UINT32 src8bitsValue    = EXTRACTBYTE(srcValue, regPart);
             UINT32 dest8bitsValue   = EXTRACTBYTE(destValue, regPart);
@@ -820,23 +820,23 @@ template<UINT32 len> void LOGICAL::sOR_RR
 ///////////////
 
 // SIMULATE
-template<UINT32 len> void LOGICAL::sXOR_IM(THREADID tid, ADDRINT value, ADDRINT writeAddress ADDRESS_DEBUG)
+template<UINT32 lengthInBits> void LOGICAL::sXOR_IM(THREADID tid, ADDRINT value, ADDRINT writeAddress ADDRESS_DEBUG)
 {
     TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
 
-    if (!pTmgrGlobal->isMemoryTainted<len>(writeAddress)) pTmgrTls->unTaintAllFlags();
+    if (!pTmgrGlobal->isMemoryTainted<lengthInBits>(writeAddress)) pTmgrTls->unTaintAllFlags();
     else 
     {
-        _LOGTAINT("xorIM" << len << " ");
+        _LOGTAINT("xorIM" << lengthInBits << " ");
 
         // MARQUAGE DES FLAGS, dépendant uniquement du résultat
-        fTaintLOGICAL(pTmgrTls, std::make_shared<TaintObject<len>>(
+        fTaintLOGICAL(pTmgrTls, std::make_shared<TaintObject<lengthInBits>>(
             X_XOR,
-            ObjectSource(pTmgrGlobal->getMemoryTaint<len>(writeAddress)),
-            ObjectSource(len, value)));
+            ObjectSource(pTmgrGlobal->getMemoryTaint<lengthInBits>(writeAddress)),
+            ObjectSource(lengthInBits, value)));
 
         // MARQUAGE DE LA DESTINATION, par octet pour éviter surmarquage
-        for (UINT32 byteNbr = 0 ; byteNbr < (len >> 3) ; ++byteNbr, ++writeAddress)
+        for (UINT32 byteNbr = 0 ; byteNbr < (lengthInBits >> 3) ; ++byteNbr, ++writeAddress)
         {
             // dest non marquée : ne rien faire
             if (!pTmgrGlobal->isMemoryTainted<8>(writeAddress)) continue;
@@ -869,24 +869,24 @@ template<UINT32 len> void LOGICAL::sXOR_IM(THREADID tid, ADDRINT value, ADDRINT 
     }
 } // sXOR_IM
 
-template<UINT32 len> void LOGICAL::sXOR_IR(THREADID tid, ADDRINT value, REG reg, ADDRINT regValue ADDRESS_DEBUG) 
+template<UINT32 lengthInBits> void LOGICAL::sXOR_IR(THREADID tid, ADDRINT value, REG reg, ADDRINT regValue ADDRESS_DEBUG) 
 {
     TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
 
-    if (!pTmgrTls->isRegisterTainted<len>(reg)) pTmgrTls->unTaintAllFlags();
+    if (!pTmgrTls->isRegisterTainted<lengthInBits>(reg)) pTmgrTls->unTaintAllFlags();
     else 
     {
-        _LOGTAINT("xorIR" << len << " ");
+        _LOGTAINT("xorIR" << lengthInBits << " ");
 
         // MARQUAGE DES FLAGS, dépendant uniquement du résultat
-        fTaintLOGICAL(pTmgrTls, std::make_shared<TaintObject<len>>(
+        fTaintLOGICAL(pTmgrTls, std::make_shared<TaintObject<lengthInBits>>(
             X_XOR,
-            ObjectSource(pTmgrTls->getRegisterTaint<len>(reg, regValue)),
-            ObjectSource(len, value)));
+            ObjectSource(pTmgrTls->getRegisterTaint<lengthInBits>(reg, regValue)),
+            ObjectSource(lengthInBits, value)));
 
         // MARQUAGE DE LA DESTINATION
         REGINDEX regIndex = getRegIndex(reg);
-        for (UINT32 regPart = 0 ; regPart < (len >> 3) ; ++regPart) 
+        for (UINT32 regPart = 0 ; regPart < (lengthInBits >> 3) ; ++regPart) 
         {
             // dest non marquée : ne rien faire
             if (!pTmgrTls->isRegisterPartTainted(regIndex, regPart)) continue;
@@ -918,36 +918,36 @@ template<UINT32 len> void LOGICAL::sXOR_IR(THREADID tid, ADDRINT value, REG reg,
     }
 } // sXOR_IR
 
-template<UINT32 len> void LOGICAL::sXOR_RM
+template<UINT32 lengthInBits> void LOGICAL::sXOR_RM
     (THREADID tid, REG regSrc, ADDRINT srcValue, ADDRINT writeAddress ADDRESS_DEBUG) 
 {
     TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
 
-    ADDRINT destValue = getMemoryValue<len>(writeAddress);
+    ADDRINT destValue = getMemoryValue<lengthInBits>(writeAddress);
 
     // marquage de la totalité de la destination et de la source
-    bool isDestTainted = pTmgrGlobal->isMemoryTainted<len>(writeAddress);
-    bool isSrcTainted  = pTmgrTls->isRegisterTainted<len>(regSrc);
+    bool isDestTainted = pTmgrGlobal->isMemoryTainted<lengthInBits>(writeAddress);
+    bool isSrcTainted  = pTmgrTls->isRegisterTainted<lengthInBits>(regSrc);
     
     if (!(isSrcTainted || isDestTainted)) pTmgrTls->unTaintAllFlags();
     else 
     {
         // dans tous les autres cas, marquage d'abord des flags puis destination octet par octet
-        _LOGTAINT("xorRM" << len << " ");
+        _LOGTAINT("xorRM" << lengthInBits << " ");
 
         // MARQUAGE DES FLAGS, dépendant uniquement du résultat 
         
         // source 1 : source
         ObjectSource objSrc = (isSrcTainted)
-            ? ObjectSource(pTmgrTls->getRegisterTaint<len>(regSrc, srcValue)) 
-            : ObjectSource(len, srcValue);
+            ? ObjectSource(pTmgrTls->getRegisterTaint<lengthInBits>(regSrc, srcValue)) 
+            : ObjectSource(lengthInBits, srcValue);
         
         // source 2 : source/destination
         ObjectSource objSrcDest = (isDestTainted)
-            ? ObjectSource(pTmgrGlobal->getMemoryTaint<len>(writeAddress)) 
-            : ObjectSource(len, destValue);
+            ? ObjectSource(pTmgrGlobal->getMemoryTaint<lengthInBits>(writeAddress)) 
+            : ObjectSource(lengthInBits, destValue);
 
-        fTaintLOGICAL(pTmgrTls, std::make_shared<TaintObject<len>>(
+        fTaintLOGICAL(pTmgrTls, std::make_shared<TaintObject<lengthInBits>>(
             X_XOR,
             objSrc,
             objSrcDest));
@@ -955,7 +955,7 @@ template<UINT32 len> void LOGICAL::sXOR_RM
         // MARQUAGE DE LA DESTINATION
         // plusieurs cas selon le marquage des opérandes, cf tableau XOR    
         REGINDEX regSrcIndex = getRegIndex(regSrc);
-        for (UINT32 byteNbr = 0 ; byteNbr < (len >> 3) ; ++byteNbr, ++writeAddress) 
+        for (UINT32 byteNbr = 0 ; byteNbr < (lengthInBits >> 3) ; ++byteNbr, ++writeAddress) 
         {   
             UINT32 src8bitsValue    = EXTRACTBYTE(srcValue, byteNbr);
             UINT32 dest8bitsValue   = EXTRACTBYTE(destValue, byteNbr);
@@ -1021,35 +1021,35 @@ template<UINT32 len> void LOGICAL::sXOR_RM
     }
 } // sXOR_RM
 
-template<UINT32 len> void LOGICAL::sXOR_MR
+template<UINT32 lengthInBits> void LOGICAL::sXOR_MR
     (THREADID tid, ADDRINT readAddress, REG regSrcDest, ADDRINT destValue ADDRESS_DEBUG)
 {
     TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
 
-    ADDRINT srcValue = getMemoryValue<len>(readAddress);
+    ADDRINT srcValue = getMemoryValue<lengthInBits>(readAddress);
 
     // marquage de la totalité de la destination et de la source
-    bool isDestTainted = pTmgrTls->isRegisterTainted<len>(regSrcDest);
-    bool isSrcTainted  = pTmgrGlobal->isMemoryTainted<len>(readAddress);
+    bool isDestTainted = pTmgrTls->isRegisterTainted<lengthInBits>(regSrcDest);
+    bool isSrcTainted  = pTmgrGlobal->isMemoryTainted<lengthInBits>(readAddress);
         
     // cf tableau démarquage Flags sur le XOR
     if (!(isSrcTainted || isDestTainted)) pTmgrTls->unTaintAllFlags();
     else 
     {
-        _LOGTAINT("xorMR" << len << " ");
+        _LOGTAINT("xorMR" << lengthInBits << " ");
         // MARQUAGE DES FLAGS, dépendant uniquement du résultat 
 
         // source 1 : source
         ObjectSource objSrc = (isSrcTainted)
-            ? ObjectSource(pTmgrGlobal->getMemoryTaint<len>(readAddress))
-            : ObjectSource(len, srcValue);
+            ? ObjectSource(pTmgrGlobal->getMemoryTaint<lengthInBits>(readAddress))
+            : ObjectSource(lengthInBits, srcValue);
         
         // source 2 : source/destination
         ObjectSource objSrcDest = (isDestTainted)
-            ? ObjectSource(pTmgrTls->getRegisterTaint<len>(regSrcDest, destValue)) 
-            : ObjectSource(len, destValue);
+            ? ObjectSource(pTmgrTls->getRegisterTaint<lengthInBits>(regSrcDest, destValue)) 
+            : ObjectSource(lengthInBits, destValue);
         
-        fTaintLOGICAL(pTmgrTls, std::make_shared<TaintObject<len>>(
+        fTaintLOGICAL(pTmgrTls, std::make_shared<TaintObject<lengthInBits>>(
             X_XOR,
             objSrc,
             objSrcDest));
@@ -1057,7 +1057,7 @@ template<UINT32 len> void LOGICAL::sXOR_MR
         // MARQUAGE DE LA DESTINATION, octet par octet
         // plusieurs cas selon le marquage des opérandes, cf tableau XOR
         REGINDEX regSrcDestIndex = getRegIndex(regSrcDest);
-        for (UINT32 byteNbr = 0 ; byteNbr < (len >> 3) ; ++byteNbr, ++readAddress) 
+        for (UINT32 byteNbr = 0 ; byteNbr < (lengthInBits >> 3) ; ++byteNbr, ++readAddress) 
         {   
             UINT32 src8bitsValue    = EXTRACTBYTE(srcValue, byteNbr);
             UINT32 dest8bitsValue   = EXTRACTBYTE(destValue, byteNbr);
@@ -1126,33 +1126,33 @@ template<UINT32 len> void LOGICAL::sXOR_MR
     }
 } // sXOR_RM
 
-template<UINT32 len> void LOGICAL::sXOR_RR
+template<UINT32 lengthInBits> void LOGICAL::sXOR_RR
     (THREADID tid, REG regSrc, ADDRINT srcValue, REG regSrcDest, ADDRINT destValue ADDRESS_DEBUG) 
 {
     TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
 
     // marquage de la totalité de la destination et de la source
-    bool isDestTainted = pTmgrTls->isRegisterTainted<len>(regSrcDest);
-    bool isSrcTainted  = pTmgrTls->isRegisterTainted<len>(regSrc);
+    bool isDestTainted = pTmgrTls->isRegisterTainted<lengthInBits>(regSrcDest);
+    bool isSrcTainted  = pTmgrTls->isRegisterTainted<lengthInBits>(regSrc);
     
     if ( !(isSrcTainted || isDestTainted)) pTmgrTls->unTaintAllFlags();
     else 
     {
-        _LOGTAINT("xorRR" << len << " ");
+        _LOGTAINT("xorRR" << lengthInBits << " ");
 
         // MARQUAGE DES FLAGS, dépendant uniquement du résultat 
 
         // source 1 : source
         ObjectSource objSrc = (isSrcTainted)
-            ? ObjectSource(pTmgrTls->getRegisterTaint<len>(regSrc, srcValue)) 
-            : ObjectSource(len, srcValue);
+            ? ObjectSource(pTmgrTls->getRegisterTaint<lengthInBits>(regSrc, srcValue)) 
+            : ObjectSource(lengthInBits, srcValue);
         
         // source 2 : source/destination
         ObjectSource objSrcDest = (isDestTainted)
-            ? ObjectSource(pTmgrTls->getRegisterTaint<len>(regSrcDest, destValue)) 
-            : ObjectSource(len, destValue);
+            ? ObjectSource(pTmgrTls->getRegisterTaint<lengthInBits>(regSrcDest, destValue)) 
+            : ObjectSource(lengthInBits, destValue);
         
-        fTaintLOGICAL(pTmgrTls, std::make_shared<TaintObject<len>>(
+        fTaintLOGICAL(pTmgrTls, std::make_shared<TaintObject<lengthInBits>>(
             X_XOR,
             objSrc,
             objSrcDest));
@@ -1162,7 +1162,7 @@ template<UINT32 len> void LOGICAL::sXOR_RR
         REGINDEX regSrcDestIndex = getRegIndex(regSrcDest);
         REGINDEX regSrcIndex     = getRegIndex(regSrc);
 
-        for (UINT32 regPart = 0 ; regPart < (len >> 3) ; ++regPart) 
+        for (UINT32 regPart = 0 ; regPart < (lengthInBits >> 3) ; ++regPart) 
         {  
             UINT32 src8bitsValue    = EXTRACTBYTE(srcValue, regPart);
             UINT32 dest8bitsValue   = EXTRACTBYTE(destValue, regPart);
@@ -1231,7 +1231,7 @@ template<UINT32 len> void LOGICAL::sXOR_RR
     }
 } // end sXOR_RR
 
-template<UINT32 len> void PIN_FAST_ANALYSIS_CALL LOGICAL::sXOR_RR_EQUAL(THREADID tid, REG reg ADDRESS_DEBUG) 
+template<UINT32 lengthInBits> void PIN_FAST_ANALYSIS_CALL LOGICAL::sXOR_RR_EQUAL(THREADID tid, REG reg ADDRESS_DEBUG) 
 {
     // cas typique xor reg, reg => démarquage registre et flags 
     #if DEBUG
@@ -1243,7 +1243,7 @@ template<UINT32 len> void PIN_FAST_ANALYSIS_CALL LOGICAL::sXOR_RR_EQUAL(THREADID
     TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
 
     pTmgrTls->unTaintAllFlags();
-    pTmgrTls->unTaintRegister<len>(reg);
+    pTmgrTls->unTaintRegister<lengthInBits>(reg);
 } // sXOR_RR_EQUAL
 
 ////////////////
@@ -1251,52 +1251,52 @@ template<UINT32 len> void PIN_FAST_ANALYSIS_CALL LOGICAL::sXOR_RR_EQUAL(THREADID
 ////////////////
 
 // SIMULATE
-template<UINT32 len> void LOGICAL::sTEST_IM(THREADID tid, ADDRINT value, ADDRINT writeAddress ADDRESS_DEBUG) 
+template<UINT32 lengthInBits> void LOGICAL::sTEST_IM(THREADID tid, ADDRINT value, ADDRINT writeAddress ADDRESS_DEBUG) 
 {
     TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     
-    if ( !pTmgrGlobal->isMemoryTainted<len>(writeAddress) || (value == 0)) 
+    if ( !pTmgrGlobal->isMemoryTainted<lengthInBits>(writeAddress) || (value == 0)) 
     {
         pTmgrTls->unTaintAllFlags();
     }
     else 
     {
-        _LOGTAINT("testIM" << len << " ");
+        _LOGTAINT("testIM" << lengthInBits << " ");
         // MARQUAGE DES FLAGS, dépendant uniquement du résultat
-        fTaintLOGICAL(pTmgrTls, std::make_shared<TaintObject<len>>(
+        fTaintLOGICAL(pTmgrTls, std::make_shared<TaintObject<lengthInBits>>(
             X_AND,
-            ObjectSource(pTmgrGlobal->getMemoryTaint<len>(writeAddress)),
-            ObjectSource(len, value)));
+            ObjectSource(pTmgrGlobal->getMemoryTaint<lengthInBits>(writeAddress)),
+            ObjectSource(lengthInBits, value)));
     }
 } // sTEST_IM
 
-template<UINT32 len> void LOGICAL::sTEST_IR(THREADID tid, ADDRINT value, REG reg, ADDRINT regValue ADDRESS_DEBUG) 
+template<UINT32 lengthInBits> void LOGICAL::sTEST_IR(THREADID tid, ADDRINT value, REG reg, ADDRINT regValue ADDRESS_DEBUG) 
 {
     TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
 
-    if ( !pTmgrTls->isRegisterTainted<len>(reg) || (value == 0)) pTmgrTls->unTaintAllFlags();
+    if ( !pTmgrTls->isRegisterTainted<lengthInBits>(reg) || (value == 0)) pTmgrTls->unTaintAllFlags();
     else 
     {
-        _LOGTAINT("testIR" << len << " ");
+        _LOGTAINT("testIR" << lengthInBits << " ");
 
         // MARQUAGE DES FLAGS, dépendant uniquement du résultat
-        fTaintLOGICAL(pTmgrTls, std::make_shared<TaintObject<len>>(
+        fTaintLOGICAL(pTmgrTls, std::make_shared<TaintObject<lengthInBits>>(
             X_AND,
-            ObjectSource(pTmgrTls->getRegisterTaint<len>(reg, regValue)),
-            ObjectSource(len, value)));
+            ObjectSource(pTmgrTls->getRegisterTaint<lengthInBits>(reg, regValue)),
+            ObjectSource(lengthInBits, value)));
     }
 } // sTEST_IR
 
-template<UINT32 len> void LOGICAL::sTEST_RM
+template<UINT32 lengthInBits> void LOGICAL::sTEST_RM
     (THREADID tid, REG regSrc, ADDRINT srcValue, ADDRINT writeAddress ADDRESS_DEBUG) 
 {
     TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
 
-    ADDRINT destValue = getMemoryValue<len>(writeAddress);
+    ADDRINT destValue = getMemoryValue<lengthInBits>(writeAddress);
 
     // marquage de la totalité de la destination et de la source
-    bool isFullDestTainted = pTmgrGlobal->isMemoryTainted<len>(writeAddress);
-    bool isFullSrcTainted  = pTmgrTls->isRegisterTainted<len>(regSrc);
+    bool isFullDestTainted = pTmgrGlobal->isMemoryTainted<lengthInBits>(writeAddress);
+    bool isFullSrcTainted  = pTmgrTls->isRegisterTainted<lengthInBits>(regSrc);
     
     // cas particuliers du AND (cf tableau, avec simplification par loi Morgan)
     /* if ((!isFullDestTainted && !isFullSrcTainted) \
@@ -1311,36 +1311,36 @@ template<UINT32 len> void LOGICAL::sTEST_RM
     
     else // dans tous les autres cas, marquage des flags 
     { 
-        _LOGTAINT("testRM" << len << " ");
+        _LOGTAINT("testRM" << lengthInBits << " ");
 
         // MARQUAGE DES FLAGS, dépendant uniquement du résultat 
 
         // source 1 : source
         ObjectSource objSrc = (isFullSrcTainted)
-            ? ObjectSource(pTmgrTls->getRegisterTaint<len>(regSrc, srcValue)) 
-            : ObjectSource(len, srcValue);
+            ? ObjectSource(pTmgrTls->getRegisterTaint<lengthInBits>(regSrc, srcValue)) 
+            : ObjectSource(lengthInBits, srcValue);
         
         // source 2 : source/destination
         ObjectSource objSrcDest = (isFullDestTainted)
-            ? ObjectSource(pTmgrGlobal->getMemoryTaint<len>(writeAddress)) 
-            : ObjectSource(len, destValue);
+            ? ObjectSource(pTmgrGlobal->getMemoryTaint<lengthInBits>(writeAddress)) 
+            : ObjectSource(lengthInBits, destValue);
 
-        fTaintLOGICAL(pTmgrTls, std::make_shared<TaintObject<len>>(
+        fTaintLOGICAL(pTmgrTls, std::make_shared<TaintObject<lengthInBits>>(
             X_AND,
             objSrc,
             objSrcDest)); 
     }
 } // sTEST_RM
 
-template<UINT32 len> void LOGICAL::sTEST_MR
+template<UINT32 lengthInBits> void LOGICAL::sTEST_MR
     (THREADID tid, ADDRINT readAddress, REG regSrcDest, ADDRINT destValue ADDRESS_DEBUG) 
 {   
     TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
 
-    ADDRINT srcValue = getMemoryValue<len>(readAddress);
+    ADDRINT srcValue = getMemoryValue<lengthInBits>(readAddress);
 
-    bool isFullDestTainted = pTmgrTls->isRegisterTainted<len>(regSrcDest); 
-    bool isFullSrcTainted  = pTmgrGlobal->isMemoryTainted<len>(readAddress);
+    bool isFullDestTainted = pTmgrTls->isRegisterTainted<lengthInBits>(regSrcDest); 
+    bool isFullSrcTainted  = pTmgrGlobal->isMemoryTainted<lengthInBits>(readAddress);
     
     // cas particuliers du AND (cf tableau, avec simplification par loi Morgan)
     /* if ((!isFullDestTainted && !isFullSrcTainted) \
@@ -1354,34 +1354,34 @@ template<UINT32 len> void LOGICAL::sTEST_MR
     }
     else 
     {
-        _LOGTAINT("testMR" << len << " ");
+        _LOGTAINT("testMR" << lengthInBits << " ");
 
         // MARQUAGE DES FLAGS, dépendant uniquement du résultat 
 
         // source 1 : source
         ObjectSource objSrc = (isFullSrcTainted)
-            ? ObjectSource(pTmgrGlobal->getMemoryTaint<len>(readAddress))
-            : ObjectSource(len, srcValue);
+            ? ObjectSource(pTmgrGlobal->getMemoryTaint<lengthInBits>(readAddress))
+            : ObjectSource(lengthInBits, srcValue);
         
         // source 2 : source/destination
         ObjectSource objSrcDest = (isFullDestTainted)
-            ? ObjectSource(pTmgrTls->getRegisterTaint<len>(regSrcDest, destValue)) 
-            : ObjectSource(len, destValue);
+            ? ObjectSource(pTmgrTls->getRegisterTaint<lengthInBits>(regSrcDest, destValue)) 
+            : ObjectSource(lengthInBits, destValue);
         
-        fTaintLOGICAL(pTmgrTls, std::make_shared<TaintObject<len>>(
+        fTaintLOGICAL(pTmgrTls, std::make_shared<TaintObject<lengthInBits>>(
             X_AND,
             objSrc,
             objSrcDest));
     }
 } // sTEST_MR
 
-template<UINT32 len> void LOGICAL::sTEST_RR
+template<UINT32 lengthInBits> void LOGICAL::sTEST_RR
     (THREADID tid, REG regSrc, ADDRINT srcValue, REG regSrcDest, ADDRINT destValue ADDRESS_DEBUG) 
 {
     TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
 
-    bool isFullDestTainted = pTmgrTls->isRegisterTainted<len>(regSrcDest); 
-    bool isFullSrcTainted  = pTmgrTls->isRegisterTainted<len>(regSrc);
+    bool isFullDestTainted = pTmgrTls->isRegisterTainted<lengthInBits>(regSrcDest); 
+    bool isFullSrcTainted  = pTmgrTls->isRegisterTainted<lengthInBits>(regSrc);
     
     // cas particuliers du AND (cf tableau, avec simplification par loi Morgan)
     /* if ((!isFullDestTainted && !isFullSrcTainted) \
@@ -1395,40 +1395,40 @@ template<UINT32 len> void LOGICAL::sTEST_RR
     }
     else 
     {
-        _LOGTAINT("testRR" << len << " ");
+        _LOGTAINT("testRR" << lengthInBits << " ");
 
         // MARQUAGE DES FLAGS, dépendant uniquement du résultat 
 
         // source 1 : source
         ObjectSource objSrc = (isFullSrcTainted)
-            ? ObjectSource(pTmgrTls->getRegisterTaint<len>(regSrc, srcValue)) 
-            : ObjectSource(len, srcValue);
+            ? ObjectSource(pTmgrTls->getRegisterTaint<lengthInBits>(regSrc, srcValue)) 
+            : ObjectSource(lengthInBits, srcValue);
         
         // source 2 : source/destination
         ObjectSource objSrcDest = (isFullDestTainted)
-            ? ObjectSource(pTmgrTls->getRegisterTaint<len>(regSrcDest, destValue)) 
-            : ObjectSource(len, destValue);
+            ? ObjectSource(pTmgrTls->getRegisterTaint<lengthInBits>(regSrcDest, destValue)) 
+            : ObjectSource(lengthInBits, destValue);
         
-        fTaintLOGICAL(pTmgrTls, std::make_shared<TaintObject<len>>(
+        fTaintLOGICAL(pTmgrTls, std::make_shared<TaintObject<lengthInBits>>(
             X_AND,
             objSrc,
             objSrcDest));
     }
 } // sTEST_RR
 
-template<UINT32 len> void LOGICAL::sTEST_RR_EQUAL(THREADID tid, REG regSrc, ADDRINT srcValue ADDRESS_DEBUG) 
+template<UINT32 lengthInBits> void LOGICAL::sTEST_RR_EQUAL(THREADID tid, REG regSrc, ADDRINT srcValue ADDRESS_DEBUG) 
 {
     // cas particulier des registres égaux : moins d'arguments passés
     // et marquage des flags simplifié
     TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
 
-    if (!pTmgrTls->isRegisterTainted<len>(regSrc))  pTmgrTls->unTaintAllFlags();
+    if (!pTmgrTls->isRegisterTainted<lengthInBits>(regSrc))  pTmgrTls->unTaintAllFlags();
     else 
     {
-        _LOGTAINT("testRR_EQUAL" << len << " ");
+        _LOGTAINT("testRR_EQUAL" << lengthInBits << " ");
 
         // marquage des flags avec la source uniquement (AND a, a = a)
-        fTaintLOGICAL(pTmgrTls, pTmgrTls->getRegisterTaint<len>(regSrc, srcValue));
+        fTaintLOGICAL(pTmgrTls, pTmgrTls->getRegisterTaint<lengthInBits>(regSrc, srcValue));
     }
 } // sTEST_RR_EQUAL
 
@@ -1437,13 +1437,13 @@ template<UINT32 len> void LOGICAL::sTEST_RR_EQUAL(THREADID tid, REG regSrc, ADDR
 ///////////////
 
 // SIMULATE
-template<UINT32 len> void LOGICAL::sNOT_M(ADDRINT writeAddress ADDRESS_DEBUG) 
+template<UINT32 lengthInBits> void LOGICAL::sNOT_M(ADDRINT writeAddress ADDRESS_DEBUG) 
 {
     // pas besoin du thread (rien sur les flags ni registres)
-    if (pTmgrGlobal->isMemoryTainted<len>(writeAddress)) 
+    if (pTmgrGlobal->isMemoryTainted<lengthInBits>(writeAddress)) 
     {
-        _LOGTAINT("notM" << len << " ");
-        ADDRINT lastAddress = writeAddress + (len >> 3);
+        _LOGTAINT("notM" << lengthInBits << " ");
+        ADDRINT lastAddress = writeAddress + (lengthInBits >> 3);
         do
         {   
             // si octet marqué, marquage dest = NOT(dest), sinon rien
@@ -1457,16 +1457,16 @@ template<UINT32 len> void LOGICAL::sNOT_M(ADDRINT writeAddress ADDRESS_DEBUG)
     }
 } // sNOT_M
 
-template<UINT32 len> void LOGICAL::sNOT_R(THREADID tid, REG reg ADDRESS_DEBUG) 
+template<UINT32 lengthInBits> void LOGICAL::sNOT_R(THREADID tid, REG reg ADDRESS_DEBUG) 
 {
     // masque binaire du marquage de la source
     TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
 
-    if (pTmgrTls->isRegisterTainted<len>(reg)) // si registre marqué
+    if (pTmgrTls->isRegisterTainted<lengthInBits>(reg)) // si registre marqué
     {
         _LOGTAINT("notR");
         REGINDEX regIndex = getRegIndex(reg);
-        for (UINT32 regPart = 0 ; regPart < (len >> 3) ; ++regPart)       
+        for (UINT32 regPart = 0 ; regPart < (lengthInBits >> 3) ; ++regPart)       
         {
             // si octet marqué, marquage dest = NOT(dest)
             if (pTmgrTls->isRegisterPartTainted(regIndex, regPart))   

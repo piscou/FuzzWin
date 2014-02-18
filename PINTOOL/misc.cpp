@@ -191,18 +191,18 @@ void MISC::cLEA(INS &ins)
 }   // sLEA
 
 #if TARGET_IA32
-void MISC::taintLEA(TaintManager_Thread *pTmgrTls, REG regDest, UINT32 lenEA, UINT32 lenDest, const TaintDwordPtr &tPtr)
+void MISC::taintLEA(TaintManager_Thread *pTmgrTls, REG regDest, UINT32 lengthInBitsEA, UINT32 lengthInBitsDest, const TaintDwordPtr &tPtr)
 #else
-void MISC::taintLEA(TaintManager_Thread *pTmgrTls, REG regDest, UINT32 lenEA, UINT32 lenDest, const TaintQwordPtr &tPtr)
+void MISC::taintLEA(TaintManager_Thread *pTmgrTls, REG regDest, UINT32 lengthInBitsEA, UINT32 lengthInBitsDest, const TaintQwordPtr &tPtr)
 #endif
 {
-    // Boucle de 0 à (lenEA >> 3)  : extraction octet i de l'addition/soustraction 
-    // et affectation à octet i de la destination (sauf si lenDest < leaEA : on arrete avant)
-    // octets de (lenEA >> 3) à (lenDest >> 3) mis à zéro si besoin
+    // Boucle de 0 à (lengthInBitsEA >> 3)  : extraction octet i de l'addition/soustraction 
+    // et affectation à octet i de la destination (sauf si lengthInBitsDest < leaEA : on arrete avant)
+    // octets de (lengthInBitsEA >> 3) à (lengthInBitsDest >> 3) mis à zéro si besoin
     
     REGINDEX regDestIndex = getRegIndex(regDest);
     UINT32 regPart = 0;
-    UINT32 lastTaintedByte = (lenEA < lenDest) ? (lenEA >> 3) : (lenDest >> 3); 
+    UINT32 lastTaintedByte = (lengthInBitsEA < lengthInBitsDest) ? (lengthInBitsEA >> 3) : (lengthInBitsDest >> 3); 
 
     // marquage destination
     do
@@ -213,8 +213,8 @@ void MISC::taintLEA(TaintManager_Thread *pTmgrTls, REG regDest, UINT32 lenEA, UI
             ObjectSource(8, regPart)));
     } while (++regPart < lastTaintedByte);
 
-    // démarquage octets forts (si lenDest > lenEA car zeroextend de l'EA)
-    while (regPart < (lenDest >> 3))  pTmgrTls->unTaintRegisterPart(regDestIndex, regPart++);
+    // démarquage octets forts (si lengthInBitsDest > lengthInBitsEA car zeroextend de l'EA)
+    while (regPart < (lengthInBitsDest >> 3))  pTmgrTls->unTaintRegisterPart(regDestIndex, regPart++);
 }// taintLEA
 
 ///////////

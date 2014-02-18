@@ -4,73 +4,90 @@
 #include "ObjectSource.h"
 
 // TAINT : classe représentant un objet marqué
-Taint::Taint(Relation rel, UINT32 len) 
-    : m_sourceRelation(rel), m_isDeclaredFlag(false), m_len(len)
+Taint::Taint(Relation rel, UINT32 lengthInBits) 
+    : _sourceRelation(rel), _isDeclaredFlag(false), _lengthInBits(lengthInBits)
 {}
 
-Taint::Taint(Relation rel, UINT32 len, const ObjectSource &os1) 
-    : m_sourceRelation(rel), m_isDeclaredFlag(false), m_len(len)
+Taint::Taint(Relation rel, UINT32 lengthInBits, const ObjectSource &os1) 
+    : _sourceRelation(rel), _isDeclaredFlag(false), _lengthInBits(lengthInBits)
 {
-    this->m_sources.push_back(os1);
+    this->_sources.push_back(os1);
 }
 
-Taint::Taint(Relation rel, UINT32 len, const ObjectSource &os1, const ObjectSource &os2) 
-    : m_sourceRelation(rel), m_isDeclaredFlag(false), m_len(len)
+Taint::Taint(Relation rel, UINT32 lengthInBits, const ObjectSource &os1, const ObjectSource &os2) 
+    : _sourceRelation(rel), _isDeclaredFlag(false), _lengthInBits(lengthInBits)
 {
-    this->m_sources.push_back(os1);
-    this->m_sources.push_back(os2);
+    this->_sources.push_back(os1);
+    this->_sources.push_back(os2);
 }
 
-Taint::Taint(Relation rel, UINT32 len, const ObjectSource &os1, const ObjectSource &os2, const ObjectSource &os3) 
-    : m_sourceRelation(rel), m_isDeclaredFlag(false), m_len(len)
+Taint::Taint(Relation rel, UINT32 lengthInBits, const ObjectSource &os1, const ObjectSource &os2, 
+                                       const ObjectSource &os3) 
+    : _sourceRelation(rel), _isDeclaredFlag(false), _lengthInBits(lengthInBits)
 {
-    this->m_sources.push_back(os1);
-    this->m_sources.push_back(os2);
-    this->m_sources.push_back(os3);
+    this->_sources.push_back(os1);
+    this->_sources.push_back(os2);
+    this->_sources.push_back(os3);
+}
+
+Taint::Taint(Relation rel, UINT32 lengthInBits, const ObjectSource &os1, const ObjectSource &os2, 
+                                       const ObjectSource &os3, const ObjectSource &os4) 
+    : _sourceRelation(rel), _isDeclaredFlag(false), _lengthInBits(lengthInBits)
+{
+    this->_sources.push_back(os1);
+    this->_sources.push_back(os2);
+    this->_sources.push_back(os3);
+    this->_sources.push_back(os4);
 }
 
 Taint::~Taint() { }
 
 // renvoie la longueur en bits de l'objet
-const UINT32 Taint::getLength() const { return (this->m_len); }
+const UINT32 Taint::getLength() const { return (this->_lengthInBits); }
 
 // renvoie le type de relation qui lie cet objet à ses sources
-const Relation Taint::getSourceRelation() const { return (this->m_sourceRelation); } 
+const Relation Taint::getSourceRelation() const { return (this->_sourceRelation); } 
 
 // retourne VRAI si l'objet a été déclaré dans la formule à destination du solveur
-bool Taint::isDeclared() const  { return (this->m_isDeclaredFlag); }
+bool Taint::isDeclared() const  { return (this->_isDeclaredFlag); }
 
 // indique que l'objet a été déclaré dans la formule à destination du solveur
-void Taint::setDeclared() { this->m_isDeclaredFlag = true; }
+void Taint::setDeclared() { this->_isDeclaredFlag = true; }
 
-void Taint::setName(const std::string &name) { this->m_objectName = name; }
+void Taint::setName(const std::string &name) { this->_objectName = name; }
 
-const std::string& Taint::getName() const { return (this->m_objectName); }
+const std::string& Taint::getName() const { return (this->_objectName); }
 
-std::vector<ObjectSource>& Taint::getSources() { return (this->m_sources); }
+std::vector<ObjectSource>& Taint::getSources() { return (this->_sources); }
 
-ObjectSource& Taint::getSources(UINT32 i) { return (this->m_sources.at(i)); }
+ObjectSource& Taint::getSources(UINT32 i) { return (this->_sources.at(i)); }
 
-void Taint::addSource(const TaintPtr &taintPtr) { this->m_sources.push_back(ObjectSource(taintPtr)); }
+void Taint::addSource(const TaintPtr &taintPtr) { this->_sources.push_back(ObjectSource(taintPtr)); }
 
-void Taint::addSource(const ObjectSource &src) { this->m_sources.push_back(src); }   
+void Taint::addSource(const ObjectSource &src) { this->_sources.push_back(src); }   
 
-template<UINT32 length> 
-TaintObject<length>::TaintObject(Relation rel) : Taint(rel, length) {}
+template<UINT32 lengthInBitsgth> 
+TaintObject<lengthInBitsgth>::TaintObject(Relation rel) : Taint(rel, lengthInBitsgth) {}
 
-template<UINT32 length> 
-TaintObject<length>::TaintObject(Relation rel, const ObjectSource &os1) 
-    : Taint(rel, length, os1) {}
+template<UINT32 lengthInBitsgth> 
+TaintObject<lengthInBitsgth>::TaintObject(Relation rel, const ObjectSource &os1) 
+    : Taint(rel, lengthInBitsgth, os1) {}
 
-template<UINT32 length> 
-TaintObject<length>::TaintObject(Relation rel, const ObjectSource &os1, const ObjectSource &os2) 
-    : Taint(rel, length, os1, os2) {}
+template<UINT32 lengthInBitsgth> 
+TaintObject<lengthInBitsgth>::TaintObject(Relation rel, const ObjectSource &os1, const ObjectSource &os2) 
+    : Taint(rel, lengthInBitsgth, os1, os2) {}
 
-template<UINT32 length> 
-TaintObject<length>::TaintObject(Relation rel, const ObjectSource &os1, const ObjectSource &os2, const ObjectSource &os3) 
-    : Taint(rel, length, os1, os2, os3) {}
+template<UINT32 lengthInBitsgth> 
+TaintObject<lengthInBitsgth>::TaintObject(Relation rel, const ObjectSource &os1, const ObjectSource &os2, 
+                                               const ObjectSource &os3) 
+    : Taint(rel, lengthInBitsgth, os1, os2, os3) {}
 
-template<UINT32 len> TaintObject<len>::~TaintObject() {}
+template<UINT32 lengthInBitsgth> 
+TaintObject<lengthInBitsgth>::TaintObject(Relation rel, const ObjectSource &os1, const ObjectSource &os2, 
+                                               const ObjectSource &os3, const ObjectSource &os4) 
+    : Taint(rel, lengthInBitsgth, os1, os2, os3, os4) {}
+
+template<UINT32 lengthInBits> TaintObject<lengthInBits>::~TaintObject() {}
 
 // instanciation des templates utilisés (ici car références croisées)
 class Taint;

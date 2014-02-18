@@ -854,8 +854,8 @@ void BINARY::cDIVISION(INS &ins, bool isSignedDivision)
     // etant donné qu'il y a peu de chances de rencontrer ce type d'instruction
     // on se permet de passer le type signed/unsigned par parametre (pas par template)
     void (*callback)() = nullptr;
-    REG lowDividendReg = REG_INVALID_; // AL/AX/EAX/RAX 
-    REG highDividendReg = REG_INVALID_;// AH/DX/EDX/RDX 
+    REG lowDividendReg = REG_INVALID(); // AL/AX/EAX/RAX 
+    REG highDividendReg = REG_INVALID();// AH/DX/EDX/RDX 
 
     if (INS_IsMemoryRead(ins)) 
     {	

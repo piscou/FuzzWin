@@ -21,7 +21,7 @@
 // besoin de std::cout pour erreurs d'initialisation principalement
 #include <iostream> 
 
-/// Namespace obligatoire pour eviter les confilts WINAPI / PIN
+// Namespace obligatoire pour eviter les confilts WINAPI / PIN
 namespace WINDOWS  
 {
 #include <windows.h>
@@ -33,7 +33,6 @@ namespace WINDOWS
 
 // le type DWORD n'est pas défini par PIN
 typedef unsigned long DWORD; 
-
 typedef WINDOWS::HANDLE HANDLE;
 
 /*********************/
@@ -97,6 +96,7 @@ extern KNOB<UINT32>      KnobMaxExecutionTime;
 extern KNOB<std::string> KnobBytesToTaint;
 extern KNOB<UINT32>      KnobMaxConstraints;
 extern KNOB<std::string> KnobOption;
+extern KNOB<UINT32>      KnobOsType;
 
 extern std::ofstream g_debug; // fichier de log du desassemblage
 extern std::ofstream g_taint; // fichier de log du marquage
@@ -161,7 +161,7 @@ extern std::ofstream g_taint; // fichier de log du marquage
 /****************************************/
 
 // Renvoie le registre d'accumulation utilisé par certaines instructions
-template<UINT32 len> class registerACC 
+template<UINT32 lengthInBits> class registerACC 
 { public:  static inline REG getReg() { return REG_INVALID_ ; }};
 template<> class registerACC<8> 
 { public:  static inline REG getReg() { return REG_AL; }};
@@ -175,7 +175,7 @@ template<> class registerACC<64>
 #endif
 
 // Renvoie le registre I/O (AH/DX/EDX/RDX) utilisé par certaines instructions
-template<UINT32 len> class registerIO 
+template<UINT32 lengthInBits> class registerIO 
 { public:  static inline REG getReg() { return REG_INVALID_ ; }};
 template<> class registerIO<8> 
 { public:  static inline REG getReg() { return REG_AH; }}; // tricky mais c'est comme cela que MUL est implémenté par Intel
@@ -191,19 +191,20 @@ template<> class registerIO<64>
 // détermination de la valeur "ff" en fonction de la taille fournie (en bits)
 // utilisé par les fonctions d'analyse traitant les instructions LOGICAL::OR et STRINGOP::SCAS
 // 8b =  0xff ; 16b = 0xffff ; 32b = 0xffffffff; 64b = (__int64)(-1)
-template<UINT32 len> class minusOne 
-{ public:  static inline const ADDRINT get() { return (0xffffffff >> (32 - len)); }};
+template<UINT32 lengthInBits> class minusOne 
+{ public:  static inline const ADDRINT get() { return (0xffffffff >> (32 - lengthInBits)); }};
 #if TARGET_IA32E
 template<> class minusOne<64> 
 { public:  static inline const ADDRINT get() { return (0xffffffffffffffff); }};
 #endif
 
 // déréférencement de la mémoire pour récupérer la valeur. 
-// utilisé dans les fonctions d'analyse pour créer des objets lorsque la mémoire n'est pas marquée
-template<UINT32 len> ADDRINT getMemoryValue(ADDRINT address)
+// utilisé dans les fonctions d'analyse pour créer 
+// des 'ObjectSource' lorsque la mémoire n'est pas marquée
+template<UINT32 lengthInBits> ADDRINT getMemoryValue(ADDRINT address)
 {
     ADDRINT returnValue = 0;
-    // déréférencement de 'len>>3' octets à partir de 'address'. Equivalent à Memcpy pour PIN
-    PIN_SafeCopy(&returnValue, reinterpret_cast<ADDRINT*>(address), len >> 3);
+    // déréférencement de 'lengthInBits>>3' octets à partir de 'address'. EquivalengthInBitst à Memcpy pour PIN
+    PIN_SafeCopy(&returnValue, reinterpret_cast<ADDRINT*>(address), lengthInBits >> 3);
     return (returnValue);
 }

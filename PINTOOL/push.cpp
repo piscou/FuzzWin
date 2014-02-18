@@ -72,7 +72,7 @@ void PUSH::cPUSH(INS &ins)
 
 void PUSH::cPUSHF(INS &ins, UINT32 size)
 {  
-    void (*callback)(); // pointeur sur la fonction à appeler
+    void (*callback)() = nullptr; // pointeur sur la fonction à appeler
     switch (size)
     {
         case 2: callback = (AFUNPTR) sPUSHF<16>; break;
@@ -117,8 +117,8 @@ void PUSH::sPUSHA(THREADID tid, ADDRINT stackAddressBeforePush ADDRESS_DEBUG)
     
     // sauvegarde du marquage de SP. Sauvegarde par octet pour éviter de devoir récupérer la valeur numérique de SP
     std::vector<TaintBytePtr> savedSP;  
-    savedSP.push_back(pTmgrTls->getRegisterPartTaint(rESP, 0)); // objet marqué ou nullptr;
-    savedSP.push_back(pTmgrTls->getRegisterPartTaint(rESP, 1)); // objet marqué ou nullptr;
+    savedSP.push_back(pTmgrTls->getRegisterPartTaint(regIndexESP, 0)); // objet marqué ou nullptr;
+    savedSP.push_back(pTmgrTls->getRegisterPartTaint(regIndexESP, 1)); // objet marqué ou nullptr;
   
     ADDRINT spAddress = stackAddressBeforePush - 2; // adresse de départ : SP-2 pour le 1er registre
     
@@ -166,7 +166,7 @@ void PUSH::sPUSHAD(THREADID tid, ADDRINT stackAddressBeforePush ADDRESS_DEBUG)
     std::vector<TaintBytePtr> savedESP;  
     for (UINT32 regPart = 0 ; regPart < 4; ++regPart)  
     {
-        savedESP.push_back(pTmgrTls->getRegisterPartTaint(rESP, regPart)); // objet marqué ou nullptr;
+        savedESP.push_back(pTmgrTls->getRegisterPartTaint(regIndexESP, regPart)); // objet marqué ou nullptr;
     }
 
     ADDRINT espAddress = stackAddressBeforePush - 4; // adresse de départ : ESP-4 pour le 1er registre

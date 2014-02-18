@@ -39,11 +39,25 @@ enum Relation
     X_MUL, 
     //! X_IMUL : source 1 = source, source 2 = src/dest.
     X_IMUL,
-    // division non signée avec quotient et reste 
+    // X_DIV_QUO : quotient d'une division non signée
+    // Src 0 : totalité du dividende (cas 8 bits) sinon partie haute du dividende
+    // Src 1 : totalité du diviseur  (cas 8 bits) sinon partie basse du dividende 
+    // Src 2 : cas 8 bits : néant ; autres cas : totalité du diviseur
     X_DIV_QUO, 
+    // X_DIV_REM : reste d'une division non signée
+    // Src 0 : totalité du dividende (cas 8 bits) sinon partie haute du dividende
+    // Src 1 : totalité du diviseur  (cas 8 bits) sinon partie basse du dividende 
+    // Src 2 : cas 8 bits : néant ; autres cas : totalité du diviseur
     X_DIV_REM, 
-    // division signée avec quotient et reste
+    // X_IDIV_QUO : quotient d'une division signée
+    // Src 0 : totalité du dividende (cas 8 bits) sinon partie haute du dividende
+    // Src 1 : totalité du diviseur  (cas 8 bits) sinon partie basse du dividende 
+    // Src 2 : cas 8 bits : néant ; autres cas : totalité du diviseur
     X_IDIV_QUO, 
+    // X_IDIV_REM : reste d'une division signée
+    // Src 0 : totalité du dividende (cas 8 bits) sinon partie haute du dividende
+    // Src 1 : totalité du diviseur  (cas 8 bits) sinon partie basse du dividende 
+    // Src 2 : cas 8 bits : néant ; autres cas : totalité du diviseur
     X_IDIV_REM,
 
     /** LOGICAL **/
@@ -147,6 +161,10 @@ enum Relation
     F_IS_NULL,
     // F_ARE_EQUAL : 1 si source0 et source1 sont égales, 0 sinon
     F_ARE_EQUAL,
+    // CMPXCHG 8B et 16B
+    // Srcs 0 et 1 = mémoire  (partie haute et partie basse), objets de 32 ou 64bits
+    // Srcs 2 et 3 = registre (partie haute et partie basse), objets de 32 ou 64bits
+    F_CMPXCHG_8B16B,
 
     /** OVERFLOW_FLAG **/
     // OF_ADD : Src0 : src/dest, src1 : src, src2 : result
@@ -242,6 +260,7 @@ const static std::string enum_strings[RELATION_LAST] =
     // ZERO FLAG
     "F_IS_NULL",
     "F_ARE_EQUAL",
+    "F_CMPXCHG_8B16B",
 
     // OVERFLOW FLAG
     "F_OVERFLOW_ADD", "F_OVERFLOW_SUB",

@@ -510,7 +510,7 @@ void ROTATE::fROR(TaintManager_Thread *pTmgrTls, const TaintPtr &resultPtr)
 // RCL, déplacement non marqué
 void ROTATE::fRCL(TaintManager_Thread *pTmgrTls, const TaintPtr &resultPtr, const ObjectSource &objSrc, UINT32 maskedDepl)
 {
-    // CF/RCL : recopie du dernier bit de la source ejecté à gauche (bit 'len - depl' avec la source codée sur les bits de 0 à len-1)
+    // CF/RCL : recopie du dernier bit de la source ejecté à gauche (bit 'lengthInBits - depl' avec la source codée sur les bits de 0 à lengthInBits-1)
     pTmgrTls->updateTaintCarryFlag(std::make_shared<TaintBit>(
         EXTRACT, 
         objSrc,
@@ -530,7 +530,7 @@ void ROTATE::fRCL(TaintManager_Thread *pTmgrTls, const TaintPtr &resultPtr, cons
 // RCL, déplacement marqué
 void ROTATE::fRCL(TaintManager_Thread *pTmgrTls, const ObjectSource &objSrc, const TaintBytePtr &tbCountPtr)
 {
-    // CF/RCL : recopie du dernier bit de la source ejecté à gauche (bit 'len - depl' avec la source codée sur les bits de 0 à len-1)
+    // CF/RCL : recopie du dernier bit de la source ejecté à gauche (bit 'lengthInBits - depl' avec la source codée sur les bits de 0 à lengthInBits-1)
     pTmgrTls->updateTaintCarryFlag(std::make_shared<TaintBit>(
         F_CARRY_RCL, 
         objSrc,
@@ -544,7 +544,7 @@ void ROTATE::fRCL(TaintManager_Thread *pTmgrTls, const ObjectSource &objSrc, con
 // RCR, déplacement non marqué
 void ROTATE::fRCR(TaintManager_Thread *pTmgrTls, const ObjectSource &objSrc, const ObjectSource &objCarryFlagBeforeRcr, UINT32 maskedDepl)
 {
-    // CF/RCR : recopie du dernier bit de la source ejecté à droite (bit 'depl - 1' avec la source codée sur les bits de 0 à len-1)
+    // CF/RCR : recopie du dernier bit de la source ejecté à droite (bit 'depl - 1' avec la source codée sur les bits de 0 à lengthInBits-1)
     pTmgrTls->updateTaintCarryFlag(std::make_shared<TaintBit>(
         EXTRACT, 
         objSrc,
@@ -564,7 +564,7 @@ void ROTATE::fRCR(TaintManager_Thread *pTmgrTls, const ObjectSource &objSrc, con
 // RCR, déplacement marqué
 void ROTATE::fRCR(TaintManager_Thread *pTmgrTls, const ObjectSource &objSrc, const TaintBytePtr &tbCountPtr)
 {
-    // CF/RCR : recopie du dernier bit de la source ejecté à droite (bit 'depl - 1' avec la source codée sur les bits de 0 à len-1)
+    // CF/RCR : recopie du dernier bit de la source ejecté à droite (bit 'depl - 1' avec la source codée sur les bits de 0 à lengthInBits-1)
     pTmgrTls->updateTaintCarryFlag(std::make_shared<TaintBit>(
         F_CARRY_RCR, 
         objSrc,

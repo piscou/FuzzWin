@@ -70,39 +70,39 @@ void sSETNLE_R(THREADID tid, REG regDest, ADDRINT regDestValue, ADDRINT eflagsVa
 
 // SIMULATE
 // Simulate : bits tests
-template<UINT32 len> void sBT_IM(THREADID tid, ADDRINT testedAddress, ADDRINT value ADDRESS_DEBUG); 
-template<UINT32 len> void sBT_IR(THREADID tid, REG testedReg, ADDRINT value ADDRESS_DEBUG);
-template<UINT32 len> void sBT_RM
+template<UINT32 lengthInBits> void sBT_IM(THREADID tid, ADDRINT testedAddress, ADDRINT value ADDRESS_DEBUG); 
+template<UINT32 lengthInBits> void sBT_IR(THREADID tid, REG testedReg, ADDRINT value ADDRESS_DEBUG);
+template<UINT32 lengthInBits> void sBT_RM
     (THREADID tid, ADDRINT testedAddress, REG bitIndexReg, ADDRINT bitIndexRegValue ADDRESS_DEBUG); 
-template<UINT32 len> void sBT_RR
+template<UINT32 lengthInBits> void sBT_RR
     (THREADID tid, REG testedReg, ADDRINT testedRegValue, REG bitIndexReg, ADDRINT bitIndexRegValue ADDRESS_DEBUG); 
 
-template<UINT32 len> void sBTC_IM(THREADID tid, ADDRINT testedAddress, ADDRINT value ADDRESS_DEBUG); 
-template<UINT32 len> void sBTC_IR(THREADID tid, REG testedReg, ADDRINT value ADDRESS_DEBUG);
-template<UINT32 len> void sBTC_RM
+template<UINT32 lengthInBits> void sBTC_IM(THREADID tid, ADDRINT testedAddress, ADDRINT value ADDRESS_DEBUG); 
+template<UINT32 lengthInBits> void sBTC_IR(THREADID tid, REG testedReg, ADDRINT value ADDRESS_DEBUG);
+template<UINT32 lengthInBits> void sBTC_RM
     (THREADID tid, ADDRINT testedAddress, REG bitIndexReg, ADDRINT bitIndexRegValue ADDRESS_DEBUG); 
-template<UINT32 len> void sBTC_RR
+template<UINT32 lengthInBits> void sBTC_RR
     (THREADID tid, REG testedReg, ADDRINT testedRegValue, REG bitIndexReg, ADDRINT bitIndexRegValue ADDRESS_DEBUG); 
 
-template<UINT32 len> void sBTR_IM(THREADID tid, ADDRINT testedAddress, ADDRINT value ADDRESS_DEBUG); 
-template<UINT32 len> void sBTR_IR(THREADID tid, REG testedReg, ADDRINT value ADDRESS_DEBUG);
-template<UINT32 len> void sBTR_RM
+template<UINT32 lengthInBits> void sBTR_IM(THREADID tid, ADDRINT testedAddress, ADDRINT value ADDRESS_DEBUG); 
+template<UINT32 lengthInBits> void sBTR_IR(THREADID tid, REG testedReg, ADDRINT value ADDRESS_DEBUG);
+template<UINT32 lengthInBits> void sBTR_RM
     (THREADID tid, ADDRINT testedAddress, REG bitIndexReg, ADDRINT bitIndexRegValue ADDRESS_DEBUG); 
-template<UINT32 len> void sBTR_RR
+template<UINT32 lengthInBits> void sBTR_RR
     (THREADID tid, REG testedReg, ADDRINT testedRegValue, REG bitIndexReg, ADDRINT bitIndexRegValue ADDRESS_DEBUG);  
 
-template<UINT32 len> void sBTS_IM(THREADID tid, ADDRINT testedAddress, ADDRINT value ADDRESS_DEBUG); 
-template<UINT32 len> void sBTS_IR(THREADID tid, REG testedReg, ADDRINT value ADDRESS_DEBUG);
-template<UINT32 len> void sBTS_RM
+template<UINT32 lengthInBits> void sBTS_IM(THREADID tid, ADDRINT testedAddress, ADDRINT value ADDRESS_DEBUG); 
+template<UINT32 lengthInBits> void sBTS_IR(THREADID tid, REG testedReg, ADDRINT value ADDRESS_DEBUG);
+template<UINT32 lengthInBits> void sBTS_RM
     (THREADID tid, ADDRINT testedAddress, REG bitIndexReg, ADDRINT bitIndexRegValue ADDRESS_DEBUG); 
-template<UINT32 len> void sBTS_RR
+template<UINT32 lengthInBits> void sBTS_RR
     (THREADID tid, REG testedReg, ADDRINT testedRegValue, REG bitIndexReg, ADDRINT bitIndexRegValue ADDRESS_DEBUG);  
 
-template<UINT32 len> void sBSR_M(THREADID tid, ADDRINT testedAddress, REG resultReg ADDRESS_DEBUG); 
-template<UINT32 len> void sBSR_R(THREADID tid, REG testedReg, ADDRINT testedRegValue, REG resultReg ADDRESS_DEBUG); 
+template<UINT32 lengthInBits> void sBSR_M(THREADID tid, ADDRINT testedAddress, REG resultReg ADDRESS_DEBUG); 
+template<UINT32 lengthInBits> void sBSR_R(THREADID tid, REG testedReg, ADDRINT testedRegValue, REG resultReg ADDRESS_DEBUG); 
 
-template<UINT32 len> void sBSF_M(THREADID tid, ADDRINT testedAddress, REG resultReg ADDRESS_DEBUG); 
-template<UINT32 len> void sBSF_R(THREADID tid, REG testedReg, ADDRINT testedRegValue, REG resultReg ADDRESS_DEBUG); 
+template<UINT32 lengthInBits> void sBSF_M(THREADID tid, ADDRINT testedAddress, REG resultReg ADDRESS_DEBUG); 
+template<UINT32 lengthInBits> void sBSF_R(THREADID tid, REG testedReg, ADDRINT testedRegValue, REG resultReg ADDRESS_DEBUG); 
 } // namespace BITBYTE
 
 

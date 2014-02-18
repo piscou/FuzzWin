@@ -17,11 +17,12 @@ static WINDOWS::DWORD PIN_NtMapViewOfSection;
 // convertit un texte unicode en ascii
 static std::string SYSCALLS::unicodeToAscii(const std::wstring &input)
 {  
-    char *ascii = new char[input.length() + 1];
-    ascii[input.length() + 1] = 0;
+    size_t lengthOfInput = input.length();
+    char *ascii = new char[lengthOfInput + 1];
+    ascii[lengthOfInput + 1] = 0;
 
     WINDOWS::WideCharToMultiByte(CP_ACP, 0, input.c_str(), 
-        -1, ascii, static_cast<int>(input.length()), nullptr, nullptr);
+        -1, ascii, static_cast<int>(lengthOfInput), nullptr, nullptr);
 
     std::string result(ascii);
     delete[] (ascii);

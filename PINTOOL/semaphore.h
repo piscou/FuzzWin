@@ -1,5 +1,7 @@
 #pragma once
 #include "pintool.h"
+#include "binary.h" // CMP (pour CMPXCHG)
+#include "dataxfer.h" // MOV (pour CMPXCHG)
 
 namespace SEMAPHORE
 {
@@ -13,10 +15,10 @@ void cCMPXCHG16B(INS &ins);
 #endif
 
 // simulate
-template<UINT32 len> void sCMPXCHG_RM
-    (THREADID tid, REG regSrc, ADDRINT address, ADDRINT regGAXValue ADDRESS_DEBUG);
-template<UINT32 len> void sCMPXCHG_RR
-    (THREADID tid, REG regSrc, REG regDest, ADDRINT regDestValue, ADDRINT regGAXValue ADDRESS_DEBUG);
+template<UINT32 lengthInBits> 
+void sCMPXCHG_RM(THREADID tid, REG regSrc, ADDRINT address, REG cmpReg, ADDRINT cmpRegValue ADDRESS_DEBUG);
+template<UINT32 lengthInBits> 
+void sCMPXCHG_RR(THREADID tid, REG regSrc, REG regDest, ADDRINT regDestValue, REG cmpReg, ADDRINT cmpRegValue ADDRESS_DEBUG);
 
 void sCMPXCHG8B(THREADID tid, ADDRINT address, ADDRINT regEAXValue, ADDRINT regEDXValue ADDRESS_DEBUG);
 

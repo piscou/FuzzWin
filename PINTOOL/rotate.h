@@ -12,33 +12,41 @@ void cRCL(INS &ins);
 void cRCR(INS &ins);
 
 // SIMULATE 
-template<UINT32 len> void sROL_IM(THREADID tid, UINT32 maskedDepl, ADDRINT writeAddress ADDRESS_DEBUG);        
-template<UINT32 len> void sROL_IR(THREADID tid, UINT32 maskedDepl, REG reg, ADDRINT regValue ADDRESS_DEBUG);
-template<UINT32 len> void sROL_RM(THREADID tid, ADDRINT regCLValue, ADDRINT writeAddressess ADDRESS_DEBUG);
-template<UINT32 len> void sROL_RR(THREADID tid, ADDRINT regCLValue, REG reg, ADDRINT regValue ADDRESS_DEBUG);
+template<UINT32 lengthInBits> 
+void sROL_IM(THREADID tid, UINT32 maskedDepl, ADDRINT writeAddress ADDRESS_DEBUG);        
+template<UINT32 lengthInBits> 
+void sROL_IR(THREADID tid, UINT32 maskedDepl, REG reg, ADDRINT regValue ADDRESS_DEBUG);
+template<UINT32 lengthInBits> 
+void sROL_RM(THREADID tid, ADDRINT regCLValue, ADDRINT writeAddressess ADDRESS_DEBUG);
+template<UINT32 lengthInBits> 
+void sROL_RR(THREADID tid, ADDRINT regCLValue, REG reg, ADDRINT regValue ADDRESS_DEBUG);
         
-template<UINT32 len> void sROR_IM(THREADID tid, UINT32 maskedDepl, ADDRINT writeAddress ADDRESS_DEBUG);        
-template<UINT32 len> void sROR_IR(THREADID tid, UINT32 maskedDepl, REG reg, ADDRINT regValue ADDRESS_DEBUG);
-template<UINT32 len> void sROR_RM(THREADID tid, ADDRINT regCLValue, ADDRINT writeAddressess ADDRESS_DEBUG);
-template<UINT32 len> void sROR_RR(THREADID tid, ADDRINT regCLValue, REG reg, ADDRINT regValue ADDRESS_DEBUG);
+template<UINT32 lengthInBits> 
+void sROR_IM(THREADID tid, UINT32 maskedDepl, ADDRINT writeAddress ADDRESS_DEBUG);        
+template<UINT32 lengthInBits> 
+void sROR_IR(THREADID tid, UINT32 maskedDepl, REG reg, ADDRINT regValue ADDRESS_DEBUG);
+template<UINT32 lengthInBits> 
+void sROR_RM(THREADID tid, ADDRINT regCLValue, ADDRINT writeAddressess ADDRESS_DEBUG);
+template<UINT32 lengthInBits> 
+void sROR_RR(THREADID tid, ADDRINT regCLValue, REG reg, ADDRINT regValue ADDRESS_DEBUG);
 
-template<UINT32 len> void sRCL_IM
-    (THREADID tid, UINT32 maskedDepl, ADDRINT writeAddress, ADDRINT regGflagsValue ADDRESS_DEBUG);        
-template<UINT32 len> void sRCL_IR
-    (THREADID tid, UINT32 maskedDepl, REG reg, ADDRINT regValue, ADDRINT regGflagsValue ADDRESS_DEBUG);
-template<UINT32 len> void sRCL_RM
-    (THREADID tid, ADDRINT regCLValue, ADDRINT writeAddressess, ADDRINT regGflagsValue ADDRESS_DEBUG);
-template<UINT32 len> void sRCL_RR
-    (THREADID tid, ADDRINT regCLValue, REG reg, ADDRINT regValue, ADDRINT regGflagsValue  ADDRESS_DEBUG);
+template<UINT32 lengthInBits> 
+void sRCL_IM(THREADID tid, UINT32 maskedDepl, ADDRINT writeAddress, ADDRINT regGflagsValue ADDRESS_DEBUG);        
+template<UINT32 lengthInBits> 
+void sRCL_IR(THREADID tid, UINT32 maskedDepl, REG reg, ADDRINT regValue, ADDRINT regGflagsValue ADDRESS_DEBUG);
+template<UINT32 lengthInBits> 
+void sRCL_RM(THREADID tid, ADDRINT regCLValue, ADDRINT writeAddressess, ADDRINT regGflagsValue ADDRESS_DEBUG);
+template<UINT32 lengthInBits> 
+void sRCL_RR(THREADID tid, ADDRINT regCLValue, REG reg, ADDRINT regValue, ADDRINT regGflagsValue  ADDRESS_DEBUG);
      
-template<UINT32 len> void sRCR_IM
-    (THREADID tid, UINT32 maskedDepl, ADDRINT writeAddress, ADDRINT regGflagsValue ADDRESS_DEBUG);        
-template<UINT32 len> void sRCR_IR
-    (THREADID tid, UINT32 maskedDepl, REG reg, ADDRINT regValue, ADDRINT regGflagsValue ADDRESS_DEBUG);
-template<UINT32 len> void sRCR_RM
-    (THREADID tid, ADDRINT regCLValue, ADDRINT writeAddressess, ADDRINT regGflagsValue ADDRESS_DEBUG);
-template<UINT32 len> void sRCR_RR
-    (THREADID tid, ADDRINT regCLValue, REG reg, ADDRINT regValue, ADDRINT regGflagsValue  ADDRESS_DEBUG);
+template<UINT32 lengthInBits> 
+void sRCR_IM(THREADID tid, UINT32 maskedDepl, ADDRINT writeAddress, ADDRINT regGflagsValue ADDRESS_DEBUG);        
+template<UINT32 lengthInBits> 
+void sRCR_IR(THREADID tid, UINT32 maskedDepl, REG reg, ADDRINT regValue, ADDRINT regGflagsValue ADDRESS_DEBUG);
+template<UINT32 lengthInBits> 
+void sRCR_RM(THREADID tid, ADDRINT regCLValue, ADDRINT writeAddressess, ADDRINT regGflagsValue ADDRESS_DEBUG);
+template<UINT32 lengthInBits> 
+void sRCR_RR(THREADID tid, ADDRINT regCLValue, REG reg, ADDRINT regValue, ADDRINT regGflagsValue  ADDRESS_DEBUG);
         
 //  FLAGS 
 // marquage flags spécifique pour ROL, déplacement non marqué 

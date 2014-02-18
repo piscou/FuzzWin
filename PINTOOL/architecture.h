@@ -8,8 +8,11 @@
 namespace ARCHITECTURE
 {
 
-// architecture 32 bits
+/*************************/
+/** ARCHITECTURE 32BITS **/
+/*************************/
 #if TARGET_IA32 
+
 // les registres sont découpes en 4 sous registres de 8 bits
 #define BYTEPARTS 4 
 
@@ -17,10 +20,10 @@ namespace ARCHITECTURE
 // en x86, 8 registres de 32bits, 8 registres de 16 bits
 enum REGINDEX 
 {
-    rEAX, rEBX, rECX, rEDX,
-    rESI, rEDI, rEBP, rESP,
-    rLAST = rESP,
-    rINVALID
+    regIndexEAX, regIndexEBX, regIndexECX, regIndexEDX,
+    regIndexESI, regIndexEDI, regIndexEBP, regIndexESP,
+    regIndexLAST = regIndexESP,
+    regIndexINVALID
 };
 
 // transformation d'un registre au format PIN
@@ -28,43 +31,43 @@ enum REGINDEX
 
 inline REGINDEX getRegIndex(REG r) 
 {
-    REGINDEX index = rINVALID;
+    REGINDEX index = regIndexINVALID;
     switch (r) 
     {
     case REG_EAX:
     case REG_AL:
     case REG_AH:
     case REG_AX:
-        index = rEAX;   break;
+        index = regIndexEAX;   break;
     case REG_EBX:
     case REG_BL:
     case REG_BH:
     case REG_BX:
-        index = rEBX;   break;
+        index = regIndexEBX;   break;
     case REG_ECX:
     case REG_CL:
     case REG_CH:
     case REG_CX:
-        index = rECX;   break;
+        index = regIndexECX;   break;
     case REG_EDX:
     case REG_DL:
     case REG_DH:
     case REG_DX:
-        index = rEDX;   break;
+        index = regIndexEDX;   break;
     case REG_ESI:
     case REG_SI:
-        index = rESI;   break;
+        index = regIndexESI;   break;
     case REG_EDI:
     case REG_DI:
-        index = rEDI;   break;
+        index = regIndexEDI;   break;
     case REG_EBP:
     case REG_BP:
-        index = rEBP;   break;
+        index = regIndexEBP;   break;
     case REG_ESP:
     case REG_SP:
-        index = rESP;   break;
+        index = regIndexESP;   break;
     }
-    // si registre n'est pas listé ci dessous, retourner rINVALID (invalide)
+    // si registre n'est pas listé ci dessous, retourner regIndexINVALID (invalide)
     return (index); 
 }
 
@@ -106,7 +109,10 @@ inline UINT32 getRegSize(REG r)
     return (size); 
 }
 
-#else   // architecture 64 bits
+/*************************/
+/** ARCHITECTURE 64BITS **/
+/*************************/
+#else   
 
 // les registres sont découpes en 8 sous registres de 8 bits
 #define BYTEPARTS 8
@@ -114,10 +120,12 @@ inline UINT32 getRegSize(REG r)
 // liste des registres "entiers" suivis dans le marquage
 enum REGINDEX 
 {
-    rRAX, rRBX, rRCX, rRDX, rRSI, rRDI, rRBP, rRSP,
-    rR8, rR9, rR10, rR11, rR12, rR13, rR14, rR15,
-    rLAST = rR15,
-    rINVALID
+    regIndexRAX, regIndexRBX, regIndexRCX, regIndexRDX, 
+    regIndexRSI, regIndexRDI, regIndexRBP, regIndexRSP,
+    regIndexR8,  regIndexR9,  regIndexR10, regIndexR11, 
+    regIndexR12, regIndexR13, regIndexR14, regIndexR15,
+    regIndexLAST = regIndexR15,
+    regIndexINVALID
 };
 
 // en 64bits, on dénombre les registres généraux suivants 
@@ -133,7 +141,7 @@ enum REGINDEX
 //   R8, R9, R10, R11, R12, R13, R14, R15.
 inline REGINDEX getRegIndex(REG r) 
 {
-    REGINDEX index = rINVALID;
+    REGINDEX index = regIndexINVALID;
     switch (r) 
     {
     case REG_RAX:
@@ -141,87 +149,87 @@ inline REGINDEX getRegIndex(REG r)
     case REG_AX:
     case REG_AH:
     case REG_AL:
-        index = rRAX;   break;
+        index = regIndexRAX;   break;
     case REG_RBX:
     case REG_EBX:
     case REG_BX:
     case REG_BH:
     case REG_BL:
-        index = rRBX;   break;
+        index = regIndexRBX;   break;
     case REG_RCX:
     case REG_ECX:
     case REG_CX:
     case REG_CH:
     case REG_CL:
-        index = rRCX;   break;
+        index = regIndexRCX;   break;
     case REG_RDX:
     case REG_EDX:
     case REG_DX:    
     case REG_DH:
     case REG_DL:
-        index = rRDX;   break;
+        index = regIndexRDX;   break;
     case REG_RSI:
     case REG_ESI:
     case REG_SI:
     case REG_SIL:
-        index = rRSI;   break;
+        index = regIndexRSI;   break;
     case REG_RDI:
     case REG_EDI:
     case REG_DI:
     case REG_DIL:
-        index = rRDI;   break;
+        index = regIndexRDI;   break;
     case REG_RBP:
     case REG_EBP:
     case REG_BP:
     case REG_BPL:
-        index = rRBP;   break;
+        index = regIndexRBP;   break;
     case REG_RSP:
     case REG_ESP:
     case REG_SP:
     case REG_SPL:
-        index = rRSP;   break;
+        index = regIndexRSP;   break;
     case REG_R8:
     case REG_R8D:
     case REG_R8W:
     case REG_R8B:
-        index = rR8;    break;
+        index = regIndexR8;    break;
     case REG_R9:
     case REG_R9D:
     case REG_R9W:
     case REG_R9B:
-        index = rR9;    break;
+        index = regIndexR9;    break;
     case REG_R10:
     case REG_R10D:
     case REG_R10W:
     case REG_R10B:
-        index = rR10;   break;
+        index = regIndexR10;   break;
     case REG_R11:
     case REG_R11D:
     case REG_R11W:
     case REG_R11B:
-        index = rR11;   break;
+        index = regIndexR11;   break;
     case REG_R12:
     case REG_R12D:
     case REG_R12W:
     case REG_R12B:
-        index = rR12;   break;
+        index = regIndexR12;   break;
     case REG_R13:
     case REG_R13D:
     case REG_R13W:
     case REG_R13B:
-        index = rR13;   break;
+        index = regIndexR13;   break;
     case REG_R14:
     case REG_R14D:
     case REG_R14W:
     case REG_R14B:
-        index = rR14;   break;
+        index = regIndexR14;   break;
     case REG_R15:
     case REG_R15D:
     case REG_R15W:
     case REG_R15B:
-        index = rR15;   break;
+        index = regIndexR15;   break;
     }
-    // si registre n'est pas listé ci dessous, retourner rINVALID
+    // si registre n'est pas listé ci dessous, retourner regIndexINVALID
     return (index); 
 }
 

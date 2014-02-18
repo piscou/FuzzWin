@@ -89,7 +89,7 @@ void STRINGOP::cLODS(INS &ins, UINT32 size)
     }
     else // pas de préfixe : une seule répét, <=> mov AL/AX/EAX/EAX, [ESI]
     {	
-        REG regDest = REG_INVALID_;	// registre de destination
+        REG regDest = REG_INVALID();	// registre de destination
         switch (size) 	// taille de l'opérande mémoire source
         {
         case 1:	callback = (AFUNPTR) DATAXFER::sMOV_MR<8>;	regDest = REG_AL;	break;
@@ -140,7 +140,7 @@ void STRINGOP::cSTOS(INS &ins, UINT32 size)
     }
     else // pas de préfixe REP : équivalent à mov [ESI], AL/AX/EAX/EAX
     {	
-        REG regSrc = REG_INVALID_;	// registre source
+        REG regSrc = REG_INVALID();	// registre source
         switch (size) 	// taille de l'opérande mémoire source
         {
         case 1:	callback = (AFUNPTR) DATAXFER::sMOV_RM<8>;	regSrc = REG_AL;  break;
@@ -191,7 +191,7 @@ void STRINGOP::cSCAS(INS &ins, UINT32 size)
     void (*callback)() = nullptr;
     void (*storeTaint)() = nullptr;
 
-    REG regSrc = REG_INVALID_;	// registre source (AL si 8b, AX si 16b, etc...)
+    REG regSrc = REG_INVALID();	// registre source (AL si 8b, AX si 16b, etc...)
     if (INS_HasRealRep(ins)) // instruction préfixée par REPE ou REPNE
     {	
         switch (size) 	// taille de l'opérande mémoire de destination

@@ -8,13 +8,13 @@
 class ObjectSource 
 { 
 private:    
-    UINT32    m_len;
-    TaintPtr  m_src;
-    ADDRINT   m_val;   // 32 ou 64bits selon la compilation 
+    UINT32    _lengthInBits;
+    TaintPtr  _src;
+    ADDRINT   _val;   // 32 ou 64bits selon la compilation 
 public:
     ObjectSource() {};
     ObjectSource(const TaintPtr &taintPtr);
-    ObjectSource(UINT32 length, ADDRINT value);
+    ObjectSource(UINT32 lengthInBits, ADDRINT value);
     ~ObjectSource() {} 
 
     UINT32  getLength() const;

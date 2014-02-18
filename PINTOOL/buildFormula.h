@@ -9,13 +9,13 @@
 class SolverFormula
 {
 private:
-    std::ostringstream m_formula;
+    std::ostringstream _formula;
 
     // index pour les contraintes
-    UINT32 m_iAssert; 
+    UINT32 _iAssert; 
 
     // index pour les variables de 1/8/16/32/64/128 bits
-    UINT32 m_iTbit, m_iTb, m_iTw, m_iTdw, m_iTqw, m_iTdqw;
+    UINT32 _iTbit, _iTb, _iTw, _iTdw, _iTqw, _iTdqw;
 
     // procédure de déclaration d'un objet (récursif)
     void declareObject(const TaintPtr &tPtr);  

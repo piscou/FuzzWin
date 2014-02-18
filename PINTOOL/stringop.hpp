@@ -1,9 +1,9 @@
 // SIMULATE
-template<UINT32 len> void STRINGOP::sMOVS
+template<UINT32 lengthInBits> void STRINGOP::sMOVS
     (ADDRINT count, ADDRINT flagsValue, ADDRINT readAddress, ADDRINT writeAddress ADDRESS_DEBUG) 
 {
     // copie de "count" octets/mot/double mots de [ESI] vers [EDI] (idem MOV mem->mem)
-    ADDRINT nbIterations = count * (len >> 3); // nombre d'octets copiés
+    ADDRINT nbIterations = count * (lengthInBits >> 3); // nombre d'octets copiés
     
     // direction Flag mis à 1 : les adresses vont décroissantes, sinon ca sera l'inverse
     UINT32 isDecrease = (flagsValue >> DIRECTION_FLAG) & 1; 
@@ -12,7 +12,7 @@ template<UINT32 len> void STRINGOP::sMOVS
     {
         if (pTmgrGlobal->isMemoryTainted<8>(readAddress))	
         {
-            _LOGTAINT("MOVS " << len<< "bits");
+            _LOGTAINT("MOVS " << lengthInBits<< "bits");
             pTmgrGlobal->updateMemoryTaint<8>(writeAddress, std::make_shared<TaintByte>(
                 X_ASSIGN,
                 ObjectSource(pTmgrGlobal->getMemoryTaint<8>(readAddress))));
@@ -30,25 +30,25 @@ template<UINT32 len> void STRINGOP::sMOVS
     }
 } //sMOVS
 
-template<UINT32 len> void STRINGOP::sLODS
+template<UINT32 lengthInBits> void STRINGOP::sLODS
     (THREADID tid, ADDRINT count, ADDRINT flagsValue, ADDRINT readAddress ADDRESS_DEBUG) 
 {
     // déplacement de "count" octets/mot/dble mots de [ESI] vers AL/AX/EAX/RAX
     // en réalité, seule la dernière itération nous interesse
-    // ce sera un MOV_MR<len> de lastAddress vers AL/AX/EAX/RAX
+    // ce sera un MOV_MR<lengthInBits> de lastAddress vers AL/AX/EAX/RAX
   
     // calcul de l'adresse pointée par ESI lors de la dernière opération
     // DF a 1 => adresses décroissantes, DF a 0 => adresses croissantes
     ADDRINT lastAddress = ((flagsValue >> DIRECTION_FLAG) & 1) 
-        ? (readAddress - ((count-1) * (len >> 3))) 
-        : (readAddress + ((count-1) * (len >> 3))); 
+        ? (readAddress - ((count-1) * (lengthInBits >> 3))) 
+        : (readAddress + ((count-1) * (lengthInBits >> 3))); 
     
     // appel de la procédure MOVMR adéquate selon le registre
     _LOGTAINT("LODS (si marqué : message movRM suivra)");
-    DATAXFER::sMOV_MR<len>(tid, lastAddress, registerACC<len>::getReg() INSADDRESS);
+    DATAXFER::sMOV_MR<lengthInBits>(tid, lastAddress, registerACC<lengthInBits>::getReg() INSADDRESS);
 } // sLODS
 
-template<UINT32 len> void STRINGOP::sSTOS
+template<UINT32 lengthInBits> void STRINGOP::sSTOS
     (THREADID tid, ADDRINT count, ADDRINT flagsValue, ADDRINT writeAddress ADDRESS_DEBUG) 
 {
     // déplacement de "count" octets/mot/dble mots de AL/AX/EAX/RAX -> [EDI] 
@@ -58,12 +58,12 @@ template<UINT32 len> void STRINGOP::sSTOS
     // 1) recupération du marquage du registre, et stockage dans un vecteur.
     // et stockage dans un tableau d'objets (ou nullPtr)
     vector<TaintBytePtr> vTaintRegSrc;
-    for (UINT32 regPart = 0 ; regPart < (len >> 3) ; ++regPart) 
+    for (UINT32 regPart = 0 ; regPart < (lengthInBits >> 3) ; ++regPart) 
     {
         #if TARGET_IA32
-        vTaintRegSrc.push_back(pTmgrTls->getRegisterPartTaint(rEAX, regPart));
+        vTaintRegSrc.push_back(pTmgrTls->getRegisterPartTaint(regIndexEAX, regPart));
         #else
-        vTaintRegSrc.push_back(pTmgrTls->getRegisterPartTaint(rRAX, regPart));
+        vTaintRegSrc.push_back(pTmgrTls->getRegisterPartTaint(regIndexRAX, regPart));
         #endif  
     }
 
@@ -72,7 +72,7 @@ template<UINT32 len> void STRINGOP::sSTOS
 
     for (UINT32 iteration = 0 ; iteration < count ; ++iteration) // répétition "count" fois
     {
-        // marquage de chaque plage de 'len' octets avec le registre source     
+        // marquage de chaque plage de 'lengthInBits' octets avec le registre source     
         for (auto it = vTaintRegSrc.begin(); it != vTaintRegSrc.end() ; ++it) 
         {
             if ((bool) *it)
@@ -89,7 +89,7 @@ template<UINT32 len> void STRINGOP::sSTOS
     }
 } // sSTOS
 
-template<UINT32 len> void STRINGOP::sStoreTaintSCAS(
+template<UINT32 lengthInBits> void STRINGOP::sStoreTaintSCAS(
     THREADID tid, BOOL isREPZ, ADDRINT regValue, ADDRINT insAddress) 
 { 
     // procédure appelée lors de la première itération (callback IF/THEN)
@@ -103,10 +103,10 @@ template<UINT32 len> void STRINGOP::sStoreTaintSCAS(
     
     // si registre marqué, stockage de l'objet, sinon mise à nullptr 
     // et stockage de la valeur
-    if (pTmgrTls->isRegisterTainted<len>(registerACC<len>::getReg())) 
+    if (pTmgrTls->isRegisterTainted<lengthInBits>(registerACC<lengthInBits>::getReg())) 
     {
         strInfo.isRegTainted = true;
-        strInfo.tPtr = pTmgrTls->getRegisterTaint<len>(registerACC<len>::getReg(), regValue);
+        strInfo.tPtr = pTmgrTls->getRegisterTaint<lengthInBits>(registerACC<lengthInBits>::getReg(), regValue);
     }
     else 
     {
@@ -118,7 +118,7 @@ template<UINT32 len> void STRINGOP::sStoreTaintSCAS(
     pTmgrTls->storeStringOpInfo(strInfo);
 } // storeTaintSCAS
 
-template<UINT32 len> void STRINGOP::sSCAS(THREADID tid, ADDRINT address) 
+template<UINT32 lengthInBits> void STRINGOP::sSCAS(THREADID tid, ADDRINT address) 
 {
     // comparaison de AL/AX/EAX/RAX avec [EDI] 
     // + ajout d'une contrainte sur ZFLAG, indiquant une répétition ou non
@@ -128,7 +128,7 @@ template<UINT32 len> void STRINGOP::sSCAS(THREADID tid, ADDRINT address)
     StringOpInfo strInfo = pTmgrTls->getStoredStringOpInfo();
     
     bool isSrcDestTainted = strInfo.isRegTainted;
-    bool isSrcTainted =		pTmgrGlobal->isMemoryTainted<len>(address);
+    bool isSrcTainted =		pTmgrGlobal->isMemoryTainted<lengthInBits>(address);
 
     if ( !(isSrcDestTainted || isSrcTainted))   pTmgrTls->unTaintAllFlags();
     else 
@@ -138,24 +138,24 @@ template<UINT32 len> void STRINGOP::sSCAS(THREADID tid, ADDRINT address)
         
         // calcul des sources pour le futur objet
         ObjectSource srcDest = (isSrcDestTainted) 
-            ? ObjectSource(strInfo.tPtr) : ObjectSource(len, strInfo.regValue);
+            ? ObjectSource(strInfo.tPtr) : ObjectSource(lengthInBits, strInfo.regValue);
         
         ObjectSource src = (isSrcTainted) 
-            ? ObjectSource(pTmgrGlobal->getMemoryTaint<len>(address))
-            : ObjectSource(len, getMemoryValue<len>(address));
+            ? ObjectSource(pTmgrGlobal->getMemoryTaint<lengthInBits>(address))
+            : ObjectSource(lengthInBits, getMemoryValue<lengthInBits>(address));
 
         // marquage flags 
-        BINARY::fTaintCMP<len>(pTmgrTls, srcDest, src);
+        BINARY::fTaintCMP<lengthInBits>(pTmgrTls, srcDest, src);
         // déclaration de la contrainte
         g_pFormula->addConstraint_ZERO(pTmgrTls, insAddress, strInfo.isREPZ);
     }
 } // sSCAS
 
-template<UINT32 len> void STRINGOP::sCMPS
+template<UINT32 lengthInBits> void STRINGOP::sCMPS
     (THREADID tid, UINT32 repCode, ADDRINT esiAddr, ADDRINT ediAddr, ADDRINT insAddress) 
 {
-    bool isSrcTainted =		pTmgrGlobal->isMemoryTainted<len>(esiAddr);
-    bool isSrcDestTainted = pTmgrGlobal->isMemoryTainted<len>(ediAddr);	
+    bool isSrcTainted =		pTmgrGlobal->isMemoryTainted<lengthInBits>(esiAddr);
+    bool isSrcDestTainted = pTmgrGlobal->isMemoryTainted<lengthInBits>(ediAddr);	
     
     TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
     
@@ -165,15 +165,15 @@ template<UINT32 len> void STRINGOP::sCMPS
         _LOGTAINT("CMPS");
         
         ObjectSource src = (isSrcTainted) 
-            ? ObjectSource(pTmgrGlobal->getMemoryTaint<len>(esiAddr))
-            : ObjectSource(len, getMemoryValue<len>(esiAddr));
+            ? ObjectSource(pTmgrGlobal->getMemoryTaint<lengthInBits>(esiAddr))
+            : ObjectSource(lengthInBits, getMemoryValue<lengthInBits>(esiAddr));
        
         ObjectSource srcDest = (isSrcDestTainted) 
-            ? ObjectSource(pTmgrGlobal->getMemoryTaint<len>(ediAddr))
-            : ObjectSource(len, getMemoryValue<len>(ediAddr));
+            ? ObjectSource(pTmgrGlobal->getMemoryTaint<lengthInBits>(ediAddr))
+            : ObjectSource(lengthInBits, getMemoryValue<lengthInBits>(ediAddr));
 
         // marquage flags (resultat calculé dans la procédure Flags) 
-        BINARY::fTaintCMP<len>(pTmgrTls, srcDest, src);	
+        BINARY::fTaintCMP<lengthInBits>(pTmgrTls, srcDest, src);	
         
         // déclaration de la contrainte s'il y avait un préfixe REP (codes 1 REPE = 0 et 2)
         if (repCode)  g_pFormula->addConstraint_ZERO(pTmgrTls, insAddress, (repCode == 1) ? true : false); 

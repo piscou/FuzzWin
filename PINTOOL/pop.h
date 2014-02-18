@@ -14,16 +14,16 @@ void cPOPAD(INS &ins);
 #endif
  
 // SIMULATE 
-template<UINT32 len> 
+template<UINT32 lengthInBits> 
 void sUpdateEspTaint(TaintManager_Thread *pTmgrTls, ADDRINT stackAddressBeforePush);
 
-template<UINT32 len> 
+template<UINT32 lengthInBits> 
 void sPOP_M(THREADID tid, ADDRINT writeAddress, ADDRINT stackAddressBeforePop ADDRESS_DEBUG);
 
-template<UINT32 len> 
+template<UINT32 lengthInBits> 
 void sPOP_R(THREADID tid, REG regDest, ADDRINT stackAddressBeforePop ADDRESS_DEBUG);
 
-template<UINT32 len> 
+template<UINT32 lengthInBits> 
 void sPOPF(THREADID tid, ADDRINT stackAddressBeforePop ADDRESS_DEBUG);
 
 #if TARGET_IA32
