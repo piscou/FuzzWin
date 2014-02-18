@@ -5,11 +5,12 @@
 #include "binary.h"
 #include "bitbyte.h"
 #include "cmov.h"
-#include "CALL.h"
+#include "call.h"
 #include "conditional_branch.h"
 #include "convert.h"
 #include "unconditional_branch.h"
 #include "dataxfer.h"
+#include "flagop.h"
 #include "logical.h"
 #include "misc.h"
 #include "pop.h"
@@ -39,8 +40,7 @@ void INSTRUMENTATION::Instruction(INS ins, void* )
 
     switch (INS_Opcode(ins)) // BIG BIG SWITCH :)
     {
-    case XED_ICLASS_NOP:    break;    // la plus facile :p
-
+    
     // BINARY: ADD, SUB, INC, DEC, NEG, CMP
     case XED_ICLASS_SUB:  BINARY::cSUB(ins);  break;
     case XED_ICLASS_ADD:  BINARY::cADD(ins);  break;
@@ -52,6 +52,31 @@ void INSTRUMENTATION::Instruction(INS ins, void* )
     case XED_ICLASS_IMUL: BINARY::cIMUL(ins); break;
     case XED_ICLASS_IDIV: BINARY::cDIVISION(ins, true); break;  // true = signed
     case XED_ICLASS_DIV:  BINARY::cDIVISION(ins, false); break; // false = unsigned
+
+    // BIBYTE (SETcc)
+    case XED_ICLASS_SETB:   BITBYTE::cSETB(ins);    break;
+    case XED_ICLASS_SETNB:  BITBYTE::cSETNB(ins);   break;
+    case XED_ICLASS_SETO:   BITBYTE::cSETO(ins);    break;
+    case XED_ICLASS_SETNO:  BITBYTE::cSETNO(ins);   break;
+    case XED_ICLASS_SETP:   BITBYTE::cSETP(ins);    break;
+    case XED_ICLASS_SETNP:  BITBYTE::cSETNP(ins);   break;
+    case XED_ICLASS_SETS:   BITBYTE::cSETS(ins);    break;
+    case XED_ICLASS_SETNS:  BITBYTE::cSETNS(ins);   break;
+    case XED_ICLASS_SETZ:   BITBYTE::cSETZ(ins);    break;
+    case XED_ICLASS_SETNZ:  BITBYTE::cSETNZ(ins);   break;
+    case XED_ICLASS_SETBE:  BITBYTE::cSETBE(ins);   break;
+    case XED_ICLASS_SETNBE: BITBYTE::cSETNBE(ins);  break;
+    case XED_ICLASS_SETL:   BITBYTE::cSETL(ins);    break;
+    case XED_ICLASS_SETNL:  BITBYTE::cSETNL(ins);   break;
+    case XED_ICLASS_SETLE:  BITBYTE::cSETLE(ins);   break;
+    case XED_ICLASS_SETNLE: BITBYTE::cSETNLE(ins);  break;    
+    // BIBYTE (BTxx, BSR, BSF)
+    case XED_ICLASS_BT:  BITBYTE::cBT(ins);  break;
+    case XED_ICLASS_BTC: BITBYTE::cBTC(ins); break;
+    case XED_ICLASS_BTR: BITBYTE::cBTR(ins); break;
+    case XED_ICLASS_BTS: BITBYTE::cBTS(ins); break;
+    case XED_ICLASS_BSR: BITBYTE::cBSR(ins); break;
+    case XED_ICLASS_BSF: BITBYTE::cBSF(ins); break;
 
     // CMOV
     case XED_ICLASS_CMOVB:   CMOV::cCMOVB(ins);    break;
@@ -89,6 +114,16 @@ void INSTRUMENTATION::Instruction(INS ins, void* )
     case XED_ICLASS_JLE:    CONDITIONAL_BR::cJLE(ins);  break;
     case XED_ICLASS_JNLE:   CONDITIONAL_BR::cJNLE(ins); break;
    
+    // CONVERT
+    case XED_ICLASS_CBW:  CONVERT::cCBW(ins);  break;
+    case XED_ICLASS_CWDE: CONVERT::cCWDE(ins); break;
+    case XED_ICLASS_CWD:  CONVERT::cCWD(ins);  break;
+    case XED_ICLASS_CDQ:  CONVERT::cCDQ(ins);  break;
+#if TARGET_IA32E
+    case XED_ICLASS_CDQE: CONVERT::cCDQE(ins); break;
+    case XED_ICLASS_CQO:  CONVERT::cCQO(ins);  break;
+#endif
+
     // DATAXFER: MOV, MOVSX, MOVZX, XCHG, BSWAP
     case XED_ICLASS_MOV:   DATAXFER::cMOV(ins);  break;
     case XED_ICLASS_MOVSX: DATAXFER::cMOVSX(ins);  break;
@@ -99,7 +134,20 @@ void INSTRUMENTATION::Instruction(INS ins, void* )
     case XED_ICLASS_MOVSXD: DATAXFER::cMOVSXD(ins);  break;
     #endif 
 
-    // SHIFT: SHL, SHR, SAR (manque SHRD et SHLD)
+    // FLAGOP
+    case XED_ICLASS_CLC: // CLC et STC ont le même effet : démarquage CF uniquement
+    case XED_ICLASS_STC:    FLAGOP::cCLC_STC(ins); break;
+
+    case XED_ICLASS_CMC:    FLAGOP::cCMC(ins);  break;
+    case XED_ICLASS_LAHF:   FLAGOP::cLAHF(ins); break;
+    case XED_ICLASS_SAHF:   FLAGOP::cSAHF(ins); break;
+    case XED_ICLASS_SALC:   FLAGOP::cSALC(ins); break;
+    case XED_ICLASS_CLD:    break;  // Direction Flag mis à 0, sans objet pour le marquage
+    case XED_ICLASS_CLI:    break;  // Interrupt Flag mis à 0, sans objet pour le marquage
+    case XED_ICLASS_STD:    break;  // Direction Flag mis à 1, sans objet pour le marquage
+    case XED_ICLASS_STI:    break;  // Interrupt Flag mis à 1, sans objet pour le marquage
+
+    // SHIFT: SHL, SHR, SAR, SHRD, SHLD
     case XED_ICLASS_SHL:  SHIFT::cSHL(ins);  break;
     case XED_ICLASS_SHR:  SHIFT::cSHR(ins);  break;
     case XED_ICLASS_SAR:  SHIFT::cSAR(ins);  break;
@@ -120,7 +168,8 @@ void INSTRUMENTATION::Instruction(INS ins, void* )
 #if TARGET_IA32
     case XED_ICLASS_PUSHA:  PUSH::cPUSHA(ins);    break;
     case XED_ICLASS_PUSHAD: PUSH::cPUSHAD(ins);   break;
-#else
+#endif
+#if TARGET_IA32E
     case XED_ICLASS_PUSHFQ: PUSH::cPUSHF(ins, 8); break;
 #endif
      
@@ -131,13 +180,16 @@ void INSTRUMENTATION::Instruction(INS ins, void* )
 #if TARGET_IA32
     case XED_ICLASS_POPA:  POP::cPOPA(ins);    break;
     case XED_ICLASS_POPAD: POP::cPOPAD(ins);   break;
-#else
+#endif
+#if TARGET_IA32E
     case XED_ICLASS_POPFQ: POP::cPOPF(ins, 8); break;
 #endif
 
-    // MISC: LEA, LEAVE (RET Far considéré niveau marquage comme ret)
-    case XED_ICLASS_LEA:    MISC::cLEA(ins);      break;
-    case XED_ICLASS_LEAVE:  MISC::cLEAVE(ins);    break;
+    // MISC: LEA, LEAVE
+    case XED_ICLASS_LEA:        MISC::cLEA(ins);      break;
+    case XED_ICLASS_LEAVE:      MISC::cLEAVE(ins);    break;
+    
+    // RET
     case XED_ICLASS_RET_FAR: // identique en traitement à RET_NEAR
     case XED_ICLASS_RET_NEAR:    RET::cRET(ins);   break;
 
@@ -179,48 +231,14 @@ void INSTRUMENTATION::Instruction(INS ins, void* )
     // les JMP_FAR ne sont pas traités pour l'instant
     case XED_ICLASS_JMP_FAR: _LOGDEBUG(" *** JMP_FAR ***"); break;
 
-    // CONVERT
-    case XED_ICLASS_CBW:  CONVERT::cCBW(ins);  break;
-    case XED_ICLASS_CWDE: CONVERT::cCWDE(ins); break;
-    case XED_ICLASS_CWD:  CONVERT::cCWD(ins);  break;
-    case XED_ICLASS_CDQ:  CONVERT::cCDQ(ins);  break;
-    #if TARGET_IA32E
-    case XED_ICLASS_CDQE: CONVERT::cCDQE(ins); break;
-    case XED_ICLASS_CQO:  CONVERT::cCQO(ins);  break;
-    #endif
-
-    // BIBYTE : SETcc
-    case XED_ICLASS_SETB:   BITBYTE::cSETB(ins);    break;
-    case XED_ICLASS_SETNB:  BITBYTE::cSETNB(ins);   break;
-    case XED_ICLASS_SETO:   BITBYTE::cSETO(ins);    break;
-    case XED_ICLASS_SETNO:  BITBYTE::cSETNO(ins);   break;
-    case XED_ICLASS_SETP:   BITBYTE::cSETP(ins);    break;
-    case XED_ICLASS_SETNP:  BITBYTE::cSETNP(ins);   break;
-    case XED_ICLASS_SETS:   BITBYTE::cSETS(ins);    break;
-    case XED_ICLASS_SETNS:  BITBYTE::cSETNS(ins);   break;
-    case XED_ICLASS_SETZ:   BITBYTE::cSETZ(ins);    break;
-    case XED_ICLASS_SETNZ:  BITBYTE::cSETNZ(ins);   break;
-    case XED_ICLASS_SETBE:  BITBYTE::cSETBE(ins);   break;
-    case XED_ICLASS_SETNBE: BITBYTE::cSETNBE(ins);  break;
-    case XED_ICLASS_SETL:   BITBYTE::cSETL(ins);    break;
-    case XED_ICLASS_SETNL:  BITBYTE::cSETNL(ins);   break;
-    case XED_ICLASS_SETLE:  BITBYTE::cSETLE(ins);   break;
-    case XED_ICLASS_SETNLE: BITBYTE::cSETNLE(ins);  break;
-      
-    // BIBYTE : BTxx, BSR, BSF
-    case XED_ICLASS_BT:  BITBYTE::cBT(ins);  break;
-    case XED_ICLASS_BTC: BITBYTE::cBTC(ins); break;
-    case XED_ICLASS_BTR: BITBYTE::cBTR(ins); break;
-    case XED_ICLASS_BTS: BITBYTE::cBTS(ins); break;
-    case XED_ICLASS_BSR: BITBYTE::cBSR(ins); break;
-    case XED_ICLASS_BSF: BITBYTE::cBSF(ins); break;
-   
+    
+  
     // SEMAPHORE
-    case XED_ICLASS_CMPXCHG : SEMAPHORE::cCMPXCHG(ins); break;
-    case XED_ICLASS_CMPXCHG8B : SEMAPHORE::cCMPXCHG8B(ins); break;
-    #if TARGET_IA32E
-    case XED_ICLASS_CMPXCHG16B : SEMAPHORE::cCMPXCHG16B(ins); break;
-    #endif
+    case XED_ICLASS_CMPXCHG:    SEMAPHORE::cCMPXCHG(ins); break;
+    case XED_ICLASS_CMPXCHG8B:  SEMAPHORE::cCMPXCHG8B(ins); break;
+#if TARGET_IA32E
+    case XED_ICLASS_CMPXCHG16B: SEMAPHORE::cCMPXCHG16B(ins); break;
+#endif
 
     // ROTATE
     case XED_ICLASS_ROL: ROTATE::cROL(ins); break;
@@ -228,8 +246,11 @@ void INSTRUMENTATION::Instruction(INS ins, void* )
     case XED_ICLASS_RCL: ROTATE::cRCL(ins); break;
     case XED_ICLASS_RCR: ROTATE::cRCR(ins); break;
     
-   
-    default: // fonction non traitée : démarquage de(s) destination(s)
+    /*** AUCUNE ACTION SUR MEMOIRE OU REGISTRE MARQUE : NE RIEN FAIRE ***/
+    case XED_ICLASS_NOP:    break;    // la plus facile :p
+
+    /*** AUTRES INSTRUCTIONS : DEMARQUAGE DES DESTINATIONS SUIVIES ***/
+    default: 
         UTILS::cUNHANDLED(ins);     
         _LOGUNHANDLED(ins);
         break;

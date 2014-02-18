@@ -26,6 +26,12 @@ static inline UINT32 EXTRACTBYTE(ADDRINT value, UINT32 index)
     return (static_cast<UINT32>(0xff & (value >> (index << 3)))); 
 }
 
+// extraction du bit n° "index" de la valeur "value"
+static inline UINT32 EXTRACTBIT(ADDRINT value, UINT32 index) 
+{
+    return (static_cast<UINT32>(0x1 & (value >> index))); 
+}
+
 // structure de sauvegarde des adresses de retour des fonctions
 // TODO : analyse à faire en option choisie par l'utilisateur
 typedef struct
