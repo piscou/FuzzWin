@@ -56,7 +56,7 @@ void CONVERT::cCQO(INS &ins)
 
 void CONVERT::sCBW(THREADID tid ADDRESS_DEBUG)
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     REGINDEX regIndex = getRegIndex(REG_AL);
 
     if (pTmgrTls->isRegisterPartTainted(regIndex, 0))
@@ -72,7 +72,7 @@ void CONVERT::sCBW(THREADID tid ADDRESS_DEBUG)
 // CWDE : EAX <- signExtend(AX)
 void CONVERT::sCWDE(THREADID tid, ADDRINT regAXValue ADDRESS_DEBUG)
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     if (pTmgrTls->isRegisterTainted<16>(REG_AX))
     {
         // affectation à EAX (enregistrement du TaintDword)
@@ -86,7 +86,7 @@ void CONVERT::sCWDE(THREADID tid, ADDRINT regAXValue ADDRESS_DEBUG)
 // CWD : DX:AX <- signExtend(AX)
 void CONVERT::sCWD(THREADID tid, ADDRINT regAXValue ADDRESS_DEBUG)
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     if (pTmgrTls->isRegisterTainted<16>(REG_AX))
     {
         // construction du résultat
@@ -109,7 +109,7 @@ void CONVERT::sCWD(THREADID tid, ADDRINT regAXValue ADDRESS_DEBUG)
 // CDQ : EDX:EAX <- signExtend(EAX)
 void CONVERT::sCDQ(THREADID tid, ADDRINT regEAXValue ADDRESS_DEBUG)
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     if (pTmgrTls->isRegisterTainted<32>(REG_EAX))
     {
         // construction du résultat
@@ -133,7 +133,7 @@ void CONVERT::sCDQ(THREADID tid, ADDRINT regEAXValue ADDRESS_DEBUG)
 // CDQE : RAX <- signExtend(EAX)
 void CONVERT::sCDQE(THREADID tid, ADDRINT regEAXValue ADDRESS_DEBUG)
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     if (pTmgrTls->isRegisterTainted<32>(REG_EAX))
     {
         // affectation à RAX (enregistrement du TaintQword)
@@ -147,7 +147,7 @@ void CONVERT::sCDQE(THREADID tid, ADDRINT regEAXValue ADDRESS_DEBUG)
 // CQO : RDX:RAX <- signExtend(RAX)
 void CONVERT::sCQO(THREADID tid, ADDRINT regRAXValue ADDRESS_DEBUG)
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     if (pTmgrTls->isRegisterTainted<64>(REG_RAX))
     {
         // construction du résultat

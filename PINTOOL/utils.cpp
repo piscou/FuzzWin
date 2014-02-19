@@ -104,7 +104,7 @@ void UTILS::computeTaintEffectiveAddress(THREADID tid, REG baseReg, ADDRINT base
 //      SINON source2 = IS
 //  SINON source2 = valeur (index*scale +/- displ)
     
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     
     bool isIndexRegTainted = pTmgrTls->isRegisterTainted<32>(indexReg);
     bool isBaseRegTainted =  pTmgrTls->isRegisterTainted<32>(baseReg);
@@ -169,7 +169,7 @@ void UTILS::computeTaintEffectiveAddress
 //      resul = ISD
 //  SINON result = IS
     
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     
     // traitement si le registre d'index est marqué 
     if (pTmgrTls->isRegisterTainted<32>(indexReg)) 
@@ -211,7 +211,7 @@ void UTILS::computeTaintEffectiveAddress
 void UTILS::computeTaintEffectiveAddress
     (THREADID tid, REG baseReg, ADDRINT baseRegValue, INT32 displ)
 { 
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     
     // traitement si le registre de base est marqué 
     if (pTmgrTls->isRegisterTainted<32>(baseReg)) 
@@ -250,7 +250,7 @@ void UTILS::computeTaintEffectiveAddress(THREADID tid, REG baseReg, ADDRINT base
 //      SINON source2 = IS
 //  SINON source2 = valeur (index*scale +/- displ)
 
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     
     bool isIndexRegTainted = pTmgrTls->isRegisterTainted<64>(indexReg);
     bool isBaseRegTainted =  pTmgrTls->isRegisterTainted<64>(baseReg);
@@ -314,7 +314,7 @@ void UTILS::computeTaintEffectiveAddress
 //      resul = ISD
 //  SINON result = IS
 
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     
     // traitement si le registre d'index est marqué 
     if (pTmgrTls->isRegisterTainted<64>(indexReg)) 
@@ -355,7 +355,7 @@ void UTILS::computeTaintEffectiveAddress
 void UTILS::computeTaintEffectiveAddress
     (THREADID tid, REG baseReg, ADDRINT baseRegValue, INT32 displ)
 { 
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
         
     // traitement si le registre de base est marqué 
     if (pTmgrTls->isRegisterTainted<64>(baseReg)) 

@@ -66,26 +66,26 @@ void Taint::addSource(const TaintPtr &taintPtr) { this->_sources.push_back(Objec
 
 void Taint::addSource(const ObjectSource &src) { this->_sources.push_back(src); }   
 
-template<UINT32 lengthInBitsgth> 
-TaintObject<lengthInBitsgth>::TaintObject(Relation rel) : Taint(rel, lengthInBitsgth) {}
+template<UINT32 lengthInBits> 
+TaintObject<lengthInBits>::TaintObject(Relation rel) : Taint(rel, lengthInBits) {}
 
-template<UINT32 lengthInBitsgth> 
-TaintObject<lengthInBitsgth>::TaintObject(Relation rel, const ObjectSource &os1) 
-    : Taint(rel, lengthInBitsgth, os1) {}
+template<UINT32 lengthInBits> 
+TaintObject<lengthInBits>::TaintObject(Relation rel, const ObjectSource &os1) 
+    : Taint(rel, lengthInBits, os1) {}
 
-template<UINT32 lengthInBitsgth> 
-TaintObject<lengthInBitsgth>::TaintObject(Relation rel, const ObjectSource &os1, const ObjectSource &os2) 
-    : Taint(rel, lengthInBitsgth, os1, os2) {}
+template<UINT32 lengthInBits> 
+TaintObject<lengthInBits>::TaintObject(Relation rel, const ObjectSource &os1, const ObjectSource &os2) 
+    : Taint(rel, lengthInBits, os1, os2) {}
 
-template<UINT32 lengthInBitsgth> 
-TaintObject<lengthInBitsgth>::TaintObject(Relation rel, const ObjectSource &os1, const ObjectSource &os2, 
+template<UINT32 lengthInBits> 
+TaintObject<lengthInBits>::TaintObject(Relation rel, const ObjectSource &os1, const ObjectSource &os2, 
                                                const ObjectSource &os3) 
-    : Taint(rel, lengthInBitsgth, os1, os2, os3) {}
+    : Taint(rel, lengthInBits, os1, os2, os3) {}
 
-template<UINT32 lengthInBitsgth> 
-TaintObject<lengthInBitsgth>::TaintObject(Relation rel, const ObjectSource &os1, const ObjectSource &os2, 
+template<UINT32 lengthInBits> 
+TaintObject<lengthInBits>::TaintObject(Relation rel, const ObjectSource &os1, const ObjectSource &os2, 
                                                const ObjectSource &os3, const ObjectSource &os4) 
-    : Taint(rel, lengthInBitsgth, os1, os2, os3, os4) {}
+    : Taint(rel, lengthInBits, os1, os2, os3, os4) {}
 
 template<UINT32 lengthInBits> TaintObject<lengthInBits>::~TaintObject() {}
 

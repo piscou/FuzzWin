@@ -319,8 +319,7 @@ void INSTRUMENTATION::threadFini(THREADID tid, const CONTEXT *, INT32 , VOID *)
 {
     _LOGDEBUG("destruction du thread n° " << tid << " et TLS associée");
 
-    TaintManager_Thread *pTmgrTls = 
-        static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     delete (pTmgrTls);
 
     Syscall_Data *pSysData = 

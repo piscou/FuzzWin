@@ -146,10 +146,10 @@ void SolverFormula::declareRelation(const TaintPtr &tPtr, const vector<ObjectSou
     case X_SIGNEXTEND:	
     {
         // nombre de bits à ajouter = longueur resultat - longueur source
-        UINT32 lengthInBitsgthExtension = lengthInBitsOfResult - sources.front().getLength();
+        UINT32 lengthInBitsExtension = lengthInBitsOfResult - sources.front().getLength();
 
         out += "((_ sign_extend ";
-        out += decstr(lengthInBitsgthExtension);
+        out += decstr(lengthInBitsExtension);
         out += ") ";
 
         // insertion du nom de l'objet
@@ -665,14 +665,14 @@ void SolverFormula::declareRelation(const TaintPtr &tPtr, const vector<ObjectSou
     }
     case F_CARRY_SHL:
     {
-        // dernier bit ejecté vers la gauche = bit (lengthInBitsgth - count), count marqué (8 bits)
-        // récupération par LSB (src >> (lengthInBitsgth - count))
+        // dernier bit ejecté vers la gauche = bit (lengthInBits - count), count marqué (8 bits)
+        // récupération par LSB (src >> (lengthInBits - count))
         // ATTENTION : count doit etre auparavant masqué à 0x1f ou 0x3f
         out += "((_ extract 0 0) (bvlshr ";
         this->insertSourceName(out, sources.front());
 
         out += " (bvsub #x";
-        out += StringHex(lengthInBitsOfResult, 2, false); // lengthInBitsgth sur 2 digits, pas de prefixe
+        out += StringHex(lengthInBitsOfResult, 2, false); // lengthInBits sur 2 digits, pas de prefixe
         
         // masquage du déplacement 0x1f ou 0x3f en 64bits 
         out += " (bvand ";
@@ -748,7 +748,7 @@ void SolverFormula::declareRelation(const TaintPtr &tPtr, const vector<ObjectSou
     case F_CARRY_NEG:
     {
         UINT32 srcLength = sources.front().getLength();
-        // comparaison de la source au nombre 0 représenté sur "lengthInBitsgth" bits
+        // comparaison de la source au nombre 0 représenté sur "lengthInBits" bits
         out += "(ite (= (_ bv0 ";
         out += decstr(srcLength);
         out += ") ";

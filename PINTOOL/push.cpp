@@ -113,7 +113,7 @@ void PUSH::sPUSHA(THREADID tid, ADDRINT stackAddressBeforePush ADDRESS_DEBUG)
     // du point de vue marquage, equivalent à un MOVRM [SP-2], reg 
 
     REG regsToPush[8] = {REG_AX, REG_CX, REG_DX, REG_BX, REG_SP, REG_BP, REG_SI, REG_DI};
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));    
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);    
     
     // sauvegarde du marquage de SP. Sauvegarde par octet pour éviter de devoir récupérer la valeur numérique de SP
     std::vector<TaintBytePtr> savedSP;  
@@ -160,7 +160,7 @@ void PUSH::sPUSHAD(THREADID tid, ADDRINT stackAddressBeforePush ADDRESS_DEBUG)
     REG regsToPush[8] = {REG_EAX, REG_ECX, REG_EDX, REG_EBX, REG_ESP, REG_EBP, REG_ESI, REG_EDI};
     
     // sauvegarde du marquage de ESP
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));    
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);    
     
     // sauvegarde du marquage de SP. Sauvegarde par octet pour éviter de devoir récupérer la valeur numérique de SP
     std::vector<TaintBytePtr> savedESP;  

@@ -300,7 +300,7 @@ void CMOV::cCMOVNLE(INS &ins)
 void CMOV::sCMOVB(THREADID tid, bool isPredicatTrue, ADDRINT insAddress)
 {
     // CMOVB/CMOVNAE/CMOVC   CF = 1     Below/not above or equal/carry   
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     if (pTmgrTls->isCarryFlagTainted()) 
     {
         _LOGTAINT("CMOVB");
@@ -311,7 +311,7 @@ void CMOV::sCMOVB(THREADID tid, bool isPredicatTrue, ADDRINT insAddress)
 void CMOV::sCMOVNB(THREADID tid, bool isPredicatTrue, ADDRINT insAddress)
 { 
     // CMOVAE/CMOVNB/CMOVNC  CF = 0     Above or equal/not below
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     if (pTmgrTls->isCarryFlagTainted()) 
     {
         _LOGTAINT("CMOVNB");
@@ -322,7 +322,7 @@ void CMOV::sCMOVNB(THREADID tid, bool isPredicatTrue, ADDRINT insAddress)
 void CMOV::sCMOVS(THREADID tid, bool isPredicatTrue, ADDRINT insAddress)
 { 
     // CMOVS           SF = 1          Sign (negative)
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     if (pTmgrTls->isSignFlagTainted()) 
     {
         _LOGTAINT("CMOVS");
@@ -333,7 +333,7 @@ void CMOV::sCMOVS(THREADID tid, bool isPredicatTrue, ADDRINT insAddress)
 void CMOV::sCMOVNS(THREADID tid, bool isPredicatTrue, ADDRINT insAddress)
 {
     // CMOVNS       SF = 0      Not sign (non-negative)
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     if (pTmgrTls->isSignFlagTainted()) 
     {
         _LOGTAINT("CMOVNS");
@@ -344,7 +344,7 @@ void CMOV::sCMOVNS(THREADID tid, bool isPredicatTrue, ADDRINT insAddress)
 void CMOV::sCMOVO (THREADID tid, bool isPredicatTrue, ADDRINT insAddress)
 {
     // CMOVO           OF = 1          Overflow
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     if (pTmgrTls->isOverflowFlagTainted())  
     {
         _LOGTAINT("CMOVO");
@@ -355,7 +355,7 @@ void CMOV::sCMOVO (THREADID tid, bool isPredicatTrue, ADDRINT insAddress)
 void CMOV::sCMOVNO(THREADID tid, bool isPredicatTrue, ADDRINT insAddress)
 { 
     // CMOVNO           OF = 0          not Overflow
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     if (pTmgrTls->isOverflowFlagTainted()) 
     {
         _LOGTAINT("CMOVNO");
@@ -366,7 +366,7 @@ void CMOV::sCMOVNO(THREADID tid, bool isPredicatTrue, ADDRINT insAddress)
 void CMOV::sCMOVP (THREADID tid, bool isPredicatTrue, ADDRINT insAddress)
 { 
     // CMOVP/CMOVPE       PF = 1          Parity/parity even
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     if (pTmgrTls->isParityFlagTainted()) 
     {
         _LOGTAINT("CMOVP");
@@ -377,7 +377,7 @@ void CMOV::sCMOVP (THREADID tid, bool isPredicatTrue, ADDRINT insAddress)
 void CMOV::sCMOVNP(THREADID tid, bool isPredicatTrue, ADDRINT insAddress)
 { 
     // CMOVNP/CMOVPO      PF = 0          Not parity/parity odd
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     if (pTmgrTls->isParityFlagTainted()) 
     {
         _LOGTAINT("CMOVNP");
@@ -388,7 +388,7 @@ void CMOV::sCMOVNP(THREADID tid, bool isPredicatTrue, ADDRINT insAddress)
 void CMOV::sCMOVZ (THREADID tid, bool isPredicatTrue, ADDRINT insAddress)
 { 
     // CMOVE/CMOVZ        ZF = 1          Equal/zero
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     if (pTmgrTls->isZeroFlagTainted()) 
     {
         _LOGTAINT("CMOVZ");
@@ -399,7 +399,7 @@ void CMOV::sCMOVZ (THREADID tid, bool isPredicatTrue, ADDRINT insAddress)
 void CMOV::sCMOVNZ(THREADID tid, bool isPredicatTrue, ADDRINT insAddress)
 {
     // CMOVNE/CMOVNZ      ZF = 0          Not equal/not zero
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     if (pTmgrTls->isZeroFlagTainted()) 
     {
         _LOGTAINT("CMOVNZ");
@@ -410,7 +410,7 @@ void CMOV::sCMOVNZ(THREADID tid, bool isPredicatTrue, ADDRINT insAddress)
 void CMOV::sCMOVBE(THREADID tid, bool isPredicatTrue, ADDRINT regEflagsValue, ADDRINT insAddress)
 {
     // (CF or ZF) = 1  Below or equal/not above
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     if (pTmgrTls->isZeroFlagTainted() || pTmgrTls->isCarryFlagTainted() ) 
     {
         _LOGTAINT("CMOVBE");
@@ -421,7 +421,7 @@ void CMOV::sCMOVBE(THREADID tid, bool isPredicatTrue, ADDRINT regEflagsValue, AD
 void CMOV::sCMOVNBE(THREADID tid, bool isPredicatTrue, ADDRINT regEflagsValue, ADDRINT insAddress)
 {
     // CMOVA/CMOVNBE      (CF or ZF) = 0  Above/not below or equal
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     if (pTmgrTls->isZeroFlagTainted() || pTmgrTls->isCarryFlagTainted() ) 
     {
         _LOGTAINT("CMOVNBE");
@@ -432,7 +432,7 @@ void CMOV::sCMOVNBE(THREADID tid, bool isPredicatTrue, ADDRINT regEflagsValue, A
 void CMOV::sCMOVL(THREADID tid, bool isPredicatTrue, ADDRINT regEflagsValue, ADDRINT insAddress)
 {
     // CMOVL/CMOVNGE      (SF xor OF) = 1 Less/not greater or equal
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     if (pTmgrTls->isSignFlagTainted() || pTmgrTls->isOverflowFlagTainted() ) 
     {
         _LOGTAINT("CMOVL");
@@ -443,7 +443,7 @@ void CMOV::sCMOVL(THREADID tid, bool isPredicatTrue, ADDRINT regEflagsValue, ADD
 void CMOV::sCMOVNL(THREADID tid, bool isPredicatTrue, ADDRINT regEflagsValue, ADDRINT insAddress)
 { 
     // CMOVGE/CMOVNL      (SF xor OF) = 0 Greater or equal/not less
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     if (pTmgrTls->isSignFlagTainted() || pTmgrTls->isOverflowFlagTainted() ) 
     {
         _LOGTAINT("CMOVNL");
@@ -454,7 +454,7 @@ void CMOV::sCMOVNL(THREADID tid, bool isPredicatTrue, ADDRINT regEflagsValue, AD
 void CMOV::sCMOVLE(THREADID tid, bool isPredicatTrue, ADDRINT regEflagsValue, ADDRINT insAddress) 
 { 
     // CMOVLE/CMOVNG      ((SF xor OF) or ZF) = 1 Less or equal/not greater
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     if (pTmgrTls->isZeroFlagTainted() 
         || pTmgrTls->isSignFlagTainted() 
         || pTmgrTls->isOverflowFlagTainted() ) 
@@ -467,7 +467,7 @@ void CMOV::sCMOVLE(THREADID tid, bool isPredicatTrue, ADDRINT regEflagsValue, AD
 void CMOV::sCMOVNLE(THREADID tid, bool isPredicatTrue, ADDRINT regEflagsValue, ADDRINT insAddress) 
 {
     // CMOVG/CMOVNLE      ((SF xor OF) or ZF) = 0 Greater/not less or equal
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     if (pTmgrTls->isZeroFlagTainted() 
         || pTmgrTls->isSignFlagTainted() 
         || pTmgrTls->isOverflowFlagTainted() ) 

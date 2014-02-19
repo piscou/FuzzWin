@@ -53,7 +53,7 @@ template<UINT32 lengthInBits> void STRINGOP::sSTOS
 {
     // déplacement de "count" octets/mot/dble mots de AL/AX/EAX/RAX -> [EDI] 
     
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
         
     // 1) recupération du marquage du registre, et stockage dans un vecteur.
     // et stockage dans un tableau d'objets (ou nullPtr)
@@ -95,7 +95,7 @@ template<UINT32 lengthInBits> void STRINGOP::sStoreTaintSCAS(
     // procédure appelée lors de la première itération (callback IF/THEN)
     // sert à stocker dans TaintManager les arguments (marquage, adresse)
     
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     StringOpInfo strInfo = {0};
 
     // mise en cache de la valeur du préfixe (true = REPZ/E, false = REPNZ/E)
@@ -124,7 +124,7 @@ template<UINT32 lengthInBits> void STRINGOP::sSCAS(THREADID tid, ADDRINT address
     // + ajout d'une contrainte sur ZFLAG, indiquant une répétition ou non
     // métohde identique à CMP_MR, reprise ici intégralement afin d'insérer la contrainte sur le ZFLAG
     
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     StringOpInfo strInfo = pTmgrTls->getStoredStringOpInfo();
     
     bool isSrcDestTainted = strInfo.isRegTainted;
@@ -157,7 +157,7 @@ template<UINT32 lengthInBits> void STRINGOP::sCMPS
     bool isSrcTainted =		pTmgrGlobal->isMemoryTainted<lengthInBits>(esiAddr);
     bool isSrcDestTainted = pTmgrGlobal->isMemoryTainted<lengthInBits>(ediAddr);	
     
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     
     if ( !(isSrcDestTainted || isSrcTainted)) pTmgrTls->unTaintAllFlags();
     else 

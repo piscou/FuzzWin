@@ -103,7 +103,7 @@ void SEMAPHORE::cCMPXCHG16B(INS &ins)
 
 void SEMAPHORE::sCMPXCHG8B(THREADID tid, ADDRINT address, ADDRINT regEAXValue, ADDRINT regEDXValue ADDRESS_DEBUG)
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     
     // 1ere partie de CMPXCHG8B :
     // CMP_RM entre EDX:EAX et m64. 
@@ -174,7 +174,7 @@ void SEMAPHORE::sCMPXCHG8B(THREADID tid, ADDRINT address, ADDRINT regEAXValue, A
 #if TARGET_IA32E
 void SEMAPHORE::sCMPXCHG16B(THREADID tid, ADDRINT address, ADDRINT regRAXValue, ADDRINT regRDXValue ADDRESS_DEBUG)
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     
     // 1ere partie de CMPXCHG16B :
     // CMP_RM entre RDX:RAX et m128. 

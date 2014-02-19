@@ -409,7 +409,7 @@ void BITBYTE::cSETNLE(INS &ins)
 // -------------------
 void BITBYTE::sSETB_M(THREADID tid, ADDRINT address, ADDRINT insAddress)
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     // SETB/SETNAE/SETC   CF = 1     Below/not above or equal/carry   
     if (pTmgrTls->isCarryFlagTainted()) 
     {
@@ -424,7 +424,7 @@ void BITBYTE::sSETB_M(THREADID tid, ADDRINT address, ADDRINT insAddress)
 
 void BITBYTE::sSETNB_M(THREADID tid, ADDRINT address, ADDRINT insAddress)
 { 
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     // SETAE/SETNB/SETNC  CF = 0     Above or equal/not below
     if (pTmgrTls->isCarryFlagTainted()) 
     {
@@ -439,7 +439,7 @@ void BITBYTE::sSETNB_M(THREADID tid, ADDRINT address, ADDRINT insAddress)
 
 void BITBYTE::sSETS_M(THREADID tid, ADDRINT address, ADDRINT insAddress)
 { 
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     // SETS           SF = 1          Sign (negative)
     if (pTmgrTls->isSignFlagTainted()) 
     {
@@ -454,7 +454,7 @@ void BITBYTE::sSETS_M(THREADID tid, ADDRINT address, ADDRINT insAddress)
 
 void BITBYTE::sSETNS_M(THREADID tid, ADDRINT address, ADDRINT insAddress)
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     // SETNS       SF = 0      Not sign (non-negative)
     if (pTmgrTls->isSignFlagTainted()) 
     {
@@ -469,7 +469,7 @@ void BITBYTE::sSETNS_M(THREADID tid, ADDRINT address, ADDRINT insAddress)
 
 void BITBYTE::sSETO_M(THREADID tid, ADDRINT address, ADDRINT insAddress)
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     // SETO           OF = 1          Overflow
     if (pTmgrTls->isOverflowFlagTainted())  
     {
@@ -483,7 +483,7 @@ void BITBYTE::sSETO_M(THREADID tid, ADDRINT address, ADDRINT insAddress)
 
 void BITBYTE::sSETNO_M(THREADID tid, ADDRINT address, ADDRINT insAddress)
 { 
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     // SETNO           OF = 0          not Overflow
     if (pTmgrTls->isOverflowFlagTainted()) 
     {
@@ -497,7 +497,7 @@ void BITBYTE::sSETNO_M(THREADID tid, ADDRINT address, ADDRINT insAddress)
 
 void BITBYTE::sSETP_M(THREADID tid, ADDRINT address, ADDRINT insAddress)
 { 
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     // SETP/SETPE       PF = 1          Parity/parity even
     if (pTmgrTls->isParityFlagTainted()) 
     {
@@ -511,7 +511,7 @@ void BITBYTE::sSETP_M(THREADID tid, ADDRINT address, ADDRINT insAddress)
 
 void BITBYTE::sSETNP_M(THREADID tid, ADDRINT address, ADDRINT insAddress)
 { 
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     // SETNP/SETPO      PF = 0          Not parity/parity odd
     if (pTmgrTls->isParityFlagTainted()) 
     {
@@ -525,7 +525,7 @@ void BITBYTE::sSETNP_M(THREADID tid, ADDRINT address, ADDRINT insAddress)
 
 void BITBYTE::sSETZ_M(THREADID tid, ADDRINT address, ADDRINT insAddress)
 { 
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     // SETE/SETZ        ZF = 1          Equal/zero
     if (pTmgrTls->isZeroFlagTainted()) 
     {
@@ -539,7 +539,7 @@ void BITBYTE::sSETZ_M(THREADID tid, ADDRINT address, ADDRINT insAddress)
 
 void BITBYTE::sSETNZ_M(THREADID tid, ADDRINT address, ADDRINT insAddress)
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     // SETNE/SETNZ      ZF = 0          Not equal/not zero
     if (pTmgrTls->isZeroFlagTainted()) 
     {
@@ -553,7 +553,7 @@ void BITBYTE::sSETNZ_M(THREADID tid, ADDRINT address, ADDRINT insAddress)
 
 void BITBYTE::sSETBE_M(THREADID tid, ADDRINT address, ADDRINT regEflagsValue, ADDRINT insAddress)
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     // (CF or ZF) = 1  Below or equal/not above
     if (pTmgrTls->isZeroFlagTainted() || pTmgrTls->isCarryFlagTainted() ) 
     {
@@ -567,7 +567,7 @@ void BITBYTE::sSETBE_M(THREADID tid, ADDRINT address, ADDRINT regEflagsValue, AD
 
 void BITBYTE::sSETNBE_M(THREADID tid, ADDRINT address, ADDRINT regEflagsValue, ADDRINT insAddress)
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     // SETA/SETNBE      (CF or ZF) = 0  Above/not below or equal
     if (pTmgrTls->isZeroFlagTainted() || pTmgrTls->isCarryFlagTainted() ) 
     {
@@ -581,7 +581,7 @@ void BITBYTE::sSETNBE_M(THREADID tid, ADDRINT address, ADDRINT regEflagsValue, A
 
 void BITBYTE::sSETL_M(THREADID tid, ADDRINT address, ADDRINT regEflagsValue, ADDRINT insAddress)
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     // SETL/SETNGE      (SF xor OF) = 1 Less/not greater or equal
     if (pTmgrTls->isSignFlagTainted() || pTmgrTls->isOverflowFlagTainted() ) 
     {
@@ -595,7 +595,7 @@ void BITBYTE::sSETL_M(THREADID tid, ADDRINT address, ADDRINT regEflagsValue, ADD
 
 void BITBYTE::sSETNL_M(THREADID tid, ADDRINT address, ADDRINT regEflagsValue, ADDRINT insAddress)
 { 
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     // SETGE/SETNL      (SF xor OF) = 0 Greater or equal/not less
     if (pTmgrTls->isSignFlagTainted() || pTmgrTls->isOverflowFlagTainted() ) 
     {
@@ -609,7 +609,7 @@ void BITBYTE::sSETNL_M(THREADID tid, ADDRINT address, ADDRINT regEflagsValue, AD
 
 void BITBYTE::sSETLE_M(THREADID tid, ADDRINT address, ADDRINT regEflagsValue, ADDRINT insAddress) 
 { 
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     // SETLE/SETNG      ((SF xor OF) or ZF) = 1 Less or equal/not greater
     if (pTmgrTls->isZeroFlagTainted() 
         || pTmgrTls->isSignFlagTainted() 
@@ -625,7 +625,7 @@ void BITBYTE::sSETLE_M(THREADID tid, ADDRINT address, ADDRINT regEflagsValue, AD
 
 void BITBYTE::sSETNLE_M(THREADID tid, ADDRINT address, ADDRINT regEflagsValue, ADDRINT insAddress) 
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     // SETG/SETNLE      ((SF xor OF) or ZF) = 0 Greater/not less or equal
     if (pTmgrTls->isZeroFlagTainted() 
         || pTmgrTls->isSignFlagTainted() 
@@ -647,7 +647,7 @@ void BITBYTE::sSETNLE_M(THREADID tid, ADDRINT address, ADDRINT regEflagsValue, A
 
 void BITBYTE::sSETB_R(THREADID tid, REG regDest, ADDRINT regDestValue, ADDRINT insAddress)
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     // SETB/SETNAE/SETC   CF = 1     Below/not above or equal/carry   
     if (pTmgrTls->isCarryFlagTainted()) 
     {
@@ -662,7 +662,7 @@ void BITBYTE::sSETB_R(THREADID tid, REG regDest, ADDRINT regDestValue, ADDRINT i
 
 void BITBYTE::sSETNB_R(THREADID tid, REG regDest, ADDRINT regDestValue, ADDRINT insAddress)
 { 
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     // SETAE/SETNB/SETNC  CF = 0     Above or equal/not below
     if (pTmgrTls->isCarryFlagTainted()) 
     {
@@ -677,7 +677,7 @@ void BITBYTE::sSETNB_R(THREADID tid, REG regDest, ADDRINT regDestValue, ADDRINT 
 
 void BITBYTE::sSETS_R(THREADID tid, REG regDest, ADDRINT regDestValue, ADDRINT insAddress)
 { 
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     // SETS           SF = 1          Sign (negative)
     if (pTmgrTls->isSignFlagTainted()) 
     {
@@ -692,7 +692,7 @@ void BITBYTE::sSETS_R(THREADID tid, REG regDest, ADDRINT regDestValue, ADDRINT i
 
 void BITBYTE::sSETNS_R(THREADID tid, REG regDest, ADDRINT regDestValue, ADDRINT insAddress)
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     // SETNS       SF = 0      Not sign (non-negative)
     if (pTmgrTls->isSignFlagTainted()) 
     {
@@ -707,7 +707,7 @@ void BITBYTE::sSETNS_R(THREADID tid, REG regDest, ADDRINT regDestValue, ADDRINT 
 
 void BITBYTE::sSETO_R(THREADID tid, REG regDest, ADDRINT regDestValue, ADDRINT insAddress)
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     // SETO           OF = 1          Overflow
     if (pTmgrTls->isOverflowFlagTainted())  
     {
@@ -721,7 +721,7 @@ void BITBYTE::sSETO_R(THREADID tid, REG regDest, ADDRINT regDestValue, ADDRINT i
 
 void BITBYTE::sSETNO_R(THREADID tid,REG regDest, ADDRINT regDestValue, ADDRINT insAddress)
 { 
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     // SETNO           OF = 0          not Overflow
     if (pTmgrTls->isOverflowFlagTainted()) 
     {
@@ -735,7 +735,7 @@ void BITBYTE::sSETNO_R(THREADID tid,REG regDest, ADDRINT regDestValue, ADDRINT i
 
 void BITBYTE::sSETP_R(THREADID tid, REG regDest, ADDRINT regDestValue, ADDRINT insAddress)
 { 
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     // SETP/SETPE       PF = 1          Parity/parity even
     if (pTmgrTls->isParityFlagTainted()) 
     {
@@ -749,7 +749,7 @@ void BITBYTE::sSETP_R(THREADID tid, REG regDest, ADDRINT regDestValue, ADDRINT i
 
 void BITBYTE::sSETNP_R(THREADID tid, REG regDest, ADDRINT regDestValue, ADDRINT insAddress)
 { 
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     // SETNP/SETPO      PF = 0          Not parity/parity odd
     if (pTmgrTls->isParityFlagTainted()) 
     {
@@ -763,7 +763,7 @@ void BITBYTE::sSETNP_R(THREADID tid, REG regDest, ADDRINT regDestValue, ADDRINT 
 
 void BITBYTE::sSETZ_R(THREADID tid, REG regDest, ADDRINT regDestValue, ADDRINT insAddress)
 { 
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     // SETE/SETZ        ZF = 1          Equal/zero
     if (pTmgrTls->isZeroFlagTainted()) 
     {
@@ -777,7 +777,7 @@ void BITBYTE::sSETZ_R(THREADID tid, REG regDest, ADDRINT regDestValue, ADDRINT i
 
 void BITBYTE::sSETNZ_R(THREADID tid, REG regDest, ADDRINT regDestValue, ADDRINT insAddress)
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     // SETNE/SETNZ      ZF = 0          Not equal/not zero
     if (pTmgrTls->isZeroFlagTainted()) 
     {
@@ -791,7 +791,7 @@ void BITBYTE::sSETNZ_R(THREADID tid, REG regDest, ADDRINT regDestValue, ADDRINT 
 
 void BITBYTE::sSETBE_R(THREADID tid, REG regDest, ADDRINT regDestValue, ADDRINT regEflagsValue, ADDRINT insAddress)
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     // (CF or ZF) = 1  Below or equal/not above
     if (pTmgrTls->isZeroFlagTainted() || pTmgrTls->isCarryFlagTainted() ) 
     {
@@ -805,7 +805,7 @@ void BITBYTE::sSETBE_R(THREADID tid, REG regDest, ADDRINT regDestValue, ADDRINT 
 
 void BITBYTE::sSETNBE_R(THREADID tid, REG regDest, ADDRINT regDestValue, ADDRINT regEflagsValue, ADDRINT insAddress)
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     // SETA/SETNBE      (CF or ZF) = 0  Above/not below or equal
     if (pTmgrTls->isZeroFlagTainted() || pTmgrTls->isCarryFlagTainted() ) 
     {
@@ -819,7 +819,7 @@ void BITBYTE::sSETNBE_R(THREADID tid, REG regDest, ADDRINT regDestValue, ADDRINT
 
 void BITBYTE::sSETL_R(THREADID tid, REG regDest, ADDRINT regDestValue, ADDRINT regEflagsValue, ADDRINT insAddress)
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     // SETL/SETNGE      (SF xor OF) = 1 Less/not greater or equal
     if (pTmgrTls->isSignFlagTainted() || pTmgrTls->isOverflowFlagTainted() ) 
     {
@@ -833,7 +833,7 @@ void BITBYTE::sSETL_R(THREADID tid, REG regDest, ADDRINT regDestValue, ADDRINT r
 
 void BITBYTE::sSETNL_R(THREADID tid, REG regDest, ADDRINT regDestValue, ADDRINT regEflagsValue, ADDRINT insAddress)
 { 
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     // SETGE/SETNL      (SF xor OF) = 0 Greater or equal/not less
     if (pTmgrTls->isSignFlagTainted() || pTmgrTls->isOverflowFlagTainted() ) 
     {
@@ -847,7 +847,7 @@ void BITBYTE::sSETNL_R(THREADID tid, REG regDest, ADDRINT regDestValue, ADDRINT 
 
 void BITBYTE::sSETLE_R(THREADID tid, REG regDest, ADDRINT regDestValue, ADDRINT regEflagsValue, ADDRINT insAddress) 
 { 
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     // SETLE/SETNG      ((SF xor OF) or ZF) = 1 Less or equal/not greater
     if (pTmgrTls->isZeroFlagTainted() 
         || pTmgrTls->isSignFlagTainted() 
@@ -863,7 +863,7 @@ void BITBYTE::sSETLE_R(THREADID tid, REG regDest, ADDRINT regDestValue, ADDRINT 
 
 void BITBYTE::sSETNLE_R(THREADID tid, REG regDest, ADDRINT regDestValue, ADDRINT regEflagsValue, ADDRINT insAddress) 
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     // SETG/SETNLE      ((SF xor OF) or ZF) = 0 Greater/not less or equal
     if (pTmgrTls->isZeroFlagTainted() 
         || pTmgrTls->isSignFlagTainted() 

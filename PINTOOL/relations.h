@@ -23,8 +23,10 @@ enum Relation
     X_ASSIGN, 
     //! SIGN_EXTEND : Source 1 = source (longueur < à destination)
     X_SIGNEXTEND,
+    //! ZERO_EXTEND : Source 1 = source (longueur < à destination)
+    X_ZEROEXTEND,
     
-    /**  BINARY **/
+    /**  BINARY **/   
     //! ADD : source 1 = source, source 2 = src/dest
     X_ADD,
     //! INC : source 1 = source
@@ -222,7 +224,7 @@ const static std::string enum_strings[RELATION_LAST] =
     /**** Relations de modelisation des instructions x86 ****/
 
     // DATAXFER
-    "X_ASSIGN", "X_SIGNEXTEND",
+    "X_ASSIGN", "X_SIGNEXTEND", "X_ZEROEXTEND",
     
     // BINARY
     "X_ADD", "X_INC", "X_SUB", "X_DEC", "X_NEG",

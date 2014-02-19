@@ -139,7 +139,7 @@ void LOGICAL::cAND(INS &ins)
 // SIMULATE (spécialisation des templates)
 template<> void LOGICAL::sAND_IM<8>(THREADID tid, ADDRINT value, ADDRINT writeAddress ADDRESS_DEBUG) 
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     
     if (!pTmgrGlobal->isMemoryTainted<8>(writeAddress)) pTmgrTls->unTaintAllFlags();
     else if (!value) // AND x, 0 = 0, donc démarquage destination et flags
@@ -168,7 +168,7 @@ template<> void LOGICAL::sAND_IM<8>(THREADID tid, ADDRINT value, ADDRINT writeAd
 
 template<> void LOGICAL::sAND_IR<8>(THREADID tid, ADDRINT value, REG reg, ADDRINT unUsed ADDRESS_DEBUG) 
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     
     if ( !pTmgrTls->isRegisterTainted<8>(reg)) pTmgrTls->unTaintAllFlags();
     else if (!value)  // AND x, 0 = 0, donc démarquage destination et flags
@@ -198,7 +198,7 @@ template<> void LOGICAL::sAND_IR<8>(THREADID tid, ADDRINT value, REG reg, ADDRIN
 template<> void LOGICAL::sAND_RM<8>
     (THREADID tid, REG regSrc, ADDRINT srcValue, ADDRINT writeAddress ADDRESS_DEBUG)
 {   
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
 
     bool isDestTainted = pTmgrGlobal->isMemoryTainted<8>(writeAddress);
     bool isSrcTainted  = pTmgrTls->isRegisterTainted<8>(regSrc);
@@ -281,7 +281,7 @@ template<> void LOGICAL::sAND_RM<8>
 template<> void LOGICAL::sAND_MR<8>
     (THREADID tid, ADDRINT readAddress, REG regSrcDest, ADDRINT destValue ADDRESS_DEBUG) 
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
 
     bool isDestTainted = pTmgrTls->isRegisterTainted<8>(regSrcDest);
     bool isSrcTainted  = pTmgrGlobal->isMemoryTainted<8>(readAddress);  
@@ -364,7 +364,7 @@ template<> void LOGICAL::sAND_MR<8>
 template<> void LOGICAL::sAND_RR<8>
     (THREADID tid, REG regSrc, ADDRINT srcValue, REG regSrcDest, ADDRINT destValue ADDRESS_DEBUG)
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
 
     bool isDestTainted = pTmgrTls->isRegisterTainted<8>(regSrcDest);
     bool isSrcTainted  = pTmgrTls->isRegisterTainted<8>(regSrc);  
@@ -564,7 +564,7 @@ void LOGICAL::cOR(INS &ins)
 // SIMULATE (spécialisation des templates)
 template<> void LOGICAL::sOR_IM<8>(THREADID tid, ADDRINT value, ADDRINT writeAddress ADDRESS_DEBUG) 
 { 
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
 
     if ( !pTmgrGlobal->isMemoryTainted<8>(writeAddress)) pTmgrTls->unTaintAllFlags();
     else if (value == 0xff) 
@@ -594,7 +594,7 @@ template<> void LOGICAL::sOR_IM<8>(THREADID tid, ADDRINT value, ADDRINT writeAdd
 
 template<> void LOGICAL::sOR_IR<8>(THREADID tid, ADDRINT value, REG reg, ADDRINT unUsed ADDRESS_DEBUG) 
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     
     if ( !pTmgrTls->isRegisterTainted<8>(reg))  pTmgrTls->unTaintAllFlags();
     else if (value == 0xff)  // OR x, 0xff = 0xff, donc démarquage destination et flags
@@ -625,7 +625,7 @@ template<> void LOGICAL::sOR_IR<8>(THREADID tid, ADDRINT value, REG reg, ADDRINT
 template<> void LOGICAL::sOR_RM<8>
     (THREADID tid, REG regSrc, ADDRINT srcValue, ADDRINT writeAddress ADDRESS_DEBUG) 
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
 
     bool isDestTainted = pTmgrGlobal->isMemoryTainted<8>(writeAddress);
     bool isSrcTainted  = pTmgrTls->isRegisterTainted<8>(regSrc);
@@ -709,7 +709,7 @@ template<> void LOGICAL::sOR_RM<8>
 template<> void LOGICAL::sOR_MR<8>
     (THREADID tid, ADDRINT readAddress, REG regSrcDest, ADDRINT destValue ADDRESS_DEBUG) 
 {   
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
 
     bool isDestTainted = pTmgrTls->isRegisterTainted<8>(regSrcDest);
     bool isSrcTainted  = pTmgrGlobal->isMemoryTainted<8>(readAddress);  
@@ -792,7 +792,7 @@ template<> void LOGICAL::sOR_MR<8>
 template<> void LOGICAL::sOR_RR<8>
     (THREADID tid, REG regSrc, ADDRINT srcValue, REG regSrcDest, ADDRINT destValue ADDRESS_DEBUG)
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
 
     bool isDestTainted = pTmgrTls->isRegisterTainted<8>(regSrcDest);
     bool isSrcTainted  = pTmgrTls->isRegisterTainted<8>(regSrc);  
@@ -1014,7 +1014,7 @@ void LOGICAL::cXOR(INS &ins)
 // SIMULATE (spécialisation des templates)
 template<> void LOGICAL::sXOR_IM<8>(THREADID tid, ADDRINT value, ADDRINT writeAddress ADDRESS_DEBUG) 
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
 
     if ( !pTmgrGlobal->isMemoryTainted<8>(writeAddress)) pTmgrTls->unTaintAllFlags();
     else 
@@ -1050,7 +1050,7 @@ template<> void LOGICAL::sXOR_IM<8>(THREADID tid, ADDRINT value, ADDRINT writeAd
 
 template<> void LOGICAL::sXOR_IR<8>(THREADID tid, ADDRINT value, REG reg, ADDRINT unUsed ADDRESS_DEBUG) 
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     
     if ( !pTmgrTls->isRegisterTainted<8>(reg))  pTmgrTls->unTaintAllFlags();
     else 
@@ -1087,7 +1087,7 @@ template<> void LOGICAL::sXOR_IR<8>(THREADID tid, ADDRINT value, REG reg, ADDRIN
 template<> void LOGICAL::sXOR_RM<8>
     (THREADID tid, REG regSrc, ADDRINT srcValue, ADDRINT writeAddress ADDRESS_DEBUG) 
 {      
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     
     bool isDestTainted = pTmgrGlobal->isMemoryTainted<8>(writeAddress);
     bool isSrcTainted  = pTmgrTls->isRegisterTainted<8>(regSrc);
@@ -1183,7 +1183,7 @@ template<> void LOGICAL::sXOR_RM<8>
 template<> void LOGICAL::sXOR_MR<8>
     (THREADID tid, ADDRINT readAddress, REG regSrcDest, ADDRINT destValue ADDRESS_DEBUG) 
 {   
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
 
     bool isDestTainted = pTmgrTls->isRegisterTainted<8>(regSrcDest);
     bool isSrcTainted  = pTmgrGlobal->isMemoryTainted<8>(readAddress);  
@@ -1275,7 +1275,7 @@ template<> void LOGICAL::sXOR_MR<8>
 template<> void LOGICAL::sXOR_RR<8>
     (THREADID tid, REG regSrc, ADDRINT srcValue, REG regSrcDest, ADDRINT destValue ADDRESS_DEBUG) 
 {   
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
 
     bool isDestTainted = pTmgrTls->isRegisterTainted<8>(regSrcDest);
     bool isSrcTainted  = pTmgrTls->isRegisterTainted<8>(regSrc); 
@@ -1550,7 +1550,7 @@ void LOGICAL::cNOT(INS &ins)
 // SIMULATE (spécialisation des templates)
 template<> void LOGICAL::sNOT_R<8>(THREADID tid, REG reg ADDRESS_DEBUG) 
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
 
     if (pTmgrTls->isRegisterTainted<8>(reg)) 
     {

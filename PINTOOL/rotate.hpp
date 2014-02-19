@@ -5,7 +5,7 @@
 template<UINT32 lengthInBits> 
 void ROTATE::sROL_IM(THREADID tid, UINT32 maskedDepl, ADDRINT writeAddress ADDRESS_DEBUG) 
 {  
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
 
     // opérande non marquée => démarquage flags
     if (!pTmgrGlobal->isMemoryTainted<lengthInBits>(writeAddress)) fUnTaintROTATE(pTmgrTls);
@@ -14,7 +14,7 @@ void ROTATE::sROL_IM(THREADID tid, UINT32 maskedDepl, ADDRINT writeAddress ADDRE
         _LOGTAINT("ROLIM " << lengthInBits << " ");
         
         // construction du résultat
-        std::shared_ptr<TaintObject<lengthInBits>> resultPtr = std::make_shared<TaintObject<lengthInBits>>(
+        TAINT_OBJECT_PTR resultPtr = MK_TAINT_OBJECT_PTR(
             X_ROL,
             ObjectSource(pTmgrGlobal->getMemoryTaint<lengthInBits>(writeAddress)),  
             ObjectSource(8, maskedDepl));
@@ -60,7 +60,7 @@ void ROTATE::sROL_IM(THREADID tid, UINT32 maskedDepl, ADDRINT writeAddress ADDRE
 template<UINT32 lengthInBits> 
 void ROTATE::sROL_IR(THREADID tid, UINT32 maskedDepl, REG reg, ADDRINT regValue ADDRESS_DEBUG) 
 {  
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
 
     // opérande non marquée => démarquage flags
     if (!pTmgrTls->isRegisterTainted<lengthInBits>(reg)) fUnTaintROTATE(pTmgrTls);
@@ -69,7 +69,7 @@ void ROTATE::sROL_IR(THREADID tid, UINT32 maskedDepl, REG reg, ADDRINT regValue 
         _LOGTAINT("ROLIR " << lengthInBits << " ");
         
         // construction du résultat
-        std::shared_ptr<TaintObject<lengthInBits>> resultPtr = std::make_shared<TaintObject<lengthInBits>>(
+        TAINT_OBJECT_PTR resultPtr = MK_TAINT_OBJECT_PTR(
             X_ROL,
             ObjectSource(pTmgrTls->getRegisterTaint<lengthInBits>(reg, regValue)),  
             ObjectSource(8, maskedDepl));
@@ -114,7 +114,7 @@ void ROTATE::sROL_IR(THREADID tid, UINT32 maskedDepl, REG reg, ADDRINT regValue 
 template<UINT32 lengthInBits> 
 void ROTATE::sROL_RM(THREADID tid, ADDRINT regCLValue, ADDRINT writeAddress ADDRESS_DEBUG) 
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
 
     bool isCountTainted = pTmgrTls->isRegisterTainted<8>(REG_CL);
     bool isDestTainted  = pTmgrGlobal->isMemoryTainted<lengthInBits>(writeAddress);
@@ -137,7 +137,7 @@ void ROTATE::sROL_RM(THREADID tid, ADDRINT regCLValue, ADDRINT writeAddress ADDR
             : ObjectSource(lengthInBits, getMemoryValue<lengthInBits>(writeAddress)); 
 
         // création de l'objet resultat de l'opération
-        std::shared_ptr<TaintObject<lengthInBits>> resultPtr = std::make_shared<TaintObject<lengthInBits>>(
+        TAINT_OBJECT_PTR resultPtr = MK_TAINT_OBJECT_PTR(
             X_ROL,
             objSrcMem,
             ObjectSource(pTmgrTls->getRegisterTaint(REG_CL))); // CL contient le nombre de bits de la rotation
@@ -152,7 +152,7 @@ void ROTATE::sROL_RM(THREADID tid, ADDRINT regCLValue, ADDRINT writeAddress ADDR
 template<UINT32 lengthInBits> 
 void ROTATE::sROL_RR(THREADID tid, ADDRINT regCLValue, REG reg, ADDRINT regValue ADDRESS_DEBUG) 
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
 
     bool isCountTainted = pTmgrTls->isRegisterTainted<8>(REG_CL);
     bool isDestTainted  = pTmgrTls->isRegisterTainted<lengthInBits>(reg);
@@ -175,7 +175,7 @@ void ROTATE::sROL_RR(THREADID tid, ADDRINT regCLValue, REG reg, ADDRINT regValue
             : ObjectSource(lengthInBits, regValue); 
 
         // création de l'objet resultat de l'opération
-        std::shared_ptr<TaintObject<lengthInBits>> resultPtr = std::make_shared<TaintObject<lengthInBits>>(
+        TAINT_OBJECT_PTR resultPtr = MK_TAINT_OBJECT_PTR(
             X_ROL,
             objSrcReg,
             ObjectSource(pTmgrTls->getRegisterTaint(REG_CL))); // CL contient le nombre de bits de la rotation
@@ -195,7 +195,7 @@ void ROTATE::sROL_RR(THREADID tid, ADDRINT regCLValue, REG reg, ADDRINT regValue
 template<UINT32 lengthInBits> 
 void ROTATE::sROR_IM(THREADID tid, UINT32 maskedDepl, ADDRINT writeAddress ADDRESS_DEBUG)
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
 
     // opérande non marquée => démarquage flags
     if (!pTmgrGlobal->isMemoryTainted<lengthInBits>(writeAddress)) fUnTaintROTATE(pTmgrTls);
@@ -204,7 +204,7 @@ void ROTATE::sROR_IM(THREADID tid, UINT32 maskedDepl, ADDRINT writeAddress ADDRE
         _LOGTAINT("RORIM " << lengthInBits << " ");
         
         // construction du résultat
-        std::shared_ptr<TaintObject<lengthInBits>> resultPtr = std::make_shared<TaintObject<lengthInBits>>(
+        TAINT_OBJECT_PTR resultPtr = MK_TAINT_OBJECT_PTR(
             X_ROR,
             ObjectSource(pTmgrGlobal->getMemoryTaint<lengthInBits>(writeAddress)),  
             ObjectSource(8, maskedDepl));
@@ -250,7 +250,7 @@ void ROTATE::sROR_IM(THREADID tid, UINT32 maskedDepl, ADDRINT writeAddress ADDRE
 template<UINT32 lengthInBits> 
 void ROTATE::sROR_IR(THREADID tid, UINT32 maskedDepl, REG reg, ADDRINT regValue ADDRESS_DEBUG)
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
 
     // opérande non marquée => démarquage flags
     if (!pTmgrTls->isRegisterTainted<lengthInBits>(reg)) fUnTaintROTATE(pTmgrTls);
@@ -259,7 +259,7 @@ void ROTATE::sROR_IR(THREADID tid, UINT32 maskedDepl, REG reg, ADDRINT regValue 
         _LOGTAINT("ROLIR " << lengthInBits << " ");
         
         // construction du résultat
-        std::shared_ptr<TaintObject<lengthInBits>> resultPtr = std::make_shared<TaintObject<lengthInBits>>(
+        TAINT_OBJECT_PTR resultPtr = MK_TAINT_OBJECT_PTR(
             X_ROR,
             ObjectSource(pTmgrTls->getRegisterTaint<lengthInBits>(reg, regValue)),  
             ObjectSource(8, maskedDepl));
@@ -304,7 +304,7 @@ void ROTATE::sROR_IR(THREADID tid, UINT32 maskedDepl, REG reg, ADDRINT regValue 
 template<UINT32 lengthInBits> 
 void ROTATE::sROR_RM(THREADID tid, ADDRINT regCLValue, ADDRINT writeAddress ADDRESS_DEBUG)
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
 
     bool isCountTainted = pTmgrTls->isRegisterTainted<8>(REG_CL);
     bool isDestTainted  = pTmgrGlobal->isMemoryTainted<lengthInBits>(writeAddress);
@@ -327,7 +327,7 @@ void ROTATE::sROR_RM(THREADID tid, ADDRINT regCLValue, ADDRINT writeAddress ADDR
             : ObjectSource(lengthInBits, getMemoryValue<lengthInBits>(writeAddress)); 
 
         // création de l'objet resultat de l'opération
-        std::shared_ptr<TaintObject<lengthInBits>> resultPtr = std::make_shared<TaintObject<lengthInBits>>(
+        TAINT_OBJECT_PTR resultPtr = MK_TAINT_OBJECT_PTR(
             X_ROR,
             objSrcMem,
             ObjectSource(pTmgrTls->getRegisterTaint(REG_CL))); // CL contient le nombre de bits de la rotation
@@ -342,7 +342,7 @@ void ROTATE::sROR_RM(THREADID tid, ADDRINT regCLValue, ADDRINT writeAddress ADDR
 template<UINT32 lengthInBits>
 void ROTATE::sROR_RR(THREADID tid, ADDRINT regCLValue, REG reg, ADDRINT regValue ADDRESS_DEBUG)
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
 
     bool isCountTainted = pTmgrTls->isRegisterTainted<8>(REG_CL);
     bool isDestTainted  = pTmgrTls->isRegisterTainted<lengthInBits>(reg);
@@ -365,7 +365,7 @@ void ROTATE::sROR_RR(THREADID tid, ADDRINT regCLValue, REG reg, ADDRINT regValue
             : ObjectSource(lengthInBits, regValue); 
 
         // création de l'objet resultat de l'opération
-        std::shared_ptr<TaintObject<lengthInBits>> resultPtr = std::make_shared<TaintObject<lengthInBits>>(
+        TAINT_OBJECT_PTR resultPtr = MK_TAINT_OBJECT_PTR(
             X_ROR,
             objSrcReg,
             ObjectSource(pTmgrTls->getRegisterTaint(REG_CL))); // CL contient le nombre de bits de la rotation
@@ -384,7 +384,7 @@ void ROTATE::sROR_RR(THREADID tid, ADDRINT regCLValue, REG reg, ADDRINT regValue
 template<UINT32 lengthInBits> void ROTATE::sRCL_IM
     (THREADID tid, UINT32 maskedDepl, ADDRINT writeAddress, ADDRINT regGflagsValue ADDRESS_DEBUG)
 {  
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
 
     bool isSrcTainted       = pTmgrGlobal->isMemoryTainted<lengthInBits>(writeAddress);
     bool isCarryFlagTainted = pTmgrTls->isCarryFlagTainted();
@@ -406,7 +406,7 @@ template<UINT32 lengthInBits> void ROTATE::sRCL_IM
             : ObjectSource(1, (regGflagsValue >> CARRY_FLAG) & 1);
 
         // construction du résultat
-        std::shared_ptr<TaintObject<lengthInBits>> resultPtr = std::make_shared<TaintObject<lengthInBits>>(
+        TAINT_OBJECT_PTR resultPtr = MK_TAINT_OBJECT_PTR(
             X_RCL,
             objSrcMem,
             objSrcCF,
@@ -423,7 +423,7 @@ template<UINT32 lengthInBits> void ROTATE::sRCL_IM
 template<UINT32 lengthInBits> void ROTATE::sRCL_IR
     (THREADID tid, UINT32 maskedDepl, REG reg, ADDRINT regValue, ADDRINT regGflagsValue ADDRESS_DEBUG)
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
 
     bool isSrcTainted       = pTmgrTls->isRegisterTainted<lengthInBits>(reg);
     bool isCarryFlagTainted = pTmgrTls->isCarryFlagTainted();
@@ -445,7 +445,7 @@ template<UINT32 lengthInBits> void ROTATE::sRCL_IR
             : ObjectSource(1, (regGflagsValue >> CARRY_FLAG) & 1);
 
         // construction du résultat
-        std::shared_ptr<TaintObject<lengthInBits>> resultPtr = std::make_shared<TaintObject<lengthInBits>>(
+        TAINT_OBJECT_PTR resultPtr = MK_TAINT_OBJECT_PTR(
             X_RCL,
             objSrcReg,
             objSrcCF,
@@ -462,7 +462,7 @@ template<UINT32 lengthInBits> void ROTATE::sRCL_IR
 template<UINT32 lengthInBits> void ROTATE::sRCL_RM
     (THREADID tid, ADDRINT regCLValue, ADDRINT writeAddress, ADDRINT regGflagsValue ADDRESS_DEBUG)
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
 
     bool isCountTainted     = pTmgrTls->isRegisterTainted<8>(REG_CL);
     bool isDestTainted      = pTmgrGlobal->isMemoryTainted<lengthInBits>(writeAddress);
@@ -494,7 +494,7 @@ template<UINT32 lengthInBits> void ROTATE::sRCL_RM
         TaintBytePtr tbCountPtr = pTmgrTls->getRegisterTaint(REG_CL);
 
         // construction du résultat
-        std::shared_ptr<TaintObject<lengthInBits>> resultPtr = std::make_shared<TaintObject<lengthInBits>>(
+        TAINT_OBJECT_PTR resultPtr = MK_TAINT_OBJECT_PTR(
             X_RCL,
             objSrcMem,
             objSrcCF,
@@ -510,7 +510,7 @@ template<UINT32 lengthInBits> void ROTATE::sRCL_RM
 template<UINT32 lengthInBits> void ROTATE::sRCL_RR
     (THREADID tid, ADDRINT regCLValue, REG reg, ADDRINT regValue, ADDRINT regGflagsValue  ADDRESS_DEBUG)
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
 
     bool isCountTainted     = pTmgrTls->isRegisterTainted<8>(REG_CL);
     bool isDestTainted      = pTmgrTls->isRegisterTainted<lengthInBits>(reg);
@@ -542,7 +542,7 @@ template<UINT32 lengthInBits> void ROTATE::sRCL_RR
         TaintBytePtr tbCountPtr = pTmgrTls->getRegisterTaint(REG_CL);
 
         // création de l'objet resultat de l'opération
-        std::shared_ptr<TaintObject<lengthInBits>> resultPtr = std::make_shared<TaintObject<lengthInBits>>(
+        TAINT_OBJECT_PTR resultPtr = MK_TAINT_OBJECT_PTR(
             X_RCL,
             objSrcReg,
             ObjectSource(tbCountPtr)); 
@@ -561,7 +561,7 @@ template<UINT32 lengthInBits> void ROTATE::sRCL_RR
 template<UINT32 lengthInBits> void ROTATE::sRCR_IM
     (THREADID tid, UINT32 maskedDepl, ADDRINT writeAddress, ADDRINT regGflagsValue ADDRESS_DEBUG)
 {  
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
 
     bool isSrcTainted       = pTmgrGlobal->isMemoryTainted<lengthInBits>(writeAddress);
     bool isCarryFlagTainted = pTmgrTls->isCarryFlagTainted();
@@ -583,7 +583,7 @@ template<UINT32 lengthInBits> void ROTATE::sRCR_IM
             : ObjectSource(1, (regGflagsValue >> CARRY_FLAG) & 1);
 
         // construction du résultat
-        std::shared_ptr<TaintObject<lengthInBits>> resultPtr = std::make_shared<TaintObject<lengthInBits>>(
+        TAINT_OBJECT_PTR resultPtr = MK_TAINT_OBJECT_PTR(
             X_RCR,
             objSrcMem,
             objSrcCF,
@@ -600,7 +600,7 @@ template<UINT32 lengthInBits> void ROTATE::sRCR_IM
 template<UINT32 lengthInBits> void ROTATE::sRCR_IR
     (THREADID tid, UINT32 maskedDepl, REG reg, ADDRINT regValue, ADDRINT regGflagsValue ADDRESS_DEBUG)
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
 
     bool isSrcTainted       = pTmgrTls->isRegisterTainted<lengthInBits>(reg);
     bool isCarryFlagTainted = pTmgrTls->isCarryFlagTainted();
@@ -622,7 +622,7 @@ template<UINT32 lengthInBits> void ROTATE::sRCR_IR
             : ObjectSource(1, (regGflagsValue >> CARRY_FLAG) & 1);
 
         // construction du résultat
-        std::shared_ptr<TaintObject<lengthInBits>> resultPtr = std::make_shared<TaintObject<lengthInBits>>(
+        TAINT_OBJECT_PTR resultPtr = MK_TAINT_OBJECT_PTR(
             X_RCR,
             objSrcReg,
             objSrcCF,
@@ -639,7 +639,7 @@ template<UINT32 lengthInBits> void ROTATE::sRCR_IR
 template<UINT32 lengthInBits> void ROTATE::sRCR_RM
     (THREADID tid, ADDRINT regCLValue, ADDRINT writeAddress, ADDRINT regGflagsValue ADDRESS_DEBUG)
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
 
     bool isCountTainted     = pTmgrTls->isRegisterTainted<8>(REG_CL);
     bool isDestTainted      = pTmgrGlobal->isMemoryTainted<lengthInBits>(writeAddress);
@@ -671,7 +671,7 @@ template<UINT32 lengthInBits> void ROTATE::sRCR_RM
         TaintBytePtr tbCountPtr = pTmgrTls->getRegisterTaint(REG_CL);
 
         // construction du résultat
-        std::shared_ptr<TaintObject<lengthInBits>> resultPtr = std::make_shared<TaintObject<lengthInBits>>(
+        TAINT_OBJECT_PTR resultPtr = MK_TAINT_OBJECT_PTR(
             X_RCR,
             objSrcMem,
             objSrcCF,
@@ -687,7 +687,7 @@ template<UINT32 lengthInBits> void ROTATE::sRCR_RM
 template<UINT32 lengthInBits> void ROTATE::sRCR_RR
     (THREADID tid, ADDRINT regCLValue, REG reg, ADDRINT regValue, ADDRINT regGflagsValue  ADDRESS_DEBUG)
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
 
     bool isCountTainted     = pTmgrTls->isRegisterTainted<8>(REG_CL);
     bool isDestTainted      = pTmgrTls->isRegisterTainted<lengthInBits>(reg);
@@ -719,7 +719,7 @@ template<UINT32 lengthInBits> void ROTATE::sRCR_RR
         TaintBytePtr tbCountPtr = pTmgrTls->getRegisterTaint(REG_CL);
 
         // création de l'objet resultat de l'opération
-        std::shared_ptr<TaintObject<lengthInBits>> resultPtr = std::make_shared<TaintObject<lengthInBits>>(
+        TAINT_OBJECT_PTR resultPtr = MK_TAINT_OBJECT_PTR(
             X_RCR,
             objSrcReg,
             ObjectSource(tbCountPtr)); 

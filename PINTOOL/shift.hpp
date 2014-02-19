@@ -5,7 +5,7 @@
 template<UINT32 lengthInBits> 
 void SHIFT::sSHL_IM(THREADID tid, UINT32 maskedDepl, ADDRINT writeAddr ADDRESS_DEBUG) 
 {  
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     
     // opérande non marquée => démarquage flags
     if (!pTmgrGlobal->isMemoryTainted<lengthInBits>(writeAddr)) pTmgrTls->unTaintAllFlags();
@@ -33,7 +33,7 @@ void SHIFT::sSHL_IM(THREADID tid, UINT32 maskedDepl, ADDRINT writeAddr ADDRESS_D
         ObjectSource objSrcMem(pTmgrGlobal->getMemoryTaint<lengthInBits>(writeAddr));
 
         // construction du résultat
-        std::shared_ptr<TaintObject<lengthInBits>> resultPtr = std::make_shared<TaintObject<lengthInBits>>(
+        TAINT_OBJECT_PTR resultPtr = MK_TAINT_OBJECT_PTR(
             X_SHL,
             objSrcMem,
             ObjectSource(8, maskedDepl));
@@ -85,7 +85,7 @@ void SHIFT::sSHL_IM(THREADID tid, UINT32 maskedDepl, ADDRINT writeAddr ADDRESS_D
 template<UINT32 lengthInBits> 
 void SHIFT::sSHL_IR(THREADID tid, UINT32 maskedDepl, REG reg, ADDRINT regValue ADDRESS_DEBUG) 
 {  
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     
     // opérande non marquée => démarquage flags
     if (!pTmgrTls->isRegisterTainted<lengthInBits>(reg)) pTmgrTls->unTaintAllFlags();
@@ -115,7 +115,7 @@ void SHIFT::sSHL_IR(THREADID tid, UINT32 maskedDepl, REG reg, ADDRINT regValue A
         REGINDEX regIndex = getRegIndex(reg);
 
         // construction du résultat
-        std::shared_ptr<TaintObject<lengthInBits>> resultPtr = std::make_shared<TaintObject<lengthInBits>>(
+        TAINT_OBJECT_PTR resultPtr = MK_TAINT_OBJECT_PTR(
             X_SHL,
             objSrcReg,
             ObjectSource(8, maskedDepl));
@@ -166,7 +166,7 @@ void SHIFT::sSHL_IR(THREADID tid, UINT32 maskedDepl, REG reg, ADDRINT regValue A
 template<UINT32 lengthInBits> 
 void SHIFT::sSHL_RM(THREADID tid, ADDRINT regCLValue, ADDRINT writeAddress ADDRESS_DEBUG) 
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     
     bool isCountTainted = pTmgrTls->isRegisterTainted<8>(REG_CL);
     bool isDestTainted  = pTmgrGlobal->isMemoryTainted<lengthInBits>(writeAddress);
@@ -192,7 +192,7 @@ void SHIFT::sSHL_RM(THREADID tid, ADDRINT regCLValue, ADDRINT writeAddress ADDRE
             : ObjectSource(lengthInBits, getMemoryValue<lengthInBits>(writeAddress));
        
         // création de l'objet resultat de l'opération
-        std::shared_ptr<TaintObject<lengthInBits>> resultPtr = std::make_shared<TaintObject<lengthInBits>>(
+        TAINT_OBJECT_PTR resultPtr = MK_TAINT_OBJECT_PTR(
             X_SHL,
             objSrcMem,
             objTbCount);    
@@ -207,7 +207,7 @@ void SHIFT::sSHL_RM(THREADID tid, ADDRINT regCLValue, ADDRINT writeAddress ADDRE
 template<UINT32 lengthInBits> 
 void SHIFT::sSHL_RR(THREADID tid, ADDRINT regCLValue, REG reg, ADDRINT regValue ADDRESS_DEBUG) 
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     
     bool isCountTainted = pTmgrTls->isRegisterTainted<8>(REG_CL);
     bool isDestTainted  = pTmgrTls->isRegisterTainted<lengthInBits>(reg);
@@ -233,7 +233,7 @@ void SHIFT::sSHL_RR(THREADID tid, ADDRINT regCLValue, REG reg, ADDRINT regValue 
             : ObjectSource(lengthInBits, regValue);
         
         // création de l'objet resultat de l'opération
-        std::shared_ptr<TaintObject<lengthInBits>> resultPtr = std::make_shared<TaintObject<lengthInBits>>(
+        TAINT_OBJECT_PTR resultPtr = MK_TAINT_OBJECT_PTR(
             X_SHL,
             objSrcReg,
             objTbCount);    
@@ -252,7 +252,7 @@ void SHIFT::sSHL_RR(THREADID tid, ADDRINT regCLValue, REG reg, ADDRINT regValue 
 template<UINT32 lengthInBits> 
 void SHIFT::sSHR_IM(THREADID tid, UINT32 maskedDepl, ADDRINT writeAddr ADDRESS_DEBUG) 
 {  
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     
     // opérande non marquée => démarquage flags
     if (!pTmgrGlobal->isMemoryTainted<lengthInBits>(writeAddr)) pTmgrTls->unTaintAllFlags();
@@ -280,7 +280,7 @@ void SHIFT::sSHR_IM(THREADID tid, UINT32 maskedDepl, ADDRINT writeAddr ADDRESS_D
         ObjectSource objSrcMem(pTmgrGlobal->getMemoryTaint<lengthInBits>(writeAddr));
 
         // construction du résultat
-        std::shared_ptr<TaintObject<lengthInBits>> resultPtr = std::make_shared<TaintObject<lengthInBits>>(
+        TAINT_OBJECT_PTR resultPtr = MK_TAINT_OBJECT_PTR(
             X_SHR,
             objSrcMem,
             ObjectSource(8, maskedDepl));
@@ -334,7 +334,7 @@ void SHIFT::sSHR_IM(THREADID tid, UINT32 maskedDepl, ADDRINT writeAddr ADDRESS_D
 template<UINT32 lengthInBits> 
 void SHIFT::sSHR_IR(THREADID tid, UINT32 maskedDepl, REG reg, ADDRINT regValue ADDRESS_DEBUG) 
 {  
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     
     // opérande non marquée => démarquage flags
     if (!pTmgrTls->isRegisterTainted<lengthInBits>(reg)) pTmgrTls->unTaintAllFlags();
@@ -364,7 +364,7 @@ void SHIFT::sSHR_IR(THREADID tid, UINT32 maskedDepl, REG reg, ADDRINT regValue A
         REGINDEX regIndex = getRegIndex(reg);
 
         // construction du résultat
-        std::shared_ptr<TaintObject<lengthInBits>> resultPtr = std::make_shared<TaintObject<lengthInBits>>(
+        TAINT_OBJECT_PTR resultPtr = MK_TAINT_OBJECT_PTR(
             X_SHR,
             objSrcReg,
             ObjectSource(8, maskedDepl));
@@ -414,7 +414,7 @@ void SHIFT::sSHR_IR(THREADID tid, UINT32 maskedDepl, REG reg, ADDRINT regValue A
 template<UINT32 lengthInBits> 
 void SHIFT::sSHR_RM(THREADID tid, ADDRINT regCLValue, ADDRINT writeAddress ADDRESS_DEBUG) 
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     
     bool isCountTainted = pTmgrTls->isRegisterTainted<8>(REG_CL);
     bool isDestTainted  = pTmgrGlobal->isMemoryTainted<lengthInBits>(writeAddress);
@@ -440,7 +440,7 @@ void SHIFT::sSHR_RM(THREADID tid, ADDRINT regCLValue, ADDRINT writeAddress ADDRE
             : ObjectSource(lengthInBits, getMemoryValue<lengthInBits>(writeAddress));
 
         // création de l'objet resultat de l'opération
-        std::shared_ptr<TaintObject<lengthInBits>> resultPtr = std::make_shared<TaintObject<lengthInBits>>(
+        TAINT_OBJECT_PTR resultPtr = MK_TAINT_OBJECT_PTR(
             X_SHR,
             objSrcMem,
             objTbCount);    
@@ -455,7 +455,7 @@ void SHIFT::sSHR_RM(THREADID tid, ADDRINT regCLValue, ADDRINT writeAddress ADDRE
 template<UINT32 lengthInBits> 
 void SHIFT::sSHR_RR(THREADID tid, ADDRINT regCLValue, REG reg, ADDRINT regValue ADDRESS_DEBUG) 
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     
     bool isCountTainted = pTmgrTls->isRegisterTainted<8>(REG_CL);
     bool isDestTainted  = pTmgrTls->isRegisterTainted<lengthInBits>(reg);
@@ -481,7 +481,7 @@ void SHIFT::sSHR_RR(THREADID tid, ADDRINT regCLValue, REG reg, ADDRINT regValue 
             : ObjectSource(lengthInBits, regValue);
         
         // création de l'objet resultat de l'opération
-        std::shared_ptr<TaintObject<lengthInBits>> resultPtr = std::make_shared<TaintObject<lengthInBits>>(
+        TAINT_OBJECT_PTR resultPtr = MK_TAINT_OBJECT_PTR(
             X_SHR,
             objSrcReg,
             objTbCount);    
@@ -500,7 +500,7 @@ void SHIFT::sSHR_RR(THREADID tid, ADDRINT regCLValue, REG reg, ADDRINT regValue 
 template<UINT32 lengthInBits> 
 void SHIFT::sSAR_IM(THREADID tid, UINT32 maskedDepl, ADDRINT writeAddr ADDRESS_DEBUG) 
 {  
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     
     // opérande non marquée => démarquage flags
     if (!pTmgrGlobal->isMemoryTainted<lengthInBits>(writeAddr)) pTmgrTls->unTaintAllFlags();
@@ -528,7 +528,7 @@ void SHIFT::sSAR_IM(THREADID tid, UINT32 maskedDepl, ADDRINT writeAddr ADDRESS_D
         ObjectSource objSrcMem(pTmgrGlobal->getMemoryTaint<lengthInBits>(writeAddr));
 
         // construction du résultat
-        std::shared_ptr<TaintObject<lengthInBits>> resultPtr = std::make_shared<TaintObject<lengthInBits>>(
+        TAINT_OBJECT_PTR resultPtr = MK_TAINT_OBJECT_PTR(
             X_SAR,
             objSrcMem,
             ObjectSource(8, maskedDepl));
@@ -544,7 +544,7 @@ void SHIFT::sSAR_IM(THREADID tid, UINT32 maskedDepl, ADDRINT writeAddr ADDRESS_D
 template<UINT32 lengthInBits> 
 void SHIFT::sSAR_IR(THREADID tid, UINT32 maskedDepl, REG reg, ADDRINT regValue ADDRESS_DEBUG) 
 {  
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     
     // opérande non marquée => démarquage flags
     if (!pTmgrTls->isRegisterTainted<lengthInBits>(reg)) pTmgrTls->unTaintAllFlags();
@@ -574,7 +574,7 @@ void SHIFT::sSAR_IR(THREADID tid, UINT32 maskedDepl, REG reg, ADDRINT regValue A
         REGINDEX regIndex = getRegIndex(reg);
 
         // construction du résultat
-        std::shared_ptr<TaintObject<lengthInBits>> resultPtr = std::make_shared<TaintObject<lengthInBits>>(
+        TAINT_OBJECT_PTR resultPtr = MK_TAINT_OBJECT_PTR(
             X_SAR,
             objSrcReg,
             ObjectSource(8, maskedDepl));
@@ -590,7 +590,7 @@ void SHIFT::sSAR_IR(THREADID tid, UINT32 maskedDepl, REG reg, ADDRINT regValue A
 template<UINT32 lengthInBits> 
 void SHIFT::sSAR_RM(THREADID tid, ADDRINT regCLValue, ADDRINT writeAddress ADDRESS_DEBUG) 
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     
     bool isCountTainted = pTmgrTls->isRegisterTainted<8>(REG_CL);
     bool isDestTainted  = pTmgrGlobal->isMemoryTainted<lengthInBits>(writeAddress);
@@ -616,7 +616,7 @@ void SHIFT::sSAR_RM(THREADID tid, ADDRINT regCLValue, ADDRINT writeAddress ADDRE
             : ObjectSource(lengthInBits, getMemoryValue<lengthInBits>(writeAddress));
 
         // création de l'objet resultat de l'opération
-        std::shared_ptr<TaintObject<lengthInBits>> resultPtr = std::make_shared<TaintObject<lengthInBits>>(
+        TAINT_OBJECT_PTR resultPtr = MK_TAINT_OBJECT_PTR(
             X_SAR,
             objSrcMem,
             objTbCount);    
@@ -631,7 +631,7 @@ void SHIFT::sSAR_RM(THREADID tid, ADDRINT regCLValue, ADDRINT writeAddress ADDRE
 template<UINT32 lengthInBits> 
 void SHIFT::sSAR_RR(THREADID tid, ADDRINT regCLValue, REG reg, ADDRINT regValue ADDRESS_DEBUG) 
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     
     bool isCountTainted = pTmgrTls->isRegisterTainted<8>(REG_CL);
     bool isDestTainted  = pTmgrTls->isRegisterTainted<lengthInBits>(reg);
@@ -657,7 +657,7 @@ void SHIFT::sSAR_RR(THREADID tid, ADDRINT regCLValue, REG reg, ADDRINT regValue 
             : ObjectSource(lengthInBits, regValue);
         
         // création de l'objet resultat de l'opération
-        std::shared_ptr<TaintObject<lengthInBits>> resultPtr = std::make_shared<TaintObject<lengthInBits>>(
+        TAINT_OBJECT_PTR resultPtr = MK_TAINT_OBJECT_PTR(
             X_SAR,
             objSrcReg,
             objTbCount);    
@@ -679,7 +679,7 @@ void SHIFT::sSAR_RR(THREADID tid, ADDRINT regCLValue, REG reg, ADDRINT regValue 
 template<UINT32 lengthInBits> void SHIFT::sSHLD_IM
     (THREADID tid, UINT32 maskedDepl, REG regSrc, ADDRINT regSrcValue, ADDRINT writeAddr ADDRESS_DEBUG)
 { 
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     
     bool isSrcDestTainted = pTmgrGlobal->isMemoryTainted<lengthInBits>(writeAddr);
     bool isRegSrcTainted  = pTmgrTls->isRegisterTainted<lengthInBits>(regSrc);
@@ -723,7 +723,7 @@ template<UINT32 lengthInBits> void SHIFT::sSHLD_IM
             ObjectSource(8, maskedDepl));
 
         // construction du résultat : extraction de la partie forte de shiftOperation
-        std::shared_ptr<TaintObject<lengthInBits>> resultPtr = std::make_shared<TaintObject<lengthInBits>>(
+        TAINT_OBJECT_PTR resultPtr = MK_TAINT_OBJECT_PTR(
             EXTRACT,
             ObjectSource(std::make_shared<TaintObject<(2*lengthInBits)>>(shiftOperation)),
             ObjectSource(8, 1)); // extract de longueur 'lengthInBits' : 0 = partie faible, 1 = partie forte 
@@ -740,7 +740,7 @@ template<UINT32 lengthInBits> void SHIFT::sSHLD_IM
 template<UINT32 lengthInBits> void SHIFT::sSHLD_IR
     (THREADID tid, UINT32 maskedDepl, REG regSrc, ADDRINT regSrcValue, REG regSrcDest, ADDRINT regSrcDestValue ADDRESS_DEBUG)
 { 
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     
     bool isSrcDestTainted = pTmgrTls->isRegisterTainted<lengthInBits>(regSrcDest);
     bool isRegSrcTainted  = pTmgrTls->isRegisterTainted<lengthInBits>(regSrc);
@@ -785,7 +785,7 @@ template<UINT32 lengthInBits> void SHIFT::sSHLD_IR
             ObjectSource(8, maskedDepl));
 
         // construction du résultat : extraction de la partie forte de shiftOperation
-        std::shared_ptr<TaintObject<lengthInBits>> resultPtr = std::make_shared<TaintObject<lengthInBits>>(
+        TAINT_OBJECT_PTR resultPtr = MK_TAINT_OBJECT_PTR(
             EXTRACT,
             ObjectSource(std::make_shared<TaintObject<(2*lengthInBits)>>(shiftOperation)),
             ObjectSource(8, 1)); // extract de longueur 'lengthInBits' : 0 = partie faible, 1 = partie forte 
@@ -802,7 +802,7 @@ template<UINT32 lengthInBits> void SHIFT::sSHLD_IR
 template<UINT32 lengthInBits> void SHIFT::sSHLD_RM
     (THREADID tid, ADDRINT regCLValue, REG regSrc, ADDRINT regSrcValue, ADDRINT writeAddress ADDRESS_DEBUG)
 { 
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     
     bool isCountTainted   = pTmgrTls->isRegisterTainted<8>(REG_CL);
     bool isSrcDestTainted = pTmgrGlobal->isMemoryTainted<lengthInBits>(writeAddress);
@@ -838,7 +838,7 @@ template<UINT32 lengthInBits> void SHIFT::sSHLD_RM
             objTbCount);
 
         // construction du résultat : extraction de la partie forte de shiftOperation
-        std::shared_ptr<TaintObject<lengthInBits>> resultPtr = std::make_shared<TaintObject<lengthInBits>>(
+        TAINT_OBJECT_PTR resultPtr = MK_TAINT_OBJECT_PTR(
             EXTRACT,
             ObjectSource(std::make_shared<TaintObject<(2*lengthInBits)>>(shiftOperation)),
             ObjectSource(8, 1)); // extract de longueur 'lengthInBits' : 0 = partie faible, 1 = partie forte 
@@ -855,7 +855,7 @@ template<UINT32 lengthInBits> void SHIFT::sSHLD_RM
 template<UINT32 lengthInBits> void SHIFT::sSHLD_RR
     (THREADID tid, ADDRINT regCLValue, REG regSrc, ADDRINT regSrcValue, REG regSrcDest, ADDRINT regSrcDestValue ADDRESS_DEBUG)
 { 
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     
     bool isCountTainted   = pTmgrTls->isRegisterTainted<8>(REG_CL);
     bool isSrcDestTainted = pTmgrTls->isRegisterTainted<lengthInBits>(regSrcDest);
@@ -892,7 +892,7 @@ template<UINT32 lengthInBits> void SHIFT::sSHLD_RR
             objTbCount);
 
         // construction du résultat : extraction de la partie forte de shiftOperation
-        std::shared_ptr<TaintObject<lengthInBits>> resultPtr = std::make_shared<TaintObject<lengthInBits>>(
+        TAINT_OBJECT_PTR resultPtr = MK_TAINT_OBJECT_PTR(
             EXTRACT,
             ObjectSource(std::make_shared<TaintObject<(2*lengthInBits)>>(shiftOperation)),
             ObjectSource(8, 1)); // extract de longueur 'lengthInBits' : 0 = partie faible, 1 = partie forte 
@@ -913,7 +913,7 @@ template<UINT32 lengthInBits> void SHIFT::sSHLD_RR
 template<UINT32 lengthInBits> void SHIFT::sSHRD_IM
     (THREADID tid, UINT32 maskedDepl, REG regSrc, ADDRINT regSrcValue, ADDRINT writeAddr ADDRESS_DEBUG)
 { 
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     
     bool isSrcDestTainted = pTmgrGlobal->isMemoryTainted<lengthInBits>(writeAddr);
     bool isRegSrcTainted  = pTmgrTls->isRegisterTainted<lengthInBits>(regSrc);
@@ -961,7 +961,7 @@ template<UINT32 lengthInBits> void SHIFT::sSHRD_IM
             ObjectSource(8, maskedDepl));
 
         // construction du résultat : extraction de la partie forte de shiftOperation
-        std::shared_ptr<TaintObject<lengthInBits>> resultPtr = std::make_shared<TaintObject<lengthInBits>>(
+        TAINT_OBJECT_PTR resultPtr = MK_TAINT_OBJECT_PTR(
             EXTRACT,
             ObjectSource(std::make_shared<TaintObject<(2*lengthInBits)>>(shiftOperation)),
             ObjectSource(8, 1)); // extract de longueur 'lengthInBits' : 0 = partie faible, 1 = partie forte
@@ -977,7 +977,7 @@ template<UINT32 lengthInBits> void SHIFT::sSHRD_IM
 template<UINT32 lengthInBits> void SHIFT::sSHRD_IR
     (THREADID tid, UINT32 maskedDepl, REG regSrc, ADDRINT regSrcValue, REG regSrcDest, ADDRINT regSrcDestValue ADDRESS_DEBUG)
 { 
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     
     bool isSrcDestTainted = pTmgrTls->isRegisterTainted<lengthInBits>(regSrcDest);
     bool isRegSrcTainted  = pTmgrTls->isRegisterTainted<lengthInBits>(regSrc);
@@ -1026,7 +1026,7 @@ template<UINT32 lengthInBits> void SHIFT::sSHRD_IR
             ObjectSource(8, maskedDepl));
 
         // construction du résultat : extraction de la partie forte de shiftOperation
-        std::shared_ptr<TaintObject<lengthInBits>> resultPtr = std::make_shared<TaintObject<lengthInBits>>(
+        TAINT_OBJECT_PTR resultPtr = MK_TAINT_OBJECT_PTR(
             EXTRACT,
             ObjectSource(std::make_shared<TaintObject<(2*lengthInBits)>>(shiftOperation)),
             ObjectSource(8, 1)); // extract de longueur 'lengthInBits' : 0 = partie faible, 1 = partie forte 
@@ -1042,7 +1042,7 @@ template<UINT32 lengthInBits> void SHIFT::sSHRD_IR
 template<UINT32 lengthInBits> void SHIFT::sSHRD_RM
     (THREADID tid, ADDRINT regCLValue, REG regSrc, ADDRINT regSrcValue, ADDRINT writeAddress ADDRESS_DEBUG)
 { 
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     
     bool isCountTainted   = pTmgrTls->isRegisterTainted<8>(REG_CL);
     bool isSrcDestTainted = pTmgrGlobal->isMemoryTainted<lengthInBits>(writeAddress);
@@ -1082,7 +1082,7 @@ template<UINT32 lengthInBits> void SHIFT::sSHRD_RM
             objTbCount);
 
         // construction du résultat : extraction de la partie forte de shiftOperation
-        std::shared_ptr<TaintObject<lengthInBits>> resultPtr = std::make_shared<TaintObject<lengthInBits>>(
+        TAINT_OBJECT_PTR resultPtr = MK_TAINT_OBJECT_PTR(
             EXTRACT,
             ObjectSource(std::make_shared<TaintObject<(2*lengthInBits)>>(shiftOperation)),
             ObjectSource(8, 1)); // extract de longueur 'lengthInBits' : 0 = partie faible, 1 = partie forte 
@@ -1098,7 +1098,7 @@ template<UINT32 lengthInBits> void SHIFT::sSHRD_RM
 template<UINT32 lengthInBits> void SHIFT::sSHRD_RR
     (THREADID tid, ADDRINT regCLValue, REG regSrc, ADDRINT regSrcValue, REG regSrcDest, ADDRINT regSrcDestValue ADDRESS_DEBUG)
 { 
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     
     bool isCountTainted   = pTmgrTls->isRegisterTainted<8>(REG_CL);
     bool isSrcDestTainted = pTmgrTls->isRegisterTainted<lengthInBits>(regSrcDest);
@@ -1138,7 +1138,7 @@ template<UINT32 lengthInBits> void SHIFT::sSHRD_RR
             objTbCount);
 
         // construction du résultat : extraction de la partie forte de shiftOperation
-        std::shared_ptr<TaintObject<lengthInBits>> resultPtr = std::make_shared<TaintObject<lengthInBits>>(
+        TAINT_OBJECT_PTR resultPtr = MK_TAINT_OBJECT_PTR(
             EXTRACT,
             ObjectSource(std::make_shared<TaintObject<(2*lengthInBits)>>(shiftOperation)),
             ObjectSource(8, 1)); // extract de longueur 'lengthInBits' : 0 = partie faible, 1 = partie forte 

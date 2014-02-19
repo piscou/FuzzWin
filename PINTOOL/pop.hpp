@@ -25,7 +25,7 @@ template<UINT32 lengthInBits> void POP::sUpdateEspTaint(TaintManager_Thread *pTm
 template<UINT32 lengthInBits> 
 void POP::sPOP_M(THREADID tid, ADDRINT writeAddress, ADDRINT stackAddress ADDRESS_DEBUG) 
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     
     // ajustement du marquage d'ESP si besoin
     POP::sUpdateEspTaint<lengthInBits>(pTmgrTls, stackAddress);
@@ -55,7 +55,7 @@ void POP::sPOP_M(THREADID tid, ADDRINT writeAddress, ADDRINT stackAddress ADDRES
 template<UINT32 lengthInBits> 
 void POP::sPOP_R(THREADID tid, REG regDest, ADDRINT stackAddress ADDRESS_DEBUG) 
 {
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     
     // ajustement du marquage d'ESP si besoin, sauf dans le cas "POP ESP"
     // Manuel Intel  "the POP ESP instruction increments the stack pointer (ESP) 
@@ -93,7 +93,7 @@ template<UINT32 lengthInBits>
 void POP::sPOPF(THREADID tid, ADDRINT stackAddress ADDRESS_DEBUG)
 {
     // lengthInBits == 16 <-> POPF, lengthInBits == 32 <-> POPFD, lengthInBits == 64 <-> POPFQ
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));    
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);    
      
     // ajustement du marquage du REGISTRE ESP/RSP, dans le cas où il est marqué
     POP::sUpdateEspTaint<lengthInBits>(pTmgrTls, stackAddress);

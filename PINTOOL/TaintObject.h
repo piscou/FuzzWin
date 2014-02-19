@@ -30,6 +30,10 @@ typedef std::shared_ptr<TaintDword> TaintDwordPtr;
 typedef std::shared_ptr<TaintQword> TaintQwordPtr;
 typedef std::shared_ptr<TaintDoubleQword> TaintDoubleQwordPtr;
 
+// pas très joli mais bien utile....
+#define TAINT_OBJECT_PTR    std::shared_ptr<TaintObject<lengthInBits>>
+#define MK_TAINT_OBJECT_PTR std::make_shared<TaintObject<lengthInBits>>
+
 class Taint 
 {
 protected:                        
@@ -90,14 +94,14 @@ public:
     // ajoute la structure ObjectSource 'src' en tant que source à l'objet
     void addSource(const ObjectSource &src);
 
-    // ajoute la valeur constante 'value' sur 'lengthInBitsgth' bits en tant que source à l'objet
-    template<UINT32 lengthInBitsgth> inline void addConstantAsASource(ADDRINT value) 
+    // ajoute la valeur constante 'value' sur 'lengthInBits' bits en tant que source à l'objet
+    template<UINT32 lengthInBits> inline void addConstantAsASource(ADDRINT value) 
     { 
-        this->_sources.push_back(ObjectSource(lengthInBitsgth, value)); 
+        this->_sources.push_back(ObjectSource(lengthInBits, value)); 
     }
 };
 
-template<UINT32 lengthInBitsgth> class TaintObject : public Taint 
+template<UINT32 lengthInBits> class TaintObject : public Taint 
 {
 public:
     explicit TaintObject(Relation rel);

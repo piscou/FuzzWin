@@ -62,8 +62,7 @@ void FLAGOP::cSALC(INS &ins)
 
 void PIN_FAST_ANALYSIS_CALL FLAGOP::sCLC_STC(THREADID tid ADDRESS_DEBUG)
 {
-    TaintManager_Thread *pTmgrTls = 
-        static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     
     // simple démarquage du CF
     pTmgrTls->unTaintCarryFlag();
@@ -71,8 +70,7 @@ void PIN_FAST_ANALYSIS_CALL FLAGOP::sCLC_STC(THREADID tid ADDRESS_DEBUG)
 
 void PIN_FAST_ANALYSIS_CALL FLAGOP::sCMC(THREADID tid ADDRESS_DEBUG)
 {
-    TaintManager_Thread *pTmgrTls = 
-        static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     
     // simple inversion (= NOT) du CF, si marqué
     if (pTmgrTls->isCarryFlagTainted())
@@ -85,8 +83,7 @@ void PIN_FAST_ANALYSIS_CALL FLAGOP::sCMC(THREADID tid ADDRESS_DEBUG)
 void FLAGOP::sLAHF(THREADID tid, ADDRINT regFlagsValue ADDRESS_DEBUG)
 {
     // AH ← EFLAGS(SF:ZF:0:AF:0:PF:1:CF)
-    TaintManager_Thread *pTmgrTls = 
-        static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
 
     // il faut au moins l'un des flags marqués, sinon démarquage AH
     bool isTaintCF = pTmgrTls->isCarryFlagTainted();
@@ -139,8 +136,7 @@ void FLAGOP::sLAHF(THREADID tid, ADDRINT regFlagsValue ADDRESS_DEBUG)
 void FLAGOP::sSAHF(THREADID tid ADDRESS_DEBUG)
 {
     // EFLAGS(SF:ZF:0:AF:0:PF:1:CF) -> AH 
-    TaintManager_Thread *pTmgrTls = 
-        static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
 
     // si AH non marqué, démarquage des flags SZAPC
     if ( ! pTmgrTls->isRegisterTainted<8>(REG_AH))
@@ -176,8 +172,7 @@ void FLAGOP::sSAHF(THREADID tid ADDRESS_DEBUG)
 
 void FLAGOP::sSALC(THREADID tid, ADDRINT regALValue, ADDRINT insAddress)
 {
-    TaintManager_Thread *pTmgrTls = 
-        static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
 
     // insertion de la contrainte, si CF était marqué
     if (pTmgrTls->isCarryFlagTainted()) 
@@ -193,6 +188,4 @@ void FLAGOP::sSALC(THREADID tid, ADDRINT regALValue, ADDRINT insAddress)
     // la contrainte sur sa valeur a été exprimée via CF
     // cf comportement identique que SETcc
     pTmgrTls->unTaintRegister<8>(REG_AL);
-
 } // sSALC
-

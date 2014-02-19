@@ -194,6 +194,130 @@ void BINARY::fTaintDEC(TaintManager_Thread *pTmgrTls, const ObjectSource &objSrc
     pTmgrTls->updateTaintOverflowFlag(std::make_shared<TaintBit>(F_OVERFLOW_DEC, objSrc));
 } // fTaintDEC
 
+
+/////////
+// ADC //
+/////////
+
+// CALLBACKS
+void BINARY::cADC(INS &ins) 
+{ 	
+    void (*callback)() = nullptr;	
+    if (INS_IsMemoryWrite(ins)) // DESTINATION = MEMOIRE
+    {	
+        UINT32 writeSize = INS_MemoryWriteSize(ins);
+        if (INS_OperandIsImmediate(ins, 1)) // ADC_IM
+        {	
+            switch (writeSize) // taille de l'opérande mémoire
+            {	
+                case 1:	callback = (AFUNPTR) sADC_IM<8>;  break;
+                case 2:	callback = (AFUNPTR) sADC_IM<16>; break;
+                case 4:	callback = (AFUNPTR) sADC_IM<32>; break;
+                #if TARGET_IA32E
+                case 8: callback = (AFUNPTR) sADC_IM<64>; break;
+                #endif
+                default: return;
+            }
+            INS_InsertCall (ins, IPOINT_BEFORE, callback,
+                IARG_THREAD_ID,
+                IARG_ADDRINT, (ADDRINT) INS_OperandImmediate(ins, 1),
+                IARG_MEMORYWRITE_EA,
+                IARG_REG_VALUE, REG_GFLAGS, // valeur des flags (pour CF)
+                CALLBACK_DEBUG IARG_END);
+        } 
+        else // ADC_RM
+        { 
+            REG regSrc = INS_OperandReg(ins, 1);
+            switch (getRegSize(regSrc)) 
+            {	
+                case 1:	callback = (AFUNPTR) sADC_RM<8>;  break;
+                case 2:	callback = (AFUNPTR) sADC_RM<16>; break;
+                case 4:	callback = (AFUNPTR) sADC_RM<32>; break;
+                #if TARGET_IA32E
+                case 8: callback = (AFUNPTR) sADC_RM<64>; break;
+                #endif
+                default: return; // normalement il faudrait démarquer la mémoire...
+            }
+            INS_InsertCall (ins, IPOINT_BEFORE, callback,
+                IARG_THREAD_ID,
+                IARG_UINT32, regSrc, 
+                IARG_REG_VALUE, regSrc, 
+                IARG_MEMORYWRITE_EA, 
+                IARG_REG_VALUE, REG_GFLAGS, // valeur des flags (pour CF)
+                CALLBACK_DEBUG IARG_END);
+        }
+    }
+    else // DESTINATION = REGISTRE
+    {    
+        REG regDest  = INS_OperandReg(ins, 0);
+        UINT32 regSize = getRegSize(regDest);
+        if (!regSize) return;	        // registre non géré
+        else if (INS_IsMemoryRead(ins)) // ADC_MR
+        {			
+            switch (regSize) 
+            {	
+                case 1:	callback = (AFUNPTR) sADC_MR<8>;  break;
+                case 2:	callback = (AFUNPTR) sADC_MR<16>; break;
+                case 4:	callback = (AFUNPTR) sADC_MR<32>; break;
+                #if TARGET_IA32E
+                case 8: callback = (AFUNPTR) sADC_MR<64>; break;
+                #endif
+            }
+
+            INS_InsertCall (ins, IPOINT_BEFORE, callback,
+                IARG_THREAD_ID,
+                IARG_MEMORYREAD_EA,		    // adresse réelle de lecture
+                IARG_UINT32, regDest,	    // registre destination
+                IARG_REG_VALUE, regDest,    // valeur lors du callback
+                IARG_REG_VALUE, REG_GFLAGS, // valeur des flags (pour CF)
+                CALLBACK_DEBUG IARG_END);
+        }
+        else if (INS_OperandIsImmediate(ins, 1))  // ADC_IR
+        {         
+            switch (regSize) 
+            {	
+                case 1:	callback = (AFUNPTR) sADC_IR<8>; break;
+                case 2:	callback = (AFUNPTR) sADC_IR<16>; break;
+                case 4:	callback = (AFUNPTR) sADC_IR<32>; break;
+                #if TARGET_IA32E
+                case 8: callback = (AFUNPTR) sADC_IR<64>; break;
+                #endif
+            }
+
+            INS_InsertCall (ins, IPOINT_BEFORE, callback,
+                IARG_THREAD_ID,
+                IARG_ADDRINT, (ADDRINT) INS_OperandImmediate(ins, 1),
+                IARG_UINT32, regDest,	    // registre destination
+                IARG_REG_VALUE, regDest,    // valeur lors du callback
+                IARG_REG_VALUE, REG_GFLAGS, // valeur des flags (pour CF)
+                CALLBACK_DEBUG IARG_END);
+        }
+        else // ADC_RR
+        {    
+            REG regSrc  = INS_OperandReg(ins, 1);
+            switch (getRegSize(regSrc)) 
+            {	
+                case 1:	callback = (AFUNPTR) sADC_RR<8>;  break;
+                case 2:	callback = (AFUNPTR) sADC_RR<16>; break;
+                case 4:	callback = (AFUNPTR) sADC_RR<32>; break;
+                #if TARGET_IA32E
+                case 8: callback = (AFUNPTR) sADC_RR<64>; break;
+                #endif
+                default: return; // registre source non suivi
+            }
+            
+            INS_InsertCall (ins, IPOINT_BEFORE, callback,
+                IARG_THREAD_ID,
+                IARG_UINT32,    regSrc,		// registre source
+                IARG_REG_VALUE, regSrc,		// valeur lors du callback
+                IARG_UINT32,    regDest,	// registre de destination
+                IARG_REG_VALUE, regDest,	// valeur lors du callback
+                IARG_REG_VALUE, REG_GFLAGS, // valeur des flags (pour CF)
+                CALLBACK_DEBUG IARG_END);
+        }  
+    }
+} // cADC
+
 /////////
 // ADD //
 /////////
@@ -304,9 +428,9 @@ void BINARY::cADD(INS &ins)
             
             INS_InsertCall (ins, IPOINT_BEFORE, callback,
                 IARG_THREAD_ID,
-                IARG_UINT32, regSrc,		// registre source
+                IARG_UINT32,    regSrc,		// registre source
                 IARG_REG_VALUE, regSrc,		// valeur lors du callback
-                IARG_UINT32, regDest,		// registre de destination
+                IARG_UINT32,    regDest,	// registre de destination
                 IARG_REG_VALUE, regDest,	// valeur lors du callback
                 CALLBACK_DEBUG IARG_END);
         }  
@@ -327,6 +451,131 @@ void BINARY::fTaintADD
     pTmgrTls->updateTaintSignFlag(std::make_shared<TaintBit>(F_MSB, objResult));
     pTmgrTls->updateTaintOverflowFlag(std::make_shared<TaintBit>(F_OVERFLOW_ADD, objSrcDest, objSrc, objResult));
 } // fTaintADD
+
+
+/////////
+// SBB //
+/////////
+
+// CALLBACKS
+void BINARY::cSBB(INS &ins) 
+{ 	
+    void (*callback)() = nullptr;	
+    if (INS_IsMemoryWrite(ins)) // DESTINATION = MEMOIRE
+    {	
+        UINT32 writeSize = INS_MemoryWriteSize(ins);
+        if (INS_OperandIsImmediate(ins, 1)) // SBB_IM
+        {	
+            switch (writeSize) // taille de l'opérande mémoire
+            {	
+                case 1:	callback = (AFUNPTR) sSBB_IM<8>;  break;
+                case 2:	callback = (AFUNPTR) sSBB_IM<16>; break;
+                case 4:	callback = (AFUNPTR) sSBB_IM<32>; break;
+                #if TARGET_IA32E
+                case 8: callback = (AFUNPTR) sSBB_IM<64>; break;
+                #endif
+                default: return;
+            }
+            INS_InsertCall (ins, IPOINT_BEFORE, callback,
+                IARG_THREAD_ID,
+                IARG_ADDRINT, (ADDRINT) INS_OperandImmediate(ins, 1),
+                IARG_MEMORYWRITE_EA,
+                IARG_REG_VALUE, REG_GFLAGS, // valeur des flags (pour CF)
+                CALLBACK_DEBUG IARG_END);
+        } 
+        else // SBB_RM
+        { 
+            REG regSrc = INS_OperandReg(ins, 1);
+            switch (getRegSize(regSrc)) 
+            {	
+                case 1:	callback = (AFUNPTR) sSBB_RM<8>;  break;
+                case 2:	callback = (AFUNPTR) sSBB_RM<16>; break;
+                case 4:	callback = (AFUNPTR) sSBB_RM<32>; break;
+                #if TARGET_IA32E
+                case 8: callback = (AFUNPTR) sSBB_RM<64>; break;
+                #endif
+                default: return; // normalement il faudrait démarquer la mémoire...
+            }
+            INS_InsertCall (ins, IPOINT_BEFORE, callback,
+                IARG_THREAD_ID,
+                IARG_UINT32, regSrc, 
+                IARG_REG_VALUE, regSrc, 
+                IARG_MEMORYWRITE_EA, 
+                IARG_REG_VALUE, REG_GFLAGS, // valeur des flags (pour CF)
+                CALLBACK_DEBUG IARG_END);
+        }
+    }
+    else // DESTINATION = REGISTRE
+    {    
+        REG regDest  = INS_OperandReg(ins, 0);
+        UINT32 regSize = getRegSize(regDest);
+        if (!regSize) return;	        // registre non géré
+        else if (INS_IsMemoryRead(ins)) // SBB_MR
+        {			
+            switch (regSize) 
+            {	
+                case 1:	callback = (AFUNPTR) sSBB_MR<8>;  break;
+                case 2:	callback = (AFUNPTR) sSBB_MR<16>; break;
+                case 4:	callback = (AFUNPTR) sSBB_MR<32>; break;
+                #if TARGET_IA32E
+                case 8: callback = (AFUNPTR) sSBB_MR<64>; break;
+                #endif
+            }
+
+            INS_InsertCall (ins, IPOINT_BEFORE, callback,
+                IARG_THREAD_ID,
+                IARG_MEMORYREAD_EA,		    // adresse réelle de lecture
+                IARG_UINT32, regDest,	    // registre destination
+                IARG_REG_VALUE, regDest,    // valeur lors du callback
+                IARG_REG_VALUE, REG_GFLAGS, // valeur des flags (pour CF)
+                CALLBACK_DEBUG IARG_END);
+        }
+        else if (INS_OperandIsImmediate(ins, 1))  // SBB_IR
+        {         
+            switch (regSize) 
+            {	
+                case 1:	callback = (AFUNPTR) sSBB_IR<8>; break;
+                case 2:	callback = (AFUNPTR) sSBB_IR<16>; break;
+                case 4:	callback = (AFUNPTR) sSBB_IR<32>; break;
+                #if TARGET_IA32E
+                case 8: callback = (AFUNPTR) sSBB_IR<64>; break;
+                #endif
+            }
+
+            INS_InsertCall (ins, IPOINT_BEFORE, callback,
+                IARG_THREAD_ID,
+                IARG_ADDRINT, (ADDRINT) INS_OperandImmediate(ins, 1),
+                IARG_UINT32, regDest,	    // registre destination
+                IARG_REG_VALUE, regDest,    // valeur lors du callback
+                IARG_REG_VALUE, REG_GFLAGS, // valeur des flags (pour CF)
+                CALLBACK_DEBUG IARG_END);
+        }
+        else // SBB_RR
+        {    
+            REG regSrc  = INS_OperandReg(ins, 1);
+            switch (getRegSize(regSrc)) 
+            {	
+                case 1:	callback = (AFUNPTR) sSBB_RR<8>;  break;
+                case 2:	callback = (AFUNPTR) sSBB_RR<16>; break;
+                case 4:	callback = (AFUNPTR) sSBB_RR<32>; break;
+                #if TARGET_IA32E
+                case 8: callback = (AFUNPTR) sSBB_RR<64>; break;
+                #endif
+                default: return; // registre source non suivi
+            }
+            
+            INS_InsertCall (ins, IPOINT_BEFORE, callback,
+                IARG_THREAD_ID,
+                IARG_UINT32,    regSrc,		// registre source
+                IARG_REG_VALUE, regSrc,		// valeur lors du callback
+                IARG_UINT32,    regDest,	// registre de destination
+                IARG_REG_VALUE, regDest,	// valeur lors du callback
+                IARG_REG_VALUE, REG_GFLAGS, // valeur des flags (pour CF)
+                CALLBACK_DEBUG IARG_END);
+        }  
+    }
+} // cSBB
+
 
 /////////
 // SUB //

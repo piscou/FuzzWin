@@ -159,7 +159,7 @@ public:
     /******************************/
 
     // renvoie un objet représentant le marquage de la plage d'adresses
-    template<UINT32 lengthInBits> std::shared_ptr<TaintObject<lengthInBits>> getMemoryTaint(ADDRINT address) const
+    template<UINT32 lengthInBits> TAINT_OBJECT_PTR getMemoryTaint(ADDRINT address) const
     { 
         static_assert((lengthInBits % 8 == 0), "taille non multiple de 8 bits");
         TaintObject<lengthInBits> result(CONCAT);
@@ -180,7 +180,7 @@ public:
             address++;
         }
         PIN_ReleaseLock(&g_lock);
-        return (std::make_shared<TaintObject<lengthInBits>>(result));
+        return (MK_TAINT_OBJECT_PTR(result));
     }
 
     // spécialisation pour le cas 8 bits
@@ -266,7 +266,7 @@ public:
     // marquage de 'lengthInBits' octets avec l'objet 'tPtr' à partir de l'adresse 'address'
     // si 'tPtr' est nullptr, provoque le démarquage des 'lengthInBits' octets
     template<UINT32 lengthInBits> void updateMemoryTaint
-        (ADDRINT address, const std::shared_ptr<TaintObject<lengthInBits>> &tPtr) 
+        (ADDRINT address, const TAINT_OBJECT_PTR &tPtr) 
     {
         static_assert((lengthInBits & 0x7) == 0, "taille memoire non valide");           
         PIN_GetLock(&g_lock, 0); // obligatoire car classe globale
@@ -446,7 +446,7 @@ public:
     // renvoie un objet représentant le marquage d'un registre 
     // template entièrement spécialisé pour prendre en compte
     // les registres 8/16/32/64bits "entiers"
-    template<UINT32 lengthInBits> std::shared_ptr<TaintObject<lengthInBits>> getRegisterTaint(REG reg, ADDRINT regValue) 
+    template<UINT32 lengthInBits> TAINT_OBJECT_PTR getRegisterTaint(REG reg, ADDRINT regValue) 
     {
         static_assert((lengthInBits % 8 == 0), "registre non multiple de 8 bits");
     }
@@ -617,7 +617,7 @@ public:
     // mise à jour du marquage du registre avec l'objet fourni
     // spécialisation complete du template pour marquer les registres "entiers"
     template<UINT32 lengthInBits> 
-    void updateTaintRegister(REG reg, const std::shared_ptr<TaintObject<lengthInBits>> &tPtr)
+    void updateTaintRegister(REG reg, const TAINT_OBJECT_PTR &tPtr)
     {  static_assert((lengthInBits % 8 == 0), "registre non valide");  }
 
     // cas 8bits
@@ -657,7 +657,8 @@ public:
         }
         #endif
 
-        // si un registre plein était présent : effacer le marquage, car une partie a été modifiée
+        // si un registre plein était présent : effacer le marquage
+        // car une partie a été modifiée
         this->_registers32Ptr[regIndex].reset();
         #if TARGET_IA32E
         this->_registers64Ptr[regIndex].reset();
@@ -865,3 +866,9 @@ public:
 
 // pointeur global vers classe de gestion du marquage mémoire
 extern TaintManager_Global *pTmgrGlobal;
+
+// fonction inline pour récupérer la classe de marquage locale stockée dans la TLS
+static inline TaintManager_Thread* getTmgrInTls(THREADID tid)
+{
+    return (static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid)));
+}
