@@ -111,6 +111,10 @@ enum Relation
     // src0 : src, src1 : numéro du bit (obj marqué de longueur = à la source)
     // src1 est sur 16/32/64bits, 8 bits impossible. position bit marqué sinon ce serait un EXTRACT
     X_CLEAR_BIT,
+    // BSF : Bit Scan Forward = index du LSB de la source. Source 0 = source testée
+    X_BSF,
+    // BSR : Bit Scan Reverse = index du MSB de la source. Source 0 = source testée
+    X_BSR,
 
     /*******************************************************************/
     /**** Relations de modelisation des effets de bords (flags) x86 ****/
@@ -164,7 +168,7 @@ enum Relation
     F_IS_NULL,
     // F_ARE_EQUAL : 1 si source0 et source1 sont égales, 0 sinon
     F_ARE_EQUAL,
-    // CMPXCHG 8B et 16B
+    // CMPXCHG 8B et 16B : ZF à 1 si les deux opérandes sont égales
     // Srcs 0 et 1 = mémoire  (partie haute et partie basse), objets de 32 ou 64bits
     // Srcs 2 et 3 = registre (partie haute et partie basse), objets de 32 ou 64bits
     F_CMPXCHG_8B16B,
@@ -245,7 +249,7 @@ const static std::string enum_strings[RELATION_LAST] =
     "X_ROR", "X_ROL", "X_RCR", "X_RCL",
 
     // BIT_BYTE
-    "X_COMPLEMENT_BIT", "X_SET_BIT", "X_CLEAR_BIT",
+    "X_COMPLEMENT_BIT", "X_SET_BIT", "X_CLEAR_BIT", "X_BSF", "X_BSR"
 
     /**** Relations de modelisation des effets de bords (flags) x86 ****/
     

@@ -513,7 +513,8 @@ template<UINT32 lengthInBits> void BITBYTE::sBTR_RR
 /** BTS : test et mise à 1 du bit **/
 /***********************************/
 
-template<UINT32 lengthInBits> void BITBYTE::sBTS_IM(THREADID tid, ADDRINT testedAddress, ADDRINT value ADDRESS_DEBUG)
+template<UINT32 lengthInBits> 
+void BITBYTE::sBTS_IM(THREADID tid, ADDRINT testedAddress, ADDRINT value ADDRESS_DEBUG)
 { 
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     
@@ -545,7 +546,8 @@ template<UINT32 lengthInBits> void BITBYTE::sBTS_IM(THREADID tid, ADDRINT tested
     }
 } // sBTS_IM
 
-template<UINT32 lengthInBits> void BITBYTE::sBTS_IR(THREADID tid, REG testedReg, ADDRINT value ADDRESS_DEBUG)
+template<UINT32 lengthInBits> 
+void BITBYTE::sBTS_IR(THREADID tid, REG testedReg, ADDRINT value ADDRESS_DEBUG)
 {
     REGINDEX regIndex = getRegIndex(testedReg);
     
@@ -581,8 +583,8 @@ template<UINT32 lengthInBits> void BITBYTE::sBTS_IR(THREADID tid, REG testedReg,
     }
 } // sBTS_IR
 
-template<UINT32 lengthInBits> void BITBYTE::sBTS_RM
-    (THREADID tid, ADDRINT testedAddress, REG bitIndexReg, ADDRINT bitIndexRegValue ADDRESS_DEBUG)
+template<UINT32 lengthInBits> 
+void BITBYTE::sBTS_RM(THREADID tid, ADDRINT testedAddress, REG bitIndexReg, ADDRINT bitIndexRegValue ADDRESS_DEBUG)
 { 
     // calcul du deplacement en octets (2/4/8)* (offset DIV 16/32/64), soit une division par 8. 
     // !!! CAST EN INT POUR FAIRE UNE DIVISION SIGNEE
@@ -649,8 +651,8 @@ template<UINT32 lengthInBits> void BITBYTE::sBTS_RM
     }
 }  // sBTS_RM
 
-template<UINT32 lengthInBits> void BITBYTE::sBTS_RR
-    (THREADID tid, REG testedReg, ADDRINT testedRegValue, REG bitIndexReg, ADDRINT bitIndexRegValue ADDRESS_DEBUG)
+template<UINT32 lengthInBits> 
+void BITBYTE::sBTS_RR(THREADID tid, REG testedReg, ADDRINT testedRegValue, REG bitIndexReg, ADDRINT bitIndexRegValue ADDRESS_DEBUG)
 { 
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
         
@@ -688,9 +690,94 @@ template<UINT32 lengthInBits> void BITBYTE::sBTS_RR
     }
 } // sBTS_RR
 
+/**********************************************/
+/** BSR : Bit Scan Reverse (position du MSB) **/
+/**********************************************/
+template<UINT32 lengthInBits> 
+void BITBYTE::sBSR_M(THREADID tid, ADDRINT testedAddress, REG resultReg ADDRESS_DEBUG)
+{ 
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
 
-template<UINT32 lengthInBits> void BITBYTE::sBSR_M(THREADID tid, ADDRINT testedAddress, REG resultReg ADDRESS_DEBUG){ } 
-template<UINT32 lengthInBits> void BITBYTE::sBSR_R(THREADID tid, REG testedReg, ADDRINT testedRegValue, REG resultReg ADDRESS_DEBUG){ } 
+    if (! pTmgrGlobal->isMemoryTainted<lengthInBits>(testedAddress))
+    {
+        pTmgrTls->unTaintZeroFlag();
+    }
+    else
+    {
+        ObjectSource objSrc(pTmgrGlobal->getMemoryTaint<lengthInBits>(testedAddress));
 
-template<UINT32 lengthInBits> void BITBYTE::sBSF_M(THREADID tid, ADDRINT testedAddress, REG resultReg ADDRESS_DEBUG){ } 
-template<UINT32 lengthInBits> void BITBYTE::sBSF_R(THREADID tid, REG testedReg, ADDRINT testedRegValue, REG resultReg ADDRESS_DEBUG){ }
+        // ZF vaut 1 si la source est nulle, 0 dans les autres cas => F_IS_NULL
+        pTmgrTls->updateTaintZeroFlag(std::make_shared<TaintBit>(F_IS_NULL, objSrc);
+
+        // la destination vaut l'index du MSB => relation spécifique X_BSR
+        pTmgrTls->updateTaintRegister<lengthInBits>(resultReg, MK_TAINT_OBJECT_PTR(X_BSR, objSrc));
+    }
+}  // sBSR_M
+
+template<UINT32 lengthInBits> 
+void BITBYTE::sBSR_R(THREADID tid, REG testedReg, ADDRINT testedRegValue, 
+                     REG resultReg ADDRESS_DEBUG)
+{
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
+
+    if (! pTmgrTls->isRegisterTainted<lengthInBits>(testedReg))
+    {
+        pTmgrTls->unTaintZeroFlag();
+    }
+    else
+    {
+        ObjectSource objSrc(pTmgrGlobal->getRegisterTaint<lengthInBits>(testedReg, testedRegValue));
+
+        // ZF vaut 1 si la source est nulle, 0 dans les autres cas => F_IS_NULL
+        pTmgrTls->updateTaintZeroFlag(std::make_shared<TaintBit>(F_IS_NULL, objSrc);
+
+        // la destination vaut l'index du MSB => relation spécifique X_BSR
+        pTmgrTls->updateTaintRegister<lengthInBits>(resultReg, MK_TAINT_OBJECT_PTR(X_BSR, objSrc));
+    }
+}  // sBSR_R 
+
+/**********************************************/
+/** BSF : Bit Scan Forward (position du LSB) **/
+/**********************************************/
+template<UINT32 lengthInBits> 
+void BITBYTE::sBSF_M(THREADID tid, ADDRINT testedAddress, REG resultReg ADDRESS_DEBUG)
+{ 
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
+
+    if (! pTmgrGlobal->isMemoryTainted<lengthInBits>(testedAddress))
+    {
+        pTmgrTls->unTaintZeroFlag();
+    }
+    else
+    {
+        ObjectSource objSrc(pTmgrGlobal->getMemoryTaint<lengthInBits>(testedAddress));
+
+        // ZF vaut 1 si la source est nulle, 0 dans les autres cas => F_IS_NULL
+        pTmgrTls->updateTaintZeroFlag(std::make_shared<TaintBit>(F_IS_NULL, objSrc);
+
+        // la destination vaut l'index du LSB => relation spécifique X_BSF
+        pTmgrTls->updateTaintRegister<lengthInBits>(resultReg, MK_TAINT_OBJECT_PTR(X_BSF, objSrc));
+    }
+}  // sBSF_M
+
+template<UINT32 lengthInBits> 
+void BITBYTE::sBSF_R(THREADID tid, REG testedReg, ADDRINT testedRegValue, 
+                     REG resultReg ADDRESS_DEBUG)
+{
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
+
+    if (! pTmgrTls->isRegisterTainted<lengthInBits>(testedReg))
+    {
+        pTmgrTls->unTaintZeroFlag();
+    }
+    else
+    {
+        ObjectSource objSrc(pTmgrGlobal->getRegisterTaint<lengthInBits>(testedReg, testedRegValue));
+
+        // ZF vaut 1 si la source est nulle, 0 dans les autres cas => F_IS_NULL
+        pTmgrTls->updateTaintZeroFlag(std::make_shared<TaintBit>(F_IS_NULL, objSrc);
+
+        // la destination vaut l'index du MSB => relation spécifique X_BSF
+        pTmgrTls->updateTaintRegister<lengthInBits>(resultReg, MK_TAINT_OBJECT_PTR(X_BSF, objSrc));
+    }
+}  // sBSF_R 
