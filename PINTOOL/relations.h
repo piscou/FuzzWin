@@ -140,7 +140,8 @@ enum Relation
     F_CARRY_SHR,
     // CARRY_SAR : denier bit ejecté (cas ou la source est marqué sinon traitement direct par extract)
     // Source0 : source, source1 : depl (marqué - 8bits, sera masqué à 0x1f ou 0x3f dans la formule)
-    // IDENTIQUE A CARRY_SHR car le deplacement est masqué 
+    // IDENTIQUE A CARRY_SHR car le deplacement est masqué, donc au maximal ce sera le MSB de la source
+    // qui sera éjecté
     F_CARRY_SAR = F_CARRY_SHR,
    
     // CARRY_RCL : denier bit ejecté (cas ou la source est marqué sinon traitement direct par extract)

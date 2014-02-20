@@ -32,6 +32,7 @@ typedef std::shared_ptr<TaintDoubleQword> TaintDoubleQwordPtr;
 
 // pas très joli mais bien utile....
 #define TAINT_OBJECT_PTR    std::shared_ptr<TaintObject<lengthInBits>>
+// pas très joli mais bien utile....
 #define MK_TAINT_OBJECT_PTR std::make_shared<TaintObject<lengthInBits>>
 
 class Taint 
