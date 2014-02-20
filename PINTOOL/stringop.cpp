@@ -189,11 +189,11 @@ void STRINGOP::cSTOS(INS &ins, UINT32 size)
 void STRINGOP::cSCAS(INS &ins, UINT32 size)
 { 
     void (*callback)() = nullptr;
-    void (*storeTaint)() = nullptr;
 
     REG regSrc = REG_INVALID();	// registre source (AL si 8b, AX si 16b, etc...)
     if (INS_HasRealRep(ins)) // instruction préfixée par REPE ou REPNE
     {	
+        void (*storeTaint)() = nullptr;
         switch (size) 	// taille de l'opérande mémoire de destination
         {
         case 1:	

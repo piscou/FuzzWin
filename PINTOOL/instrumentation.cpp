@@ -43,6 +43,8 @@ void INSTRUMENTATION::Instruction(INS ins, void* )
     
     // BINARY: ADD, SUB, INC, DEC, NEG, CMP
     case XED_ICLASS_SUB:  BINARY::cSUB(ins);  break;
+    case XED_ICLASS_ADC:  BINARY::cADC(ins);  break;
+    case XED_ICLASS_SBB:  BINARY::cSBB(ins);  break;
     case XED_ICLASS_ADD:  BINARY::cADD(ins);  break;
     case XED_ICLASS_INC:  BINARY::cINC(ins);  break;
     case XED_ICLASS_DEC:  BINARY::cDEC(ins);  break;

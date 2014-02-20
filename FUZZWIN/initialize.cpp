@@ -176,8 +176,11 @@ static int deleteDirectory
                 else
                 {
                     // Set file attributes
-                    if (FALSE == SetFileAttributes(strFilePath.c_str(), FILE_ATTRIBUTE_NORMAL)) return GetLastError();
-                    // Delete file
+                    if (FALSE == SetFileAttributes(strFilePath.c_str(), FILE_ATTRIBUTE_NORMAL)) 
+                    {
+                        return GetLastError();
+                    }
+                    // Delete file 
                     if (FALSE == DeleteFile(strFilePath.c_str())) return GetLastError();
                 }
             }
@@ -271,7 +274,7 @@ std::string initialize(int argc, char** argv)
 
     // "destination" Si option non présente : choisir par défaut le dossier "results"
     std::string resultDir;
-    bool isDirectoryOptionPresent = (ops >> GetOpt::Option('d', "dir", resultDir));
+    ops >> GetOpt::Option('d', "dir", resultDir);
     if (pGlobals->resultDir.empty()) resultDir = exePath + "results";
     else pGlobals->resultDir = getAbsoluteFilePath(pGlobals->resultDir);
 

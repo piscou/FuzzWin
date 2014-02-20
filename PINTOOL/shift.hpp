@@ -134,7 +134,10 @@ void SHIFT::sSHL_IR(THREADID tid, UINT32 maskedDepl, REG reg, ADDRINT regValue A
 
             // 1ERE BOUCLE : octet fort marqué avec oct (fort - deplBytes) et ainsi de suite en décroissant les indexs
             // jusqu'à ce que index source = 0 ; pas de création d'objet, juste un déplacement
-            for (UINT32 regPartFrom = (lengthInBits >> 3) - deplBytes, regPartTo = (lengthInBits >> 3) ; regPartFrom >= 0 ; --regPartFrom, --regPartTo)
+            int regPartFrom = (lengthInBits >> 3) - deplBytes;
+            int regPartTo   = (lengthInBits >> 3);
+
+            for ( ; regPartFrom >= 0 ; --regPartFrom, --regPartTo)
             {
                 // déplacement de l'octet "faible" (from) vers l'octet "fort" (to)
                 if (pTmgrTls->isRegisterPartTainted(regIndex, regPartFrom))
@@ -380,10 +383,10 @@ void SHIFT::sSHR_IR(THREADID tid, UINT32 maskedDepl, REG reg, ADDRINT regValue A
         {
             // 1ERE BOUCLE : octet faible marqué avec oct (faible + deplBytes) et ainsi de suite en accroissant les indexes
             // jusqu'à ce que index source = index fort (lengthInBits>>3 - 1) ; pas de création d'objet, juste un déplacement
-            UINT32 fromIndex = deplBytes;  // index source
-            UINT32 toIndex = 0; // index de destination
+            UINT32 regPartFrom = deplBytes; // index source
+            UINT32 regPartTo   = 0;         // index de destination
                 
-            for (UINT32 regPartFrom = deplBytes, regPartTo = 0 ; regPartFrom < (lengthInBits >> 3) ; ++regPartFrom, ++regPartTo) 
+            while ( regPartFrom < (lengthInBits >> 3) ) 
             {
                 if (pTmgrTls->isRegisterPartTainted(regIndex, regPartFrom))
                 {
@@ -391,10 +394,14 @@ void SHIFT::sSHR_IR(THREADID tid, UINT32 maskedDepl, REG reg, ADDRINT regValue A
                         (regIndex, regPartTo, pTmgrTls->getRegisterPartTaint(regIndex, regPartFrom));
                 }
                 else pTmgrTls->unTaintRegisterPart(regIndex, regPartTo);
+                ++regPartFrom;
+                ++regPartTo;
             }
 
-            // 2EME BOUCLE : demarquage des 'deplBytes' octets forts: [(lengthInBits >> 3) - deplBytes; (lengthInBits >> 3) [
-            for (UINT32 regPart = (lengthInBits >> 3) - deplBytes ; regPart < (lengthInBits >> 3) ; ++regPart)
+            // 2EME BOUCLE : demarquage des 'deplBytes' octets forts:
+            // [(lengthInBits >> 3) - deplBytes; (lengthInBits >> 3) [
+            UINT32 regPart = (lengthInBits >> 3) - deplBytes ;
+            while (++regPart < (lengthInBits >> 3))
             {
                 pTmgrTls->unTaintRegisterPart(regIndex, regPart);
             }

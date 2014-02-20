@@ -93,10 +93,10 @@ public:
             std::sregex_token_iterator it(bytesString.begin(), bytesString.end(), bytesModel, tokens);
             std::sregex_token_iterator end;
             
-            UINT32 minBound, maxBound;
-
             while (it != end) 
             {
+                int minBound, maxBound;
+                
                 // 1ere valeur = borne minimale (tjs présente)
                 minBound = std::stoi(it->str());  
                 ++it; 
@@ -195,7 +195,7 @@ public:
     }
 
     // renvoi d'une copie de la MAP : sert aux statistiques de fin de programme
-    std::map<ADDRINT, TaintBytePtr> getSnapshotOfTaintedLocations()
+    std::map<ADDRINT, TaintBytePtr> getSnapshotOfTaintedLocations() const
     { return this->_memoryPtrs; }
     
     /*******************************/
@@ -352,6 +352,9 @@ private:
 #endif
 
 public:
+    TaintManager_Thread()  {}
+    ~TaintManager_Thread() {}
+
     /**************************************************/
     /** GESTION DU MARQUAGE DES ADDRESSES EFFECTIVES **/
     /**************************************************/
@@ -362,7 +365,7 @@ public:
     { this->_effectiveAddressPtr = tdwPtr; }
 
     // récupération de l'objet mis en cache
-    TaintDwordPtr getTaintEffectiveAddress()
+    TaintDwordPtr getTaintEffectiveAddress() const
     { return (this->_effectiveAddressPtr); }
 #else
     // mise en cache d'un objet calculant une addresse effective (64bits)
@@ -370,7 +373,7 @@ public:
     { this->_effectiveAddressPtr = tqwPtr; }
 
     // récupération de l'objet mis en cache
-    TaintQwordPtr getTaintEffectiveAddress()
+    TaintQwordPtr getTaintEffectiveAddress() const
     { return (this->_effectiveAddressPtr); }
 #endif
 
@@ -568,7 +571,7 @@ public:
 
     // renvoie un objet représentant le marquage d'un registre 8 bits
     // surcharge du template normal (passage d'un seul paramètre)
-    TaintBytePtr getRegisterTaint(REG reg)
+    TaintBytePtr getRegisterTaint(REG reg) const
     { 
         UINT32 regPart = REG_is_Upper8(reg) ? 1 : 0;
         REGINDEX regIndex = getRegIndex(reg);
@@ -585,16 +588,16 @@ public:
     }
 
     // renvoie le marquage d'une partie de registre
-    TaintBytePtr getRegisterPartTaint(REGINDEX regIndex, UINT32 regPart) 
+    TaintBytePtr getRegisterPartTaint(REGINDEX regIndex, UINT32 regPart) const  
     {  return (this->_registers8Ptr[regIndex][regPart]); }
 
     // renvoie le marquage correspondant aux flags
-    TaintBitPtr getTaintCarryFlag()        { return (this->_cFlagPtr); }
-    TaintBitPtr getTaintParityFlag()       { return (this->_pFlagPtr); }
-    TaintBitPtr getTaintAuxiliaryFlag()    { return (this->_aFlagPtr); }
-    TaintBitPtr getTaintZeroFlag()         { return (this->_zFlagPtr); }
-    TaintBitPtr getTaintSignFlag()         { return (this->_sFlagPtr); }
-    TaintBitPtr getTaintOverflowFlag()     { return (this->_oFlagPtr); }
+    TaintBitPtr getTaintCarryFlag()     const   { return (this->_cFlagPtr); }
+    TaintBitPtr getTaintParityFlag()    const   { return (this->_pFlagPtr); }
+    TaintBitPtr getTaintAuxiliaryFlag() const   { return (this->_aFlagPtr); }
+    TaintBitPtr getTaintZeroFlag()      const   { return (this->_zFlagPtr); }
+    TaintBitPtr getTaintSignFlag()      const   { return (this->_sFlagPtr); }
+    TaintBitPtr getTaintOverflowFlag()  const   { return (this->_oFlagPtr); }
 
     /*****************************************/
     /** FONCTIONS DE MARQUAGE DES REGISTRES **/

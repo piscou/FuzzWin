@@ -25,19 +25,20 @@ static UINT32 numberOfChilds = 0;	// numérotation des fichiers dérivés
 
 static size_t sendNonInvertedConstraints(const std::string &formula, UINT32 bound)
 {
-    size_t posBeginOfLine = 0; // position du début de ligne de la contrainte 'bound'
-    size_t posEndOfLine   = 0; // position du fin de ligne de la contrainte 'bound'
-
     if (bound) 
     {
+        size_t posBeginOfLine = 0; // position du début de ligne de la contrainte 'bound'
+        size_t posEndOfLine   = 0; // position du fin de ligne de la contrainte 'bound'
+    
         // recherche de la contrainte "bound" dans la formule
         posBeginOfLine	= formula.find("(assert (= C_" + std::to_string((_Longlong) bound));
         // recherche de la fin de la ligne
         posEndOfLine	= formula.find_first_of('\n', posBeginOfLine);
         // extraction des contraintes non inversées et envoi au solveur
         sendToSolver(formula.substr(0, posEndOfLine + 1));
+        return (posEndOfLine); // position de la fin de la dernière contrainte dans la formule
     }
-    return (posEndOfLine); // position de la fin de la dernière contrainte dans la formule
+    else return (0);
 }
 
 // renvoie l'inverse de la contrainte fournie en argument
@@ -242,8 +243,7 @@ ListOfInputs expandExecution(CInput *pInput, HashTable &h, UINT32 *nbFautes)
         {							
             std::string newInputContent(inputContent); // copie du contenu du fichier initial
             std::string solutions;
-            size_t      newFileHash = 0;
-             
+
             // récupération des solutions du solveur
             solutions = getModelFromSolver();
                 
@@ -280,7 +280,6 @@ ListOfInputs expandExecution(CInput *pInput, HashTable &h, UINT32 *nbFautes)
                 DWORD checkError = debugTarget(newChild);
                 if (!checkError) result.push_back(newChild);
                 else ++*nbFautes;
-
             }	
             else // le fichier a déjà été généré (hash présent ou ... collision)
             {

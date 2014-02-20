@@ -126,7 +126,8 @@
       </TreatWChar_tAsBuiltInType>
       <ForceConformanceInForLoopScope>
       </ForceConformanceInForLoopScope>
-      <MinimalRebuild>false</MinimalRebuild>
+      <MinimalRebuild>
+      </MinimalRebuild>
       <FloatingPointModel>Precise</FloatingPointModel>
       <ErrorReporting>Prompt</ErrorReporting>
       <BrowseInformation>
@@ -205,7 +206,8 @@ del "$(TargetDir)$(TargetName).exp"</Command>
       </TreatWChar_tAsBuiltInType>
       <ForceConformanceInForLoopScope>
       </ForceConformanceInForLoopScope>
-      <MinimalRebuild>false</MinimalRebuild>
+      <MinimalRebuild>
+      </MinimalRebuild>
       <FloatingPointModel>Precise</FloatingPointModel>
       <ErrorReporting>Prompt</ErrorReporting>
       <BrowseInformation>
@@ -269,7 +271,8 @@ del "$(TargetDir)$(TargetName).exp"</Command>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>TARGET_IA32;HOST_IA32;TARGET_WINDOWS;BIGARRAY_MULTIPLIER=1;_CRT_SECURE_NO_DEPRECATE;_SECURE_SCL=0;WIN32</PreprocessorDefinitions>
       <OmitFramePointers>true</OmitFramePointers>
-      <MinimalRebuild>false</MinimalRebuild>
+      <MinimalRebuild>
+      </MinimalRebuild>
       <ExceptionHandling>false</ExceptionHandling>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <BufferSecurityCheck>false</BufferSecurityCheck>
@@ -295,7 +298,7 @@ del "$(TargetDir)$(TargetName).exp"</Command>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
-      <DebugInformationFormat>None</DebugInformationFormat>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <Link>
       <SubSystem>
@@ -351,7 +354,8 @@ del "$(TargetDir)$(TargetName).exp"</Command>
       <PreprocessorDefinitions>TARGET_IA32E;HOST_IA32E;TARGET_WINDOWS;BIGARRAY_MULTIPLIER=1;_CRT_SECURE_NO_DEPRECATE;_SECURE_SCL=0;WIN32</PreprocessorDefinitions>
       <OmitFramePointers>
       </OmitFramePointers>
-      <MinimalRebuild>false</MinimalRebuild>
+      <MinimalRebuild>
+      </MinimalRebuild>
       <ExceptionHandling>
       </ExceptionHandling>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
@@ -376,7 +380,7 @@ del "$(TargetDir)$(TargetName).exp"</Command>
       <AdditionalOptions>/EHs- /EHa- %(AdditionalOptions)</AdditionalOptions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
-      <DebugInformationFormat>None</DebugInformationFormat>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <Link>
       <SubSystem>

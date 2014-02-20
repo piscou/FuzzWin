@@ -1,8 +1,6 @@
 template<UINT32 lengthInBits> void SEMAPHORE::sCMPXCHG_RM
     (THREADID tid, REG regSrc, ADDRINT address, REG cmpReg, ADDRINT cmpRegValue ADDRESS_DEBUG)
 {
-    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
-    
     // 1ere partie de CMPXCHG : il s'agit en fait d'un CMP_RM
     // donc appeler la fonction correspondante implémentée dans BINARY
     // qui marquera les flags en conséquence
@@ -19,8 +17,6 @@ template<UINT32 lengthInBits> void SEMAPHORE::sCMPXCHG_RM
 template<UINT32 lengthInBits> void SEMAPHORE::sCMPXCHG_RR
     (THREADID tid, REG regSrc, REG regDest, ADDRINT regDestValue, REG cmpReg, ADDRINT cmpRegValue ADDRESS_DEBUG)
 {
-    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
-    
     // 1ere partie de CMPXCHG : il s'agit en fait d'un CMP_RR
     // donc appeler la fonction correspondante implémentée dans BINARY
     // qui marquera les flags en conséquence

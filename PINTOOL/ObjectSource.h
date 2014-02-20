@@ -8,11 +8,11 @@
 class ObjectSource 
 { 
 private:    
-    UINT32    _lengthInBits;
     TaintPtr  _src;
-    ADDRINT   _val;   // 32 ou 64bits selon la compilation 
+    ADDRINT   _val;   // 32 ou 64bits selon la compilation
+    UINT32    _lengthInBits; 
 public:
-    ObjectSource() {};
+    ObjectSource();
     ObjectSource(const TaintPtr &taintPtr);
     ObjectSource(UINT32 lengthInBits, ADDRINT value);
     ~ObjectSource() {} 

@@ -144,55 +144,47 @@ void BINARY::sADC_IR(THREADID tid, ADDRINT value, REG reg, ADDRINT regValue,
 {
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
 
-    // Cas où CF est marqué : addition CF et (reg + Imm)
-    if (pTmgrTls->isCarryFlagTainted())	
+    bool isCFTainted  = pTmgrTls->isCarryFlagTainted();
+    bool isRegTainted = pTmgrTls->isRegisterTainted<lengthInBits>(reg);
+
+    // rien de marqué : juste un démarquage des flags
+    if (! (isCFTainted || isRegTainted))    pTmgrTls->unTaintAllFlags();  
+    else
     {
-        // CF doit être zero-extended à la longueur des sources
-        ObjectSource objCF(MK_TAINT_OBJECT_PTR(
-            X_ZEROEXTEND,
-            ObjectSource(pTmgrTls->getTaintCarryFlag())));
+        _LOGTAINT("ADC_IR " << lengthInBits);
 
-        // construction du squelette du resultat : CF + ...
-        TAINT_OBJECT_PTR resultPtr = MK_TAINT_OBJECT_PTR(X_ADD, objCF);
+        // On va calculer deux sources : 'objSrcPlusDest' et 'objCarryFlag'
+        // puis les additionner et marquer flags et destination
 
-        // ajout de (reg + Imm), selon marquage de reg
-        ObjectSource objRegImm;
-        if (pTmgrTls->isRegisterTainted<lengthInBits>(reg)) 
-        {
-            _LOGTAINT("ADC_IR " << lengthInBits << "(REG et CF marqués)");
-            TAINT_OBJECT_PTR tRegImmPtr = MK_TAINT_OBJECT_PTR(X_ADD,
-                ObjectSource(pTmgrTls->getRegisterTaint<lengthInBits>(reg, regValue)),
-                ObjectSource(lengthInBits, value));
-            objRegImm = ObjectSource(tRegImmPtr);
-        }
-        else
-        {
-            _LOGTAINT("ADC_IR " << lengthInBits << "(CF marqué mais pas REG)");
-            objRegImm = ObjectSource(lengthInBits, regValue + value);
-        }
-        resultPtr->addSource(objRegImm);
+        // objets sources à calculer
+        ObjectSource objSrcPlusDest, objCarryFlag;
         
-        // marquage flags et destination. Les deux sources sont CF et (reg+imm)
-        fTaintADD(pTmgrTls, objCF, objRegImm, resultPtr);	
+        /*** traitement de 'objSrcPlusDest' : 2 cas possibles selon marquage reg ***/
+        if (isRegTainted)  
+        {  
+            objSrcPlusDest = ObjectSource(MK_TAINT_OBJECT_PTR(X_ADD, 
+                ObjectSource(pTmgrTls->getRegisterTaint<lengthInBits>(reg, regValue)),
+                ObjectSource(lengthInBits, value)));
+        }
+        else objSrcPlusDest = ObjectSource(lengthInBits, value + regValue);
+
+        /*** traitement de 'objCarryFlag' : 2 cas possibles (marqué ou valeur) ***/
+        if (isCFTainted)	
+        {
+            // CF doit être zero-extended à la longueur des sources
+            TAINT_OBJECT_PTR zeroExtCFPtr = MK_TAINT_OBJECT_PTR(X_ZEROEXTEND,
+                ObjectSource(pTmgrTls->getTaintCarryFlag()));
+            objCarryFlag = ObjectSource(zeroExtCFPtr);
+        }
+        else objCarryFlag = ObjectSource(lengthInBits, flagsValue & 1); // CF est le LSB des flags
+
+        /*** resultat = addition des deux sources ***/
+        TAINT_OBJECT_PTR resultPtr = MK_TAINT_OBJECT_PTR(X_ADD, objSrcPlusDest, objCarryFlag);
+
+        /*** marquage flags et destination ***/
+        fTaintADD(pTmgrTls, objSrcPlusDest, objCarryFlag, resultPtr);	
         pTmgrTls->updateTaintRegister<lengthInBits>(reg, resultPtr);			
     }  
-    // cas où registre marqué (CF non marqué)
-    else if (pTmgrTls->isRegisterTainted<lengthInBits>(reg))
-    {
-        _LOGTAINT("ADC_IR " << lengthInBits << "(REG marqué, pas CF)");
-
-        // addition reg + (imm + valeur CF)
-        ObjectSource objReg(pTmgrTls->getRegisterTaint<lengthInBits>(reg, regValue));
-        ObjectSource objImmCF(lengthInBits, value + (flagsValue & 1));		
-        
-        TAINT_OBJECT_PTR resultPtr = MK_TAINT_OBJECT_PTR(X_ADD, objReg, objImmCF);
-
-        // marquage flags et destination. Les deux sources sont reg et (imm + CF)
-        fTaintADD(pTmgrTls, objReg, objImmCF, resultPtr);	
-        pTmgrTls->updateTaintRegister<lengthInBits>(reg, resultPtr);
-    }
-    // ni REG ni CF marqué : juste un démarquage des flags
-    else pTmgrTls->unTaintAllFlags(); 
 } // sADC_IR
 
 template<UINT32 lengthInBits> 
@@ -263,127 +255,68 @@ void BINARY::sADC_MR(THREADID tid, ADDRINT readAddress, REG regSrcDest,
     bool isRegTainted = pTmgrTls->isRegisterTainted<lengthInBits>(regSrcDest);
     bool isMemTainted = pTmgrGlobal->isMemoryTainted<lengthInBits>(readAddress);
     
-    // Cas où CF est marqué : addition CF et (mem + Reg)
-    if (isCFTainted)	
+    // rien de marqué : juste un démarquage des flags
+    if (! (isCFTainted || isRegTainted || isMemTainted))
     {
-        // CF doit être zero-extended à la longueur des sources
-        ObjectSource objCF(MK_TAINT_OBJECT_PTR(X_ZEROEXTEND,
-            ObjectSource(pTmgrTls->getTaintCarryFlag())));
+        pTmgrTls->unTaintAllFlags();  
+    }
+    else
+    {
+        _LOGTAINT("ADC_MR " << lengthInBits);
 
-        // construction du squelette du resultat : CF + ...
-        TAINT_OBJECT_PTR resultPtr = MK_TAINT_OBJECT_PTR(X_ADD, objCF);
+        // On va calculer deux sources : 'objSrcPlusDest' et 'objCarryFlag'
+        // puis les additionner et marquer flags et destination
 
-        // ajout de (mem + reg) : 4 possibilites
-        ObjectSource objMemReg;
+        // objets sources à calculer
+        ObjectSource objSrcPlusDest, objCarryFlag;
         
+        /*** traitement de 'objSrcPlusDest' : 4 cas possibles (M/M, M/V, V/M, V/V) ***/
         if (isRegTainted)  
         {  
-            // source 1: registre marqué
             TAINT_OBJECT_PTR tMemRegPtr = MK_TAINT_OBJECT_PTR(X_ADD, 
                 ObjectSource(pTmgrTls->getRegisterTaint<lengthInBits>(regSrcDest, regSrcDestValue)));
             
-            // CAS 1 : CF(M) REG(M) MEM(M)
-            if (isMemTainted) 
-            {
-                _LOGTAINT("ADC_MR " << lengthInBits << "(CF REG MEM marqués)");
-                // source2 : mémoire marquée
+            if (isMemTainted) // Cas M/M
+            {  
                 tMemRegPtr->addSource(pTmgrGlobal->getMemoryTaint<lengthInBits>(readAddress));
             }
-            // CAS 2 : CF(M) REG(M) MEM(V)
-            else 
+            else // cas M/V
             {
-                _LOGTAINT("ADC_MR " << lengthInBits << "(CF REG marqués)");
                 ADDRINT memValue = getMemoryValue<lengthInBits>(readAddress);
-                // source2 : mémoire valeur
                 tMemRegPtr->addConstantAsASource<lengthInBits>(memValue);
             }
             // résultat reg + mem traduit sous forme de source
-            objMemReg = ObjectSource(tMemRegPtr);
+            objSrcPlusDest = ObjectSource(tMemRegPtr);
         }
-        else if (isMemTainted)
+        else if (isMemTainted) // cas V/M
         {
-            // src 1: mémoire marquée, src 2: registre (valeur), sinon on serait dans cas 1
-            // CAS 3 : CF(M) REG(V) MEM(M)
-            _LOGTAINT("ADC_MR " << lengthInBits << "(CF MEM marqués)");
-
-            // résultat reg + mem traduit sous forme de source
-            objMemReg = ObjectSource(MK_TAINT_OBJECT_PTR(X_ADD, 
+            objSrcPlusDest = ObjectSource(MK_TAINT_OBJECT_PTR(X_ADD, 
                 ObjectSource(pTmgrGlobal->getMemoryTaint<lengthInBits>(readAddress)),
                 ObjectSource(lengthInBits, regSrcDestValue)));
         }
-        else
+        else // cas V/V
         {
-            // CAS 4 : CF(M) REG(V) MEM(V)
-            // on additionne donc les deux valeurs et c'est tout
-            _LOGTAINT("ADC_MR " << lengthInBits << "(CF marqué)");
-
             ADDRINT memValue = getMemoryValue<lengthInBits>(readAddress);
-            // résultat reg + mem traduit sous forme de source
-            objMemReg = ObjectSource(lengthInBits, memValue + regSrcDestValue);
+            objSrcPlusDest = ObjectSource(lengthInBits, memValue + regSrcDestValue);
         }
 
-        // ajout de l'objet (reg + mem) à l'addition globale
-        resultPtr->addSource(objMemReg);
+        /*** traitement de 'objCarryFlag' : 2 cas possibles (marqué ou valeur) ***/
+        if (isCFTainted)	
+        {
+            // CF doit être zero-extended à la longueur des sources
+            TAINT_OBJECT_PTR zeroExtCFPtr = MK_TAINT_OBJECT_PTR(X_ZEROEXTEND,
+                ObjectSource(pTmgrTls->getTaintCarryFlag()));
+            objCarryFlag = ObjectSource(zeroExtCFPtr);
+        }
+        else objCarryFlag = ObjectSource(lengthInBits, flagsValue & 1); // CF est le LSB des flags
 
-        // marquage flags et destination. Les deux sources sont CF et (REG + MEM)
-        fTaintADD(pTmgrTls, objCF, objMemReg, resultPtr);	
+        /*** resultat = addition des deux sources ***/
+        TAINT_OBJECT_PTR resultPtr = MK_TAINT_OBJECT_PTR(X_ADD, objSrcPlusDest, objCarryFlag);
+
+        /*** marquage flags et destination ***/
+        fTaintADD(pTmgrTls, objSrcPlusDest, objCarryFlag, resultPtr);	
         pTmgrTls->updateTaintRegister<lengthInBits>(regSrcDest, resultPtr);			
     }  
-    
-    // Cas où CF est NON MARQUE , mais MEM MARQUEE
-    else if (isMemTainted)
-    {
-        ObjectSource objMem(pTmgrGlobal->getMemoryTaint<lengthInBits>(readAddress));
-       
-        // construction du squelette du resultat : MEM + ...
-        TAINT_OBJECT_PTR resultPtr = MK_TAINT_OBJECT_PTR(X_ADD, objMem);
-
-        // ajout de (REG + CF) : 2 possibilites, selon marquage de REG
-        ObjectSource objRegCF;
-        if (isRegTainted)  
-        {  
-            // CAS 5 : CF(V) REG(M) MEM(M)
-            _LOGTAINT("ADC_MR " << lengthInBits << "(REG MEM marqués)");
-            objRegCF = ObjectSource(MK_TAINT_OBJECT_PTR(X_ADD, 
-                ObjectSource(pTmgrTls->getRegisterTaint<lengthInBits>(regSrcDest, regSrcDestValue)),
-                ObjectSource(lengthInBits, flagsValue & 1))); // valeur de CF
-        }
-        else
-        {
-            // CAS 6 : CF(V) REG(V) MEM(M)
-            // ajout de la valeur numérique regValue + CF
-            _LOGTAINT("ADC_MR " << lengthInBits << "(MEM marqué)");
-            objRegCF = ObjectSource(lengthInBits, regSrcDestValue + (flagsValue & 1));
-        }
-        // ajout de l'objet (reg + CF) à l'addition globale
-        resultPtr->addSource(objRegCF);
-
-        // marquage flags et destination. Les deux sources sont MEM et (REG + CF)
-        fTaintADD(pTmgrTls, objMem, objRegCF, resultPtr);	
-        pTmgrTls->updateTaintRegister<lengthInBits>(regSrcDest, resultPtr);	
-    }
-
-    // Cas où CF et MEM NON MARQUES, mais REG MARQUE
-    else if (isRegTainted)
-    {
-        ADDRINT memValue = getMemoryValue<lengthInBits>(readAddress);
-        ADDRINT CFValue  = flagsValue & 1;
-
-        ObjectSource objReg(pTmgrTls->getRegisterTaint<lengthInBits>(regSrcDest, regSrcDestValue));
-        ObjectSource objMemCF(lengthInBits, memValue + CFValue);
-
-        // CAS 7 : CF(V) REG(M) MEM(V)
-        _LOGTAINT("ADC_MR " << lengthInBits << "(REG marqué)");
-        TAINT_OBJECT_PTR resultPtr = MK_TAINT_OBJECT_PTR(X_ADD, objReg, objMemCF);
-
-        // marquage flags et destination. Les deux sources sont REG et (MEM + CF)
-        fTaintADD(pTmgrTls, objReg, objMemCF, resultPtr);	
-        pTmgrTls->updateTaintRegister<lengthInBits>(regSrcDest, resultPtr);
-    }
-
-    // CAS 8 : CF(V) REG(V) MEM(V) : juste un démarquage des flags
-    else pTmgrTls->unTaintAllFlags(); 
-
 } // sADC_MR
 
 template<UINT32 lengthInBits> 
@@ -394,128 +327,70 @@ void BINARY::sADC_RM(THREADID tid, REG regSrc, ADDRINT regSrcValue, ADDRINT writ
 
     bool isCFTainted  = pTmgrTls->isCarryFlagTainted();
     bool isRegTainted = pTmgrTls->isRegisterTainted<lengthInBits>(regSrc);
-    bool isMemTainted = pTmgrGlobal->isMemoryTainted<lengthInBits>(writeAddress);
-    
-    // Cas où CF est marqué : addition CF et (mem + Reg)
-    if (isCFTainted)	
+    bool isMemTainted = pTmgrGlobal->isMemoryTainted<lengthInBits>(writeAddress);  
+
+    // rien de marqué : juste un démarquage des flags
+    if (! (isCFTainted || isRegTainted || isMemTainted))
     {
-        // CF doit être zero-extended à la longueur des sources
-        ObjectSource objCF(MK_TAINT_OBJECT_PTR(X_ZEROEXTEND,
-            ObjectSource(pTmgrTls->getTaintCarryFlag())));
+        pTmgrTls->unTaintAllFlags();  
+    }
+    else
+    {
+        _LOGTAINT("ADC_RM " << lengthInBits);
 
-        // construction du squelette du resultat : CF + ...
-        TAINT_OBJECT_PTR resultPtr = MK_TAINT_OBJECT_PTR(X_ADD, objCF);
+        // On va calculer deux sources : 'objSrcPlusDest' et 'objCarryFlag'
+        // puis les additionner et marquer flags et destination
 
-        // ajout de (mem + reg) : 4 possibilites
-        ObjectSource objMemReg;
+        // objets sources à calculer
+        ObjectSource objSrcPlusDest, objCarryFlag;
         
+        /*** traitement de 'objSrcPlusDest' : 4 cas possibles (M/M, M/V, V/M, V/V) ***/
         if (isRegTainted)  
         {  
-            // source 1: registre marqué
             TAINT_OBJECT_PTR tMemRegPtr = MK_TAINT_OBJECT_PTR(X_ADD, 
                 ObjectSource(pTmgrTls->getRegisterTaint<lengthInBits>(regSrc, regSrcValue)));
             
-            // CAS 1 : CF(M) REG(M) MEM(M)
-            if (isMemTainted) 
-            {
-                _LOGTAINT("ADC_RM " << lengthInBits << "(CF REG MEM marqués)");
-                // source2 : mémoire marquée
+            if (isMemTainted) // Cas M/M
+            {  
                 tMemRegPtr->addSource(pTmgrGlobal->getMemoryTaint<lengthInBits>(writeAddress));
             }
-            // CAS 2 : CF(M) REG(M) MEM(V)
-            else 
+            else // cas M/V
             {
-                _LOGTAINT("ADC_RM " << lengthInBits << "(CF REG marqués)");
                 ADDRINT memValue = getMemoryValue<lengthInBits>(writeAddress);
-                // source2 : mémoire valeur
                 tMemRegPtr->addConstantAsASource<lengthInBits>(memValue);
             }
             // résultat reg + mem traduit sous forme de source
-            objMemReg = ObjectSource(tMemRegPtr);
+            objSrcPlusDest = ObjectSource(tMemRegPtr);
         }
-        else if (isMemTainted)
+        else if (isMemTainted) // cas V/M
         {
-            // src 1: mémoire marquée, src 2: registre (valeur), sinon on serait dans cas 1
-            // CAS 3 : CF(M) REG(V) MEM(M)
-            _LOGTAINT("ADC_RM " << lengthInBits << "(CF MEM marqués)");
-            
-            // résultat reg + mem traduit sous forme de source
-            objMemReg = ObjectSource(MK_TAINT_OBJECT_PTR(X_ADD, 
+            objSrcPlusDest = ObjectSource(MK_TAINT_OBJECT_PTR(X_ADD, 
                 ObjectSource(pTmgrGlobal->getMemoryTaint<lengthInBits>(writeAddress)),
                 ObjectSource(lengthInBits, regSrcValue)));
         }
-        else
+        else // cas V/V
         {
-            // CAS 4 : CF(M) REG(V) MEM(V)
-            // on additionne donc les deux valeurs et c'est tout
-            _LOGTAINT("ADC_RM " << lengthInBits << "(CF marqué)");
-
             ADDRINT memValue = getMemoryValue<lengthInBits>(writeAddress);
-            // résultat reg + mem traduit sous forme de source
-            objMemReg = ObjectSource(lengthInBits, memValue + regSrcValue);
+            objSrcPlusDest = ObjectSource(lengthInBits, memValue + regSrcValue);
         }
 
-        // ajout de l'objet (reg + mem) à l'addition globale
-        resultPtr->addSource(objMemReg);
+        /*** traitement de 'objCarryFlag' : 2 cas possibles (marqué ou valeur) ***/
+        if (isCFTainted)	
+        {
+            // CF doit être zero-extended à la longueur des sources
+            TAINT_OBJECT_PTR zeroExtCFPtr = MK_TAINT_OBJECT_PTR(X_ZEROEXTEND,
+                ObjectSource(pTmgrTls->getTaintCarryFlag()));
+            objCarryFlag = ObjectSource(zeroExtCFPtr);
+        }
+        else objCarryFlag = ObjectSource(lengthInBits, flagsValue & 1); // CF est le LSB des flags
 
-        // marquage flags et destination. Les deux sources sont CF et (REG + MEM)
-        fTaintADD(pTmgrTls, objCF, objMemReg, resultPtr);	
+        /*** resultat = addition des deux sources ***/
+        TAINT_OBJECT_PTR resultPtr = MK_TAINT_OBJECT_PTR(X_ADD, objSrcPlusDest, objCarryFlag);
+
+        /*** marquage flags et destination ***/
+        fTaintADD(pTmgrTls, objSrcPlusDest, objCarryFlag, resultPtr);	
         pTmgrGlobal->updateMemoryTaint<lengthInBits>(writeAddress, resultPtr);			
     }  
-    
-    // Cas où CF est NON MARQUE , mais MEM MARQUEE
-    else if (isMemTainted)
-    {
-        ObjectSource objMem(pTmgrGlobal->getMemoryTaint<lengthInBits>(writeAddress));
-       
-        // construction du squelette du resultat : MEM + ...
-        TAINT_OBJECT_PTR resultPtr = MK_TAINT_OBJECT_PTR(X_ADD, objMem);
-
-        // ajout de (REG + CF) : 2 possibilites, selon marquage de REG
-        ObjectSource objRegCF;
-        if (isRegTainted)  
-        {  
-            // CAS 5 : CF(V) REG(M) MEM(M)
-            _LOGTAINT("ADC_RM " << lengthInBits << "(REG MEM marqués)");
-            objRegCF = ObjectSource(MK_TAINT_OBJECT_PTR(X_ADD, 
-                ObjectSource(pTmgrTls->getRegisterTaint<lengthInBits>(regSrc, regSrcValue)),
-                ObjectSource(lengthInBits, flagsValue & 1))); // valeur de CF
-        }
-        else
-        {
-            // CAS 6 : CF(V) REG(V) MEM(M)
-            // ajout de la valeur numérique regValue + CF 
-            _LOGTAINT("ADC_RM " << lengthInBits << "(MEM marqués)");
-            objRegCF = ObjectSource(lengthInBits, regSrcValue + (flagsValue & 1));
-        }
-        // ajout de l'objet (reg + CF) à l'addition globale
-        resultPtr->addSource(objRegCF);
-
-        // marquage flags et destination. Les deux sources sont MEM et (REG + CF)
-        fTaintADD(pTmgrTls, objMem, objRegCF, resultPtr);	
-        pTmgrGlobal->updateMemoryTaint<lengthInBits>(writeAddress, resultPtr);	
-    }
-
-    // Cas où CF et MEM NON MARQUES, mais REG MARQUE
-    else if (isRegTainted)
-    {
-        ADDRINT memValue = getMemoryValue<lengthInBits>(writeAddress);
-        ADDRINT CFValue  = flagsValue & 1;
-
-        ObjectSource objReg(pTmgrTls->getRegisterTaint<lengthInBits>(regSrc, regSrcValue));
-        ObjectSource objMemCF(lengthInBits, memValue + CFValue);
-
-        // CAS 7 : CF(V) REG(M) MEM(V)
-        _LOGTAINT("ADC_RM " << lengthInBits << "(REG marqué)");
-        TAINT_OBJECT_PTR resultPtr = MK_TAINT_OBJECT_PTR(X_ADD, objReg, objMemCF);
-
-        // marquage flags et destination. Les deux sources sont REG et (MEM + CF)
-        fTaintADD(pTmgrTls, objReg, objMemCF, resultPtr);	
-        pTmgrGlobal->updateMemoryTaint<lengthInBits>(writeAddress, resultPtr);
-    }
-
-    // CAS 8 : CF(V) REG(V) MEM(V) : juste un démarquage des flags
-    else pTmgrTls->unTaintAllFlags(); 
 } // sADC_RM
 
 template<UINT32 lengthInBits> 
@@ -528,125 +403,63 @@ void BINARY::sADC_RR(THREADID tid, REG regSrc, ADDRINT regSrcValue, REG regSrcDe
     bool isRegSrcTainted      = pTmgrTls->isRegisterTainted<lengthInBits>(regSrc);
     bool isRegSrcDestTainted  = pTmgrTls->isRegisterTainted<lengthInBits>(regSrcDest);
     
-    // Cas où CF est marqué : addition CF et (REGSRCDEST + REGSRC)
-    if (isCFTainted)	
+    // rien de marqué : juste un démarquage des flags
+    if (! (isCFTainted || isRegSrcTainted || isRegSrcDestTainted))
     {
-        // CF doit être zero-extended à la longueur des sources
-        ObjectSource objCF(MK_TAINT_OBJECT_PTR(X_ZEROEXTEND,
-            ObjectSource(pTmgrTls->getTaintCarryFlag())));
+        pTmgrTls->unTaintAllFlags();  
+    }
+    else
+    {
+        _LOGTAINT("ADC_RR " << lengthInBits);
 
-        // construction du squelette du resultat : CF + ...
-        TAINT_OBJECT_PTR resultPtr = MK_TAINT_OBJECT_PTR(X_ADD, objCF);
+        // On va calculer deux sources : 'objSrcPlusDest' et 'objCarryFlag'
+        // puis les additionner et marquer flags et destination
 
-        // ajout de (REGSRCDEST + REGSRC) : 4 possibilites
-        ObjectSource objRegSrcRegDest;
+        // objets sources à calculer
+        ObjectSource objSrcPlusDest, objCarryFlag;
         
+        /*** traitement de 'objSrcPlusDest' : 4 cas possibles (M/M, M/V, V/M, V/V) ***/
         if (isRegSrcTainted)  
         {  
-            // source 1: registre source marqué
-            TAINT_OBJECT_PTR tRegSrcRegDestPtr = MK_TAINT_OBJECT_PTR(X_ADD, 
+            TAINT_OBJECT_PTR tRegRegPtr = MK_TAINT_OBJECT_PTR(X_ADD, 
                 ObjectSource(pTmgrTls->getRegisterTaint<lengthInBits>(regSrc, regSrcValue)));
             
-            // CAS 1 : CF(M) REGSRC(M) REGSRCDEST(M)
-            if (isRegSrcDestTainted) 
-            {
-                _LOGTAINT("ADC_RR " << lengthInBits << "(CF REGSRC REGSRCDEST marqués)");
-                // source2 : REGSRCDEST marqué
-                tRegSrcRegDestPtr->addSource(
+            if (isRegSrcDestTainted) // Cas M/M
+            {  
+                tRegRegPtr->addSource(
                     pTmgrTls->getRegisterTaint<lengthInBits>(regSrcDest, regSrcDestValue));
             }
-            // CAS 2 : CF(M) REGSRC(M) REGSRCDEST(V)
-            else 
-            {
-                _LOGTAINT("ADC_RR " << lengthInBits << "(CF REGSRC marqués)");
-                // source2 : REGSRCDEST valeur
-                tRegSrcRegDestPtr->addConstantAsASource<lengthInBits>(regSrcDestValue);
-            }
-            // résultat REGSRC + REGSRCDEST traduit sous forme de source
-            objRegSrcRegDest = ObjectSource(tRegSrcRegDestPtr);
+            // cas M/V
+            else  tRegRegPtr->addConstantAsASource<lengthInBits>(regSrcDestValue);
+            // résultat reg + mem traduit sous forme de source
+            objSrcPlusDest = ObjectSource(tRegRegPtr);
         }
-        else if (isRegSrcDestTainted)
+        else if (isRegSrcDestTainted) // cas V/M
         {
-            // src 1: REGSRCDEST marquée, src 2: REGSRC (valeur), sinon on serait dans cas 1
-            // CAS 3 : CF(M) REGSRC(V) REGSRCDEST(M)
-            _LOGTAINT("ADC_RR " << lengthInBits << "(CF REGSRCDEST marqués)");
-
-            // résultat REGSRC + REGSRCDEST traduit sous forme de source
-            objRegSrcRegDest = ObjectSource(MK_TAINT_OBJECT_PTR(X_ADD, 
+            objSrcPlusDest = ObjectSource(MK_TAINT_OBJECT_PTR(X_ADD, 
                 ObjectSource(pTmgrTls->getRegisterTaint<lengthInBits>(regSrcDest, regSrcDestValue)),
                 ObjectSource(lengthInBits, regSrcValue)));
         }
-        else
+        // cas V/V
+        else objSrcPlusDest = ObjectSource(lengthInBits, regSrcDestValue + regSrcValue);
+
+        /*** traitement de 'objCarryFlag' : 2 cas possibles (marqué ou valeur) ***/
+        if (isCFTainted)	
         {
-            // CAS 4 : CF(M) REGSRC(V) REGSRCDEST(V)
-            // on additionne donc les deux valeurs et c'est tout
-            _LOGTAINT("ADC_RR " << lengthInBits << "(CF marqué)");
-
-            // résultat REGSRC + REGSRCDEST traduit sous forme de source
-            objRegSrcRegDest = ObjectSource(lengthInBits, regSrcDest + regSrcValue);
+            // CF doit être zero-extended à la longueur des sources
+            TAINT_OBJECT_PTR zeroExtCFPtr = MK_TAINT_OBJECT_PTR(X_ZEROEXTEND,
+                ObjectSource(pTmgrTls->getTaintCarryFlag()));
+            objCarryFlag = ObjectSource(zeroExtCFPtr);
         }
+        else objCarryFlag = ObjectSource(lengthInBits, flagsValue & 1); // CF est le LSB des flags
 
-        // ajout de l'objet (REGSRC + REGSRCDEST) à l'addition globale
-        resultPtr->addSource(objRegSrcRegDest);
+        /*** resultat = addition des deux sources ***/
+        TAINT_OBJECT_PTR resultPtr = MK_TAINT_OBJECT_PTR(X_ADD, objSrcPlusDest, objCarryFlag);
 
-        // marquage flags et destination. Les deux sources sont CF et (REGSRC + REGSRCDEST)
-        fTaintADD(pTmgrTls, objCF, objRegSrcRegDest, resultPtr);	
+        /*** marquage flags et destination ***/
+        fTaintADD(pTmgrTls, objSrcPlusDest, objCarryFlag, resultPtr);	
         pTmgrTls->updateTaintRegister<lengthInBits>(regSrcDest, resultPtr);			
     }  
-    
-    // Cas où CF est NON MARQUE , mais REGSRCDEST MARQUEE
-    else if (isRegSrcDestTainted)
-    {
-        ObjectSource objRegSrcDest(
-            pTmgrTls->getRegisterTaint<lengthInBits>(regSrcDest, regSrcDestValue));
-       
-        // construction du squelette du resultat : REGSRCDEST + ...
-        TAINT_OBJECT_PTR resultPtr = MK_TAINT_OBJECT_PTR(X_ADD, objRegSrcDest);
-
-        // ajout de (REGSRC + CF) : 2 possibilites, selon marquage de REGSRC
-        ObjectSource objRegSrcCF;
-        if (isRegSrcTainted)  
-        {  
-            // CAS 5 : CF(V) REGSRC(M) REGSRCDEST(M)
-            _LOGTAINT("ADC_RR " << lengthInBits << "(REGSRC REGSRCDEST marqués)");
-            objRegSrcCF = ObjectSource(MK_TAINT_OBJECT_PTR(X_ADD, 
-                ObjectSource(pTmgrTls->getRegisterTaint<lengthInBits>(regSrc, regSrcValue)),
-                ObjectSource(lengthInBits, flagsValue & 1))); // valeur de CF
-        }
-        else
-        {
-            // CAS 6 : CF(V) REGSRC(V) REGSRCDEST(M)
-            // ajout de la valeur numérique regValue + CF 
-            _LOGTAINT("ADC_RR " << lengthInBits << "(REGSRCDEST marqué)");
-            objRegSrcCF = ObjectSource(lengthInBits, regSrcValue + (flagsValue & 1));
-        }
-        // ajout de l'objet (REGSRC + CF) à l'addition globale
-        resultPtr->addSource(objRegSrcCF);
-
-        // marquage flags et destination. Les deux sources sont REGSRCDEST et (REGSRC + CF)
-        fTaintADD(pTmgrTls, objRegSrcDest, objRegSrcCF, resultPtr);	
-        pTmgrTls->updateTaintRegister<lengthInBits>(regSrcDest, resultPtr);	
-    }
-
-    // Cas où CF et REGSRCDEST NON MARQUES, mais REGSRC MARQUE
-    else if (isRegSrcTainted)
-    {
-        ADDRINT CFValue  = flagsValue & 1;
-
-        ObjectSource objRegSrc(pTmgrTls->getRegisterTaint<lengthInBits>(regSrc, regSrcValue));
-        ObjectSource objRegSrcDestCF(lengthInBits, regSrcDestValue + CFValue);
-
-        // CAS 7 : CF(V) REGSRC(M) REGSRCDEST(V)
-        _LOGTAINT("ADC_RR " << lengthInBits << "(REGSRC marqué)");
-        TAINT_OBJECT_PTR resultPtr = MK_TAINT_OBJECT_PTR(X_ADD, objRegSrc, objRegSrcDestCF);
-
-        // marquage flags et destination. Les deux sources sont REGSRC et (REGSRCDEST + CF)
-        fTaintADD(pTmgrTls, objRegSrc, objRegSrcDestCF, resultPtr);	
-        pTmgrTls->updateTaintRegister<lengthInBits>(regSrcDest, resultPtr);
-    }
-
-    // CAS 8 : CF(V) REGSRC(V) REGSRCDEST(V) : juste un démarquage des flags
-    else pTmgrTls->unTaintAllFlags(); 
 } // sADC_RR
 
 
@@ -668,10 +481,7 @@ void BINARY::sADD_IR(THREADID tid, ADDRINT value, REG reg, ADDRINT regValue ADDR
         ObjectSource objSrcDest(pTmgrTls->getRegisterTaint<lengthInBits>(reg, regValue));
         ObjectSource objSrc(lengthInBits, value);		
     
-        TAINT_OBJECT_PTR resultPtr = MK_TAINT_OBJECT_PTR(
-            X_ADD,
-            objSrcDest,
-            objSrc);
+        TAINT_OBJECT_PTR resultPtr = MK_TAINT_OBJECT_PTR(X_ADD, objSrcDest, objSrc);
 
         // marquage flags et destination
         fTaintADD(pTmgrTls, objSrcDest, objSrc, resultPtr);	
@@ -692,10 +502,7 @@ void BINARY::sADD_IM(THREADID tid, ADDRINT value, ADDRINT writeAddress ADDRESS_D
         ObjectSource objSrcDest(pTmgrGlobal->getMemoryTaint<lengthInBits>(writeAddress));
         ObjectSource objSrc(lengthInBits, value);		
     
-        TAINT_OBJECT_PTR resultPtr = MK_TAINT_OBJECT_PTR(
-            X_ADD,
-            objSrcDest,
-            objSrc);
+        TAINT_OBJECT_PTR resultPtr = MK_TAINT_OBJECT_PTR(X_ADD, objSrcDest, objSrc);
 
         // marquage flags et destination
         fTaintADD(pTmgrTls, objSrcDest, objSrc, resultPtr);	
@@ -724,10 +531,7 @@ void BINARY::sADD_MR(THREADID tid, ADDRINT readAddress, REG regSrcDest, ADDRINT 
             ? ObjectSource(pTmgrGlobal->getMemoryTaint<lengthInBits>(readAddress))
             : ObjectSource(lengthInBits, getMemoryValue<lengthInBits>(readAddress));
 
-        TAINT_OBJECT_PTR resultPtr = MK_TAINT_OBJECT_PTR(
-            X_ADD,
-            objSrcDest,
-            objSrc);
+        TAINT_OBJECT_PTR resultPtr = MK_TAINT_OBJECT_PTR(X_ADD, objSrcDest, objSrc);
 
         // marquage flags et dest
         fTaintADD(pTmgrTls, objSrcDest, objSrc, resultPtr);	
@@ -756,10 +560,7 @@ void BINARY::sADD_RM(THREADID tid, REG regSrc, ADDRINT regSrcValue, ADDRINT writ
             ? ObjectSource(pTmgrTls->getRegisterTaint<lengthInBits>(regSrc, regSrcValue))
             : ObjectSource(lengthInBits, regSrcValue);
 
-        TAINT_OBJECT_PTR resultPtr = MK_TAINT_OBJECT_PTR(
-            X_ADD,
-            objSrcDest,
-            objSrc);
+        TAINT_OBJECT_PTR resultPtr = MK_TAINT_OBJECT_PTR(X_ADD, objSrcDest, objSrc);
 
         // marquage flags et destination
         fTaintADD(pTmgrTls, objSrcDest, objSrc, resultPtr);
@@ -788,10 +589,7 @@ void BINARY::sADD_RR(THREADID tid, REG regSrc, ADDRINT regSrcValue, REG regSrcDe
                 ? ObjectSource(pTmgrTls->getRegisterTaint<lengthInBits>(regSrc, regSrcValue))
                 : ObjectSource(lengthInBits, regSrcValue);
     
-        TAINT_OBJECT_PTR resultPtr = MK_TAINT_OBJECT_PTR(
-            X_ADD,
-            objSrcDest,
-            objSrc);
+        TAINT_OBJECT_PTR resultPtr = MK_TAINT_OBJECT_PTR(X_ADD, objSrcDest, objSrc);
 
         // marquage flags et destination
         fTaintADD(pTmgrTls, objSrcDest, objSrc, resultPtr);   
@@ -813,8 +611,7 @@ void BINARY::sSBB_IR(THREADID tid, ADDRINT value, REG reg, ADDRINT regValue, ADD
     if (pTmgrTls->isCarryFlagTainted())	
     {
         // CF doit être zero-extended à la longueur des sources
-        ObjectSource objCF(MK_TAINT_OBJECT_PTR(
-            X_ZEROEXTEND,
+        ObjectSource objCF(MK_TAINT_OBJECT_PTR( X_ZEROEXTEND,
             ObjectSource(pTmgrTls->getTaintCarryFlag())));
 
         // construction du squelette du resultat : CF + ...
@@ -1599,7 +1396,7 @@ void BINARY::sDIVISION_R(THREADID tid, REG regSrc, ADDRINT regSrcValue,
     bool isLowDividendTainted  = pTmgrTls->isRegisterTainted<lengthInBits>(regACC);
     bool isHighDividendTainted = pTmgrTls->isRegisterTainted<lengthInBits>(regIO);
     
-    if (isLowDividendTainted || isLowDividendTainted || isDivisorTainted) 
+    if (isLowDividendTainted || isHighDividendTainted || isDivisorTainted) 
     {
         _LOGTAINT(((isSignedDivision) ? "I" : "") << "DIVR " << lengthInBits << " " );
 

@@ -2,6 +2,8 @@
 
 // OBJECTSOURCE : classe représentant les sources d'un objet
 
+ObjectSource::ObjectSource() : _src(nullptr), _val(0), _lengthInBits(0) {}
+
 // constructeur pour source de type marquée
 ObjectSource::ObjectSource(const TaintPtr &taintPtr)     
     : _src(taintPtr),  

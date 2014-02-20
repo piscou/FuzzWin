@@ -2,10 +2,9 @@
 
 // CONSTRUCTEUR
 SolverFormula::SolverFormula(): 
+    _formula(std::ostringstream::ate),
     _iAssert(0), // valeur nulle mais la première contrainte sera la n°1 (cf fonction declareHeader)
-    _iTbit(0), _iTb(0), _iTw(0), _iTdw(0), _iTqw(0), _iTdqw(0),
-    _formula(std::ostringstream::ate)
-{}
+    _iTbit(0), _iTb(0), _iTw(0), _iTdw(0), _iTqw(0), _iTdqw(0) {}
 
 // nom de variable pour les objets, utilisées dans les formules SMTLIB
 void SolverFormula::insertSourceName(std::string &out, const ObjectSource &objSrc) 

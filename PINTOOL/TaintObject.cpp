@@ -5,17 +5,17 @@
 
 // TAINT : classe représentant un objet marqué
 Taint::Taint(Relation rel, UINT32 lengthInBits) 
-    : _sourceRelation(rel), _isDeclaredFlag(false), _lengthInBits(lengthInBits)
+    : _lengthInBits(lengthInBits), _sourceRelation(rel), _isDeclaredFlag(false) 
 {}
 
 Taint::Taint(Relation rel, UINT32 lengthInBits, const ObjectSource &os1) 
-    : _sourceRelation(rel), _isDeclaredFlag(false), _lengthInBits(lengthInBits)
+    : _lengthInBits(lengthInBits), _sourceRelation(rel), _isDeclaredFlag(false) 
 {
     this->_sources.push_back(os1);
 }
 
 Taint::Taint(Relation rel, UINT32 lengthInBits, const ObjectSource &os1, const ObjectSource &os2) 
-    : _sourceRelation(rel), _isDeclaredFlag(false), _lengthInBits(lengthInBits)
+    : _lengthInBits(lengthInBits), _sourceRelation(rel), _isDeclaredFlag(false) 
 {
     this->_sources.push_back(os1);
     this->_sources.push_back(os2);
@@ -23,7 +23,7 @@ Taint::Taint(Relation rel, UINT32 lengthInBits, const ObjectSource &os1, const O
 
 Taint::Taint(Relation rel, UINT32 lengthInBits, const ObjectSource &os1, const ObjectSource &os2, 
                                        const ObjectSource &os3) 
-    : _sourceRelation(rel), _isDeclaredFlag(false), _lengthInBits(lengthInBits)
+    : _lengthInBits(lengthInBits), _sourceRelation(rel), _isDeclaredFlag(false) 
 {
     this->_sources.push_back(os1);
     this->_sources.push_back(os2);
@@ -32,7 +32,7 @@ Taint::Taint(Relation rel, UINT32 lengthInBits, const ObjectSource &os1, const O
 
 Taint::Taint(Relation rel, UINT32 lengthInBits, const ObjectSource &os1, const ObjectSource &os2, 
                                        const ObjectSource &os3, const ObjectSource &os4) 
-    : _sourceRelation(rel), _isDeclaredFlag(false), _lengthInBits(lengthInBits)
+    : _lengthInBits(lengthInBits), _sourceRelation(rel), _isDeclaredFlag(false) 
 {
     this->_sources.push_back(os1);
     this->_sources.push_back(os2);

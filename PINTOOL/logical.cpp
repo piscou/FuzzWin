@@ -1104,7 +1104,6 @@ template<> void LOGICAL::sXOR_RM<8>
         // CAS 2 : destination non marquée (et donc source marquée)
         if (!isDestTainted) 
         {
-            TaintBytePtr resultPtr;
             ObjectSource srcReg(pTmgrTls->getRegisterTaint(regSrc));
 
             // cas 2.1 : destination vaut 0 ; XOR 0, src équivaut à MOV dest, src

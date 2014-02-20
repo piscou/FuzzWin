@@ -4,8 +4,6 @@
 #if TARGET_IA32
 void UNCONDITIONAL_BR::cJMP(INS &ins) 
 {
-    void (*callback)() = nullptr;   // pointeur sur la fonction a appeler
-
     // seuls les cas de type JMP reg ou JMP ea (donc un JMP Near) sont traités
     // Si l'adresse de saut est marquée, alors ajout d'une contrainte
     // qui essaiera de sauter à un autre emplacement
@@ -22,6 +20,8 @@ void UNCONDITIONAL_BR::cJMP(INS &ins)
             INT32 displ = INS_MemoryDisplacement(ins);
             UINT32 scale = INS_MemoryScale(ins);
 
+            void (*callback)() = nullptr;   // pointeur sur la fonction a appeler
+            
             if (indexReg == REG_INVALID()) // pas de registre d'index
             {
                 // pas de registre de base : aucune propagation possible de marquage 

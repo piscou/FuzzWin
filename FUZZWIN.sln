@@ -28,6 +28,7 @@ Global
 		{E535A52C-8237-4B5A-8A50-5CE162AB679C}.Release|Win32.Deploy.0 = Release|Win32
 		{E535A52C-8237-4B5A-8A50-5CE162AB679C}.Release|x64.ActiveCfg = Release|x64
 		{E535A52C-8237-4B5A-8A50-5CE162AB679C}.Release|x64.Build.0 = Release|x64
+		{E535A52C-8237-4B5A-8A50-5CE162AB679C}.Release|x64.Deploy.0 = Release|x64
 		{016C7F1E-D4F9-4811-A61F-57B34284592F}.Debug|Mixed Platforms.ActiveCfg = Debug|Win32
 		{016C7F1E-D4F9-4811-A61F-57B34284592F}.Debug|Mixed Platforms.Build.0 = Debug|Win32
 		{016C7F1E-D4F9-4811-A61F-57B34284592F}.Debug|Mixed Platforms.Deploy.0 = Debug|Win32

@@ -1,6 +1,6 @@
 #include "solver.h"
 
-#define BUFFER_SIZE_READ_FROM_SOLVER 128
+#define BUFFER_SIZE 128
 
 // Creaation du process Z3, en redirigeant ses entrées/sorties standard via des pipes
 bool createSolverProcess(const std::string &solverPath) 
@@ -92,18 +92,16 @@ bool checkSatFromSolver()
 
 std::string getModelFromSolver()
 {
-    char bufferRead[BUFFER_SIZE_READ_FROM_SOLVER] = {0}; // buffer de reception des données du solveur
+    char bufferRead[BUFFER_SIZE] = {0}; // buffer de reception des données du solveur
     std::string result, line;
-    DWORD bytesAvailable = 0, nbBytesRead = 0;
-    BOOL fSuccess;
-    
+    DWORD nbBytesRead = 0;
+ 
     sendToSolver("(get-model)\n");
 
     // lecture des données dans le pipe
     while (1)
     {
-        fSuccess = ReadFile(pGlobals->hReadFromZ3, bufferRead, BUFFER_SIZE_READ_FROM_SOLVER, &nbBytesRead, NULL);
-        line = std::string(bufferRead, nbBytesRead);
+        BOOL fSuccess = ReadFile(pGlobals->hReadFromZ3, bufferRead, BUFFER_SIZE, &nbBytesRead, NULL);
         if( !fSuccess) 
         {
             std::cout << "erreur de lecture de la réponse du solveur\n";

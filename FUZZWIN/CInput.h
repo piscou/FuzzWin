@@ -97,7 +97,7 @@ public:
 
     // renvoie le chemin vers le fichier qui contiendra la formule SMT2
     // associée à l'execution de cette entrée (option --keepfiles mise à TRUE)
-    std::string getLogFile() { return (_filePath + ".fzw"); }
+    std::string getLogFile() const { return (_filePath + ".fzw"); }
 
     // renvoie le contenu du fichier sous la forme de string
     std::string getFileContent() const
@@ -115,13 +115,13 @@ public:
     }
 
     // renvoie la ligne de commande complète pour l'appel du pintool
-    std::string getCmdLineFuzzwin() 
+    std::string getCmdLineFuzzwin() const
     {
         return (pGlobals->cmdLinePin + '"' + this->_filePath + '"'); 
     }
 
     // renvoie la ligne de commande complète pour l'execution de la cible en mode debug
-    std::string getCmdLineDebug() 
+    std::string getCmdLineDebug() const
     {
         return ('"' + pGlobals->targetPath + "\" \"" + this->_filePath + '"'); 
     }

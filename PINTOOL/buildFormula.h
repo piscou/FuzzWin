@@ -34,7 +34,7 @@ private:
     // insere dans la formule le nom de l'objet 'objSrc'
     // => soit le numéro de variable, soit une valeur numérique
     // si précisé, insère un espace à la fin
-    void insertSourceName(std::string &out, const ObjectSource &objSrc);
+    static void insertSourceName(std::string &out, const ObjectSource &objSrc);
 
 public:
     SolverFormula();
