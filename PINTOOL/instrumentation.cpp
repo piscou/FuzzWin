@@ -241,6 +241,8 @@ void INSTRUMENTATION::Instruction(INS ins, void* )
 #if TARGET_IA32E
     case XED_ICLASS_CMPXCHG16B: SEMAPHORE::cCMPXCHG16B(ins); break;
 #endif
+    case XED_ICLASS_XADD:       SEMAPHORE::cXADD(ins);  break;  
+
 
     // ROTATE
     case XED_ICLASS_ROL: ROTATE::cROL(ins); break;

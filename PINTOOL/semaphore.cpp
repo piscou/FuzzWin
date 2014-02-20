@@ -1,6 +1,7 @@
 #include "semaphore.h"
 #include "TaintManager.h"
 
+// CALLBACKS
 void SEMAPHORE::cCMPXCHG(INS &ins)
 {
     // CMPXCHG : d'abord une comparaison destination (R ou M) avec 
@@ -83,7 +84,6 @@ void SEMAPHORE::cCMPXCHG8B(INS &ins)
 } // cCMPXCHG8B
 
 #if TARGET_IA32E
-
 void SEMAPHORE::cCMPXCHG16B(INS &ins)
 {
     // CMPXCHG16B (mode x64): d'abord une comparaison RDX:RAX avec m128
@@ -101,6 +101,57 @@ void SEMAPHORE::cCMPXCHG16B(INS &ins)
 } // cCMPXCHG16B
 #endif
 
+void SEMAPHORE::cXADD(INS &ins)
+{
+    // pointeur vers fonction à appeler
+    void (*callback)() = nullptr;
+
+    // XADD : opérande 0 est soit mémoire, soit registre, opérande 1 tjs registre
+    REG regSrc = INS_OperandReg(ins, 1);
+    UINT32 regSrcSize = getRegSize(regSrc);
+
+    if (!regSrcSize) return;    // registre non géré en marquage
+    else if (INS_OperandIsMemory(ins, 0)) // XADD_M (opérande 0 = mémoire)
+    {
+        switch (regSrcSize) 
+        {	
+        case 1:	callback = (AFUNPTR) sXADD_M<8>;  break;
+        case 2:	callback = (AFUNPTR) sXADD_M<16>;  break;
+        case 4:	callback = (AFUNPTR) sXADD_M<32>;  break;
+        #if TARGET_IA32E
+        case 8: callback = (AFUNPTR) sXADD_M<64>;  break;
+        #endif
+        }
+        INS_InsertCall (ins, IPOINT_BEFORE, callback,
+            IARG_THREAD_ID,
+            IARG_UINT32,    regSrc,
+            IARG_REG_VALUE, regSrc,
+            IARG_MEMORYWRITE_EA, 
+            CALLBACK_DEBUG IARG_END); 
+    }
+    else  // XADD_R (opérande 0 = registre)
+    {
+        REG regDest = INS_OperandReg(ins, 0);
+        switch (getRegSize(regDest)) 
+        {	
+        case 1:	callback = (AFUNPTR) sXADD_R<8>;  break;
+        case 2:	callback = (AFUNPTR) sXADD_R<16>;  break;
+        case 4:	callback = (AFUNPTR) sXADD_R<32>;  break;
+        #if TARGET_IA32E
+        case 8: callback = (AFUNPTR) sXADD_R<64>;  break;
+        #endif
+        }
+        INS_InsertCall (ins, IPOINT_BEFORE, callback,
+            IARG_THREAD_ID,
+            IARG_UINT32,    regSrc,
+            IARG_REG_VALUE, regSrc,
+            IARG_UINT32,    regDest,
+            IARG_REG_VALUE, regDest,
+            CALLBACK_DEBUG IARG_END); 
+    }
+} // cXADD
+
+// SIMULATE
 void SEMAPHORE::sCMPXCHG8B(THREADID tid, ADDRINT address, ADDRINT regEAXValue, ADDRINT regEDXValue ADDRESS_DEBUG)
 {
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);

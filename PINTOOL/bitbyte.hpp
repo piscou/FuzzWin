@@ -707,7 +707,7 @@ void BITBYTE::sBSR_M(THREADID tid, ADDRINT testedAddress, REG resultReg ADDRESS_
         ObjectSource objSrc(pTmgrGlobal->getMemoryTaint<lengthInBits>(testedAddress));
 
         // ZF vaut 1 si la source est nulle, 0 dans les autres cas => F_IS_NULL
-        pTmgrTls->updateTaintZeroFlag(std::make_shared<TaintBit>(F_IS_NULL, objSrc);
+        pTmgrTls->updateTaintZeroFlag(std::make_shared<TaintBit>(F_IS_NULL, objSrc));
 
         // la destination vaut l'index du MSB => relation spécifique X_BSR
         pTmgrTls->updateTaintRegister<lengthInBits>(resultReg, MK_TAINT_OBJECT_PTR(X_BSR, objSrc));
@@ -726,10 +726,10 @@ void BITBYTE::sBSR_R(THREADID tid, REG testedReg, ADDRINT testedRegValue,
     }
     else
     {
-        ObjectSource objSrc(pTmgrGlobal->getRegisterTaint<lengthInBits>(testedReg, testedRegValue));
+        ObjectSource objSrc(pTmgrTls->getRegisterTaint<lengthInBits>(testedReg, testedRegValue));
 
         // ZF vaut 1 si la source est nulle, 0 dans les autres cas => F_IS_NULL
-        pTmgrTls->updateTaintZeroFlag(std::make_shared<TaintBit>(F_IS_NULL, objSrc);
+        pTmgrTls->updateTaintZeroFlag(std::make_shared<TaintBit>(F_IS_NULL, objSrc));
 
         // la destination vaut l'index du MSB => relation spécifique X_BSR
         pTmgrTls->updateTaintRegister<lengthInBits>(resultReg, MK_TAINT_OBJECT_PTR(X_BSR, objSrc));
@@ -753,7 +753,7 @@ void BITBYTE::sBSF_M(THREADID tid, ADDRINT testedAddress, REG resultReg ADDRESS_
         ObjectSource objSrc(pTmgrGlobal->getMemoryTaint<lengthInBits>(testedAddress));
 
         // ZF vaut 1 si la source est nulle, 0 dans les autres cas => F_IS_NULL
-        pTmgrTls->updateTaintZeroFlag(std::make_shared<TaintBit>(F_IS_NULL, objSrc);
+        pTmgrTls->updateTaintZeroFlag(std::make_shared<TaintBit>(F_IS_NULL, objSrc));
 
         // la destination vaut l'index du LSB => relation spécifique X_BSF
         pTmgrTls->updateTaintRegister<lengthInBits>(resultReg, MK_TAINT_OBJECT_PTR(X_BSF, objSrc));
@@ -772,10 +772,10 @@ void BITBYTE::sBSF_R(THREADID tid, REG testedReg, ADDRINT testedRegValue,
     }
     else
     {
-        ObjectSource objSrc(pTmgrGlobal->getRegisterTaint<lengthInBits>(testedReg, testedRegValue));
+        ObjectSource objSrc(pTmgrTls->getRegisterTaint<lengthInBits>(testedReg, testedRegValue));
 
         // ZF vaut 1 si la source est nulle, 0 dans les autres cas => F_IS_NULL
-        pTmgrTls->updateTaintZeroFlag(std::make_shared<TaintBit>(F_IS_NULL, objSrc);
+        pTmgrTls->updateTaintZeroFlag(std::make_shared<TaintBit>(F_IS_NULL, objSrc));
 
         // la destination vaut l'index du MSB => relation spécifique X_BSF
         pTmgrTls->updateTaintRegister<lengthInBits>(resultReg, MK_TAINT_OBJECT_PTR(X_BSF, objSrc));

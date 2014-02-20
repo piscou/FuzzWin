@@ -29,3 +29,27 @@ template<UINT32 lengthInBits> void SEMAPHORE::sCMPXCHG_RR
     else                               DATAXFER::sMOV_RR<lengthInBits>(tid, regDest, cmpReg INSADDRESS);
 } // sCMPXCHG_RR
 
+template<UINT32 lengthInBits>
+void SEMAPHORE::sXADD_R(THREADID tid, REG regSrc, ADDRINT regSrcValue, 
+                        REG regDest, ADDRINT regDestValue ADDRESS_DEBUG)
+{
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
+
+    bool isRegSrcTainted  = pTmgrTls->isRegisterTainted<lengthInBits>(regSrc);
+    bool isRegDestTainted = pTmgrTls->isRegisterTainted<lengthInBits>(regDest);
+
+
+} // sXADD_R
+
+template<UINT32 lengthInBits>
+void SEMAPHORE::sXADD_M(THREADID tid, REG regSrc, ADDRINT regSrcValue,
+                        ADDRINT writeAddress ADDRESS_DEBUG)
+{
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
+
+    bool isRegSrcTainted  = pTmgrTls->isRegisterTainted<lengthInBits>(regSrc);
+    bool isMemTainted     = pTmgrGlobal->isMemoryTainted<lengthInBits>(writeAddress);
+
+
+} // sXADD_M
+

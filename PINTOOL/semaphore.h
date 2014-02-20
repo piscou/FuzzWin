@@ -26,6 +26,11 @@ void sCMPXCHG8B(THREADID tid, ADDRINT address, ADDRINT regEAXValue, ADDRINT regE
 void sCMPXCHG16B(THREADID tid, ADDRINT address, ADDRINT regRAXValue, ADDRINT regRDXValue ADDRESS_DEBUG);
 #endif
 
+template<UINT32 lengthInBits>
+void sXADD_R(THREADID tid, REG regSrc, ADDRINT regSrcValue, REG regDest, ADDRINT regDestValue ADDRESS_DEBUG);
+template<UINT32 lengthInBits>
+void sXADD_M(THREADID tid, REG regSrc, ADDRINT regSrcValue, ADDRINT writeAddress ADDRESS_DEBUG);
+
 } // namespace SEMAPHORE
 
 #include "semaphore.hpp"
