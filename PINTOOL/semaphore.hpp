@@ -38,7 +38,40 @@ void SEMAPHORE::sXADD_R(THREADID tid, REG regSrc, ADDRINT regSrcValue,
     bool isRegSrcTainted  = pTmgrTls->isRegisterTainted<lengthInBits>(regSrc);
     bool isRegDestTainted = pTmgrTls->isRegisterTainted<lengthInBits>(regDest);
 
+    if (! (isRegSrcTainted || isRegDestTainted)) pTmgrTls->unTaintAllFlags();
+    else
+    {
+        // addition src + dest, puis stockage dans variable temporaire
+        _LOGTAINT("XADD_R" << lengthInBits << " ");
 
+        ObjectSource objSrc = (isRegSrcTainted) 
+            ? ObjectSource(pTmgrTls->getRegisterTaint<lengthInBits>(regSrc, regSrcValue))
+            : ObjectSource(lengthInBits, regSrcValue);
+
+        ObjectSource objSrcDest = (isRegDestTainted)
+            ? ObjectSource(pTmgrTls->getRegisterTaint<lengthInBits>(regDest, regDestValue))
+            : ObjectSource(lengthInBits, regDestValue);
+    
+        TAINT_OBJECT_PTR resultPtr = MK_TAINT_OBJECT_PTR(X_ADD, objSrcDest, objSrc);
+
+        // déplacement destination -> source
+        REGINDEX regIndexSrc  = getRegIndex(regSrc);
+        REGINDEX regIndexDest = getRegIndex(regDest);
+        for (UINT32 regPart = 0 ; regPart < (lengthInBits >> 3) ; ++regPart) 
+        {	
+            if (pTmgrTls->isRegisterPartTainted(regIndexDest, regPart))   
+            {
+                pTmgrTls->updateTaintRegisterPart(regIndexSrc, regPart, std::make_shared<TaintByte>(
+                    X_ASSIGN, 
+                    ObjectSource(pTmgrTls->getRegisterPartTaint(regIndexDest, regPart))));
+            }
+            else pTmgrTls->unTaintRegisterPart(regIndexSrc, regPart);
+        }
+
+        // affectation du resultat de l'addition à la destination, et marquage flags
+        BINARY::fTaintADD(pTmgrTls, objSrcDest, objSrc, resultPtr);   
+        pTmgrTls->updateTaintRegister<lengthInBits>(regDest, resultPtr);
+    }
 } // sXADD_R
 
 template<UINT32 lengthInBits>
@@ -50,6 +83,39 @@ void SEMAPHORE::sXADD_M(THREADID tid, REG regSrc, ADDRINT regSrcValue,
     bool isRegSrcTainted  = pTmgrTls->isRegisterTainted<lengthInBits>(regSrc);
     bool isMemTainted     = pTmgrGlobal->isMemoryTainted<lengthInBits>(writeAddress);
 
+    if (! (isRegSrcTainted || isMemTainted)) pTmgrTls->unTaintAllFlags();
+    else
+    {
+        // addition src + dest, puis stockage dans variable temporaire
+        _LOGTAINT("XADD_M" << lengthInBits << " ");
+
+        ObjectSource objSrc = (isRegSrcTainted) 
+            ? ObjectSource(pTmgrTls->getRegisterTaint<lengthInBits>(regSrc, regSrcValue))
+            : ObjectSource(lengthInBits, regSrcValue);
+
+        ObjectSource objSrcDest = (isMemTainted)
+            ? ObjectSource(pTmgrGlobal->getMemoryTaint<lengthInBits>(writeAddress))
+            : ObjectSource(lengthInBits, getMemoryValue<lengthInBits>(writeAddress));
+    
+        TAINT_OBJECT_PTR resultPtr = MK_TAINT_OBJECT_PTR(X_ADD, objSrcDest, objSrc);
+
+        // déplacement destination -> source
+        REGINDEX regIndexSrc  = getRegIndex(regSrc);
+        for (UINT32 regPart = 0 ; regPart < (lengthInBits >> 3) ; ++regPart, ++writeAddress) 
+        {	
+            if (pTmgrGlobal->isMemoryTainted<8>(writeAddress))   
+            {
+                pTmgrTls->updateTaintRegisterPart(regIndexSrc, regPart, std::make_shared<TaintByte>(
+                    X_ASSIGN, 
+                    ObjectSource(pTmgrGlobal->getMemoryTaint<8>(writeAddress))));
+            }
+            else pTmgrTls->unTaintRegisterPart(regIndexSrc, regPart);
+        }
+
+        // affectation du resultat de l'addition à la destination, et marquage flags
+        BINARY::fTaintADD(pTmgrTls, objSrcDest, objSrc, resultPtr);   
+        pTmgrTls->updateTaintRegister<lengthInBits>(regSrc, resultPtr);
+    }
 
 } // sXADD_M
 

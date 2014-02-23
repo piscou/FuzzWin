@@ -3,8 +3,58 @@
 // CONSTRUCTEUR
 SolverFormula::SolverFormula(): 
     _formula(std::ostringstream::ate),
-    _iAssert(0), // valeur nulle mais la première contrainte sera la n°1 (cf fonction declareHeader)
-    _iTbit(0), _iTb(0), _iTw(0), _iTdw(0), _iTqw(0), _iTdqw(0) {}
+    // numéro de contrainte initialisé à 0
+    // mais la première contrainte sera la n°1 (cf fonction declareHeader)
+    _iAssert(0),
+    _iTbit(0), _iTb(0), _iTw(0), _iTdw(0), _iTqw(0), _iTdqw(0),
+    _isDeBruijnDeclared(false)
+{}
+
+std::string SolverFormula::getDeBruijnArray()
+{
+    // variables utilisées par les instructions BSR et BSF
+    // cf. commentaires dans buildFormula.h
+
+    std::string result;
+
+    // déclaration de la constante multiplicative
+    result += "(define-const constante (_ BitVec 64) #x";
+    result += hexstr(debruijn64, 8).substr(2); // pour éliminer le "Ox"
+    result += ")\n";
+
+    // déclaration d'un tableau vide de valeurs sur 64 bits, 
+    // dont les indexs sont sur 64 bits (meme s'ils vont de 0 à 63)
+    // car l'index est déterminé par un emultiplication avec un 64bits..
+    result += "(declare-const emptyArray (Array (_ BitVec 64) (_ BitVec 64)))\n";
+
+    // définition du tableau debruijn64. Il se crée en ajoutant valeur apres valeur
+    result += "(define-fun index64 () (Array (_ BitVec 64) (_ BitVec 64)) ";
+
+    // stockage de 64 valeurs : 64x la fonction "(store ";
+    for (UINT32 index = 0 ; index < 64 ; ++index)   
+    {
+        result += "(store ";
+    }
+    
+    // ajout du tableau vide
+    result += "emptyArray ";
+
+    // stockage de chaque valeur sous la forme " 'index' 'valeur')"
+    for (UINT32 index = 0 ; index < 64 ; ++index)
+    {
+        result += " (_ bv" + decstr(index) + " 64)"; // index d'insertion
+        result += " (_ bv" + decstr(index64[index]) + " 64))"; // valeur
+    }
+
+    // parenthèse finale
+    result += ")\n";
+
+    // le tableau et la constante sont déclarés
+    this->_isDeBruijnDeclared = true;
+
+    return (result);
+}
+
 
 // nom de variable pour les objets, utilisées dans les formules SMTLIB
 void SolverFormula::insertSourceName(std::string &out, const ObjectSource &objSrc) 
@@ -22,12 +72,16 @@ void SolverFormula::insertSourceName(std::string &out, const ObjectSource &objSr
         // dans les autres cas : resultat en hexa
         else
         {
-            // la fonction StringFromAddrint (API PIN) convertit un ADDRINT(32 ou 64bits) 
+            // la fonction StringFromAddrint (API PIN) convertit un ADDRINT 
             // en chaine de caractères. Or la source est encodée sur 'srcLength' bits
             // donc extraire les 2/4/8/16 derniers chiffres, selon la taille
+
             std::string valueString(StringFromAddrint(value));
             out += "#x";
             out += valueString.substr(valueString.size() - (srcLength >> 2)); 
+#if 0
+            out += "( _bv" + decstr(value) + ' ' + decstr(srcLength) + ')';
+#endif        
         }
     }
 } // insertSourceName
@@ -102,7 +156,8 @@ void SolverFormula::declareRelation(const TaintPtr &tPtr, const vector<ObjectSou
     tPtr->setName(name);
 
     // declaration de l'entête de ligne : nom de variable
-    std::string out("(define-fun " + name + " () (_ BitVec " + decstr(lengthInBitsOfResult) + ") ");
+    const std::string lengthOfResultString(decstr(lengthInBitsOfResult));
+    std::string out("(define-fun " + name + " () (_ BitVec " + lengthOfResultString + ") ");
 
     // insertion des arguments selon la relation
     /****** MEGA BIG SWITCH ;););););); *****/
@@ -118,11 +173,7 @@ void SolverFormula::declareRelation(const TaintPtr &tPtr, const vector<ObjectSou
         // borne max = borne min + (longueur - 1)
         UINT32 higherLimit = lowerLimit + (lengthInBitsOfResult - 1);
 
-        out += "((_ extract ";
-        out += decstr(higherLimit);
-        out += ' ';
-        out += decstr(lowerLimit);
-        out += ") ";     
+        out += "(_ extract " + decstr(higherLimit) + ' ' + decstr(lowerLimit) + ") ";     
 
         // ajout de l'objet subissant l'extraction
         out += sources.front().getTaintedSource()->getName();
@@ -134,7 +185,7 @@ void SolverFormula::declareRelation(const TaintPtr &tPtr, const vector<ObjectSou
         // Attention : les objets seront inséres du plus fort au plus faible
         // d'ou le rbegin/rend (cf def CONCAT du langage SMTLIB)
 
-        out += "(concat";
+        out += "concat";
         for (auto it = sources.rbegin();  it != sources.rend() ; ++it) 
         {
             out += ' ';
@@ -142,13 +193,12 @@ void SolverFormula::declareRelation(const TaintPtr &tPtr, const vector<ObjectSou
         } 
         break;
     }
-    case X_SIGNEXTEND:	
+    case X_SIGNEXTEND:
+    case X_ZEROEXTEND:
     {
+        out += (X_SIGNEXTEND == rel) ? "(_ sign_extend " : "(_ zero_extend ";
         // nombre de bits à ajouter = longueur resultat - longueur source
-        UINT32 lengthInBitsExtension = lengthInBitsOfResult - sources.front().getLength();
-
-        out += "((_ sign_extend ";
-        out += decstr(lengthInBitsExtension);
+        out += decstr(lengthInBitsOfResult - sources.front().getLength());
         out += ") ";
 
         // insertion du nom de l'objet
@@ -157,7 +207,7 @@ void SolverFormula::declareRelation(const TaintPtr &tPtr, const vector<ObjectSou
     }  
     case X_ADD:
     {
-        out += "(bvadd ";
+        out += "bvadd ";
         this->insertSourceName(out, sources.front());
         out += ' ';
         this->insertSourceName(out, sources[1]);
@@ -165,7 +215,7 @@ void SolverFormula::declareRelation(const TaintPtr &tPtr, const vector<ObjectSou
     }
     case X_SUB:
     {
-        out += "(bvsub ";
+        out += "bvsub ";
         this->insertSourceName(out, sources.front());
         out += ' ';
         this->insertSourceName(out, sources[1]);
@@ -173,7 +223,7 @@ void SolverFormula::declareRelation(const TaintPtr &tPtr, const vector<ObjectSou
     }
     case X_AND:
     {
-        out += "(bvand ";
+        out += "bvand ";
         this->insertSourceName(out, sources.front());
         out += ' ';
         this->insertSourceName(out, sources[1]);
@@ -181,7 +231,7 @@ void SolverFormula::declareRelation(const TaintPtr &tPtr, const vector<ObjectSou
     }
     case X_OR:
     {
-        out += "(bvor ";
+        out += "bvor ";
         this->insertSourceName(out, sources.front());
         out += ' ';
         this->insertSourceName(out, sources[1]);
@@ -189,7 +239,7 @@ void SolverFormula::declareRelation(const TaintPtr &tPtr, const vector<ObjectSou
     }
     case X_XOR:
     {
-        out += "(bvxor ";
+        out += "bvxor ";
         this->insertSourceName(out, sources.front());
         out += ' ';
         this->insertSourceName(out, sources[1]);
@@ -200,13 +250,13 @@ void SolverFormula::declareRelation(const TaintPtr &tPtr, const vector<ObjectSou
     {
         out += (rel == X_INC) ? "(bvadd " : "(bvsub ";
         out += sources.front().getTaintedSource()->getName();
-        out += " (_ bv1 " + decstr(lengthInBitsOfResult) + ')';
+        out += " (_ bv1 " + lengthOfResultString + ')';
         break;
     }
     case X_NEG:	
     case X_NOT:
     {
-        out += (rel == X_NEG) ? "(bvneg " : "(bvnot ";
+        out += (rel == X_NEG) ? "bvneg " : "bvnot ";
         this->insertSourceName(out, sources.front());
         break;
     }
@@ -214,7 +264,7 @@ void SolverFormula::declareRelation(const TaintPtr &tPtr, const vector<ObjectSou
     case X_SHR:
     case X_SAR:
     {
-        out += (rel == X_SHL) ? "(bvshl " : ((rel == X_SHR) ? "(bvlshr " : "(bvashr ");
+        out += (rel == X_SHL) ? "bvshl " : ((rel == X_SHR) ? "bvlshr " : "bvashr ");
         this->insertSourceName(out, sources.front());
         out += ' ';
 
@@ -225,7 +275,7 @@ void SolverFormula::declareRelation(const TaintPtr &tPtr, const vector<ObjectSou
             out += "(_ bv";
             out += decstr(sources[1].getValue());
             out += ' ';
-            out += decstr(lengthInBitsOfResult);
+            out += lengthOfResultString;
             out += ')';
         } 
         else // si décalage marqué (8bits) : masquage à 0x1f (ou 0x3f si 64 bits)
@@ -251,7 +301,7 @@ void SolverFormula::declareRelation(const TaintPtr &tPtr, const vector<ObjectSou
         // si déplacement non marqué : utilisation de l'instruction SMTLIB '_ rotate_right'
         if (!sources[1].isSrcTainted())
         {
-            out += "((_ rotate_right ";
+            out += "(_ rotate_right ";
             out += decstr(sources[1].getValue());
             out += ") ";
             this->insertSourceName(out, sources.front());
@@ -266,7 +316,7 @@ void SolverFormula::declareRelation(const TaintPtr &tPtr, const vector<ObjectSou
                 ? "" : ("((_ zero_extend " + decstr(lengthInBitsOfResult - 8) + ") ");
 
             // masquage du déplacement à 0x1f (ou 0x3f en 64 bits)
-            out += "(let ((l_depl (bvand ";
+            out += "let ((l_depl (bvand ";
             out += sources[1].getTaintedSource()->getName();  // objet représentant le déplacement
             out += (lengthInBitsOfResult == 64) ? " #x3f" : " #x1f";
 
@@ -283,7 +333,7 @@ void SolverFormula::declareRelation(const TaintPtr &tPtr, const vector<ObjectSou
             out += ' ';
             out += adjustLengthForShift;
             out += "(bvsub (_ bv";
-            out += decstr(lengthInBitsOfResult);
+            out += lengthOfResultString;
             out += " 8) l_depl))))";
         }
         break;
@@ -295,7 +345,7 @@ void SolverFormula::declareRelation(const TaintPtr &tPtr, const vector<ObjectSou
         // si déplacement non marqué : utilisation de l'instruction SMTLIB '_ rotate_left'
         if (!sources[1].isSrcTainted())
         {
-            out += "((_ rotate_left ";
+            out += "(_ rotate_left ";
             out += decstr(sources[1].getValue());
             out += ") ";
             this->insertSourceName(out, sources.front());
@@ -310,7 +360,7 @@ void SolverFormula::declareRelation(const TaintPtr &tPtr, const vector<ObjectSou
                 ? "" : ("((_ zero_extend " + decstr(lengthInBitsOfResult - 8) + ") ");
 
             // masquage du déplacement à 0x1f (ou 0x3f en 64 bits)
-            out += "(let ((l_depl (bvand ";
+            out += "let ((l_depl (bvand ";
             out += sources[1].getTaintedSource()->getName();  // objet représentant le déplacement
             out += (lengthInBitsOfResult == 64) ? " #x3f" : " #x1f";
 
@@ -327,7 +377,7 @@ void SolverFormula::declareRelation(const TaintPtr &tPtr, const vector<ObjectSou
             out += ' ';
             out += adjustLengthForShift;
             out += "(bvsub (_ bv";
-            out += decstr(lengthInBitsOfResult);
+            out += lengthOfResultString;
             out += " 8) l_depl))))";
         }
         break;
@@ -339,8 +389,8 @@ void SolverFormula::declareRelation(const TaintPtr &tPtr, const vector<ObjectSou
         // => obligation de faire toutes les operations (bvshl, bvsub, ... ) sur (lengthInBits + 1 bits)
         // et au final d'extraire les 'lengthInBits' bits forts
 
-        out += "((_ extract ";
-        out += decstr(lengthInBitsOfResult);
+        out += "(_ extract ";
+        out += lengthOfResultString;
         out += " 1)";
 
         // si déplacement non marqué : utilisation de l'instruction SMTLIB '_ rotate_right'
@@ -383,7 +433,7 @@ void SolverFormula::declareRelation(const TaintPtr &tPtr, const vector<ObjectSou
 
             out += adjustLengthForShift;
             out += "(bvsub (_ bv";
-            out += decstr(lengthInBitsOfResult);
+            out += lengthOfResultString;
             out += " 8) l_depl)))))";
         }
         break;
@@ -395,7 +445,7 @@ void SolverFormula::declareRelation(const TaintPtr &tPtr, const vector<ObjectSou
         // => obligation de faire toutes les operations (bvshr, bvsub, ... ) sur (lengthInBits + 1 bits)
         // et au final d'extraire les 'lengthInBits' bits faibles
 
-        out += "((_ extract ";
+        out += "(_ extract ";
         out += decstr(lengthInBitsOfResult - 1);
         out += " 0)";
 
@@ -439,7 +489,7 @@ void SolverFormula::declareRelation(const TaintPtr &tPtr, const vector<ObjectSou
             
             out += adjustLengthForShift;
             out += "(bvsub (_ bv";
-            out += decstr(lengthInBitsOfResult);
+            out += lengthOfResultString;
             out += " 8) l_depl)))))";
         }
         break;
@@ -455,7 +505,7 @@ void SolverFormula::declareRelation(const TaintPtr &tPtr, const vector<ObjectSou
         UINT32 srcLength = sources.front().getLength(); // nombre de bits de la source
         const std::string srcLengthName(decstr(srcLength)); // représentation en string
 
-        out += (rel == X_SET_BIT) ? "(bvor " : "(bvxor ";
+        out += (rel == X_SET_BIT) ? "bvor " : "bvxor ";
         this->insertSourceName(out, sources.front());
 
         out += " (bvshl (_ bv1 ";
@@ -480,7 +530,7 @@ void SolverFormula::declareRelation(const TaintPtr &tPtr, const vector<ObjectSou
         UINT32 srcLength = sources.front().getLength(); // nombre de bits de la source
         const std::string srcLengthName(decstr(srcLength)); // représentation en string
 
-        out += "(bvand ";
+        out += "bvand ";
         this->insertSourceName(out, sources.front());
 
         out += " (bvnot (bvshl (_ bv1 ";
@@ -504,7 +554,7 @@ void SolverFormula::declareRelation(const TaintPtr &tPtr, const vector<ObjectSou
         // la longueur de la source (= moitié longueur du résultat)
         const std::string zeroExtend("((_ zero_extend " + decstr(lengthInBitsOfResult >> 1) + ") ");
 
-        out += "(bvmul ";
+        out += "bvmul ";
         // 1ere source, zero-étendue
         out += zeroExtend;
         this->insertSourceName(out, sources.front());
@@ -534,7 +584,7 @@ void SolverFormula::declareRelation(const TaintPtr &tPtr, const vector<ObjectSou
                     : ((rel == X_IDIV_QUO) ? "(bvsdiv "
                     : "(bvsrem ")));
 
-        out += "((_ extract ";
+        out += "(_ extract ";
         switch (lengthInBitsOfResult)
         {
         case 8: // resultat 8bits : dividende en src0, diviseur 8b en src 1
@@ -603,14 +653,170 @@ void SolverFormula::declareRelation(const TaintPtr &tPtr, const vector<ObjectSou
         out += "))";
         break;
     }
-                    
+          
+    case X_BSF:
+    {
+        /* Bit Scan Forward : index du LSB de la source
+        cet index vaut index64[((bb ^ (bb-1)) * debruijn64) >> 58]
+        les variables intermédiaires seront implémentées via des 'let'
+        Le calcul se fait sur 64 bits : la source devra être zero extended
+        si besoin. Exemple pour une source de 32 bits:
+        (define-fun BSF32 () (_ BitVec 64) (
+           let ((bb TDW1)) 
+          (let ((bbMin1 (bvsub bb (_ bv1 32)))) 
+          (let ((bbXor (bvxor bb bbMin1)))
+          (let ((bbZeroExt ((_ zero_extend 32) bbXor))) 
+          (let ((bbMul (bvmul bbZeroExt constante))) 
+          (let ((bbShift (bvlshr bbMul (_ bv58 64)))) 
+          ((_ extract 31 0) (select index64 bbShift)))))))))  => ce qui sera affecté à BSF */
+
+        UINT32 srcLength = sources.front().getLength(); // nombre de bits de la source
+        
+
+        // si le tableau et la constante n'ont pas encore été déclaré, le faire
+        out += "let ((bb ";
+        this->insertSourceName(out, sources.front());
+        out += "))";
+
+        // bbMin1 = bb-1
+        out += "(let ((bbMin1 (bvsub bb (_ bv1 " + decstr(srcLength) + "))))";
+        // bbXor = bb ^ (bb-1)
+        out += "(let ((bbXor (bvxor bb bbMin1)))";
+        
+        // traitement différent selon que la source soit sur 64 bits ou non
+        if (srcLength != 64)
+        {
+            out += "(let ((bbZeroExt ((_ zero_extend " + decstr(64 - srcLength) + ") bbXor)))";
+            // multiplication par la constante
+            out += "(let ((bbMul (bvmul bbZeroExt constante)))";
+            // shift de 58 bits
+            out += "(let ((bbShift (bvlshr bbMul (_ bv58 64))))";
+            // extraction sur 'length' bits de la valeur du tableau à l'index calculé
+            out += "((_ extract " + decstr(srcLength - 1) + " 0) (select index64 bbShift))";
+            // 5 lets (en dehors du premier) => 5 parenthèses fermantes
+            out += ")))))";
+        }
+        else 
+        {
+            out += "(let ((bbMul (bvmul bbXor constante)))";
+            // shift de 58 bits
+            out += "(let ((bbShift (bvlshr bbMul (_ bv58 64))))";
+            // récupération de la valeur du tableau à l'index calculé
+            out += " (select index64 bbShift)";
+            // 4 lets (en dehors du premier) => 4 parenthèses fermantes
+            out += "))))";
+        }        
+
+        break;
+    }
+
+    case X_BSR:
+    {
+        /* Bit Scan Reverse : index du MSB de la source
+        cet index vaut :
+        bb |= bb >> 1; bb |= bb >> 2;  bb |= bb >> 4; bb |= bb >> 8; 
+        bb |= bb >> 16; (cas 32 et 64bits)
+        bb |= bb >> 32; (cas 64bits)
+        index = index64[(bb * debruijn64) >> 58];
+        
+        les variables intermédiaires seront implémentées via des 'let'
+        Le calcul se fait sur 64 bits : la source devra être zero extended si besoin. 
+        TODO : en 32bits on s'arrete au shift16. En 16 bits on s'arrete au shift8
+       
+        Exemple pour une source de 32 bits:
+         (define-fun BSR32 () (_ BitVec 32) (
+          let ((bbShift0 TDW1)) 
+         (let ((bbShift1 (bvor bbShift0 (bvlshr bbShift0 (_ bv1 32))))) 
+         (let ((bbShift2 (bvor bbShift1 (bvlshr bbShift1 (_ bv2 32))))) 
+         (let ((bbShift3 (bvor bbShift2 (bvlshr bbShift2 (_ bv4 32))))) 
+         (let ((bbShift4 (bvor bbShift3 (bvlshr bbShift3 (_ bv8 32))))) 
+         (let ((bbShift5 (bvor bbShift4 (bvlshr bbShift4 (_ bv16 32))))) 
+         (let ((bbShift6 (bvor bbShift5 (bvlshr bbShift5 (_ bv32 32)))))
+         (let ((bbZeroExt ((_ zero_extend 32) bbShift6))) ; ZERO_EXTEND car calcul sur 64bits
+         (let ((bbMul (bvmul bbZeroExt constante))) 
+         (let ((bbShift (bvlshr bbMul (_ bv58 64)))) 
+         ((_ extract 31 0) (select index64 bbShift)))))))))))) => ce qui sera affecté à BSR32 */
+
+        const std::string firstVar("bbShift0");
+        out += "let ((" + firstVar;
+        this->insertSourceName(out, sources.front());
+        out += " ))";
+
+        // nombre d'iteration de shifts
+        UINT32 iterationRound = 1;
+        // valeur du shift
+        UINT32 shiftValue     = 1;
+        // longueur en bit de la source
+        UINT32 srcLength      = sources.front().getLength();
+        // longueur en bit de la source (sous forme de string)
+        std::string lengthOfSrcString(decstr(sources.front().getLength())); 
+        // nom de la dernière variable temporaire définie
+        std::string lastVar(firstVar);
+        // nom de la variable temporaire qui va être définie
+        std::string var;
+
+        // on s'arrete lorsque la valeur du shift atteint la longueur des sources
+        // car les shifts suivants n'auront plus aucun effet
+        while (shiftValue < srcLength)
+        {
+            // nom de la variable temporaire insérée
+            var = "bbShift" + decstr(iterationRound);
+            out += "(let ((" + var + " (bvor " + lastVar + " (bvlshr " + lastVar;
+            
+            // insertion valeur du shift sur 'lengthOfResult' bits
+            out += "(_ bv" + decstr(shiftValue) + ' ' + lengthOfResultString + ")))))";
+            
+            // mise à jour des variables pour prochain tour
+            ++iterationRound;
+            shiftValue >>= 1;
+            lastVar = var;
+        }
+
+        // zero_extend de la source si elle n'était pas sur 64bits
+        if (srcLength != 64)
+        {
+            out += "(let ((bbZeroExt ((_ zero_extend ";
+            out += decstr(64 - srcLength) + ") ";
+            // insertion du nom de la dernière variable à étendre
+            out += lastVar + ")))";
+            // la dernière variable sera désormais "bbZeroExt"
+            lastVar = "bbZeroExt";
+        }
+
+        // multiplication par la constante, et shift
+        out += "(let ((bbMul (bvmul " + lastVar + " constante)))";
+        out += "(let ((bbShift (bvlshr bbMul (_ bv58 64))))";
+
+        // récupération de la valeur dans le tableau. Mise à la taille du resultat
+        // (par une extraction) si besoin
+        if (srcLength != 64)
+        {
+            out += "((_ extract " + decstr(srcLength - 1) + " 0) (select index64 bbShift))";
+            // nombre de parenthèses fermantes 
+            //      1 par bbShiftXX (4 ou 5)
+            //      1 pour le ZeroExt
+            //      2 pour bbMul et bbShift => TOTAL de 7 (cas 16 bits) ou 8 (cas 32bits)
+            out += ")))))))";
+            if (srcLength == 32) out += ')';
+        }
+        else
+        {
+            out += "(select index64 bbShift)";
+            // nombre de parenthèses fermantes
+            //      1 par bbShift (soit 6)
+            //      2 pour bbMul et bbShift => TOTAL de 8
+            out += "))))))))";
+        }
+        break;
+    }
+
     /*************************************/
     /************ FLAGS ******************/
     /*************************************/
 
     case F_LSB:	
     {
-        out += "((_ extract 0 0) ";
+        out += "(_ extract 0 0) ";
         this->insertSourceName(out, sources.front()); 
         break;
     }
@@ -618,11 +824,7 @@ void SolverFormula::declareRelation(const TaintPtr &tPtr, const vector<ObjectSou
     {
         // position du signe dépendant de la longueur de la source
         const std::string extractIndex(decstr(sources.front().getLength() - 1));
-        out += "((_ extract ";
-        out += extractIndex;
-        out += ' ';
-        out += extractIndex;
-        out += ") ";
+        out += "(_ extract " + extractIndex + ' ' + extractIndex + ") ";
 
         this->insertSourceName(out, sources.front());  
         break;
@@ -634,11 +836,7 @@ void SolverFormula::declareRelation(const TaintPtr &tPtr, const vector<ObjectSou
         const std::string extractIndex(decstr(sources.front().getLength()));
         const std::string extendSource("((_ zero_extend 1) ");
 
-        out += "((_ extract ";
-        out += extractIndex;
-        out += ' ';
-        out += extractIndex;
-        out += ") (bvadd ";
+        out += "(_ extract " + extractIndex + ' ' + extractIndex + ") (bvadd ";
 
         // zeroextend de l'opérande src/dest
         out += extendSource;
@@ -655,7 +853,7 @@ void SolverFormula::declareRelation(const TaintPtr &tPtr, const vector<ObjectSou
     case F_CARRY_SUB:
     {
         // bvult renvoie True si opérande 1 < opérande 2
-        out += "(ite (bvult ";
+        out += "ite (bvult ";
         this->insertSourceName(out, sources.front());
         out += ' ';
         this->insertSourceName(out, sources[1]);
@@ -667,16 +865,29 @@ void SolverFormula::declareRelation(const TaintPtr &tPtr, const vector<ObjectSou
         // dernier bit ejecté vers la gauche = bit (lengthInBits - count), count marqué (8 bits)
         // récupération par LSB (src >> (lengthInBits - count))
         // ATTENTION : count doit etre auparavant masqué à 0x1f ou 0x3f
-        out += "((_ extract 0 0) (bvlshr ";
+        const std::string lengthOfResultString(lengthOfResultString);
+
+        // &ere partie du shift : source déplacée
+        out += "(_ extract 0 0) (bvlshr ";
         this->insertSourceName(out, sources.front());
 
-        out += " (bvsub #x";
-        out += StringHex(lengthInBitsOfResult, 2, false); // lengthInBits sur 2 digits, pas de prefixe
-        
+        // 2eme partie du shift = déplacement (lengthInBits - count), 
+        // la soustraction est calculée sur 8 bits puis zero_ext à la longueur
+        // de la source (cad si source != 8 bits)
+
+        if (lengthInBitsOfResult != 8)
+        {
+            out += " ((_ zero_extend " + decstr(lengthInBitsOfResult - 8) + ") ";
+        }
+        out += " (bvsub #" + StringHex(lengthInBitsOfResult, 2, false);
+
         // masquage du déplacement 0x1f ou 0x3f en 64bits 
         out += " (bvand ";
         this->insertSourceName(out, sources[1]);
         out += (lengthInBitsOfResult == 64) ? " #x3f)))" : " #x1f)))";
+
+        // parenthèse fermante correspondant à _ zero_extend
+        if (lengthInBitsOfResult != 8) out += ')';
 
         break;
     }
@@ -685,15 +896,26 @@ void SolverFormula::declareRelation(const TaintPtr &tPtr, const vector<ObjectSou
         // dernier bit ejecté vers la gauche = bit (count - 1), count marqué (8 bits)
         // récupération par LSB (src >> (count - 1))
         // ATTENTION : count doit etre auparavant masqué à 0x1f ou 0x3f
-        out += "((_ extract 0 0) (bvlshr ";
+        out += "(_ extract 0 0) (bvlshr ";
         this->insertSourceName(out, sources.front());
+
+        // la soustraction est calculée sur 8 bits puis zero_ext à la longueur
+        // de la source (cad si source != 8 bits)
+
+        if (lengthInBitsOfResult != 8)
+        {
+            out += " ((_ zero_extend " + decstr(lengthInBitsOfResult - 8) + ") ";
+        }
 
         // soustraction apres masquage du déplacement 0x1f ou 0x3f en 64bits 
         out += " (bvsub (bvand ";
         this->insertSourceName(out, sources[1]);
         out += "(_ bv1 ";
-        out += decstr(lengthInBitsOfResult);
+        out += lengthOfResultString;
         out += "))))";
+
+        // parenthèse fermante correspondant à _ zero_extend
+        if (lengthInBitsOfResult != 8) out += ')';
 
         break;
     }
@@ -704,7 +926,7 @@ void SolverFormula::declareRelation(const TaintPtr &tPtr, const vector<ObjectSou
         UINT32 srcLength = sources.front().getLength(); // nombre de bits de la source
         const std::string srcLengthName(decstr(srcLength)); // représentation en string
 
-        out += "(ite (= (_ bv0 ";
+        out += "ite (= (_ bv0 ";
         out += srcLengthName; // nombre 0 sur x bits
         
         // AND de source0 avec (bvshl (_bv1 'lengthInBits') (bvand 'numero' (_bv15/31/63 'lengthInBits')))
@@ -715,7 +937,7 @@ void SolverFormula::declareRelation(const TaintPtr &tPtr, const vector<ObjectSou
         out += ") (bvand ";
         this->insertSourceName(out, sources[1]);
 
-        // nombre 15/31/64 sur 'lengthInBits' bitsq
+        // nombre 15/31/64 sur 'lengthInBits' bits
         out += " (_ bv";
         out += decstr(srcLength - 1);
         out += ' ';
@@ -731,7 +953,7 @@ void SolverFormula::declareRelation(const TaintPtr &tPtr, const vector<ObjectSou
         //   parité de v = parité de p. 
         //   Si p = 1, parité sera 0 => inverser le résultat (d'ou le bvnot)
 
-        out += "(let ((t0 ((_ extract 7 0) "; // seuls les 8 bits faibles sont considérés
+        out += "let ((t0 ((_ extract 7 0) "; // seuls les 8 bits faibles sont considérés
         this->insertSourceName(out, sources.front());
         out += "))) " \
             "(let ((t1 (bvlshr t0 #x04))) " \
@@ -748,7 +970,7 @@ void SolverFormula::declareRelation(const TaintPtr &tPtr, const vector<ObjectSou
     {
         UINT32 srcLength = sources.front().getLength();
         // comparaison de la source au nombre 0 représenté sur "lengthInBits" bits
-        out += "(ite (= (_ bv0 ";
+        out += "ite (= (_ bv0 ";
         out += decstr(srcLength);
         out += ") ";
         this->insertSourceName(out, sources.front());
@@ -759,7 +981,7 @@ void SolverFormula::declareRelation(const TaintPtr &tPtr, const vector<ObjectSou
     }
     case F_ARE_EQUAL:
     {
-        out += "(ite (= ";
+        out += "ite (= ";
         this->insertSourceName(out, sources.front());
         out += ' ';
         this->insertSourceName(out, sources[1]);
@@ -782,11 +1004,7 @@ void SolverFormula::declareRelation(const TaintPtr &tPtr, const vector<ObjectSou
         // index d'extraction du MSB
         const std::string extractIndex(decstr(sources.front().getLength() - 1));
        
-        out += "((_ extract ";
-        out += extractIndex;
-        out += ' ';
-        out += extractIndex;
-        out += ") ";
+        out += "(_ extract " + extractIndex + ' ' + extractIndex + ") ";
                 
         // A XOR RESULT
         out += "(bvand (bvxor ";
@@ -819,7 +1037,7 @@ void SolverFormula::declareRelation(const TaintPtr &tPtr, const vector<ObjectSou
         UINT32 nb = (sources.front().getLength() >> 2) - 1;
         const std::string suffix(nb, c);
 
-        out += "(ite (= ";
+        out += "ite (= ";
         this->insertSourceName(out, sources.front());
         out += (rel == F_OVERFLOW_INC) ? " #x7" : " #x8";
         out += suffix;
@@ -835,7 +1053,7 @@ void SolverFormula::declareRelation(const TaintPtr &tPtr, const vector<ObjectSou
         const std::string indexMSB(decstr(sources.front().getLength() - 1));
         const std::string extractMsb("((_ extract " + indexMSB + ' ' + indexMSB + ") ");
 
-        out += "(ite (= ";
+        out += "ite (= ";
         // 1) extraction msb du resultat
         out += extractMsb;
         this->insertSourceName(out, sources.front());
@@ -853,13 +1071,9 @@ void SolverFormula::declareRelation(const TaintPtr &tPtr, const vector<ObjectSou
         // ite (= (LSB 'src0' MSB 'src0') #b0 #b1)
         const std::string indexMSB = decstr(sources.front().getLength() - 1);
         
-        out += "(ite (= ((_ extract 0 0) ";
+        out += "ite (= ((_ extract 0 0) ";
         this->insertSourceName(out, sources.front());
-        out += ") ((_ extract ";
-        out += indexMSB;
-        out += ' ';
-        out += indexMSB;
-        out += ") ";
+        out += ") ((_ extract " + indexMSB + ' ' + indexMSB + ") ";
         this->insertSourceName(out, sources.front());
         out +=")) #b0 #b1";
         
@@ -870,13 +1084,9 @@ void SolverFormula::declareRelation(const TaintPtr &tPtr, const vector<ObjectSou
         // ite (= ('src1' MSB 'src0') #b0 #b1)
         const std::string indexMSB = decstr(sources.front().getLength() - 1);
         
-        out += "(ite (= ";
+        out += "ite (= ";
         this->insertSourceName(out, sources[1]);
-        out += " ((_ extract ";
-        out += indexMSB;
-        out += ' ';
-        out += indexMSB;
-        out += ") ";
+        out += " ((_ extract " + indexMSB + ' ' + indexMSB + ") ";
         this->insertSourceName(out, sources.front());
         out +=")) #b0 #b1";
         
