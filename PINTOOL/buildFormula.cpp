@@ -22,28 +22,27 @@ std::string SolverFormula::getDeBruijnArray()
     result += hexstr(debruijn64, 8).substr(2); // pour éliminer le "Ox"
     result += ")\n";
 
-    // déclaration d'un tableau vide de valeurs sur 64 bits, 
-    // dont les indexs sont sur 64 bits (meme s'ils vont de 0 à 63)
-    // car l'index est déterminé par un emultiplication avec un 64bits..
-    result += "(declare-const emptyArray (Array (_ BitVec 64) (_ BitVec 64)))\n";
-
-    // définition du tableau debruijn64. Il se crée en ajoutant valeur apres valeur
-    result += "(define-fun index64 () (Array (_ BitVec 64) (_ BitVec 64)) ";
-
-    // stockage de 64 valeurs : 64x la fonction "(store ";
+    // définition du tableau debruijn64. Il se crée via une fonction:
+    // paramètre 'x'    = index
+    // valeur de retour = valeur du tableau
+    // ALTERNATIVE A UN ARRAY CAR UN ARRAY NE PERMET PAS D'UTILISER UN '(get-model)'
+    // pour obtenir les résultats !!!!!
+    result += "(define-fun index64 ((x (_ BitVec 64))) (_ BitVec 64)\n";
+        
+    // stockage de 64 valeurs : 64x la fonction "(ite (= x (_ bvAA 64)) (_ bvVAL 64) ";
     for (UINT32 index = 0 ; index < 64 ; ++index)   
     {
-        result += "(store ";
+        result += "  (ite (= x (_ bv" + decstr(index) + " 64)) ";
+        result +=             "(_ bv" + decstr(index64[index]) + " 64)\n";
     }
-    
-    // ajout du tableau vide
-    result += "emptyArray ";
 
-    // stockage de chaque valeur sous la forme " 'index' 'valeur')"
-    for (UINT32 index = 0 ; index < 64 ; ++index)
+    // pour le dernier ite, si non égal renvoyer 0 (comme si une erreur était arrivée)
+    result +=     "  (_ bv0 64)";
+
+    // 64 parenthèses fermantes (une par 'ite') 
+    for (UINT32 index = 0 ; index < 8 ; ++index)
     {
-        result += " (_ bv" + decstr(index) + " 64)"; // index d'insertion
-        result += " (_ bv" + decstr(index64[index]) + " 64))"; // valeur
+        result += "))))))))"; // 8 parenthèses par 8
     }
 
     // parenthèse finale
@@ -137,7 +136,8 @@ void SolverFormula::declareObject(const TaintPtr &tPtr)
 
 void SolverFormula::declareRelation(const TaintPtr &tPtr, const vector<ObjectSource> &sources)
 {
-    UINT32 lengthInBitsOfResult = tPtr->getLength();  // longueur du résultat 
+    UINT32 lengthInBitsOfResult = tPtr->getLength();  // longueur du résultat  
+    const std::string lengthOfResultString(decstr(lengthInBitsOfResult)); // longueur en 'string'
     Relation rel = tPtr->getSourceRelation();   // relation résultat <-> sources
     
     // fabrication du nom de variable unique selon la taille du resultat
@@ -155,9 +155,9 @@ void SolverFormula::declareRelation(const TaintPtr &tPtr, const vector<ObjectSou
     // Affectation du nom à l'objet
     tPtr->setName(name);
 
-    // declaration de l'entête de ligne : nom de variable
-    const std::string lengthOfResultString(decstr(lengthInBitsOfResult));
-    std::string out("(define-fun " + name + " () (_ BitVec " + lengthOfResultString + ") ");
+    // declaration de l'entête de ligne : nom de variable et longueur
+    std::string out("(define-fun " + name);
+    out += " () (_ BitVec " + lengthOfResultString + ") (";
 
     // insertion des arguments selon la relation
     /****** MEGA BIG SWITCH ;););););); *****/
@@ -668,41 +668,42 @@ void SolverFormula::declareRelation(const TaintPtr &tPtr, const vector<ObjectSou
           (let ((bbZeroExt ((_ zero_extend 32) bbXor))) 
           (let ((bbMul (bvmul bbZeroExt constante))) 
           (let ((bbShift (bvlshr bbMul (_ bv58 64)))) 
-          ((_ extract 31 0) (select index64 bbShift)))))))))  => ce qui sera affecté à BSF */
+          ((_ extract 31 0) (index64 bbShift)))))))))  => ce qui sera affecté à BSF */
 
-        UINT32 srcLength = sources.front().getLength(); // nombre de bits de la source
-        
+        UINT32 srcLength = sources.front().getLength(); // nombre de bits de la source 
 
         // si le tableau et la constante n'ont pas encore été déclaré, le faire
-        out += "let ((bb ";
+        if (!this->_isDeBruijnDeclared) out = this->getDeBruijnArray() + out;
+
+        out += "\n  let ((bb ";
         this->insertSourceName(out, sources.front());
-        out += "))";
+        out += "))\n";
 
         // bbMin1 = bb-1
-        out += "(let ((bbMin1 (bvsub bb (_ bv1 " + decstr(srcLength) + "))))";
+        out += "  (let ((bbMin1 (bvsub bb (_ bv1 " + decstr(srcLength) + "))))\n";
         // bbXor = bb ^ (bb-1)
-        out += "(let ((bbXor (bvxor bb bbMin1)))";
+        out += "  (let ((bbXor (bvxor bb bbMin1)))\n";
         
         // traitement différent selon que la source soit sur 64 bits ou non
         if (srcLength != 64)
         {
-            out += "(let ((bbZeroExt ((_ zero_extend " + decstr(64 - srcLength) + ") bbXor)))";
+            out += "  (let ((bbZeroExt ((_ zero_extend " + decstr(64 - srcLength) + ") bbXor)))\n";
             // multiplication par la constante
-            out += "(let ((bbMul (bvmul bbZeroExt constante)))";
+            out += "  (let ((bbMul (bvmul bbZeroExt constante)))\n";
             // shift de 58 bits
-            out += "(let ((bbShift (bvlshr bbMul (_ bv58 64))))";
+            out += "  (let ((bbShift (bvlshr bbMul (_ bv58 64))))\n";
             // extraction sur 'length' bits de la valeur du tableau à l'index calculé
-            out += "((_ extract " + decstr(srcLength - 1) + " 0) (select index64 bbShift))";
+            out += "  ((_ extract " + decstr(srcLength - 1) + " 0) (index64 bbShift))";
             // 5 lets (en dehors du premier) => 5 parenthèses fermantes
             out += ")))))";
         }
         else 
         {
-            out += "(let ((bbMul (bvmul bbXor constante)))";
+            out += "  (let ((bbMul (bvmul bbXor constante)))\n";
             // shift de 58 bits
-            out += "(let ((bbShift (bvlshr bbMul (_ bv58 64))))";
+            out += "  (let ((bbShift (bvlshr bbMul (_ bv58 64))))\n";
             // récupération de la valeur du tableau à l'index calculé
-            out += " (select index64 bbShift)";
+            out += "  (index64 bbShift)";
             // 4 lets (en dehors du premier) => 4 parenthèses fermantes
             out += "))))";
         }        
@@ -735,12 +736,15 @@ void SolverFormula::declareRelation(const TaintPtr &tPtr, const vector<ObjectSou
          (let ((bbZeroExt ((_ zero_extend 32) bbShift6))) ; ZERO_EXTEND car calcul sur 64bits
          (let ((bbMul (bvmul bbZeroExt constante))) 
          (let ((bbShift (bvlshr bbMul (_ bv58 64)))) 
-         ((_ extract 31 0) (select index64 bbShift)))))))))))) => ce qui sera affecté à BSR32 */
+         ((_ extract 31 0) (index64 bbShift)))))))))))) => ce qui sera affecté à BSR32 */
 
-        const std::string firstVar("bbShift0");
-        out += "let ((" + firstVar;
+        // si le tableau et la constante n'ont pas encore été déclaré, le faire
+        if (!this->_isDeBruijnDeclared) out = this->getDeBruijnArray() + out;
+
+        const std::string firstVar("bbShift0 ");
+        out += "\n   let ((" + firstVar;
         this->insertSourceName(out, sources.front());
-        out += " ))";
+        out += " ))\n";
 
         // nombre d'iteration de shifts
         UINT32 iterationRound = 1;
@@ -760,38 +764,38 @@ void SolverFormula::declareRelation(const TaintPtr &tPtr, const vector<ObjectSou
         while (shiftValue < srcLength)
         {
             // nom de la variable temporaire insérée
-            var = "bbShift" + decstr(iterationRound);
-            out += "(let ((" + var + " (bvor " + lastVar + " (bvlshr " + lastVar;
+            var = "bbShift" + decstr(iterationRound) + ' ';
+            out += "  (let ((" + var + "(bvor " + lastVar + "(bvlshr " + lastVar;
             
             // insertion valeur du shift sur 'lengthOfResult' bits
-            out += "(_ bv" + decstr(shiftValue) + ' ' + lengthOfResultString + ")))))";
+            out += "(_ bv" + decstr(shiftValue) + ' ' + lengthOfResultString + ")))))\n";
             
             // mise à jour des variables pour prochain tour
             ++iterationRound;
-            shiftValue >>= 1;
+            shiftValue <<= 1;
             lastVar = var;
         }
 
         // zero_extend de la source si elle n'était pas sur 64bits
         if (srcLength != 64)
         {
-            out += "(let ((bbZeroExt ((_ zero_extend ";
+            out += "  (let ((bbZeroExt ((_ zero_extend ";
             out += decstr(64 - srcLength) + ") ";
             // insertion du nom de la dernière variable à étendre
-            out += lastVar + ")))";
+            out += lastVar + ")))\n";
             // la dernière variable sera désormais "bbZeroExt"
             lastVar = "bbZeroExt";
         }
 
         // multiplication par la constante, et shift
-        out += "(let ((bbMul (bvmul " + lastVar + " constante)))";
-        out += "(let ((bbShift (bvlshr bbMul (_ bv58 64))))";
+        out += "  (let ((bbMul (bvmul " + lastVar + " constante)))\n";
+        out += "  (let ((bbShift (bvlshr bbMul (_ bv58 64))))\n";
 
         // récupération de la valeur dans le tableau. Mise à la taille du resultat
         // (par une extraction) si besoin
         if (srcLength != 64)
         {
-            out += "((_ extract " + decstr(srcLength - 1) + " 0) (select index64 bbShift))";
+            out += "  ((_ extract " + decstr(srcLength - 1) + " 0) (index64 bbShift))";
             // nombre de parenthèses fermantes 
             //      1 par bbShiftXX (4 ou 5)
             //      1 pour le ZeroExt
@@ -801,7 +805,7 @@ void SolverFormula::declareRelation(const TaintPtr &tPtr, const vector<ObjectSou
         }
         else
         {
-            out += "(select index64 bbShift)";
+            out += "  (index64 bbShift)";
             // nombre de parenthèses fermantes
             //      1 par bbShift (soit 6)
             //      2 pour bbMul et bbShift => TOTAL de 8
@@ -953,15 +957,15 @@ void SolverFormula::declareRelation(const TaintPtr &tPtr, const vector<ObjectSou
         //   parité de v = parité de p. 
         //   Si p = 1, parité sera 0 => inverser le résultat (d'ou le bvnot)
 
-        out += "let ((t0 ((_ extract 7 0) "; // seuls les 8 bits faibles sont considérés
+        out += "\n   let ((t0 ((_ extract 7 0) "; // seuls les 8 bits faibles sont considérés
         this->insertSourceName(out, sources.front());
-        out += "))) " \
-            "(let ((t1 (bvlshr t0 #x04))) " \
-            "(let ((t2 (bvxor t1 t0))) " \
-            "(let ((t3 (bvand t2 #x0f))) " \
-            "(let ((t4 (bvlshr #x6996 ((_ zero_extend 8) t3)))) " \
-            "(let ((t5 ((_ extract 0 0) t4))) " \
-            "(bvnot t5))))))";
+        out += ")))\n" \
+          "  (let ((t1 (bvlshr t0 #x04)))\n" \
+          "  (let ((t2 (bvxor t1 t0)))\n" \
+          "  (let ((t3 (bvand t2 #x0f)))\n" \
+          "  (let ((t4 (bvlshr #x6996 ((_ zero_extend 8) t3))))\n" \
+          "  (let ((t5 ((_ extract 0 0) t4)))\n" \
+          "  (bvnot t5))))))";
 
         break;
     }
