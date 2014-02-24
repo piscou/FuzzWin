@@ -704,6 +704,8 @@ void BITBYTE::sBSR_M(THREADID tid, ADDRINT testedAddress, REG resultReg ADDRESS_
     }
     else
     {
+        _LOGTAINT("BSR_M" << lengthInBits);
+
         ObjectSource objSrc(pTmgrGlobal->getMemoryTaint<lengthInBits>(testedAddress));
 
         // ZF vaut 1 si la source est nulle, 0 dans les autres cas => F_IS_NULL
@@ -726,6 +728,7 @@ void BITBYTE::sBSR_R(THREADID tid, REG testedReg, ADDRINT testedRegValue,
     }
     else
     {
+        _LOGTAINT("BSR_R" << lengthInBits);
         ObjectSource objSrc(pTmgrTls->getRegisterTaint<lengthInBits>(testedReg, testedRegValue));
 
         // ZF vaut 1 si la source est nulle, 0 dans les autres cas => F_IS_NULL
@@ -750,6 +753,7 @@ void BITBYTE::sBSF_M(THREADID tid, ADDRINT testedAddress, REG resultReg ADDRESS_
     }
     else
     {
+        _LOGTAINT("BSF_M" << lengthInBits);
         ObjectSource objSrc(pTmgrGlobal->getMemoryTaint<lengthInBits>(testedAddress));
 
         // ZF vaut 1 si la source est nulle, 0 dans les autres cas => F_IS_NULL
@@ -772,6 +776,7 @@ void BITBYTE::sBSF_R(THREADID tid, REG testedReg, ADDRINT testedRegValue,
     }
     else
     {
+        _LOGTAINT("BSF_R" << lengthInBits);
         ObjectSource objSrc(pTmgrTls->getRegisterTaint<lengthInBits>(testedReg, testedRegValue));
 
         // ZF vaut 1 si la source est nulle, 0 dans les autres cas => F_IS_NULL

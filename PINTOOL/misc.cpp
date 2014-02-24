@@ -272,3 +272,58 @@ void MISC::cLEAVE(INS &ins)
         CALLBACK_DEBUG IARG_END);
 }
 #endif
+
+//////////
+// XLAT //
+//////////
+
+void MISC::cXLAT(INS &ins) 
+{
+    // XLAT est un MOV Memoire -> registre (8BITS), ou l'emplacement
+    // mémoire est défini par DS:(E/R)BX + ZeroExtend(AL)
+
+    // TODO : traiter le cas où (E/R)BX ou AL est marqué
+    // (adressage indirect)
+
+    INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR) DATAXFER::sMOV_MR<8>,
+        IARG_THREAD_ID,
+        IARG_MEMORYREAD_EA,  // emplacement mémoire de lecture
+        IARG_UINT32, REG_AL, // registre destination = AL
+        CALLBACK_DEBUG IARG_END);
+}
+
+///////////
+// CPUID //
+///////////
+
+// CALLBACK
+void MISC::cCPUID(INS &ins)
+{
+    // démarquage E/RAX, E/RBX, E/RCX et E/RDX
+    INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR) sCPUID,
+        IARG_FAST_ANALYSIS_CALL,
+        IARG_THREAD_ID,
+        CALLBACK_DEBUG IARG_END);
+}
+
+// SIMULATE
+
+void PIN_FAST_ANALYSIS_CALL MISC::sCPUID(THREADID tid ADDRESS_DEBUG)
+{
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
+
+#if TARGET_IA32
+    // 32bits : démarquage EAX, EBX, ECX et EDX
+    pTmgrTls->unTaintRegister<32>(REG_EAX);
+    pTmgrTls->unTaintRegister<32>(REG_EBX);
+    pTmgrTls->unTaintRegister<32>(REG_ECX);
+    pTmgrTls->unTaintRegister<32>(REG_EDX);
+#else
+    // 32bits : démarquage RAX, RBX, RCX et RDX
+    pTmgrTls->unTaintRegister<64>(REG_RAX);
+    pTmgrTls->unTaintRegister<64>(REG_RBX);
+    pTmgrTls->unTaintRegister<64>(REG_RCX);
+    pTmgrTls->unTaintRegister<64>(REG_RDX);
+#endif
+
+}

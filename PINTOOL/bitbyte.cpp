@@ -26,7 +26,7 @@ void BITBYTE::cSETB(INS &ins)
     // SETB/SETNAE/SETC   CF = 1          Below/not above or equal/carry     
     if (INS_IsMemoryWrite(ins))     
     {   
-        INS_InsertCall (ins, IPOINT_BEFORE, (AFUNPTR) sSETB_M,         
+        INS_InsertCall (ins, IPOINT_AFTER, (AFUNPTR) sSETB_M,         
             IARG_THREAD_ID,
             IARG_MEMORYWRITE_EA,    // adresse de destination (8 bits)
             IARG_INST_PTR,          // adresse de l'instruction
@@ -35,7 +35,7 @@ void BITBYTE::cSETB(INS &ins)
     else // forcement registre
     {
         REG regDest = INS_RegW(ins, 0);  // registre de destination (8 bits)
-        INS_InsertCall (ins, IPOINT_BEFORE, (AFUNPTR) sSETB_R,         
+        INS_InsertCall (ins, IPOINT_AFTER, (AFUNPTR) sSETB_R,         
             IARG_THREAD_ID,
             IARG_UINT32, regDest,    // registre de destination (8 bits)
             IARG_REG_VALUE, regDest, // sa valeur (qui ser 0 ou 1 selon valeur prédicat)
@@ -49,7 +49,7 @@ void BITBYTE::cSETNB(INS &ins)
     // SETAE/SETNB/SETNC  CF = 0     Above or equal/not below
     if (INS_IsMemoryWrite(ins))     
     {   
-        INS_InsertCall (ins, IPOINT_BEFORE, (AFUNPTR) sSETNB_M,         
+        INS_InsertCall (ins, IPOINT_AFTER, (AFUNPTR) sSETNB_M,         
             IARG_THREAD_ID,
             IARG_MEMORYWRITE_EA,    // adresse de destination (8 bits)
             IARG_INST_PTR,          // adresse de l'instruction
@@ -58,7 +58,7 @@ void BITBYTE::cSETNB(INS &ins)
     else // forcement registre
     {
         REG regDest = INS_RegW(ins, 0);  // registre de destination (8 bits)
-        INS_InsertCall (ins, IPOINT_BEFORE, (AFUNPTR) sSETNB_R,         
+        INS_InsertCall (ins, IPOINT_AFTER, (AFUNPTR) sSETNB_R,         
             IARG_THREAD_ID,
             IARG_UINT32, regDest,    // registre de destination (8 bits)
             IARG_REG_VALUE, regDest, // sa valeur (qui ser 0 ou 1 selon valeur prédicat)
@@ -72,7 +72,7 @@ void BITBYTE::cSETS(INS &ins)
     // SETS           SF = 1          Sign (negative)   
     if (INS_IsMemoryWrite(ins))     
     {   
-        INS_InsertCall (ins, IPOINT_BEFORE, (AFUNPTR) sSETS_M,         
+        INS_InsertCall (ins, IPOINT_AFTER, (AFUNPTR) sSETS_M,         
             IARG_THREAD_ID,
             IARG_MEMORYWRITE_EA,    // adresse de destination (8 bits)
             IARG_INST_PTR,          // adresse de l'instruction
@@ -81,7 +81,7 @@ void BITBYTE::cSETS(INS &ins)
     else // forcement registre
     {
         REG regDest = INS_RegW(ins, 0);  // registre de destination (8 bits)
-        INS_InsertCall (ins, IPOINT_BEFORE, (AFUNPTR) sSETS_R,         
+        INS_InsertCall (ins, IPOINT_AFTER, (AFUNPTR) sSETS_R,         
             IARG_THREAD_ID,
             IARG_UINT32, regDest,    // registre de destination (8 bits)
             IARG_REG_VALUE, regDest, // sa valeur (qui ser 0 ou 1 selon valeur prédicat)
@@ -95,7 +95,7 @@ void BITBYTE::cSETNS(INS &ins)
     // SETNS          SF = 0          Not sign (non-negative) 
     if (INS_IsMemoryWrite(ins))     
     {   
-        INS_InsertCall (ins, IPOINT_BEFORE, (AFUNPTR) sSETNS_M,         
+        INS_InsertCall (ins, IPOINT_AFTER, (AFUNPTR) sSETNS_M,         
             IARG_THREAD_ID,
             IARG_MEMORYWRITE_EA,    // adresse de destination (8 bits)
             IARG_INST_PTR,          // adresse de l'instruction
@@ -104,7 +104,7 @@ void BITBYTE::cSETNS(INS &ins)
     else // forcement registre
     {
         REG regDest = INS_RegW(ins, 0);  // registre de destination (8 bits)
-        INS_InsertCall (ins, IPOINT_BEFORE, (AFUNPTR) sSETNS_R,         
+        INS_InsertCall (ins, IPOINT_AFTER, (AFUNPTR) sSETNS_R,         
             IARG_THREAD_ID,
             IARG_UINT32, regDest,    // registre de destination (8 bits)
             IARG_REG_VALUE, regDest, // sa valeur (qui ser 0 ou 1 selon valeur prédicat)
@@ -118,7 +118,7 @@ void BITBYTE::cSETO(INS &ins)
     // SETO           OF = 1          Overflow  
     if (INS_IsMemoryWrite(ins))     
     {   
-        INS_InsertCall (ins, IPOINT_BEFORE, (AFUNPTR) sSETO_M,         
+        INS_InsertCall (ins, IPOINT_AFTER, (AFUNPTR) sSETO_M,         
             IARG_THREAD_ID,
             IARG_MEMORYWRITE_EA,    // adresse de destination (8 bits)
             IARG_INST_PTR,          // adresse de l'instruction
@@ -127,7 +127,7 @@ void BITBYTE::cSETO(INS &ins)
     else // forcement registre
     {
         REG regDest = INS_RegW(ins, 0);  // registre de destination (8 bits)
-        INS_InsertCall (ins, IPOINT_BEFORE, (AFUNPTR) sSETO_R,         
+        INS_InsertCall (ins, IPOINT_AFTER, (AFUNPTR) sSETO_R,         
             IARG_THREAD_ID,
             IARG_UINT32, regDest,    // registre de destination (8 bits)
             IARG_REG_VALUE, regDest, // sa valeur (qui ser 0 ou 1 selon valeur prédicat)
@@ -141,7 +141,7 @@ void BITBYTE::cSETNO(INS &ins)
     // SETNO          OF = 0          Not overflow   
     if (INS_IsMemoryWrite(ins))     
     {   
-        INS_InsertCall (ins, IPOINT_BEFORE, (AFUNPTR) sSETNO_M,         
+        INS_InsertCall (ins, IPOINT_AFTER, (AFUNPTR) sSETNO_M,         
             IARG_THREAD_ID,
             IARG_MEMORYWRITE_EA,    // adresse de destination (8 bits)
             IARG_INST_PTR,          // adresse de l'instruction
@@ -150,7 +150,7 @@ void BITBYTE::cSETNO(INS &ins)
     else // forcement registre
     {
         REG regDest = INS_RegW(ins, 0);  // registre de destination (8 bits)
-        INS_InsertCall (ins, IPOINT_BEFORE, (AFUNPTR) sSETNO_R,         
+        INS_InsertCall (ins, IPOINT_AFTER, (AFUNPTR) sSETNO_R,         
             IARG_THREAD_ID,
             IARG_UINT32, regDest,    // registre de destination (8 bits)
             IARG_REG_VALUE, regDest, // sa valeur (qui ser 0 ou 1 selon valeur prédicat)
@@ -164,7 +164,7 @@ void BITBYTE::cSETP(INS &ins)
     // SETP/SETPE       PF = 1          Parity/parity even 
     if (INS_IsMemoryWrite(ins))     
     {   
-        INS_InsertCall (ins, IPOINT_BEFORE, (AFUNPTR) sSETP_M,         
+        INS_InsertCall (ins, IPOINT_AFTER, (AFUNPTR) sSETP_M,         
             IARG_THREAD_ID,
             IARG_MEMORYWRITE_EA,    // adresse de destination (8 bits)
             IARG_INST_PTR,          // adresse de l'instruction
@@ -173,7 +173,7 @@ void BITBYTE::cSETP(INS &ins)
     else // forcement registre
     {
         REG regDest = INS_RegW(ins, 0);  // registre de destination (8 bits)
-        INS_InsertCall (ins, IPOINT_BEFORE, (AFUNPTR) sSETP_R,         
+        INS_InsertCall (ins, IPOINT_AFTER, (AFUNPTR) sSETP_R,         
             IARG_THREAD_ID,
             IARG_UINT32, regDest,    // registre de destination (8 bits)
             IARG_REG_VALUE, regDest, // sa valeur (qui ser 0 ou 1 selon valeur prédicat)
@@ -187,7 +187,7 @@ void BITBYTE::cSETNP(INS &ins)
     // SETNP/SETPO      PF = 0          Not parity/parity odd 
     if (INS_IsMemoryWrite(ins))     
     {   
-        INS_InsertCall (ins, IPOINT_BEFORE, (AFUNPTR) sSETNP_M,         
+        INS_InsertCall (ins, IPOINT_AFTER, (AFUNPTR) sSETNP_M,         
             IARG_THREAD_ID,
             IARG_MEMORYWRITE_EA,    // adresse de destination (8 bits)
             IARG_INST_PTR,          // adresse de l'instruction
@@ -196,7 +196,7 @@ void BITBYTE::cSETNP(INS &ins)
     else // forcement registre
     {
         REG regDest = INS_RegW(ins, 0);  // registre de destination (8 bits)
-        INS_InsertCall (ins, IPOINT_BEFORE, (AFUNPTR) sSETNP_R,         
+        INS_InsertCall (ins, IPOINT_AFTER, (AFUNPTR) sSETNP_R,         
             IARG_THREAD_ID,
             IARG_UINT32, regDest,    // registre de destination (8 bits)
             IARG_REG_VALUE, regDest, // sa valeur (qui ser 0 ou 1 selon valeur prédicat)
@@ -210,7 +210,7 @@ void BITBYTE::cSETZ(INS &ins)
     // SETE/SETZ        ZF = 1          Equal/zero
     if (INS_IsMemoryWrite(ins))     
     {   
-        INS_InsertCall (ins, IPOINT_BEFORE, (AFUNPTR) sSETZ_M,         
+        INS_InsertCall (ins, IPOINT_AFTER, (AFUNPTR) sSETZ_M,         
             IARG_THREAD_ID,
             IARG_MEMORYWRITE_EA,    // adresse de destination (8 bits)
             IARG_INST_PTR,          // adresse de l'instruction
@@ -219,7 +219,7 @@ void BITBYTE::cSETZ(INS &ins)
     else // forcement registre
     {
         REG regDest = INS_RegW(ins, 0);  // registre de destination (8 bits)
-        INS_InsertCall (ins, IPOINT_BEFORE, (AFUNPTR) sSETZ_R,         
+        INS_InsertCall (ins, IPOINT_AFTER, (AFUNPTR) sSETZ_R,         
             IARG_THREAD_ID,
             IARG_UINT32, regDest,    // registre de destination (8 bits)
             IARG_REG_VALUE, regDest, // sa valeur (qui ser 0 ou 1 selon valeur prédicat)
@@ -233,7 +233,7 @@ void BITBYTE::cSETNZ(INS &ins)
     // SETNE/SETNZ      ZF = 0          Not equal/not zero
     if (INS_IsMemoryWrite(ins))     
     {   
-        INS_InsertCall (ins, IPOINT_BEFORE, (AFUNPTR) sSETNZ_M,         
+        INS_InsertCall (ins, IPOINT_AFTER, (AFUNPTR) sSETNZ_M,         
             IARG_THREAD_ID,
             IARG_MEMORYWRITE_EA,    // adresse de destination (8 bits)
             IARG_INST_PTR,          // adresse de l'instruction
@@ -242,7 +242,7 @@ void BITBYTE::cSETNZ(INS &ins)
     else // forcement registre
     {
         REG regDest = INS_RegW(ins, 0);  // registre de destination (8 bits)
-        INS_InsertCall (ins, IPOINT_BEFORE, (AFUNPTR) sSETNZ_R,         
+        INS_InsertCall (ins, IPOINT_AFTER, (AFUNPTR) sSETNZ_R,         
             IARG_THREAD_ID,
             IARG_UINT32, regDest,    // registre de destination (8 bits)
             IARG_REG_VALUE, regDest, // sa valeur (qui ser 0 ou 1 selon valeur prédicat)
@@ -256,7 +256,7 @@ void BITBYTE::cSETBE(INS &ins)
     // SETBE/SETNA      (CF or ZF) = 1  Below or equal/not above  
     if (INS_IsMemoryWrite(ins))     
     {   
-        INS_InsertCall (ins, IPOINT_BEFORE, (AFUNPTR) sSETBE_M,         
+        INS_InsertCall (ins, IPOINT_AFTER, (AFUNPTR) sSETBE_M,         
             IARG_THREAD_ID,
             IARG_MEMORYWRITE_EA,    // adresse de destination (8 bits)
             IARG_REG_VALUE, REG_GFLAGS, // valeur exacte des flags
@@ -266,7 +266,7 @@ void BITBYTE::cSETBE(INS &ins)
     else // forcement registre
     {
         REG regDest = INS_RegW(ins, 0);  // registre de destination (8 bits)
-        INS_InsertCall (ins, IPOINT_BEFORE, (AFUNPTR) sSETBE_R,         
+        INS_InsertCall (ins, IPOINT_AFTER, (AFUNPTR) sSETBE_R,         
             IARG_THREAD_ID,
             IARG_UINT32, regDest,    // registre de destination (8 bits)
             IARG_REG_VALUE, regDest, // sa valeur (qui ser 0 ou 1 selon valeur prédicat)
@@ -281,7 +281,7 @@ void BITBYTE::cSETNBE(INS &ins)
     // SETA/SETNBE      (CF or ZF) = 0  Above/not below or equal
     if (INS_IsMemoryWrite(ins))     
     {   
-        INS_InsertCall (ins, IPOINT_BEFORE, (AFUNPTR) sSETNBE_M,         
+        INS_InsertCall (ins, IPOINT_AFTER, (AFUNPTR) sSETNBE_M,         
             IARG_THREAD_ID,
             IARG_MEMORYWRITE_EA,    // adresse de destination (8 bits)
             IARG_REG_VALUE, REG_GFLAGS, // valeur exacte des flags
@@ -291,7 +291,7 @@ void BITBYTE::cSETNBE(INS &ins)
     else // forcement registre
     {
         REG regDest = INS_RegW(ins, 0);  // registre de destination (8 bits)
-        INS_InsertCall (ins, IPOINT_BEFORE, (AFUNPTR) sSETNBE_R,         
+        INS_InsertCall (ins, IPOINT_AFTER, (AFUNPTR) sSETNBE_R,         
             IARG_THREAD_ID,
             IARG_UINT32, regDest,    // registre de destination (8 bits)
             IARG_REG_VALUE, regDest, // sa valeur (qui ser 0 ou 1 selon valeur prédicat)
@@ -306,7 +306,7 @@ void BITBYTE::cSETL(INS &ins)
     // SETL/SETNGE      (SF xor OF) = 1 Less/not greater or equal
     if (INS_IsMemoryWrite(ins))     
     {   
-        INS_InsertCall (ins, IPOINT_BEFORE, (AFUNPTR) sSETL_M,         
+        INS_InsertCall (ins, IPOINT_AFTER, (AFUNPTR) sSETL_M,         
             IARG_THREAD_ID,
             IARG_MEMORYWRITE_EA,    // adresse de destination (8 bits)
             IARG_REG_VALUE, REG_GFLAGS, // valeur exacte des flags
@@ -316,7 +316,7 @@ void BITBYTE::cSETL(INS &ins)
     else // forcement registre
     {
         REG regDest = INS_RegW(ins, 0);  // registre de destination (8 bits)
-        INS_InsertCall (ins, IPOINT_BEFORE, (AFUNPTR) sSETL_R,         
+        INS_InsertCall (ins, IPOINT_AFTER, (AFUNPTR) sSETL_R,         
             IARG_THREAD_ID,
             IARG_UINT32, regDest,    // registre de destination (8 bits)
             IARG_REG_VALUE, regDest, // sa valeur (qui ser 0 ou 1 selon valeur prédicat)
@@ -331,7 +331,7 @@ void BITBYTE::cSETNL(INS &ins)
     // SETGE/SETNL      (SF xor OF) = 0 Greater or equal/not less
     if (INS_IsMemoryWrite(ins))     
     {   
-        INS_InsertCall (ins, IPOINT_BEFORE, (AFUNPTR) sSETNL_M,         
+        INS_InsertCall (ins, IPOINT_AFTER, (AFUNPTR) sSETNL_M,         
             IARG_THREAD_ID,
             IARG_MEMORYWRITE_EA,    // adresse de destination (8 bits)
             IARG_REG_VALUE, REG_GFLAGS, // valeur exacte des flags
@@ -341,7 +341,7 @@ void BITBYTE::cSETNL(INS &ins)
     else // forcement registre
     {
         REG regDest = INS_RegW(ins, 0);  // registre de destination (8 bits)
-        INS_InsertCall (ins, IPOINT_BEFORE, (AFUNPTR) sSETNL_R,         
+        INS_InsertCall (ins, IPOINT_AFTER, (AFUNPTR) sSETNL_R,         
             IARG_THREAD_ID,
             IARG_UINT32, regDest,    // registre de destination (8 bits)
             IARG_REG_VALUE, regDest, // sa valeur (qui ser 0 ou 1 selon valeur prédicat)
@@ -356,7 +356,7 @@ void BITBYTE::cSETLE(INS &ins)
     // SETLE/SETNG      ((SF xor OF) or ZF) = 1 Less or equal/not greater
     if (INS_IsMemoryWrite(ins))     
     {   
-        INS_InsertCall (ins, IPOINT_BEFORE, (AFUNPTR) sSETLE_M,         
+        INS_InsertCall (ins, IPOINT_AFTER, (AFUNPTR) sSETLE_M,         
             IARG_THREAD_ID,
             IARG_MEMORYWRITE_EA,    // adresse de destination (8 bits)
             IARG_REG_VALUE, REG_GFLAGS, // valeur exacte des flags
@@ -366,7 +366,7 @@ void BITBYTE::cSETLE(INS &ins)
     else // forcement registre
     {
         REG regDest = INS_RegW(ins, 0);  // registre de destination (8 bits)
-        INS_InsertCall (ins, IPOINT_BEFORE, (AFUNPTR) sSETLE_R,         
+        INS_InsertCall (ins, IPOINT_AFTER, (AFUNPTR) sSETLE_R,         
             IARG_THREAD_ID,
             IARG_UINT32, regDest,    // registre de destination (8 bits)
             IARG_REG_VALUE, regDest, // sa valeur (qui ser 0 ou 1 selon valeur prédicat)
@@ -380,7 +380,7 @@ void BITBYTE::cSETNLE(INS &ins)
 {
     if (INS_IsMemoryWrite(ins))     
     {   
-        INS_InsertCall (ins, IPOINT_BEFORE, (AFUNPTR) sSETNLE_M,         
+        INS_InsertCall (ins, IPOINT_AFTER, (AFUNPTR) sSETNLE_M,         
             IARG_THREAD_ID,
             IARG_MEMORYWRITE_EA,    // adresse de destination (8 bits)
             IARG_REG_VALUE, REG_GFLAGS, // valeur exacte des flags
@@ -390,7 +390,7 @@ void BITBYTE::cSETNLE(INS &ins)
     else // forcement registre
     {
         REG regDest = INS_RegW(ins, 0);  // registre de destination (8 bits)
-        INS_InsertCall (ins, IPOINT_BEFORE, (AFUNPTR) sSETNLE_R,         
+        INS_InsertCall (ins, IPOINT_AFTER, (AFUNPTR) sSETNLE_R,         
             IARG_THREAD_ID,
             IARG_UINT32, regDest,    // registre de destination (8 bits)
             IARG_REG_VALUE, regDest, // sa valeur (qui ser 0 ou 1 selon valeur prédicat)
