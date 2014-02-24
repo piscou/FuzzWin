@@ -8,6 +8,11 @@ template<UINT32 lengthInBits> void DATAXFER::sMOV_RR(THREADID tid, REG regSrc, R
     // pas besoin de tester le marquage de la source : perte de temps
     // car isRegisterTainted va faire une boucle pour tester le marquage, 
     // et le marquage est également testé octet par octet dans la boucle for ci dessous
+    
+    // on pourrait faire directement un updateRegisterTaint mais
+    // on traite octet par octet pour éviter le surmarquage, et en plus
+    // cela ne nécessite pas les valeurs des registres (gain en performances)
+
     REGINDEX regIndexDest = getRegIndex(regDest);	
     REGINDEX regIndexSrc  = getRegIndex(regSrc);
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);

@@ -110,7 +110,7 @@ extern std::ofstream g_taint; // fichier de log du marquage
 // log de dessassemblage standard (partie instrumentation)
 #define _LOGINS(ins)  { \
     PIN_GetLock(&g_lock, PIN_ThreadId()); \
-    g_debug << "[T:" << PIN_ThreadId() << "] 0x" << hexstr(INS_Address(ins)); \
+    g_debug << "[T:" << PIN_ThreadId() << "] " << hexstr(INS_Address(ins)); \
     g_debug << " " << INS_Disassemble(ins).c_str(); \
     PIN_ReleaseLock(&g_lock); }
 

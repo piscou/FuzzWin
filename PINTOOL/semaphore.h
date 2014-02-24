@@ -1,6 +1,6 @@
 #pragma once
 #include "pintool.h"
-#include "binary.h" // CMP (pour CMPXCHG)
+#include "binary.h"   // CMP (pour CMPXCHG)
 #include "dataxfer.h" // MOV (pour CMPXCHG)
 
 namespace SEMAPHORE

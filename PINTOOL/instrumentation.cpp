@@ -271,6 +271,8 @@ void INSTRUMENTATION::FiniTaint(INT32 code, void* )
     g_pFormula->final();
 
 #if DEBUG
+    g_debug << g_pFormula->getDeBruijnArray();
+    
     // fermeture des fichiers de log
     clock_t totalTime = clock() - g_timeBegin;
 
