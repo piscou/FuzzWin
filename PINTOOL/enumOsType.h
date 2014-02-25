@@ -11,17 +11,20 @@ enum OSTYPE
 
     HOST_X86_VISTA_SP0, // pour cette version, le syscall 'setinformationfile' n'est pas le meme que pour les autres SP...
     HOST_X86_VISTA,
-    HOST_X86_2008 = HOST_X86_VISTA,   // les index des syscalls sont les mêmes
-    HOST_X86_2008_R2 = HOST_X86_2008, // les index des syscalls sont les mêmes
+    HOST_X86_2008    = HOST_X86_VISTA, // les index des syscalls sont les mêmes
+    HOST_X86_2008_R2 = HOST_X86_2008,  // les index des syscalls sont les mêmes
   
     HOST_X86_SEVEN,
     
-    HOST_X86_8_0,
-    HOST_X86_2012 = HOST_X86_8_0,    // a priori ce sont les memes
+    HOST_X86_WIN80,
+    HOST_X86_2012 = HOST_X86_WIN80, 
     
-    HOST_X86_8_1,
-    HOST_X86_2012_R2 = HOST_X86_8_1, // a priori ce sont les memes
+    HOST_X86_WIN81,
+    HOST_X86_2012_R2 = HOST_X86_WIN81, // a priori ce sont les memes
     
-    HOST_64BITS,
-    HOST_END = HOST_64BITS
+    BEGIN_HOST_64BITS,
+    HOST_X64_BEFORE_WIN8 = BEGIN_HOST_64BITS,
+    HOST_X64_WIN80,
+    HOST_X64_WIN81,
+    HOST_UNKNOWN
 };

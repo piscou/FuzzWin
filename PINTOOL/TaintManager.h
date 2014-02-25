@@ -394,7 +394,7 @@ public:
         if (regIndex == regIndexINVALID)
         {
             g_debug << "Erreur isRegisterTainted non géré" << std::endl;
-            PIN_ExitApplication(-1);
+            PIN_ExitApplication(EXIT_FAILURE);
         }
         #endif
 
@@ -419,7 +419,7 @@ public:
         if (regIndex == regIndexINVALID)
         {
             g_debug << "Erreur isRegisterTainted non géré" << std::endl;
-            PIN_ExitApplication(-1);
+            PIN_ExitApplication(EXIT_FAILURE);
         }
         #endif
         
@@ -470,7 +470,7 @@ public:
         if (regIndex == regIndexINVALID)
         {
             g_debug << "Erreur getRegisterTainted non géré" << std::endl;
-            PIN_ExitApplication(-1);
+            PIN_ExitApplication(EXIT_FAILURE);
         }
         #endif
 
@@ -504,7 +504,7 @@ public:
         if (regIndex == regIndexINVALID)
         {
             g_debug << "Erreur getRegisterTainted non géré" << std::endl;
-            PIN_ExitApplication(-1);
+            PIN_ExitApplication(EXIT_FAILURE);
         }
         #endif
 
@@ -542,7 +542,7 @@ public:
         if (regIndex == regIndexINVALID)
         {
             g_debug << "Erreur getRegisterTainted non géré" << std::endl;
-            PIN_ExitApplication(-1);
+            PIN_ExitApplication(EXIT_FAILURE);
         }
         #endif
 
@@ -580,7 +580,7 @@ public:
         if (regIndex == regIndexINVALID)
         {
             g_debug << "Erreur getRegisterTainted non géré" << std::endl;
-            PIN_ExitApplication(-1);
+            PIN_ExitApplication(EXIT_FAILURE);
         }
         #endif
         
@@ -632,7 +632,7 @@ public:
         if (regIndex == regIndexINVALID)
         {
             g_debug << "Erreur updateTaintRegister non géré" << std::endl;
-            PIN_ExitApplication(-1);
+            PIN_ExitApplication(EXIT_FAILURE);
         }
         #endif
 
@@ -656,7 +656,7 @@ public:
         if (regIndex == regIndexINVALID)
         {
             g_debug << "Erreur updateTaintRegister non géré" << std::endl;
-            PIN_ExitApplication(-1);
+            PIN_ExitApplication(EXIT_FAILURE);
         }
         #endif
 
@@ -689,7 +689,7 @@ public:
         if (regIndex == regIndexINVALID)
         {
             g_debug << "Erreur updateTaintRegister non géré" << std::endl;
-            PIN_ExitApplication(-1);
+            PIN_ExitApplication(EXIT_FAILURE);
         }
         #endif
         
@@ -722,7 +722,7 @@ public:
         if (regIndex == regIndexINVALID)
         {
             g_debug << "Erreur updateTaintRegister non géré" << std::endl;
-            PIN_ExitApplication(-1);
+            PIN_ExitApplication(EXIT_FAILURE);
         }
         #endif
         
@@ -781,7 +781,7 @@ public:
         if (regIndex == regIndexINVALID)
         {
             g_debug << "Erreur unTaintRegister non géré" << std::endl;
-            PIN_ExitApplication(-1);
+            PIN_ExitApplication(EXIT_FAILURE);
         }
         #endif
 
@@ -806,7 +806,7 @@ public:
         if (regIndex == regIndexINVALID)
         {
             g_debug << "Erreur unTaintRegister non géré" << std::endl;
-            PIN_ExitApplication(-1);
+            PIN_ExitApplication(EXIT_FAILURE);
         }
         #endif
 

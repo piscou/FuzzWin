@@ -6,39 +6,59 @@
 /*** SETcc ***/
 /*************/
 
-//! tous les callbacks pour SETcc suivent le même principe
-//! C'est l'une des rares instructions où la fonction d'analyse 
-//! sera insérée APRES l'exécution. En effet, SETcc ne fait pas partie des instructions
-//! avec prédicats qui utilisent le paramètre IARG_EXECUTING (comme CMOVcc et Jcc)
-//! 
+//! tous les callbacks pour SETcc suivent le même principe 
+//! SETcc ne fait pas partie des instructions avec prédicats 
+//! qui utilisent le paramètre IARG_EXECUTING (comme CMOVcc et Jcc)
 //! Dans la conception de PIN, l'instruction est en effet toujours exécutée : elle
 //! fixe la destination (registre ou mémoire, 8 bits) à 0 ou 1 selon la valeur du prédicat
 //! 
-//! Donc instrumentation en IPOINT_AFTER
-//! avec passage en arguments de la destination (et des flags selon le type de predicat)
+//! Deux cas seront distingués:
 //!
-//! la fonction d'analyse lit la valeur de la destination, regarde si le predicat
-//! a été vrai (<-> destination à 1), et ajoute la contrainte correspondante
-//! ne pas oublier : démarquage destination quoi qu'il arrive
+//! *-> cas REGISTRE : instrumentation en IPOINT_AFTER
+//! avec passage en arguments de la destination (et des flags selon le type de predicat)
+//! la fonction d'analyse lit la valeur du registre après exécution
+//! s'il vaut 1, le predicat était vrai => ajout de la contrainte correspondante
+//! et démarquage du registre
+//!
+//! *-> cas MEMOIRE : instrumentation en IF(BEFORE)/THEN(AFTER)
+//! en effet impossible d'obtenir l'argument mémoire en IPOINT_AFTER
+//! donc en InsertIfCall(Before), on passe comme arguement l'adresse qui sera modifiée
+//! la fonction d'analyse 'Before' démarque la mémoire (quoi qu'il arrive elle sera démarquée)
+//! et vérifie le marquage du flag concerné.
+//! Si marqué, enregistrement de l'adresse de destination en variable globale
+//! et retour de la valeur 'True' pour déclencher l'instrumentation 'Then'
+//!
+//! l'instrumentation 'then' a comme argument la valeur des flags selon le type de predicat
+//! la fonction d'analyse lit la valeur de la mémoire après exécution
+//! s'il vaut 1, le predicat était vrai => ajout de la contrainte correspondante
+
+// adresse d'écriture d'une instruction SETCC_M
+static ADDRINT g_writeAddressSetcc;
 
 void BITBYTE::cSETB(INS &ins) 
 { 
     // SETB/SETNAE/SETC   CF = 1          Below/not above or equal/carry     
     if (INS_IsMemoryWrite(ins))     
     {   
-        INS_InsertCall (ins, IPOINT_AFTER, (AFUNPTR) sSETB_M,         
+        // Instrumentation 'If' en IPOINT_BEFORE
+        INS_InsertIfCall (ins, IPOINT_BEFORE, (AFUNPTR) sSETB_M_BEFORE,         
             IARG_THREAD_ID,
             IARG_MEMORYWRITE_EA,    // adresse de destination (8 bits)
-            IARG_INST_PTR,          // adresse de l'instruction
+            IARG_END);
+
+        // Instrumentation 'Then' en IPOINT_AFTER
+        INS_InsertThenCall (ins, IPOINT_AFTER, (AFUNPTR) sSETB_M_AFTER,         
+            IARG_THREAD_ID,
+            IARG_INST_PTR,    // adresse de l'instruction
             IARG_END);
     }
     else // forcement registre
     {
-        REG regDest = INS_RegW(ins, 0);  // registre de destination (8 bits)
+        REG regDest = INS_RegW(ins, 0);  // registre de destination (8 bits) qui sera démarqué
         INS_InsertCall (ins, IPOINT_AFTER, (AFUNPTR) sSETB_R,         
             IARG_THREAD_ID,
-            IARG_UINT32, regDest,    // registre de destination (8 bits)
-            IARG_REG_VALUE, regDest, // sa valeur (qui ser 0 ou 1 selon valeur prédicat)
+            IARG_UINT32, regDest,    // registre de destination (8 bits) qui sera démarqué
+            IARG_REG_VALUE, regDest, // sa valeur (qui sera 0 ou 1 selon valeur prédicat)
             IARG_INST_PTR,          // adresse de l'instruction
             IARG_END);
     }
@@ -49,19 +69,25 @@ void BITBYTE::cSETNB(INS &ins)
     // SETAE/SETNB/SETNC  CF = 0     Above or equal/not below
     if (INS_IsMemoryWrite(ins))     
     {   
-        INS_InsertCall (ins, IPOINT_AFTER, (AFUNPTR) sSETNB_M,         
+        // Instrumentation 'If' en IPOINT_BEFORE : idem SETB
+        INS_InsertIfCall (ins, IPOINT_BEFORE, (AFUNPTR) sSETB_M_BEFORE,         
             IARG_THREAD_ID,
             IARG_MEMORYWRITE_EA,    // adresse de destination (8 bits)
-            IARG_INST_PTR,          // adresse de l'instruction
+            IARG_END);
+
+        // Instrumentation 'Then' en IPOINT_AFTER
+        INS_InsertThenCall (ins, IPOINT_AFTER, (AFUNPTR) sSETNB_M_AFTER,         
+            IARG_THREAD_ID,
+            IARG_INST_PTR,    // adresse de l'instruction
             IARG_END);
     }
     else // forcement registre
     {
-        REG regDest = INS_RegW(ins, 0);  // registre de destination (8 bits)
+        REG regDest = INS_RegW(ins, 0);  // registre de destination (8 bits) qui sera démarqué
         INS_InsertCall (ins, IPOINT_AFTER, (AFUNPTR) sSETNB_R,         
             IARG_THREAD_ID,
-            IARG_UINT32, regDest,    // registre de destination (8 bits)
-            IARG_REG_VALUE, regDest, // sa valeur (qui ser 0 ou 1 selon valeur prédicat)
+            IARG_UINT32, regDest,    // registre de destination (8 bits) qui sera démarqué
+            IARG_REG_VALUE, regDest, // sa valeur (qui sera 0 ou 1 selon valeur prédicat)
             IARG_INST_PTR,          // adresse de l'instruction
             IARG_END);
     }
@@ -72,19 +98,25 @@ void BITBYTE::cSETS(INS &ins)
     // SETS           SF = 1          Sign (negative)   
     if (INS_IsMemoryWrite(ins))     
     {   
-        INS_InsertCall (ins, IPOINT_AFTER, (AFUNPTR) sSETS_M,         
+        // Instrumentation 'If' en IPOINT_BEFORE
+        INS_InsertIfCall (ins, IPOINT_BEFORE, (AFUNPTR) sSETS_M_BEFORE,         
             IARG_THREAD_ID,
             IARG_MEMORYWRITE_EA,    // adresse de destination (8 bits)
-            IARG_INST_PTR,          // adresse de l'instruction
+            IARG_END);
+
+        // Instrumentation 'Then' en IPOINT_AFTER
+        INS_InsertThenCall (ins, IPOINT_AFTER, (AFUNPTR) sSETS_M_AFTER,         
+            IARG_THREAD_ID,
+            IARG_INST_PTR,    // adresse de l'instruction
             IARG_END);
     }
     else // forcement registre
     {
-        REG regDest = INS_RegW(ins, 0);  // registre de destination (8 bits)
+        REG regDest = INS_RegW(ins, 0);  // registre de destination (8 bits) qui sera démarqué
         INS_InsertCall (ins, IPOINT_AFTER, (AFUNPTR) sSETS_R,         
             IARG_THREAD_ID,
-            IARG_UINT32, regDest,    // registre de destination (8 bits)
-            IARG_REG_VALUE, regDest, // sa valeur (qui ser 0 ou 1 selon valeur prédicat)
+            IARG_UINT32, regDest,    // registre de destination (8 bits) qui sera démarqué
+            IARG_REG_VALUE, regDest, // sa valeur (qui sera 0 ou 1 selon valeur prédicat)
             IARG_INST_PTR,          // adresse de l'instruction
             IARG_END);
     }
@@ -95,19 +127,25 @@ void BITBYTE::cSETNS(INS &ins)
     // SETNS          SF = 0          Not sign (non-negative) 
     if (INS_IsMemoryWrite(ins))     
     {   
-        INS_InsertCall (ins, IPOINT_AFTER, (AFUNPTR) sSETNS_M,         
+        // Instrumentation 'If' en IPOINT_BEFORE : idem SETS
+        INS_InsertIfCall (ins, IPOINT_BEFORE, (AFUNPTR) sSETS_M_BEFORE,         
             IARG_THREAD_ID,
             IARG_MEMORYWRITE_EA,    // adresse de destination (8 bits)
-            IARG_INST_PTR,          // adresse de l'instruction
+            IARG_END);
+
+        // Instrumentation 'Then' en IPOINT_AFTER
+        INS_InsertThenCall (ins, IPOINT_AFTER, (AFUNPTR) sSETNS_M_AFTER,         
+            IARG_THREAD_ID,
+            IARG_INST_PTR,    // adresse de l'instruction
             IARG_END);
     }
     else // forcement registre
     {
-        REG regDest = INS_RegW(ins, 0);  // registre de destination (8 bits)
+        REG regDest = INS_RegW(ins, 0);  // registre de destination (8 bits) qui sera démarqué
         INS_InsertCall (ins, IPOINT_AFTER, (AFUNPTR) sSETNS_R,         
             IARG_THREAD_ID,
-            IARG_UINT32, regDest,    // registre de destination (8 bits)
-            IARG_REG_VALUE, regDest, // sa valeur (qui ser 0 ou 1 selon valeur prédicat)
+            IARG_UINT32, regDest,    // registre de destination (8 bits) qui sera démarqué
+            IARG_REG_VALUE, regDest, // sa valeur (qui sera 0 ou 1 selon valeur prédicat)
             IARG_INST_PTR,          // adresse de l'instruction
             IARG_END);
     }
@@ -118,19 +156,25 @@ void BITBYTE::cSETO(INS &ins)
     // SETO           OF = 1          Overflow  
     if (INS_IsMemoryWrite(ins))     
     {   
-        INS_InsertCall (ins, IPOINT_AFTER, (AFUNPTR) sSETO_M,         
+        // Instrumentation 'If' en IPOINT_BEFORE
+        INS_InsertIfCall (ins, IPOINT_BEFORE, (AFUNPTR) sSETO_M_BEFORE,         
             IARG_THREAD_ID,
             IARG_MEMORYWRITE_EA,    // adresse de destination (8 bits)
-            IARG_INST_PTR,          // adresse de l'instruction
+            IARG_END);
+
+        // Instrumentation 'Then' en IPOINT_AFTER
+        INS_InsertThenCall (ins, IPOINT_AFTER, (AFUNPTR) sSETO_M_AFTER,         
+            IARG_THREAD_ID,
+            IARG_INST_PTR,    // adresse de l'instruction
             IARG_END);
     }
     else // forcement registre
     {
-        REG regDest = INS_RegW(ins, 0);  // registre de destination (8 bits)
+        REG regDest = INS_RegW(ins, 0);  // registre de destination (8 bits) qui sera démarqué
         INS_InsertCall (ins, IPOINT_AFTER, (AFUNPTR) sSETO_R,         
             IARG_THREAD_ID,
-            IARG_UINT32, regDest,    // registre de destination (8 bits)
-            IARG_REG_VALUE, regDest, // sa valeur (qui ser 0 ou 1 selon valeur prédicat)
+            IARG_UINT32, regDest,    // registre de destination (8 bits) qui sera démarqué
+            IARG_REG_VALUE, regDest, // sa valeur (qui sera 0 ou 1 selon valeur prédicat)
             IARG_INST_PTR,          // adresse de l'instruction
             IARG_END);
     }
@@ -141,19 +185,25 @@ void BITBYTE::cSETNO(INS &ins)
     // SETNO          OF = 0          Not overflow   
     if (INS_IsMemoryWrite(ins))     
     {   
-        INS_InsertCall (ins, IPOINT_AFTER, (AFUNPTR) sSETNO_M,         
+        // Instrumentation 'If' en IPOINT_BEFORE : idem SETO
+        INS_InsertIfCall (ins, IPOINT_BEFORE, (AFUNPTR) sSETO_M_BEFORE,         
             IARG_THREAD_ID,
             IARG_MEMORYWRITE_EA,    // adresse de destination (8 bits)
-            IARG_INST_PTR,          // adresse de l'instruction
+            IARG_END);
+
+        // Instrumentation 'Then' en IPOINT_AFTER
+        INS_InsertThenCall (ins, IPOINT_AFTER, (AFUNPTR) sSETNO_M_AFTER,         
+            IARG_THREAD_ID,
+            IARG_INST_PTR,    // adresse de l'instruction
             IARG_END);
     }
     else // forcement registre
     {
-        REG regDest = INS_RegW(ins, 0);  // registre de destination (8 bits)
+        REG regDest = INS_RegW(ins, 0);  // registre de destination (8 bits) qui sera démarqué
         INS_InsertCall (ins, IPOINT_AFTER, (AFUNPTR) sSETNO_R,         
             IARG_THREAD_ID,
-            IARG_UINT32, regDest,    // registre de destination (8 bits)
-            IARG_REG_VALUE, regDest, // sa valeur (qui ser 0 ou 1 selon valeur prédicat)
+            IARG_UINT32, regDest,    // registre de destination (8 bits) qui sera démarqué
+            IARG_REG_VALUE, regDest, // sa valeur (qui sera 0 ou 1 selon valeur prédicat)
             IARG_INST_PTR,          // adresse de l'instruction
             IARG_END);
     } 
@@ -164,19 +214,25 @@ void BITBYTE::cSETP(INS &ins)
     // SETP/SETPE       PF = 1          Parity/parity even 
     if (INS_IsMemoryWrite(ins))     
     {   
-        INS_InsertCall (ins, IPOINT_AFTER, (AFUNPTR) sSETP_M,         
+        // Instrumentation 'If' en IPOINT_BEFORE
+        INS_InsertIfCall (ins, IPOINT_BEFORE, (AFUNPTR) sSETP_M_BEFORE,         
             IARG_THREAD_ID,
             IARG_MEMORYWRITE_EA,    // adresse de destination (8 bits)
-            IARG_INST_PTR,          // adresse de l'instruction
+            IARG_END);
+
+        // Instrumentation 'Then' en IPOINT_AFTER
+        INS_InsertThenCall (ins, IPOINT_AFTER, (AFUNPTR) sSETP_M_AFTER,         
+            IARG_THREAD_ID,
+            IARG_INST_PTR,    // adresse de l'instruction
             IARG_END);
     }
     else // forcement registre
     {
-        REG regDest = INS_RegW(ins, 0);  // registre de destination (8 bits)
+        REG regDest = INS_RegW(ins, 0);  // registre de destination (8 bits) qui sera démarqué
         INS_InsertCall (ins, IPOINT_AFTER, (AFUNPTR) sSETP_R,         
             IARG_THREAD_ID,
-            IARG_UINT32, regDest,    // registre de destination (8 bits)
-            IARG_REG_VALUE, regDest, // sa valeur (qui ser 0 ou 1 selon valeur prédicat)
+            IARG_UINT32, regDest,    // registre de destination (8 bits) qui sera démarqué
+            IARG_REG_VALUE, regDest, // sa valeur (qui sera 0 ou 1 selon valeur prédicat)
             IARG_INST_PTR,          // adresse de l'instruction
             IARG_END);
     } 
@@ -187,19 +243,25 @@ void BITBYTE::cSETNP(INS &ins)
     // SETNP/SETPO      PF = 0          Not parity/parity odd 
     if (INS_IsMemoryWrite(ins))     
     {   
-        INS_InsertCall (ins, IPOINT_AFTER, (AFUNPTR) sSETNP_M,         
+        // Instrumentation 'If' en IPOINT_BEFORE : idem SETP
+        INS_InsertIfCall (ins, IPOINT_BEFORE, (AFUNPTR) sSETP_M_BEFORE,         
             IARG_THREAD_ID,
             IARG_MEMORYWRITE_EA,    // adresse de destination (8 bits)
-            IARG_INST_PTR,          // adresse de l'instruction
+            IARG_END);
+
+        // Instrumentation 'Then' en IPOINT_AFTER
+        INS_InsertThenCall (ins, IPOINT_AFTER, (AFUNPTR) sSETNP_M_AFTER,         
+            IARG_THREAD_ID,
+            IARG_INST_PTR,    // adresse de l'instruction
             IARG_END);
     }
     else // forcement registre
     {
-        REG regDest = INS_RegW(ins, 0);  // registre de destination (8 bits)
+        REG regDest = INS_RegW(ins, 0);  // registre de destination (8 bits) qui sera démarqué
         INS_InsertCall (ins, IPOINT_AFTER, (AFUNPTR) sSETNP_R,         
             IARG_THREAD_ID,
-            IARG_UINT32, regDest,    // registre de destination (8 bits)
-            IARG_REG_VALUE, regDest, // sa valeur (qui ser 0 ou 1 selon valeur prédicat)
+            IARG_UINT32, regDest,    // registre de destination (8 bits) qui sera démarqué
+            IARG_REG_VALUE, regDest, // sa valeur (qui sera 0 ou 1 selon valeur prédicat)
             IARG_INST_PTR,          // adresse de l'instruction
             IARG_END);
     }
@@ -210,19 +272,25 @@ void BITBYTE::cSETZ(INS &ins)
     // SETE/SETZ        ZF = 1          Equal/zero
     if (INS_IsMemoryWrite(ins))     
     {   
-        INS_InsertCall (ins, IPOINT_AFTER, (AFUNPTR) sSETZ_M,         
+        // Instrumentation 'If' en IPOINT_BEFORE
+        INS_InsertIfCall (ins, IPOINT_BEFORE, (AFUNPTR) sSETZ_M_BEFORE,         
             IARG_THREAD_ID,
             IARG_MEMORYWRITE_EA,    // adresse de destination (8 bits)
-            IARG_INST_PTR,          // adresse de l'instruction
+            IARG_END);
+
+        // Instrumentation 'Then' en IPOINT_AFTER
+        INS_InsertThenCall (ins, IPOINT_AFTER, (AFUNPTR) sSETZ_M_AFTER,         
+            IARG_THREAD_ID,
+            IARG_INST_PTR,    // adresse de l'instruction
             IARG_END);
     }
     else // forcement registre
     {
-        REG regDest = INS_RegW(ins, 0);  // registre de destination (8 bits)
+        REG regDest = INS_RegW(ins, 0);  // registre de destination (8 bits) qui sera démarqué
         INS_InsertCall (ins, IPOINT_AFTER, (AFUNPTR) sSETZ_R,         
             IARG_THREAD_ID,
-            IARG_UINT32, regDest,    // registre de destination (8 bits)
-            IARG_REG_VALUE, regDest, // sa valeur (qui ser 0 ou 1 selon valeur prédicat)
+            IARG_UINT32, regDest,    // registre de destination (8 bits) qui sera démarqué
+            IARG_REG_VALUE, regDest, // sa valeur (qui sera 0 ou 1 selon valeur prédicat)
             IARG_INST_PTR,          // adresse de l'instruction
             IARG_END);
     }
@@ -233,19 +301,25 @@ void BITBYTE::cSETNZ(INS &ins)
     // SETNE/SETNZ      ZF = 0          Not equal/not zero
     if (INS_IsMemoryWrite(ins))     
     {   
-        INS_InsertCall (ins, IPOINT_AFTER, (AFUNPTR) sSETNZ_M,         
+        // Instrumentation 'If' en IPOINT_BEFORE : idem SETZ
+        INS_InsertIfCall (ins, IPOINT_BEFORE, (AFUNPTR) sSETZ_M_BEFORE,         
             IARG_THREAD_ID,
             IARG_MEMORYWRITE_EA,    // adresse de destination (8 bits)
-            IARG_INST_PTR,          // adresse de l'instruction
+            IARG_END);
+
+        // Instrumentation 'Then' en IPOINT_AFTER
+        INS_InsertThenCall (ins, IPOINT_AFTER, (AFUNPTR) sSETNZ_M_AFTER,         
+            IARG_THREAD_ID,
+            IARG_INST_PTR,    // adresse de l'instruction
             IARG_END);
     }
     else // forcement registre
     {
-        REG regDest = INS_RegW(ins, 0);  // registre de destination (8 bits)
+        REG regDest = INS_RegW(ins, 0);  // registre de destination (8 bits) qui sera démarqué
         INS_InsertCall (ins, IPOINT_AFTER, (AFUNPTR) sSETNZ_R,         
             IARG_THREAD_ID,
-            IARG_UINT32, regDest,    // registre de destination (8 bits)
-            IARG_REG_VALUE, regDest, // sa valeur (qui ser 0 ou 1 selon valeur prédicat)
+            IARG_UINT32, regDest,    // registre de destination (8 bits) qui sera démarqué
+            IARG_REG_VALUE, regDest, // sa valeur (qui sera 0 ou 1 selon valeur prédicat)
             IARG_INST_PTR,          // adresse de l'instruction
             IARG_END);
     }
@@ -256,20 +330,26 @@ void BITBYTE::cSETBE(INS &ins)
     // SETBE/SETNA      (CF or ZF) = 1  Below or equal/not above  
     if (INS_IsMemoryWrite(ins))     
     {   
-        INS_InsertCall (ins, IPOINT_AFTER, (AFUNPTR) sSETBE_M,         
+        // Instrumentation 'If' en IPOINT_BEFORE
+        INS_InsertIfCall (ins, IPOINT_BEFORE, (AFUNPTR) sSETBE_M_BEFORE,         
             IARG_THREAD_ID,
             IARG_MEMORYWRITE_EA,    // adresse de destination (8 bits)
+            IARG_END);
+
+        // Instrumentation 'Then' en IPOINT_AFTER
+        INS_InsertThenCall (ins, IPOINT_AFTER, (AFUNPTR) sSETBE_M_AFTER,         
+            IARG_THREAD_ID,
             IARG_REG_VALUE, REG_GFLAGS, // valeur exacte des flags
-            IARG_INST_PTR,          // adresse de l'instruction
+            IARG_INST_PTR,              // adresse de l'instruction
             IARG_END);
     }
     else // forcement registre
     {
-        REG regDest = INS_RegW(ins, 0);  // registre de destination (8 bits)
+        REG regDest = INS_RegW(ins, 0);  // registre de destination (8 bits) qui sera démarqué
         INS_InsertCall (ins, IPOINT_AFTER, (AFUNPTR) sSETBE_R,         
             IARG_THREAD_ID,
-            IARG_UINT32, regDest,    // registre de destination (8 bits)
-            IARG_REG_VALUE, regDest, // sa valeur (qui ser 0 ou 1 selon valeur prédicat)
+            IARG_UINT32, regDest,    // registre de destination (8 bits) qui sera démarqué
+            IARG_REG_VALUE, regDest, // sa valeur (qui sera 0 ou 1 selon valeur prédicat)
             IARG_REG_VALUE, REG_GFLAGS, // valeur exacte des flags
             IARG_INST_PTR,          // adresse de l'instruction
             IARG_END);
@@ -281,20 +361,26 @@ void BITBYTE::cSETNBE(INS &ins)
     // SETA/SETNBE      (CF or ZF) = 0  Above/not below or equal
     if (INS_IsMemoryWrite(ins))     
     {   
-        INS_InsertCall (ins, IPOINT_AFTER, (AFUNPTR) sSETNBE_M,         
+        // Instrumentation 'If' en IPOINT_BEFORE : idem SETBE
+        INS_InsertIfCall (ins, IPOINT_BEFORE, (AFUNPTR) sSETBE_M_BEFORE,         
             IARG_THREAD_ID,
             IARG_MEMORYWRITE_EA,    // adresse de destination (8 bits)
+            IARG_END);
+
+        // Instrumentation 'Then' en IPOINT_AFTER
+        INS_InsertThenCall (ins, IPOINT_AFTER, (AFUNPTR) sSETNBE_M_AFTER,         
+            IARG_THREAD_ID,
             IARG_REG_VALUE, REG_GFLAGS, // valeur exacte des flags
-            IARG_INST_PTR,          // adresse de l'instruction
+            IARG_INST_PTR,              // adresse de l'instruction
             IARG_END);
     }
     else // forcement registre
     {
-        REG regDest = INS_RegW(ins, 0);  // registre de destination (8 bits)
+        REG regDest = INS_RegW(ins, 0);  // registre de destination (8 bits) qui sera démarqué
         INS_InsertCall (ins, IPOINT_AFTER, (AFUNPTR) sSETNBE_R,         
             IARG_THREAD_ID,
-            IARG_UINT32, regDest,    // registre de destination (8 bits)
-            IARG_REG_VALUE, regDest, // sa valeur (qui ser 0 ou 1 selon valeur prédicat)
+            IARG_UINT32, regDest,    // registre de destination (8 bits) qui sera démarqué
+            IARG_REG_VALUE, regDest, // sa valeur (qui sera 0 ou 1 selon valeur prédicat)
             IARG_REG_VALUE, REG_GFLAGS, // valeur exacte des flags
             IARG_INST_PTR,          // adresse de l'instruction
             IARG_END);
@@ -306,20 +392,26 @@ void BITBYTE::cSETL(INS &ins)
     // SETL/SETNGE      (SF xor OF) = 1 Less/not greater or equal
     if (INS_IsMemoryWrite(ins))     
     {   
-        INS_InsertCall (ins, IPOINT_AFTER, (AFUNPTR) sSETL_M,         
+        // Instrumentation 'If' en IPOINT_BEFORE
+        INS_InsertIfCall (ins, IPOINT_BEFORE, (AFUNPTR) sSETL_M_BEFORE,         
             IARG_THREAD_ID,
             IARG_MEMORYWRITE_EA,    // adresse de destination (8 bits)
+            IARG_END);
+
+        // Instrumentation 'Then' en IPOINT_AFTER
+        INS_InsertThenCall (ins, IPOINT_AFTER, (AFUNPTR) sSETL_M_AFTER,         
+            IARG_THREAD_ID,
             IARG_REG_VALUE, REG_GFLAGS, // valeur exacte des flags
-            IARG_INST_PTR,          // adresse de l'instruction
+            IARG_INST_PTR,              // adresse de l'instruction
             IARG_END);
     }
     else // forcement registre
     {
-        REG regDest = INS_RegW(ins, 0);  // registre de destination (8 bits)
+        REG regDest = INS_RegW(ins, 0);  // registre de destination (8 bits) qui sera démarqué
         INS_InsertCall (ins, IPOINT_AFTER, (AFUNPTR) sSETL_R,         
             IARG_THREAD_ID,
-            IARG_UINT32, regDest,    // registre de destination (8 bits)
-            IARG_REG_VALUE, regDest, // sa valeur (qui ser 0 ou 1 selon valeur prédicat)
+            IARG_UINT32, regDest,    // registre de destination (8 bits) qui sera démarqué
+            IARG_REG_VALUE, regDest, // sa valeur (qui sera 0 ou 1 selon valeur prédicat)
             IARG_REG_VALUE, REG_GFLAGS, // valeur exacte des flags
             IARG_INST_PTR,          // adresse de l'instruction
             IARG_END);
@@ -331,20 +423,26 @@ void BITBYTE::cSETNL(INS &ins)
     // SETGE/SETNL      (SF xor OF) = 0 Greater or equal/not less
     if (INS_IsMemoryWrite(ins))     
     {   
-        INS_InsertCall (ins, IPOINT_AFTER, (AFUNPTR) sSETNL_M,         
+        // Instrumentation 'If' en IPOINT_BEFORE : idem SETL
+        INS_InsertIfCall (ins, IPOINT_BEFORE, (AFUNPTR) sSETL_M_BEFORE,         
             IARG_THREAD_ID,
             IARG_MEMORYWRITE_EA,    // adresse de destination (8 bits)
+            IARG_END);
+
+        // Instrumentation 'Then' en IPOINT_AFTER
+        INS_InsertThenCall (ins, IPOINT_AFTER, (AFUNPTR) sSETNL_M_AFTER,         
+            IARG_THREAD_ID,
             IARG_REG_VALUE, REG_GFLAGS, // valeur exacte des flags
-            IARG_INST_PTR,          // adresse de l'instruction
+            IARG_INST_PTR,              // adresse de l'instruction
             IARG_END);
     }
     else // forcement registre
     {
-        REG regDest = INS_RegW(ins, 0);  // registre de destination (8 bits)
+        REG regDest = INS_RegW(ins, 0);  // registre de destination (8 bits) qui sera démarqué
         INS_InsertCall (ins, IPOINT_AFTER, (AFUNPTR) sSETNL_R,         
             IARG_THREAD_ID,
-            IARG_UINT32, regDest,    // registre de destination (8 bits)
-            IARG_REG_VALUE, regDest, // sa valeur (qui ser 0 ou 1 selon valeur prédicat)
+            IARG_UINT32, regDest,    // registre de destination (8 bits) qui sera démarqué
+            IARG_REG_VALUE, regDest, // sa valeur (qui sera 0 ou 1 selon valeur prédicat)
             IARG_REG_VALUE, REG_GFLAGS, // valeur exacte des flags
             IARG_INST_PTR,          // adresse de l'instruction
             IARG_END);
@@ -356,20 +454,26 @@ void BITBYTE::cSETLE(INS &ins)
     // SETLE/SETNG      ((SF xor OF) or ZF) = 1 Less or equal/not greater
     if (INS_IsMemoryWrite(ins))     
     {   
-        INS_InsertCall (ins, IPOINT_AFTER, (AFUNPTR) sSETLE_M,         
+        // Instrumentation 'If' en IPOINT_BEFORE
+        INS_InsertIfCall (ins, IPOINT_BEFORE, (AFUNPTR) sSETLE_M_BEFORE,         
             IARG_THREAD_ID,
             IARG_MEMORYWRITE_EA,    // adresse de destination (8 bits)
+            IARG_END);
+
+        // Instrumentation 'Then' en IPOINT_AFTER
+        INS_InsertThenCall (ins, IPOINT_AFTER, (AFUNPTR) sSETLE_M_AFTER,         
+            IARG_THREAD_ID,
             IARG_REG_VALUE, REG_GFLAGS, // valeur exacte des flags
-            IARG_INST_PTR,          // adresse de l'instruction
+            IARG_INST_PTR,              // adresse de l'instruction
             IARG_END);
     }
     else // forcement registre
     {
-        REG regDest = INS_RegW(ins, 0);  // registre de destination (8 bits)
+        REG regDest = INS_RegW(ins, 0);  // registre de destination (8 bits) qui sera démarqué
         INS_InsertCall (ins, IPOINT_AFTER, (AFUNPTR) sSETLE_R,         
             IARG_THREAD_ID,
-            IARG_UINT32, regDest,    // registre de destination (8 bits)
-            IARG_REG_VALUE, regDest, // sa valeur (qui ser 0 ou 1 selon valeur prédicat)
+            IARG_UINT32, regDest,    // registre de destination (8 bits) qui sera démarqué
+            IARG_REG_VALUE, regDest, // sa valeur (qui sera 0 ou 1 selon valeur prédicat)
             IARG_REG_VALUE, REG_GFLAGS, // valeur exacte des flags
             IARG_INST_PTR,          // adresse de l'instruction
             IARG_END);
@@ -380,20 +484,26 @@ void BITBYTE::cSETNLE(INS &ins)
 {
     if (INS_IsMemoryWrite(ins))     
     {   
-        INS_InsertCall (ins, IPOINT_AFTER, (AFUNPTR) sSETNLE_M,         
+        // Instrumentation 'If' en IPOINT_BEFORE : idem SETLE
+        INS_InsertIfCall (ins, IPOINT_BEFORE, (AFUNPTR) sSETLE_M_BEFORE,         
             IARG_THREAD_ID,
             IARG_MEMORYWRITE_EA,    // adresse de destination (8 bits)
+            IARG_END);
+
+        // Instrumentation 'Then' en IPOINT_AFTER
+        INS_InsertThenCall (ins, IPOINT_AFTER, (AFUNPTR) sSETNLE_M_AFTER,         
+            IARG_THREAD_ID,
             IARG_REG_VALUE, REG_GFLAGS, // valeur exacte des flags
-            IARG_INST_PTR,          // adresse de l'instruction
+            IARG_INST_PTR,              // adresse de l'instruction
             IARG_END);
     }
     else // forcement registre
     {
-        REG regDest = INS_RegW(ins, 0);  // registre de destination (8 bits)
+        REG regDest = INS_RegW(ins, 0);  // registre de destination (8 bits) qui sera démarqué
         INS_InsertCall (ins, IPOINT_AFTER, (AFUNPTR) sSETNLE_R,         
             IARG_THREAD_ID,
-            IARG_UINT32, regDest,    // registre de destination (8 bits)
-            IARG_REG_VALUE, regDest, // sa valeur (qui ser 0 ou 1 selon valeur prédicat)
+            IARG_UINT32, regDest,    // registre de destination (8 bits) qui sera démarqué
+            IARG_REG_VALUE, regDest, // sa valeur (qui sera 0 ou 1 selon valeur prédicat)
             IARG_REG_VALUE, REG_GFLAGS, // valeur exacte des flags
             IARG_INST_PTR,          // adresse de l'instruction
             IARG_END);
@@ -404,242 +514,383 @@ void BITBYTE::cSETNLE(INS &ins)
 /****  SIMULATE ****/
 /*******************/
 
-// -------------------
-// DESTINATION MEMOIRE
-// -------------------
-void BITBYTE::sSETB_M(THREADID tid, ADDRINT address, ADDRINT insAddress)
+// -----------------------------------------------
+// destination mémoire : partie IF (IPOINT_BEFORE)
+// -----------------------------------------------
+
+ADDRINT BITBYTE::sSETB_M_BEFORE(THREADID tid, ADDRINT writeAddress)
 {
-    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
-    // SETB/SETNAE/SETC   CF = 1     Below/not above or equal/carry   
+    TaintManager_Thread* pTmgrTls    = getTmgrInTls(tid);
+    ADDRINT              returnValue = 0;    // par défaut pas d'instrumentation 'Then'
+   
+    // démarquage de la destination quoi qu'il arrive
+    pTmgrGlobal->unTaintMemory<8>(writeAddress);
+    
+    // si flag marqué, traitement de la contrainte dans la partie 'then' (retour non nul)   
     if (pTmgrTls->isCarryFlagTainted()) 
     {
-        _LOGTAINT("SETB_M");
-        // prédicat vrai si la destination est non nulle
-        g_pFormula->addConstraint_BELOW(pTmgrTls, insAddress, (getMemoryValue<8>(address) != 0));
-    }
+        // stockage adresse de destination pour traitement dans la partie 'then'
+        g_writeAddressSetcc = writeAddress;
+        returnValue         = 1;
+    }   
+    return (returnValue);
+}// sSETB_M_BEFORE
 
-    // démarquage de la destination (la contrainte sur sa valeur a été enregistrée)
-    pTmgrGlobal->unTaintMemory<8>(address);
-}// sSETB
-
-void BITBYTE::sSETNB_M(THREADID tid, ADDRINT address, ADDRINT insAddress)
+ADDRINT BITBYTE::sSETS_M_BEFORE(THREADID tid, ADDRINT writeAddress)
 { 
-    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
-    // SETAE/SETNB/SETNC  CF = 0     Above or equal/not below
-    if (pTmgrTls->isCarryFlagTainted()) 
-    {
-        _LOGTAINT("SETNB_M");
-        // prédicat vrai si la destination est non nulle + inversion car NOT BELOW
-        g_pFormula->addConstraint_BELOW(pTmgrTls, insAddress, (getMemoryValue<8>(address) == 0));
-    }
-
-    // démarquage de la destination (la contrainte sur sa valeur a été enregistrée)
-    pTmgrGlobal->unTaintMemory<8>(address);
-}// sSETNB
-
-void BITBYTE::sSETS_M(THREADID tid, ADDRINT address, ADDRINT insAddress)
-{ 
-    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
-    // SETS           SF = 1          Sign (negative)
+    TaintManager_Thread* pTmgrTls    = getTmgrInTls(tid);
+    ADDRINT              returnValue = 0;    // par défaut pas d'instrumentation 'Then'
+   
+    // démarquage de la destination quoi qu'il arrive
+    pTmgrGlobal->unTaintMemory<8>(writeAddress);
+    
+    // si flag marqué, traitement de la contrainte dans la partie 'then' (retour non nul)   
     if (pTmgrTls->isSignFlagTainted()) 
     {
-        _LOGTAINT("SETS_M");
-        // prédicat vrai si la destination est non nulle
-        g_pFormula->addConstraint_SIGN(pTmgrTls, insAddress, (getMemoryValue<8>(address) != 0));
-    }
-
-    // démarquage de la destination (la contrainte sur sa valeur a été enregistrée)
-    pTmgrGlobal->unTaintMemory<8>(address);
+        // stockage adresse de destination pour traitement dans la partie 'then'
+        g_writeAddressSetcc = writeAddress;
+        returnValue         = 1;
+    }   
+    return (returnValue);
 }// sSETS
 
-void BITBYTE::sSETNS_M(THREADID tid, ADDRINT address, ADDRINT insAddress)
+ADDRINT BITBYTE::sSETO_M_BEFORE(THREADID tid, ADDRINT writeAddress)
 {
-    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
-    // SETNS       SF = 0      Not sign (non-negative)
-    if (pTmgrTls->isSignFlagTainted()) 
-    {
-        _LOGTAINT("SETNS_M");
-        // prédicat vrai si la destination est nulle (inversion car NOT)
-        g_pFormula->addConstraint_SIGN(pTmgrTls, insAddress, (getMemoryValue<8>(address) == 0));
-    }
-
-    // démarquage de la destination (la contrainte sur sa valeur a été enregistrée)
-    pTmgrGlobal->unTaintMemory<8>(address);
-}// sSETNS
-
-void BITBYTE::sSETO_M(THREADID tid, ADDRINT address, ADDRINT insAddress)
-{
-    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
-    // SETO           OF = 1          Overflow
-    if (pTmgrTls->isOverflowFlagTainted())  
-    {
-        _LOGTAINT("SETO_M");
-        // prédicat vrai si la destination est non nulle
-        g_pFormula->addConstraint_OVERFLOW(pTmgrTls, insAddress, (getMemoryValue<8>(address) != 0));
-    }
-    // démarquage de la destination (la contrainte sur sa valeur a été enregistrée)
-    pTmgrGlobal->unTaintMemory<8>(address);
-}// sSETO
-
-void BITBYTE::sSETNO_M(THREADID tid, ADDRINT address, ADDRINT insAddress)
-{ 
-    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
-    // SETNO           OF = 0          not Overflow
+    TaintManager_Thread* pTmgrTls    = getTmgrInTls(tid);
+    ADDRINT              returnValue = 0;    // par défaut pas d'instrumentation 'Then'
+   
+    // démarquage de la destination quoi qu'il arrive
+    pTmgrGlobal->unTaintMemory<8>(writeAddress);
+    
+    // si flag marqué, traitement de la contrainte dans la partie 'then' (retour non nul)   
     if (pTmgrTls->isOverflowFlagTainted()) 
     {
-        _LOGTAINT("SETNO_M");
-        // prédicat vrai si la destination est nulle (inversion car NOT)
-        g_pFormula->addConstraint_OVERFLOW(pTmgrTls, insAddress, (getMemoryValue<8>(address) == 0));
-    }
-    // démarquage de la destination (la contrainte sur sa valeur a été enregistrée)
-    pTmgrGlobal->unTaintMemory<8>(address);
-}// sSETNO
+        // stockage adresse de destination pour traitement dans la partie 'then'
+        g_writeAddressSetcc = writeAddress;
+        returnValue         = 1;
+    }   
+    return (returnValue);
+}// sSETO
 
-void BITBYTE::sSETP_M(THREADID tid, ADDRINT address, ADDRINT insAddress)
+ADDRINT BITBYTE::sSETP_M_BEFORE(THREADID tid, ADDRINT writeAddress)
 { 
-    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
-    // SETP/SETPE       PF = 1          Parity/parity even
+    TaintManager_Thread* pTmgrTls    = getTmgrInTls(tid);
+    ADDRINT              returnValue = 0;    // par défaut pas d'instrumentation 'Then'
+   
+    // démarquage de la destination quoi qu'il arrive
+    pTmgrGlobal->unTaintMemory<8>(writeAddress);
+    
+    // si flag marqué, traitement de la contrainte dans la partie 'then' (retour non nul)   
     if (pTmgrTls->isParityFlagTainted()) 
     {
-        _LOGTAINT("SETP_M");
-        // prédicat vrai si la destination est non nulle
-        g_pFormula->addConstraint_PARITY(pTmgrTls, insAddress, (getMemoryValue<8>(address) != 0));
-    }
-    // démarquage de la destination (la contrainte sur sa valeur a été enregistrée)
-    pTmgrGlobal->unTaintMemory<8>(address);
+        // stockage adresse de destination pour traitement dans la partie 'then'
+        g_writeAddressSetcc = writeAddress;
+        returnValue         = 1;
+    }   
+    return (returnValue);
 }// sSETP
 
-void BITBYTE::sSETNP_M(THREADID tid, ADDRINT address, ADDRINT insAddress)
+ADDRINT BITBYTE::sSETZ_M_BEFORE(THREADID tid, ADDRINT writeAddress)
 { 
-    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
-    // SETNP/SETPO      PF = 0          Not parity/parity odd
-    if (pTmgrTls->isParityFlagTainted()) 
-    {
-        _LOGTAINT("SETNP_M");
-        // prédicat vrai si la destination est nulle (inversion car NOT)
-        g_pFormula->addConstraint_PARITY(pTmgrTls, insAddress, (getMemoryValue<8>(address) == 0));
-    }
-    // démarquage de la destination (la contrainte sur sa valeur a été enregistrée)
-    pTmgrGlobal->unTaintMemory<8>(address);
-}// sSETNP
-
-void BITBYTE::sSETZ_M(THREADID tid, ADDRINT address, ADDRINT insAddress)
-{ 
-    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
-    // SETE/SETZ        ZF = 1          Equal/zero
+    TaintManager_Thread* pTmgrTls    = getTmgrInTls(tid);
+    ADDRINT              returnValue = 0;    // par défaut pas d'instrumentation 'Then'
+   
+    // démarquage de la destination quoi qu'il arrive
+    pTmgrGlobal->unTaintMemory<8>(writeAddress);
+    
+    // si flag marqué, traitement de la contrainte dans la partie 'then' (retour non nul)   
     if (pTmgrTls->isZeroFlagTainted()) 
     {
-        _LOGTAINT("SETZ_M");
-        // prédicat vrai si la destination est non nulle
-        g_pFormula->addConstraint_ZERO(pTmgrTls, insAddress, (getMemoryValue<8>(address) != 0));
-    }
-    // démarquage de la destination (la contrainte sur sa valeur a été enregistrée)
-    pTmgrGlobal->unTaintMemory<8>(address);
+        // stockage adresse de destination pour traitement dans la partie 'then'
+        g_writeAddressSetcc = writeAddress;
+        returnValue         = 1;
+    }   
+    return (returnValue);
 }// sSETZ
 
-void BITBYTE::sSETNZ_M(THREADID tid, ADDRINT address, ADDRINT insAddress)
+ADDRINT BITBYTE::sSETBE_M_BEFORE(THREADID tid, ADDRINT writeAddress)
 {
-    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
-    // SETNE/SETNZ      ZF = 0          Not equal/not zero
-    if (pTmgrTls->isZeroFlagTainted()) 
-    {
-        _LOGTAINT("SETNZ_M");
-        // prédicat vrai si la destination est nulle (inversion car NOT)
-        g_pFormula->addConstraint_ZERO(pTmgrTls, insAddress, (getMemoryValue<8>(address) == 0));
-    }
-    // démarquage de la destination (la contrainte sur sa valeur a été enregistrée)
-    pTmgrGlobal->unTaintMemory<8>(address);
-}// sSETNZ
-
-void BITBYTE::sSETBE_M(THREADID tid, ADDRINT address, ADDRINT regEflagsValue, ADDRINT insAddress)
-{
-    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
-    // (CF or ZF) = 1  Below or equal/not above
+    TaintManager_Thread* pTmgrTls    = getTmgrInTls(tid);
+    ADDRINT              returnValue = 0;    // par défaut pas d'instrumentation 'Then'
+   
+    // démarquage de la destination quoi qu'il arrive
+    pTmgrGlobal->unTaintMemory<8>(writeAddress);
+    
+    // si flag marqué, traitement de la contrainte dans la partie 'then' (retour non nul)   
     if (pTmgrTls->isZeroFlagTainted() || pTmgrTls->isCarryFlagTainted() ) 
     {
-        _LOGTAINT("SETBE_M");
-        // prédicat vrai si la destination est non nulle
-        g_pFormula->addConstraint_BELOW_OR_EQUAL(pTmgrTls, insAddress, (getMemoryValue<8>(address) != 0), regEflagsValue);
-    }
-    // démarquage de la destination (la contrainte sur sa valeur a été enregistrée)
-    pTmgrGlobal->unTaintMemory<8>(address);
+        // stockage adresse de destination pour traitement dans la partie 'then'
+        g_writeAddressSetcc = writeAddress;
+        returnValue         = 1;
+    }   
+    return (returnValue);
 }// sSETBE
 
-void BITBYTE::sSETNBE_M(THREADID tid, ADDRINT address, ADDRINT regEflagsValue, ADDRINT insAddress)
+ADDRINT BITBYTE::sSETL_M_BEFORE(THREADID tid, ADDRINT writeAddress)
 {
-    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
-    // SETA/SETNBE      (CF or ZF) = 0  Above/not below or equal
-    if (pTmgrTls->isZeroFlagTainted() || pTmgrTls->isCarryFlagTainted() ) 
-    {
-        _LOGTAINT("SETNBE_M");
-        // prédicat vrai si la destination est nulle (inversion car NOT)
-        g_pFormula->addConstraint_BELOW_OR_EQUAL(pTmgrTls, insAddress, (getMemoryValue<8>(address) == 0), regEflagsValue);
-    }
-    // démarquage de la destination (la contrainte sur sa valeur a été enregistrée)
-    pTmgrGlobal->unTaintMemory<8>(address);
-}// sSETNBE
-
-void BITBYTE::sSETL_M(THREADID tid, ADDRINT address, ADDRINT regEflagsValue, ADDRINT insAddress)
-{
-    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
-    // SETL/SETNGE      (SF xor OF) = 1 Less/not greater or equal
+    TaintManager_Thread* pTmgrTls    = getTmgrInTls(tid);
+    ADDRINT              returnValue = 0;    // par défaut pas d'instrumentation 'Then'
+   
+    // démarquage de la destination quoi qu'il arrive
+    pTmgrGlobal->unTaintMemory<8>(writeAddress);
+    
+    // si flag marqué, traitement de la contrainte dans la partie 'then' (retour non nul)   
     if (pTmgrTls->isSignFlagTainted() || pTmgrTls->isOverflowFlagTainted() ) 
     {
-        _LOGTAINT("SETL_M");
-        // prédicat vrai si la destination est non nulle
-        g_pFormula->addConstraint_LESS(pTmgrTls, insAddress, (getMemoryValue<8>(address) != 0), regEflagsValue);
-    }
-    // démarquage de la destination (la contrainte sur sa valeur a été enregistrée)
-    pTmgrGlobal->unTaintMemory<8>(address);
+        // stockage adresse de destination pour traitement dans la partie 'then'
+        g_writeAddressSetcc = writeAddress;
+        returnValue         = 1;
+    }   
+    return (returnValue);
 }// sSETL
 
-void BITBYTE::sSETNL_M(THREADID tid, ADDRINT address, ADDRINT regEflagsValue, ADDRINT insAddress)
+ADDRINT BITBYTE::sSETLE_M_BEFORE(THREADID tid, ADDRINT writeAddress)
 { 
-    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
-    // SETGE/SETNL      (SF xor OF) = 0 Greater or equal/not less
-    if (pTmgrTls->isSignFlagTainted() || pTmgrTls->isOverflowFlagTainted() ) 
-    {
-        _LOGTAINT("SETNL_M");
-        // prédicat vrai si la destination est nulle (inversion car NOT)
-        g_pFormula->addConstraint_LESS(pTmgrTls, insAddress, (getMemoryValue<8>(address) == 0), regEflagsValue);
-    }
-    // démarquage de la destination (la contrainte sur sa valeur a été enregistrée)
-    pTmgrGlobal->unTaintMemory<8>(address);
-}// sSETNL
-
-void BITBYTE::sSETLE_M(THREADID tid, ADDRINT address, ADDRINT regEflagsValue, ADDRINT insAddress) 
-{ 
-    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
-    // SETLE/SETNG      ((SF xor OF) or ZF) = 1 Less or equal/not greater
+    TaintManager_Thread* pTmgrTls    = getTmgrInTls(tid);
+    ADDRINT              returnValue = 0;    // par défaut pas d'instrumentation 'Then'
+   
+    // démarquage de la destination quoi qu'il arrive
+    pTmgrGlobal->unTaintMemory<8>(writeAddress);
+    
+    // si flag marqué, traitement de la contrainte dans la partie 'then' (retour non nul)   
     if (pTmgrTls->isZeroFlagTainted() 
         || pTmgrTls->isSignFlagTainted() 
         || pTmgrTls->isOverflowFlagTainted() ) 
     {
-        _LOGTAINT("SETLE_M");
-        // prédicat vrai si la destination est non nulle
-        g_pFormula->addConstraint_LESS_OR_EQUAL(pTmgrTls, insAddress, (getMemoryValue<8>(address) != 0), regEflagsValue);
-    }
-    // démarquage de la destination (la contrainte sur sa valeur a été enregistrée)
-    pTmgrGlobal->unTaintMemory<8>(address);
+        // stockage adresse de destination pour traitement dans la partie 'then'
+        g_writeAddressSetcc = writeAddress;
+        returnValue         = 1;
+    }   
+    return (returnValue);
 }// sSETLE
 
-void BITBYTE::sSETNLE_M(THREADID tid, ADDRINT address, ADDRINT regEflagsValue, ADDRINT insAddress) 
+// ------------------------------------------------
+// destination mémoire : partie THEN (IPOINT_AFTER)
+// ------------------------------------------------
+
+void BITBYTE::sSETB_M_AFTER(THREADID tid, ADDRINT insAddress)
 {
-    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
-    // SETG/SETNLE      ((SF xor OF) or ZF) = 0 Greater/not less or equal
-    if (pTmgrTls->isZeroFlagTainted() 
-        || pTmgrTls->isSignFlagTainted() 
-        || pTmgrTls->isOverflowFlagTainted() ) 
-    {
-        _LOGTAINT("SETNLE_M");
-        // prédicat vrai si la destination est nulle (inversion car NOT)
-        g_pFormula->addConstraint_LESS_OR_EQUAL(pTmgrTls, insAddress, (getMemoryValue<8>(address) == 0), regEflagsValue);
-    }
-    // démarquage de la destination (la contrainte sur sa valeur a été enregistrée)
-    pTmgrGlobal->unTaintMemory<8>(address);
-}// sSETNLE
+    TaintManager_Thread* pTmgrTls = getTmgrInTls(tid);
 
+    _LOGTAINT("SETB_M_AFTER");
 
+    // prédicat vrai si la destination est non nulle
+    PIN_GetLock(&g_lock, 0);
+    g_pFormula->addConstraint_BELOW(pTmgrTls, insAddress,
+        (getMemoryValue<8>(g_writeAddressSetcc) != 0));
+    PIN_ReleaseLock(&g_lock);
+
+}// sSETB_M_AFTER
+
+void BITBYTE::sSETNB_M_AFTER(THREADID tid, ADDRINT insAddress)
+{
+    TaintManager_Thread* pTmgrTls = getTmgrInTls(tid);
+
+    _LOGTAINT("SETNB_M_AFTER");
+
+    // prédicat vrai si la destination est non nulle + inversion car NOT BELOW
+    PIN_GetLock(&g_lock, 0);
+    g_pFormula->addConstraint_BELOW(pTmgrTls, insAddress,
+        (getMemoryValue<8>(g_writeAddressSetcc) == 0));
+    PIN_ReleaseLock(&g_lock);
+
+}// sSETNB_M_AFTER
+
+void BITBYTE::sSETS_M_AFTER(THREADID tid, ADDRINT insAddress)
+{
+    TaintManager_Thread* pTmgrTls = getTmgrInTls(tid);
+
+    _LOGTAINT("SETS_M_AFTER");
+
+    // prédicat vrai si la destination est non nulle
+    PIN_GetLock(&g_lock, 0);
+    g_pFormula->addConstraint_SIGN(pTmgrTls, insAddress,
+        (getMemoryValue<8>(g_writeAddressSetcc) != 0));
+    PIN_ReleaseLock(&g_lock);
+
+}// sSETS_M_AFTER
+
+void BITBYTE::sSETNS_M_AFTER(THREADID tid, ADDRINT insAddress)
+{
+    TaintManager_Thread* pTmgrTls = getTmgrInTls(tid);
+
+    _LOGTAINT("SETNS_M_AFTER");
+
+    // prédicat vrai si la destination est non nulle + inversion car NOT BELOW
+    PIN_GetLock(&g_lock, 0);
+    g_pFormula->addConstraint_SIGN(pTmgrTls, insAddress,
+        (getMemoryValue<8>(g_writeAddressSetcc) == 0));
+    PIN_ReleaseLock(&g_lock);
+
+}// sSETNS_M_AFTER
+
+void BITBYTE::sSETO_M_AFTER(THREADID tid, ADDRINT insAddress)
+{
+    TaintManager_Thread* pTmgrTls = getTmgrInTls(tid);
+
+    _LOGTAINT("SETO_M_AFTER");
+
+    // prédicat vrai si la destination est non nulle
+    PIN_GetLock(&g_lock, 0);
+    g_pFormula->addConstraint_OVERFLOW(pTmgrTls, insAddress,
+        (getMemoryValue<8>(g_writeAddressSetcc) != 0));
+    PIN_ReleaseLock(&g_lock);
+
+}// sSETO_M_AFTER
+
+void BITBYTE::sSETNO_M_AFTER(THREADID tid, ADDRINT insAddress)
+{
+    TaintManager_Thread* pTmgrTls = getTmgrInTls(tid);
+
+    _LOGTAINT("SETNO_M_AFTER");
+
+    // prédicat vrai si la destination est non nulle + inversion car NOT BELOW
+    PIN_GetLock(&g_lock, 0);
+    g_pFormula->addConstraint_OVERFLOW(pTmgrTls, insAddress,
+        (getMemoryValue<8>(g_writeAddressSetcc) == 0));
+    PIN_ReleaseLock(&g_lock);
+
+}// sSETNO_M_AFTER
+
+void BITBYTE::sSETP_M_AFTER(THREADID tid, ADDRINT insAddress)
+{
+    TaintManager_Thread* pTmgrTls = getTmgrInTls(tid);
+
+    _LOGTAINT("SETB_M_AFTER");
+
+    // prédicat vrai si la destination est non nulle
+    PIN_GetLock(&g_lock, 0);
+    g_pFormula->addConstraint_PARITY(pTmgrTls, insAddress,
+        (getMemoryValue<8>(g_writeAddressSetcc) != 0));
+    PIN_ReleaseLock(&g_lock);
+
+}// sSETP_M_AFTER
+
+void BITBYTE::sSETNP_M_AFTER(THREADID tid, ADDRINT insAddress)
+{
+    TaintManager_Thread* pTmgrTls = getTmgrInTls(tid);
+
+    _LOGTAINT("SETNP_M_AFTER");
+
+    // prédicat vrai si la destination est non nulle + inversion car NOT BELOW
+    PIN_GetLock(&g_lock, 0);
+    g_pFormula->addConstraint_PARITY(pTmgrTls, insAddress,
+        (getMemoryValue<8>(g_writeAddressSetcc) == 0));
+    PIN_ReleaseLock(&g_lock);
+
+}// sSETNP_M_AFTER
+
+void BITBYTE::sSETZ_M_AFTER(THREADID tid, ADDRINT insAddress)
+{
+    TaintManager_Thread* pTmgrTls = getTmgrInTls(tid);
+
+    _LOGTAINT("SETZ_M_AFTER");
+
+    // prédicat vrai si la destination est non nulle
+    PIN_GetLock(&g_lock, 0);
+    g_pFormula->addConstraint_ZERO(pTmgrTls, insAddress,
+        (getMemoryValue<8>(g_writeAddressSetcc) != 0));
+    PIN_ReleaseLock(&g_lock);
+
+}// sSETZ_M_AFTER
+
+void BITBYTE::sSETNZ_M_AFTER(THREADID tid, ADDRINT insAddress)
+{
+    TaintManager_Thread* pTmgrTls = getTmgrInTls(tid);
+
+    _LOGTAINT("SETNZ_M_AFTER");
+
+    // prédicat vrai si la destination est non nulle + inversion car NOT BELOW
+    PIN_GetLock(&g_lock, 0);
+    g_pFormula->addConstraint_ZERO(pTmgrTls, insAddress,
+        (getMemoryValue<8>(g_writeAddressSetcc) == 0));
+    PIN_ReleaseLock(&g_lock);
+
+}// sSETNZ_M_AFTER
+
+void BITBYTE::sSETBE_M_AFTER(THREADID tid, ADDRINT eflagsValue, ADDRINT insAddress)
+{
+    TaintManager_Thread* pTmgrTls = getTmgrInTls(tid);
+
+    _LOGTAINT("SETBE_M_AFTER");
+
+    // prédicat vrai si la destination est non nulle
+    PIN_GetLock(&g_lock, 0);
+    g_pFormula->addConstraint_BELOW_OR_EQUAL(pTmgrTls, insAddress,
+        (getMemoryValue<8>(g_writeAddressSetcc) != 0), eflagsValue);
+    PIN_ReleaseLock(&g_lock);
+
+}// sSETBE_M_AFTER
+
+void BITBYTE::sSETNBE_M_AFTER(THREADID tid, ADDRINT eflagsValue, ADDRINT insAddress)
+{
+    TaintManager_Thread* pTmgrTls = getTmgrInTls(tid);
+
+    _LOGTAINT("SETNBE_M_AFTER");
+
+    // prédicat vrai si la destination est non nulle
+    PIN_GetLock(&g_lock, 0);
+    g_pFormula->addConstraint_BELOW_OR_EQUAL(pTmgrTls, insAddress,
+        (getMemoryValue<8>(g_writeAddressSetcc) == 0), eflagsValue);
+    PIN_ReleaseLock(&g_lock);
+
+}// sSETNBE_M_AFTER
+
+void BITBYTE::sSETL_M_AFTER(THREADID tid, ADDRINT eflagsValue, ADDRINT insAddress)
+{
+    TaintManager_Thread* pTmgrTls = getTmgrInTls(tid);
+
+    _LOGTAINT("SETL_M_AFTER");
+
+    // prédicat vrai si la destination est non nulle
+    PIN_GetLock(&g_lock, 0);
+    g_pFormula->addConstraint_LESS(pTmgrTls, insAddress,
+        (getMemoryValue<8>(g_writeAddressSetcc) != 0), eflagsValue);
+    PIN_ReleaseLock(&g_lock);
+
+}// sSETL_M_AFTER
+
+void BITBYTE::sSETNL_M_AFTER(THREADID tid, ADDRINT eflagsValue, ADDRINT insAddress)
+{
+    TaintManager_Thread* pTmgrTls = getTmgrInTls(tid);
+
+    _LOGTAINT("SETNL_M_AFTER");
+
+    // prédicat vrai si la destination est non nulle
+    PIN_GetLock(&g_lock, 0);
+    g_pFormula->addConstraint_LESS(pTmgrTls, insAddress,
+        (getMemoryValue<8>(g_writeAddressSetcc) == 0), eflagsValue);
+    PIN_ReleaseLock(&g_lock);
+
+}// sSETNL_M_AFTER
+
+void BITBYTE::sSETLE_M_AFTER(THREADID tid, ADDRINT eflagsValue, ADDRINT insAddress)
+{
+    TaintManager_Thread* pTmgrTls = getTmgrInTls(tid);
+
+    _LOGTAINT("SETLE_M_AFTER");
+
+    // prédicat vrai si la destination est non nulle
+    PIN_GetLock(&g_lock, 0);
+    g_pFormula->addConstraint_LESS_OR_EQUAL(pTmgrTls, insAddress,
+        (getMemoryValue<8>(g_writeAddressSetcc) != 0), eflagsValue);
+    PIN_ReleaseLock(&g_lock);
+
+}// sSETLE_M_AFTER
+
+void BITBYTE::sSETNLE_M_AFTER(THREADID tid, ADDRINT eflagsValue, ADDRINT insAddress)
+{
+    TaintManager_Thread* pTmgrTls = getTmgrInTls(tid);
+
+    _LOGTAINT("SETNLE_M_AFTER");
+
+    // prédicat vrai si la destination est non nulle
+    PIN_GetLock(&g_lock, 0);
+    g_pFormula->addConstraint_LESS_OR_EQUAL(pTmgrTls, insAddress,
+        (getMemoryValue<8>(g_writeAddressSetcc) == 0), eflagsValue);
+    PIN_ReleaseLock(&g_lock);
+
+}// sSETNLE_M_AFTER
 
 // --------------------
 // DESTINATION REGISTRE

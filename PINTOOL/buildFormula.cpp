@@ -54,7 +54,6 @@ std::string SolverFormula::getDeBruijnArray()
     return (result);
 }
 
-
 // nom de variable pour les objets, utilisées dans les formules SMTLIB
 void SolverFormula::insertSourceName(std::string &out, const ObjectSource &objSrc) 
 {
@@ -1146,8 +1145,8 @@ void SolverFormula::declareConstraintFooter(const std::string &number, bool take
 
     // Si le nombre maximal de contraintes est atteint : quitter le pintool via la fonction "Fini"
     // code = 3 (NOMBRE MAXIMAL DE CONTRAINTES)
-    // si g_maxConstraints est nul, ce csa n'arrive jamais (la première contrainte est la n°1)
-    if (this->_iAssert == g_maxConstraints)  PIN_ExitApplication(3);
+    // si g_maxConstraints est nul, ce cas n'arrive jamais (la première contrainte est la n°1)
+    if (this->_iAssert == g_maxConstraints)  PIN_ExitApplication(EXIT_MAX_CONSTRAINTS);
 }
 
 void SolverFormula::addConstraint_OVERFLOW(TaintManager_Thread *pTmgrTls, ADDRINT insAddress, bool isTaken) 

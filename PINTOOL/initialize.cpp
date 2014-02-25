@@ -15,7 +15,7 @@ static void maxTimeThread(void *nothing)
     PIN_Sleep(static_cast<UINT32>(1000 * g_maxTime));
 
     // Si le pintool n'a pas déjà terminé, le faire (code 2 = TIMEOUT)
-    PIN_ExitApplication(2); 
+    PIN_ExitApplication(EXIT_TIMEOUT); 
 } // controlThread
 
 // ouverture du pipe de communication avec le programme FuzzWin 

@@ -78,16 +78,15 @@ private:
     // => soit le numéro de variable, soit une valeur numérique
     // si précisé, insère un espace à la fin
     static void insertSourceName(std::string &out, const ObjectSource &objSrc);
-
-public:
+    
     // renvoie la déclaration SMTLIB du tableau De Bruijn (utilisé pour BSR/BSF)
     // et met le booléen "isDeBruijnDeclared" à true
     // NB : le tableau est une liste de 64 valeurs sur 64bits
     // qq soit la taille utilisée dans BSF/BSR : il faudra 
     // faire un zero_extend de la source scannée
-    // ********* A PASSER EN PRIVATE EN VERSION DEFINITIVE ********
     std::string getDeBruijnArray();
 
+public:
     SolverFormula();
 
     // traduit une contrainte dépendant des flags 
