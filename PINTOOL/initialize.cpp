@@ -73,10 +73,6 @@ static int initOptionTaint()
 
     /*** RECUPERATION DES ARGUMENTS ***/
 #if DEBUG
-    // l'écriture des resultats (formule SMT2) se fera à l'écran
-    g_hPipe = WINDOWS::GetStdHandle(STD_OUTPUT_HANDLE);
-
-    if ((HANDLE)(WINDOWS::LONG_PTR) (-1) == g_hPipe)  return (EXIT_FAILURE);
 
     // 1) récupération des options via la ligne de commande (KNOB)
     g_inputFile      = KnobInputFile.Value();
@@ -85,14 +81,27 @@ static int initOptionTaint()
     bytesToTaint     = KnobBytesToTaint.Value(); 
     g_osType         = static_cast<OSTYPE>(KnobOsType.Value());
 
-    // 2) création des fichiers de déssasemblage et de suivi du marquage
-    std::string logfile  (g_inputFile + "_dis.txt");
-    std::string taintfile(g_inputFile + "_taint.txt");
+    // 2) création des fichiers de déssasemblage, de suivi du marquage et de formule
+    std::string logfile    (g_inputFile + "_dis.txt");
+    std::string taintfile  (g_inputFile + "_taint.txt");
+    std::string formulaFile(g_inputFile + "_formula.smt2");
  
     g_debug.open(logfile);
     g_taint.open(taintfile);
     if (!g_debug.good() || !g_taint.good()) return (EXIT_FAILURE);
 
+    // l'écriture des resultats (formule SMT2) se fera dans un fichier
+    g_hPipe = WINDOWS::CreateFile(
+        formulaFile.c_str(), // noùm du fichier 
+        GENERIC_WRITE, // acces en ecriture
+        0,             // pas de partage 
+        nullptr,       // attributs de sécurité par défaut
+        CREATE_ALWAYS, // écrasement du précédent fichier, si existant
+        0,             // attributs par défaut
+        nullptr);	   // pas de modèle
+
+    if ((HANDLE)(WINDOWS::LONG_PTR) (-1) == g_hPipe)  return (EXIT_FAILURE);
+    
     // 3) stockage de l'heure du top départ pour statistiques
     g_timeBegin = clock();
 #else
@@ -144,28 +153,23 @@ int pintoolInit()
     
     // valeur de retour (par défaut fixé à erreur d'initialisation)
     int returnValue = EXIT_FAILURE;
-    
-    // récupération du handle de communication
-    // DEBUG   : lecture via ligne de commande, sortie en STDOUT
-    // RELEASE : lecture et écriture dans pipe "fuzzwin"
-    // puis récupération de l'option du pintool('taint' ou 'checkscore')
-    
-    #if DEBUG
-    // l'écriture des resultats (formule SMT2) se fera à l'écran
-    g_hPipe = WINDOWS::GetStdHandle(STD_OUTPUT_HANDLE);
-    if ((HANDLE)(WINDOWS::LONG_PTR) (-1) == g_hPipe)  return (EXIT_FAILURE);
-    
-    std::string pintoolOption(KnobOption.Value());
-    #else
-    // ouverture du pipe de communication avec FuzzWin
+
+    // ouverture du pipe de communication avec binaire FuzzWin (uniquement en release)
+#if !DEBUG
     if (EXIT_FAILURE == openPipe()) return (EXIT_FAILURE);
-
+#endif  
+    
+    // puis récupération de l'option du pintool('taint' ou 'checkscore')
+#if DEBUG
+    std::string pintoolOption(KnobOption.Value());
+#else
     std::string pintoolOption(readFromPipe());
-    #endif
-
+#endif
+    
     /*** OPTION TAINT ***/
     if (pintoolOption == "taint")
     {
+        // initialisation du pintool pour une utilisation en data tainting
         if (EXIT_FAILURE == initOptionTaint()) return (EXIT_FAILURE);
         returnValue = OPTION_TAINT;
     }
@@ -173,17 +177,18 @@ int pintoolInit()
     else if (pintoolOption == "checkscore")
     {
         returnValue = OPTION_CHECKSCORE;
-
-        #if DEBUG
+        
+        // en mode 'checkScore', un seul arguemnt = le temps maximal d'exécution
+#if DEBUG
         g_maxTime = KnobMaxExecutionTime.Value();
-        #else
+#else
         g_maxTime = LEVEL_BASE::Uint32FromString(readFromPipe());
-        #endif
+#endif
 
-        // INITIALISATION VARIABLE GLOBALE
+        // initialisationd e la la variable globale qui compte le nombre d'instructions
         g_nbIns = 0;      
     }
-    // Option inconnue
+    /*** OPTION INCONNUE ***/
     else return (EXIT_FAILURE);
 
     // création d'un thread interne au pintool : 
@@ -194,5 +199,5 @@ int pintoolInit()
         if (INVALID_THREADID == tid)   return (EXIT_FAILURE);  
     }
 
-    return (returnValue); // option choisie (taint ou checkScore)
+    return (returnValue); // option choisie (taint ou checkScore), ou erreur d'init
 } // pintoolInit()

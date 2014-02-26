@@ -77,8 +77,6 @@ void sSETNL_R (THREADID tid, REG regDest, ADDRINT regDestValue, ADDRINT eflagsVa
 void sSETLE_R (THREADID tid, REG regDest, ADDRINT regDestValue, ADDRINT eflagsValue, ADDRINT insAddress);
 void sSETNLE_R(THREADID tid, REG regDest, ADDRINT regDestValue, ADDRINT eflagsValue, ADDRINT insAddress);
  
-
-
 // SIMULATE
 // Simulate : bits tests
 template<UINT32 lengthInBits> void sBT_IM(THREADID tid, ADDRINT testedAddress, ADDRINT value ADDRESS_DEBUG); 

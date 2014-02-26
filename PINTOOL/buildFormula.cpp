@@ -247,7 +247,7 @@ void SolverFormula::declareRelation(const TaintPtr &tPtr, const vector<ObjectSou
     case X_INC:
     case X_DEC:
     {
-        out += (rel == X_INC) ? "(bvadd " : "(bvsub ";
+        out += (rel == X_INC) ? "bvadd " : "bvsub ";
         out += sources.front().getTaintedSource()->getName();
         out += " (_ bv1 " + lengthOfResultString + ')';
         break;
@@ -1111,6 +1111,10 @@ void SolverFormula::declareRelation(const TaintPtr &tPtr, const vector<ObjectSou
     #endif
 }
 
+/////////////////////////////////
+// DECLARATION DES CONTRAINTES //
+/////////////////////////////////
+
 void SolverFormula::declareConstraintHeader(ADDRINT insAddress, PREDICATE p)
 {
     // entete de formule : insertion d'un commentaire
@@ -1405,14 +1409,36 @@ void SolverFormula::addConstraint_LESS_OR_EQUAL
 void SolverFormula::final() 
 {
     WINDOWS::DWORD cbWritten = 0;
+    std::string finalFormula;
     
-    // insertion du nombre total de contraintes 
+#if DEBUG
+    // MODE DEBUG : construction d'une formule "prete à l'emploi"
+    // avec insertion de la logique, et des commandes "check-sat" et "get-model" 
+    std::string formulaHeader =
+        ";********************************\n" \
+        ";*** FUZZWIN 1.0 - MODE DEBUG ***\n" \
+        ";********************************\n" \
+        "; Fichier instrumenté : " + g_inputFile + "\n\n";
+    formulaHeader +=
+        "(set-option:produce-models true)\n" \
+        "(set-option:print-success false)\n" \
+        "(set-logic QF_BV)\n";
+
+    std::string formulaFooter = 
+        "(check-sat)\n" \
+        "(get-model)\n";
+
+    finalFormula = formulaHeader + this->_formula.str() + formulaFooter;
+#else
+    // MODE RELEASE : insertion du nombre total de contraintes 
     this->_formula << "@" << std::dec << this->_iAssert;
-    
-    // envoi de la formule en entier dans le pipe   (= stdout en mode debug)
+    finalFormula = this->_formula.str();
+#endif
+
+    // envoi de la formule en entier dans le pipe (ou fichier en mode debug)
     WINDOWS::WriteFile(g_hPipe, 
-        this->_formula.str().c_str(), 
-        static_cast<WINDOWS::DWORD>(this->_formula.str().size()), // pour eviter C4267 en x64 
+        finalFormula.c_str(), 
+        static_cast<WINDOWS::DWORD>(finalFormula.size()), // pour eviter C4267 en x64 
         &cbWritten, 
         NULL);
     WINDOWS::FlushFileBuffers(g_hPipe);

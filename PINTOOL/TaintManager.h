@@ -84,9 +84,10 @@ public:
             // expression réguliere pour octets à marquer
             // option qui permet de spécifier uniquement certains octets à suivre en marquage. 
             // type formulaire d'impression (1,3,5-30,34,...)
-            // séparation par virgules, pas d'espaces entre chiffres (sinon fait planter le parsing de argv)
+            // séparation par virgules ou point-virgules, 
+            // pas d'espaces entre chiffres (sinon fait planter le parsing de argv)
             // syntaxe de la regex: ,(présent ou non)'nb'-(présent ou non)'nb'
-            const std::regex bytesModel(",?(\\d+)-?([0-9]+)?", std::regex::ECMAScript); 
+            const std::regex bytesModel("[,;]?\\s*(\\d+)\\s*-?\\s*([0-9]+)?", std::regex::ECMAScript); 
             int tokens[2] = {1,2};
             
             // itérateur de type string sur chaque groupe d'octets qui matche

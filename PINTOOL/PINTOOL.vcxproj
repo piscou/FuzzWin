@@ -111,7 +111,7 @@
     <ClCompile>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
-      <Optimization>Disabled</Optimization>
+      <Optimization>MaxSpeed</Optimization>
       <PreprocessorDefinitions>DEBUG;TARGET_IA32;HOST_IA32;TARGET_WINDOWS;BIGARRAY_MULTIPLIER=1;_CRT_SECURE_NO_DEPRECATE;_SECURE_SCL=0;WIN32</PreprocessorDefinitions>
       <ExceptionHandling>false</ExceptionHandling>
       <BasicRuntimeChecks>
@@ -139,7 +139,7 @@
       <CallingConvention>Cdecl</CallingConvention>
       <DisableSpecificWarnings>4530;%(DisableSpecificWarnings)</DisableSpecificWarnings>
       <FunctionLevelLinking>true</FunctionLevelLinking>
-      <IntrinsicFunctions />
+      <IntrinsicFunctions>true</IntrinsicFunctions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
     </ClCompile>
@@ -163,8 +163,7 @@
       <RandomizedBaseAddress>
       </RandomizedBaseAddress>
       <EntryPointSymbol>Ptrace_DllMainCRTStartup@12 </EntryPointSymbol>
-      <OptimizeReferences>
-      </OptimizeReferences>
+      <OptimizeReferences>true</OptimizeReferences>
       <DataExecutionPrevention>
       </DataExecutionPrevention>
       <LinkErrorReporting>
@@ -189,7 +188,7 @@ del "$(TargetDir)$(TargetName).exp"</Command>
       <PrecompiledHeader>
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
-      <Optimization>Disabled</Optimization>
+      <Optimization>MaxSpeed</Optimization>
       <PreprocessorDefinitions>DEBUG; TARGET_IA32E;HOST_IA32E;TARGET_WINDOWS;BIGARRAY_MULTIPLIER=1;_CRT_SECURE_NO_DEPRECATE;_SECURE_SCL=0;WIN32</PreprocessorDefinitions>
       <ExceptionHandling>
       </ExceptionHandling>
@@ -215,11 +214,11 @@ del "$(TargetDir)$(TargetName).exp"</Command>
       <DisableLanguageExtensions>
       </DisableLanguageExtensions>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      <AdditionalOptions>/EHs- /EHa- /DTARGET_WINDOWS /DBIGARRAY_MULTIPLIER=1 /DUSING_XED /D_CRT_SECURE_NO_DEPRECATE /D_SECURE_SCL=0 /DTARGET_IA32E /DHOST_IA32E %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>/EHs- /EHa- %(AdditionalOptions)</AdditionalOptions>
       <CallingConvention>Cdecl</CallingConvention>
       <DisableSpecificWarnings>4530;%(DisableSpecificWarnings)</DisableSpecificWarnings>
       <FunctionLevelLinking>true</FunctionLevelLinking>
-      <IntrinsicFunctions />
+      <IntrinsicFunctions>true</IntrinsicFunctions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
     </ClCompile>
@@ -243,8 +242,7 @@ del "$(TargetDir)$(TargetName).exp"</Command>
       <RandomizedBaseAddress>
       </RandomizedBaseAddress>
       <EntryPointSymbol>Ptrace_DllMainCRTStartup</EntryPointSymbol>
-      <OptimizeReferences>
-      </OptimizeReferences>
+      <OptimizeReferences>true</OptimizeReferences>
       <DataExecutionPrevention>
       </DataExecutionPrevention>
       <LinkErrorReporting>
