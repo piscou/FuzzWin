@@ -139,6 +139,9 @@
     <ClInclude Include="flagop.h">
       <Filter>Fichiers d%27en-tête</Filter>
     </ClInclude>
+    <ClInclude Include="decimal.h">
+      <Filter>Fichiers d%27en-tête</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="instrumentation.cpp">
@@ -217,6 +220,9 @@
       <Filter>Fichiers sources</Filter>
     </ClCompile>
     <ClCompile Include="flagop.cpp">
+      <Filter>Fichiers sources</Filter>
+    </ClCompile>
+    <ClCompile Include="decimal.cpp">
       <Filter>Fichiers sources</Filter>
     </ClCompile>
   </ItemGroup>

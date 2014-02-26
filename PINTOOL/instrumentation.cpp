@@ -8,6 +8,7 @@
 #include "call.h"
 #include "conditional_branch.h"
 #include "convert.h"
+#include "decimal.h"
 #include "unconditional_branch.h"
 #include "dataxfer.h"
 #include "flagop.h"
@@ -127,14 +128,24 @@ void INSTRUMENTATION::Instruction(INS ins, void* )
 #endif
 
     // DATAXFER: MOV, MOVSX, MOVZX, XCHG, BSWAP
-    case XED_ICLASS_MOV:   DATAXFER::cMOV(ins);  break;
-    case XED_ICLASS_MOVSX: DATAXFER::cMOVSX(ins);  break;
-    case XED_ICLASS_MOVZX: DATAXFER::cMOVZX(ins);  break;
+    case XED_ICLASS_MOV:   DATAXFER::cMOV(ins);   break;
+    case XED_ICLASS_MOVSX: DATAXFER::cMOVSX(ins); break;
+    case XED_ICLASS_MOVZX: DATAXFER::cMOVZX(ins); break;
     case XED_ICLASS_XCHG:  DATAXFER::cXCHG(ins);  break;
-    case XED_ICLASS_BSWAP: DATAXFER::cBSWAP(ins);  break;
+    case XED_ICLASS_BSWAP: DATAXFER::cBSWAP(ins); break;
     #if TARGET_IA32E
     case XED_ICLASS_MOVSXD: DATAXFER::cMOVSXD(ins);  break;
     #endif 
+
+    // DECIMAL (uniquement en x86)
+#if TARGET_IA32
+    case XED_ICLASS_AAA:  DECIMAL::cAAA(ins); break;
+    case XED_ICLASS_AAD:  DECIMAL::cAAD(ins); break;
+    case XED_ICLASS_AAM:  DECIMAL::cAAM(ins); break;
+    case XED_ICLASS_AAS:  DECIMAL::cAAS(ins); break;
+    case XED_ICLASS_DAA:  DECIMAL::cDAA(ins); break;
+    case XED_ICLASS_DAS:  DECIMAL::cDAS(ins); break;
+#endif
 
     // FLAGOP
     case XED_ICLASS_CLC: // CLC et STC ont le même effet : démarquage CF uniquement

@@ -101,8 +101,8 @@ rem sur la version 64 bits de PIN et du PINTOOL
 @echo on
 
 %pinx86% ^
--follow_execv ^
 -pause_tool %pauseTime% ^
+-follow_execv ^
 -p64 %pinx64% ^
 -t64 %DLLx64% ^
 -t %DLLx86% ^
