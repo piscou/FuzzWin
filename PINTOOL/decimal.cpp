@@ -1,5 +1,6 @@
 #include "TaintManager.h"
 #include "decimal.h"
+#include "buildFormula.h"
 
 // CALLBACKS
 
@@ -18,7 +19,7 @@ void DECIMAL::cAAD(INS &ins)
 {
     // AAD : ASCII Adjust AX Before Division
     // besoin de la valeur d'AX et de la base de calcul (base 10 par defaut)
-    UINT32 baseValue = INS_OperandImmediate(ins, 0);
+    UINT32 baseValue = static_cast<UINT32>(INS_OperandImmediate(ins, 0));
 
     INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR) sAAD,
         IARG_THREAD_ID,
@@ -31,7 +32,7 @@ void DECIMAL::cAAM(INS &ins)
 {
     // AAM : ASCII Adjust AX After Multiply
     // juste besoin de la base de calcul (base 10 par defaut)
-    UINT32 baseValue = INS_OperandImmediate(ins, 0);
+    UINT32 baseValue = static_cast<UINT32>(INS_OperandImmediate(ins, 0));
 
     INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR) sAAM,
         IARG_THREAD_ID,
@@ -76,7 +77,28 @@ void DECIMAL::cDAS(INS &ins)
 
 void DECIMAL::sAAA(THREADID tid, ADDRINT regALValue, ADDRINT flagsValue ADDRESS_DEBUG)
 {
+   /* SOURCE: BOCHS 2.6 (cpu\bcd.cc)
+    *    IF (((AL and 0FH) > 9) or (AF==1)
+    *    THEN
+    *        AL <- AL+6 ; AH <- AH+1 ; CF <- 1 ; AF <- 1 ; AL <- AL and 0Fh 
+    *    ELSE
+    *        CF <- 0 ; AF <- 0 ; AL <- AL and 0Fh 
+    *    ENDIF
+    */
+
+    // AAA agit comme un CMOV : il s'agit d'un branchement conditionnel "déguisé"
+    // Il faut donc insérer une contrainte sur la valeur de "((AL and 0x0F) > 9) or (AF==1)" 
+    // afin de pouvoir l'inverser 
+    // puis selon la valeur de l'expression, AH et AL seront mis à jour ou non
+    // EN REVANCHE CF et AF sont DEMARQUES (idem SETcc : leur valeur est fixe : 0 ou 1)
     TaintManager_Thread* pTmgrTls = getTmgrInTls(tid);
+    bool isRegALTainted  = pTmgrTls->isRegisterTainted<8>(REG_AL);
+    bool isAFTainted     = pTmgrTls->isAuxiliaryFlagTainted();
+    
+    bool isALOver9       = ((regALValue & 0x0f) > 9) ? true : false ;
+    bool isAFSet         = ((flagsValue >> AUXILIARY_FLAG) & 1) ? true : false;
+    bool isTestTrue      = isALOver9 | isAFSet;
+    
 
 } // sAAA
 
