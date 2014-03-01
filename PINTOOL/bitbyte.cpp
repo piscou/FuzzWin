@@ -514,6 +514,8 @@ void BITBYTE::cSETNLE(INS &ins)
 /****  SIMULATE ****/
 /*******************/
 
+#if 0
+
 // -----------------------------------------------
 // destination mémoire : partie IF (IPOINT_BEFORE)
 // -----------------------------------------------
@@ -1127,6 +1129,55 @@ void BITBYTE::sSETNLE_R(THREADID tid, REG regDest, ADDRINT regDestValue, ADDRINT
     // démarquage de la destination (la contrainte sur sa valeur a été enregistrée)
     pTmgrTls->unTaintRegister<8>(regDest);
 }// sSETNLE
+
+#endif
+
+
+ADDRINT BITBYTE::sSETB_M_BEFORE  (THREADID tid, ADDRINT writeAddress){ return 0;}
+ADDRINT BITBYTE::sSETS_M_BEFORE  (THREADID tid, ADDRINT writeAddress){return 0;}
+ADDRINT BITBYTE::sSETO_M_BEFORE  (THREADID tid, ADDRINT writeAddress){return 0;}
+ADDRINT BITBYTE::sSETP_M_BEFORE  (THREADID tid, ADDRINT writeAddress){return 0;}
+ADDRINT BITBYTE::sSETZ_M_BEFORE  (THREADID tid, ADDRINT writeAddress){return 0;}
+ADDRINT BITBYTE::sSETBE_M_BEFORE (THREADID tid, ADDRINT writeAddress){return 0;}
+ADDRINT BITBYTE::sSETL_M_BEFORE  (THREADID tid, ADDRINT writeAddress){return 0;}
+ADDRINT BITBYTE::sSETLE_M_BEFORE (THREADID tid, ADDRINT writeAddress){return 0;}
+// Partie THEN (IPOINT_AFTER)
+void BITBYTE::sSETB_M_AFTER  (THREADID tid, ADDRINT insAddress){}
+void BITBYTE::sSETNB_M_AFTER (THREADID tid, ADDRINT insAddress){}
+void BITBYTE::sSETS_M_AFTER  (THREADID tid, ADDRINT insAddress){}
+void BITBYTE::sSETNS_M_AFTER (THREADID tid, ADDRINT insAddress){}
+void BITBYTE::sSETO_M_AFTER  (THREADID tid, ADDRINT insAddress){}
+void BITBYTE::sSETNO_M_AFTER (THREADID tid, ADDRINT insAddress){}
+void BITBYTE::sSETP_M_AFTER  (THREADID tid, ADDRINT insAddress){}
+void BITBYTE::sSETNP_M_AFTER (THREADID tid, ADDRINT insAddress){}
+void BITBYTE::sSETZ_M_AFTER  (THREADID tid, ADDRINT insAddress){}
+void BITBYTE::sSETNZ_M_AFTER (THREADID tid, ADDRINT insAddress){}
+void BITBYTE::sSETBE_M_AFTER (THREADID tid, ADDRINT eflagsValue, ADDRINT insAddress){}
+void BITBYTE::sSETNBE_M_AFTER(THREADID tid, ADDRINT eflagsValue, ADDRINT insAddress){}
+void BITBYTE::sSETL_M_AFTER  (THREADID tid, ADDRINT eflagsValue, ADDRINT insAddress){}
+void BITBYTE::sSETNL_M_AFTER (THREADID tid, ADDRINT eflagsValue, ADDRINT insAddress){}
+void BITBYTE::sSETLE_M_AFTER (THREADID tid, ADDRINT eflagsValue, ADDRINT insAddress){}
+void BITBYTE::sSETNLE_M_AFTER(THREADID tid, ADDRINT eflagsValue, ADDRINT insAddress){}
+
+// destination registre
+void BITBYTE::sSETB_R  (THREADID tid, REG regDest, ADDRINT regDestValue, ADDRINT insAddress){}
+void BITBYTE::sSETNB_R (THREADID tid, REG regDest, ADDRINT regDestValue, ADDRINT insAddress){}
+void BITBYTE::sSETS_R  (THREADID tid, REG regDest, ADDRINT regDestValue, ADDRINT insAddress){}
+void BITBYTE::sSETNS_R (THREADID tid, REG regDest, ADDRINT regDestValue, ADDRINT insAddress){}
+void BITBYTE::sSETO_R  (THREADID tid, REG regDest, ADDRINT regDestValue, ADDRINT insAddress){}
+void BITBYTE::sSETNO_R (THREADID tid, REG regDest, ADDRINT regDestValue, ADDRINT insAddress){}
+void BITBYTE::sSETP_R  (THREADID tid, REG regDest, ADDRINT regDestValue, ADDRINT insAddress){}
+void BITBYTE::sSETNP_R (THREADID tid, REG regDest, ADDRINT regDestValue, ADDRINT insAddress){}
+void BITBYTE::sSETZ_R  (THREADID tid, REG regDest, ADDRINT regDestValue, ADDRINT insAddress){}
+void BITBYTE::sSETNZ_R (THREADID tid, REG regDest, ADDRINT regDestValue, ADDRINT insAddress){}
+void BITBYTE::sSETBE_R (THREADID tid, REG regDest, ADDRINT regDestValue, ADDRINT eflagsValue, ADDRINT insAddress){}
+void BITBYTE::sSETNBE_R(THREADID tid, REG regDest, ADDRINT regDestValue, ADDRINT eflagsValue, ADDRINT insAddress){}
+void BITBYTE::sSETL_R  (THREADID tid, REG regDest, ADDRINT regDestValue, ADDRINT eflagsValue, ADDRINT insAddress){}
+void BITBYTE::sSETNL_R (THREADID tid, REG regDest, ADDRINT regDestValue, ADDRINT eflagsValue, ADDRINT insAddress){}
+void BITBYTE::sSETLE_R (THREADID tid, REG regDest, ADDRINT regDestValue, ADDRINT eflagsValue, ADDRINT insAddress){}
+void BITBYTE::sSETNLE_R(THREADID tid, REG regDest, ADDRINT regDestValue, ADDRINT eflagsValue, ADDRINT insAddress){}
+
+
 
 
 /************/

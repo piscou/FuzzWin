@@ -10,7 +10,7 @@ SolverFormula::SolverFormula():
     _isDeBruijnDeclared(false)
 {}
 
-std::string SolverFormula::getDeBruijnArray()
+const std::string SolverFormula::getDeBruijnArray()
 {
     // variables utilisées par les instructions BSR et BSF
     // cf. commentaires dans buildFormula.h
@@ -55,7 +55,7 @@ std::string SolverFormula::getDeBruijnArray()
 }
 
 // nom de variable pour les objets, utilisées dans les formules SMTLIB
-void SolverFormula::insertSourceName(std::string &out, const ObjectSource &objSrc) 
+void SolverFormula::insertSourceName(std::string &out, const ObjectSource &objSrc)
 {
     // si objet marqué, récupérer son nom de variable
     if (objSrc.isSrcTainted())	 out += objSrc.getTaintedSource()->getName(); 
@@ -66,7 +66,7 @@ void SolverFormula::insertSourceName(std::string &out, const ObjectSource &objSr
         ADDRINT value =  objSrc.getValue(); // valeur numérique représentée par l'objet
         
         // cas TaintBit : résultat décrit en binaire
-        if (srcLength == 1)	out += value ? "#b1" : "#b0";
+        if (srcLength == 1)	  out += (value) ? "#b1" : "#b0";
         // dans les autres cas : resultat en hexa
         else
         {
@@ -83,6 +83,253 @@ void SolverFormula::insertSourceName(std::string &out, const ObjectSource &objSr
         }
     }
 } // insertSourceName
+
+// formule correspondant au calcul d'un prédicat
+const std::string SolverFormula::getPredicateFormula(TaintManager_Thread *pTmgrTls, 
+    PREDICATE pred, ADDRINT flagsOrRegValue)
+{
+    // la déclaration d'un prédicat se fait en deux étapes
+    // 1) déclaration recursive des objets utilisés dans le calcul du ou des flags concernés
+    // 2) construction de l'expression représentant le prédicat
+    //    c'est à dire un 'ite' sur la valeur du ou des flags
+    
+    std::string result;
+    UINT32 oneFlagValue = 0;    // valeur d'un flag (extraction de FlagsOrRegValue)
+    
+    switch (pred)
+    {       
+    case PREDICATE_BELOW: 	    // Below (CF==1).
+    case PREDICATE_NOT_BELOW: 	// Not Below (CF==0).
+    {
+        // 1) déclaration récursive des sources du flag
+        this->declareObject(pTmgrTls->getTaintCarryFlag());
+        
+        // 2) construction de l'expression
+        result += "(= ";
+        result += pTmgrTls->getTaintCarryFlag()->getName();
+        result += (PREDICATE_BELOW == pred) ? " #b1)" : " #b0)";
+        break;
+    }
+
+    case PREDICATE_SIGN:        // Sign (SF==1).
+    case PREDICATE_NOT_SIGN :	// Not Sign (SF==0).
+    {
+        // 1) déclaration récursive des sources du flag
+        this->declareObject(pTmgrTls->getTaintSignFlag());
+        
+        // 2) construction de l'expression
+        result += "(= ";
+        result += pTmgrTls->getTaintSignFlag()->getName();
+        result += (PREDICATE_SIGN == pred) ? " #b1)" : " #b0)";
+        break;
+    }
+
+    case PREDICATE_ZERO: 	    // Zero (ZF==1).
+    case PREDICATE_NOT_ZERO:	// Not Zero (ZF==0).
+    {
+        // 1) déclaration récursive des sources du flag
+        this->declareObject(pTmgrTls->getTaintZeroFlag());
+        
+        // 2) construction de l'expression
+        result += "(= ";
+        result += pTmgrTls->getTaintZeroFlag()->getName();
+        result += (PREDICATE_ZERO == pred) ? " #b1)" : " #b0)";
+        break;
+    }
+
+    case PREDICATE_OVERFLOW: 	 // Overflow (OF==1).
+    case PREDICATE_NOT_OVERFLOW: // Not Overflow (OF==0)
+    {
+         // 1) déclaration récursive des sources du flag
+        this->declareObject(pTmgrTls->getTaintOverflowFlag());
+        
+        // 2) construction de l'expression
+        result += "(= ";
+        result += pTmgrTls->getTaintOverflowFlag()->getName();
+        result += (PREDICATE_OVERFLOW == pred) ? " #b1)" : " #b0)";
+        break;
+     }
+
+    case PREDICATE_PARITY: 	    // Parity (PF==1)
+    case PREDICATE_NOT_PARITY: 	// Not Parity (PF==0).
+    {
+        // 1) déclaration récursive des sources du flag
+        this->declareObject(pTmgrTls->getTaintParityFlag());
+
+        // 2) construction de l'expression
+        result += "(= ";
+        result += pTmgrTls->getTaintParityFlag()->getName();
+        result += (PREDICATE_PARITY == pred) ? " #b1)" : " #b0)";
+        break;
+    }
+
+    case PREDICATE_LESS: 	    // Less (SF!=OF).
+    case PREDICATE_NOT_LESS: 	// Greater or Equal (SF==OF).
+    {
+        result += "(ite (= ";
+
+        // insertion SIGN_FLAG : objet ou valeur selon marquage
+        if (pTmgrTls->isSignFlagTainted())
+        {
+            // 1) déclaration récursive des sources du flag
+            this->declareObject(pTmgrTls->getTaintSignFlag());
+            result += pTmgrTls->getTaintSignFlag()->getName();
+        }
+        else
+        {
+            oneFlagValue = EXTRACTBIT(flagsOrRegValue, SIGN_FLAG);
+            result      += (oneFlagValue) ? "#b1" : "#b0";
+        }
+
+        result += ' ';
+
+        // insertion OVERFLOW_FLAG : objet ou valeur selon marquage
+        if (pTmgrTls->isOverflowFlagTainted())
+        {
+            // 1) déclaration récursive des sources du flag
+            this->declareObject(pTmgrTls->getTaintOverflowFlag());
+            result += pTmgrTls->getTaintOverflowFlag()->getName();
+        }
+        else
+        {
+            oneFlagValue = EXTRACTBIT(flagsOrRegValue, OVERFLOW_FLAG);
+            result      += (oneFlagValue) ? "#b1" : "#b0";
+        }
+
+        // si egaux, flag vaut 0 dans cas LESS et 1 dans cas NOT_LESS
+        result += (PREDICATE_LESS == pred) ? ") #b0 #b1)" : ") #b1 #b0)";
+        break;
+    }
+
+    case PREDICATE_BELOW_OR_EQUAL: 	    // Below or Equal (CF==1 or ZF==1), ou (CF or ZF) == 1
+    case PREDICATE_NOT_BELOW_OR_EQUAL: 	// Above (CF==0 and ZF==0), ou (CF or ZF) == 0
+    {
+        // calcul et test de la valeur du OR entre les deux flags
+        result += "(= (bvor ";
+
+        // insertion CARRY_FLAG : objet ou valeur selon marquage
+        if (pTmgrTls->isCarryFlagTainted())
+        {
+            // 1) déclaration récursive des sources du flag
+            this->declareObject(pTmgrTls->getTaintCarryFlag());
+            result += pTmgrTls->getTaintCarryFlag()->getName();
+        }
+        else
+        {
+            oneFlagValue = EXTRACTBIT(flagsOrRegValue, CARRY_FLAG);
+            result      += (oneFlagValue) ? "#b1" : "#b0";
+        }
+
+        result += ' ';
+
+        // insertion ZERO_FLAG : objet ou valeur selon marquage
+        if (pTmgrTls->isZeroFlagTainted())
+        {
+            // 1) déclaration récursive des sources du flag
+            this->declareObject(pTmgrTls->getTaintZeroFlag());
+            result += pTmgrTls->getTaintZeroFlag()->getName();
+        }
+        else
+        {
+            oneFlagValue = EXTRACTBIT(flagsOrRegValue, ZERO_FLAG);
+            result      += (oneFlagValue) ? "#b1" : "#b0";
+        }
+
+        // BELOW_OR_EQUAL: le flag vaut 1 si le 'OR' vaut 1
+        result += (PREDICATE_BELOW_OR_EQUAL == pred) ? ") #b1)" : ") #b0)";
+        break;
+    }
+
+    case PREDICATE_LESS_OR_EQUAL: // Less or Equal (ZF==1 or SF!=OF), ou ((SF ^ OF) or ZF) == 1
+    case PREDICATE_NOT_LESS_OR_EQUAL: // Greater (ZF==0 and SF==OF),  ou ((SF ^ OF) or ZF) == 0
+    {
+        // calcul et test de la valeur du OR entre (bvxor SF OF) et ZF
+        result += "(= (bvor (bvxor ";
+
+        // insertion SIGN_FLAG : objet ou valeur selon marquage
+        if (pTmgrTls->isSignFlagTainted())
+        {
+            // 1) déclaration récursive des sources du flag
+            this->declareObject(pTmgrTls->getTaintSignFlag());
+            result += pTmgrTls->getTaintSignFlag()->getName();
+        }
+        else
+        {
+            oneFlagValue = EXTRACTBIT(flagsOrRegValue, SIGN_FLAG);
+            result      += (oneFlagValue) ? "#b1" : "#b0";
+        }
+
+        result += ' ';
+
+        // insertion OVERFLOW_FLAG : objet ou valeur selon marquage
+        if (pTmgrTls->isOverflowFlagTainted())
+        {
+            // 1) déclaration récursive des sources du flag
+            this->declareObject(pTmgrTls->getTaintOverflowFlag());
+            result += pTmgrTls->getTaintOverflowFlag()->getName();
+        }
+        else
+        {
+            oneFlagValue = EXTRACTBIT(flagsOrRegValue, OVERFLOW_FLAG);
+            result      += (oneFlagValue) ? "#b1" : "#b0";
+        }
+
+        result += ") ";
+
+        // insertion ZERO_FLAG : objet ou valeur selon marquage
+        if (pTmgrTls->isZeroFlagTainted())
+        {
+            // 1) déclaration récursive des sources du flag
+            this->declareObject(pTmgrTls->getTaintZeroFlag());
+            result += pTmgrTls->getTaintZeroFlag()->getName();
+        }
+        else
+        {
+            oneFlagValue = EXTRACTBIT(flagsOrRegValue, ZERO_FLAG);
+            result      += (oneFlagValue) ? "#b1" : "#b0";
+        }
+
+        // LESS_OR_EQUAL: le flag vaut 1 si le 'OR' vaut 1
+        result += (PREDICATE_LESS_OR_EQUAL == pred) ? ") #b1)" : ") #b0)";
+        break;
+    }
+
+    case PREDICATE_CX_NON_ZERO: 	// CX != 0.
+    {
+        // récupération de l'objet représentant CX, et déclaration de celui-ci
+        TaintWordPtr regCXPtr = pTmgrTls->getRegisterTaint<16>(REG_CX, flagsOrRegValue);
+        this->declareObject(regCXPtr);
+
+        // insertion de nom de l'objet, maintenant qu'il est déclaré, et comparaison à 0
+        result += "(not (= " + regCXPtr->getName() + " (_ bv0 16)))";
+        break;
+    }
+
+    case PREDICATE_ECX_NON_ZERO: 	// ECX != 0.
+    {
+        // récupération de l'objet représentant ECX, et déclaration de celui-ci
+        TaintDwordPtr regECXPtr = pTmgrTls->getRegisterTaint<32>(REG_ECX, flagsOrRegValue);
+        this->declareObject(regECXPtr);
+
+        // insertion de nom de l'objet, maintenant qu'il est déclaré, et comparaison à 0
+        result += "(not (= " + regECXPtr->getName() + " (_ bv0 32)))";
+        break;
+    }
+#if TARGET_IA32E
+    case PREDICATE_RCX_NON_ZERO: 	// RCX != 0.
+    {
+        // récupération de l'objet représentant RCX, et déclaration de celui-ci
+        TaintWordPtr regRCXPtr = pTmgrTls->getRegisterTaint<64>(REG_RCX, flagsOrRegValue);
+        this->declareObject(regRCXPtr);
+
+        // insertion de nom de l'objet, maintenant qu'il est déclaré, et comparaison à 0
+        result += "(not (= " + regRCXPtr->getName() + " (_ bv0 64)))";
+        break;
+    }
+#endif
+    }
+    return (result);
+} // getPredicateFormula
 
 ////////////////////////////////////
 // DECLARATION DES OBJETS MARQUES //
@@ -1115,44 +1362,40 @@ void SolverFormula::declareRelation(const TaintPtr &tPtr, const vector<ObjectSou
 // DECLARATION DES CONTRAINTES //
 /////////////////////////////////
 
-void SolverFormula::declareConstraintHeader(ADDRINT insAddress, PREDICATE p)
+void SolverFormula::addConstraintJcc(TaintManager_Thread *pTmgrTls, PREDICATE pred, 
+                          bool isTaken, ADDRINT insAddress, ADDRINT flagsOrRegValue)
 {
-    // entete de formule : insertion d'un commentaire
-    // avec n° de contrainte, adresse et type de contrainte (si DEBUG)
-    this->_formula << ";\n; contrainte " << std::dec << ++(this->_iAssert);
-    this->_formula << " (adresse " << hexstr(insAddress);
+    // nom donné à la contrainte : un "C" + un numéro unique
+    // La première contrainte porte le numéro 1 (_iAssert à 0 dans constructeur)
+    const std::string constraintName("C_" + decstr(++this->_iAssert));
+    // ligne de formule qui déclare la contrainte
+    std::string constraintFormula("(define-fun " + constraintName + " () Bool ");
 
-#if DEBUG
-    // on ne prend que les conditions "positives", les négatives
-    // étant traitées par inversion du saut pris
-    switch (p)
-    {
-    case PREDICATE_BELOW :          this->_formula << " - BELOW";          break;
-    case PREDICATE_BELOW_OR_EQUAL : this->_formula << " - BELOW OR EQUAL"; break;
-    case PREDICATE_LESS :           this->_formula << " - LESS";           break;
-    case PREDICATE_LESS_OR_EQUAL :  this->_formula << " - LESS OR EQUAL";  break;
-    case PREDICATE_OVERFLOW :       this->_formula << " - OVERFLOW";       break;
-    case PREDICATE_PARITY :         this->_formula << " - PARITY";         break;
-    case PREDICATE_SIGN :           this->_formula << " - SIGN";           break;
-    case PREDICATE_ZERO :           this->_formula << " - ZERO";           break;
-    default:                        this->_formula << " - INCONNU !!";     break;
-    }
-#endif
+    // 1) définition de l'entête de la contrainte : insertion d'un commentaire
+    // avec le n° de contrainte, l'instruction et son adresse 
+    this->_formula << ";\n; contrainte " << constraintName;
+    this->_formula << " - " << hexstr(insAddress);
+    this->_formula << " - J" << predicateToString[pred] << "\n;\n";
 
-    // fin de ligne
-    this->_formula << ")\n;\n";
-}
+    // 2) construction du nom de l'objet représentant la contrainte
+    // il s'agit d'un booléen égal à la valeur du prédicat
+    // NB : il n'est pas inséré directement dans la formule
+    // car la construction du prédicat va déclarer récursivement les objets nécessaires
+    constraintFormula += this->getPredicateFormula(pTmgrTls, pred, flagsOrRegValue) + ")\n";
+    this->_formula << constraintFormula;
 
-void SolverFormula::declareConstraintFooter(const std::string &number, bool taken)
-{
-    this->_formula << "(assert (= C_" << number << (taken ? " true))\n" : " false))\n");
+    // 3) déclaration de l'assertion en fin de contrainte 
+    // selon que la branche a été prise ou non
+    this->_formula << "(assert (= " << constraintName << ' ';
+    this->_formula << ((isTaken) ? "true" : "false") << "))\n";
 
-    // Si le nombre maximal de contraintes est atteint : quitter le pintool via la fonction "Fini"
-    // code = 3 (NOMBRE MAXIMAL DE CONTRAINTES)
+    // Si le nombre maximal de contraintes est atteint : quitter le pintool 
+    // via la fonction "Fini" avec le code EXIT_MAX_CONSTRAINTS
     // si g_maxConstraints est nul, ce cas n'arrive jamais (la première contrainte est la n°1)
     if (this->_iAssert == g_maxConstraints)  PIN_ExitApplication(EXIT_MAX_CONSTRAINTS);
-}
+} // addConstraintJcc
 
+#if 0
 void SolverFormula::addConstraint_OVERFLOW(TaintManager_Thread *pTmgrTls, ADDRINT insAddress, bool isTaken) 
 {
     // 1) définition de l'entête de la contrainte
@@ -1174,8 +1417,7 @@ void SolverFormula::addConstraint_OVERFLOW(TaintManager_Thread *pTmgrTls, ADDRIN
 
     this->_formula << constraint;
 
-    // 3) déclaration de l'assertion en fin de contrainte
-    // selon que la branche a été prise ou non
+
     this->declareConstraintFooter(constraintNumber, isTaken);
 } // addConstraint_OVERFLOW
 
@@ -1404,6 +1646,7 @@ void SolverFormula::addConstraint_LESS_OR_EQUAL
     // selon que la branche a été prise ou non
     this->declareConstraintFooter(constraintNumber, isTaken);
 } // addConstraint_LESS_OR_EQUAL
+#endif
 
 // envoi des denières données : nombre total de contraintes
 void SolverFormula::final() 
