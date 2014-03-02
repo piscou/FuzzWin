@@ -276,7 +276,7 @@ std::string initialize(int argc, char** argv)
     std::string resultDir;
     ops >> GetOpt::Option('d', "dir", resultDir);
     if (pGlobals->resultDir.empty()) resultDir = exePath + "results";
-    else pGlobals->resultDir = getAbsoluteFilePath(pGlobals->resultDir);
+    
 
     // création du dossier de résultats. 
     BOOL createDirResult = CreateDirectory(resultDir.c_str(), NULL);
@@ -297,11 +297,16 @@ std::string initialize(int argc, char** argv)
 
     // copie du fichier initial dans ce dossier (sans extension, avec le nom 'input0')
     std::string firstFileName(resultDir + "\\input0");
+    // récupération du chemin absolu (sans ..\..\ etc)
+    firstFileName = getAbsoluteFilePath(firstFileName);
+    // copie de l'entrée initiale dans le dossier de résultat
     CopyFile(pGlobals->firstInputPath.c_str(), firstFileName.c_str(), false);
     pGlobals->firstInputPath = firstFileName;
 
     // chemin prérempli pour le fichier de fautes (non créé pour l'instant)
     pGlobals->faultFile = pGlobals->resultDir + "\\fault.txt";
+    // récupération du chemin absolu (sans ..\..\ etc)
+    pGlobals->faultFile = getAbsoluteFilePath(pGlobals->faultFile);
     
     /**********************************************************************/
     /** Construction des chemins d'accès aux outils externes (PIN et Z3) **/

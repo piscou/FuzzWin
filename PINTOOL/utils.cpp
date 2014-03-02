@@ -69,7 +69,7 @@ void PIN_FAST_ANALYSIS_CALL UTILS::uMEM(ADDRINT address, UINT32 sizeInBytes)
 
 void PIN_FAST_ANALYSIS_CALL UTILS::uFLAGS(THREADID tid)  
 {  
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     pTmgrTls->unTaintAllFlags(); 
 }
 
@@ -159,7 +159,8 @@ void UTILS::computeEA_BISD(FUNCARGS_BISD)
 //  SINON            source2 = valeur (index*scale +/- displ)
 //
 //  EA = ADD(source1, source2)
-    
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
+
     bool isIndexRegTainted = pTmgrTls->isRegisterTainted<32>(indexReg);
     bool isBaseRegTainted =  pTmgrTls->isRegisterTainted<32>(baseReg);
 
@@ -264,7 +265,7 @@ void UTILS::computeEA_BID(FUNCARGS_BID)
 //  SINON           source2 = valeur (index +/- displ)
 //
 // EA = ADD(source1, source2)
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     
     bool isIndexRegTainted = pTmgrTls->isRegisterTainted<32>(indexReg);
     bool isBaseRegTainted =  pTmgrTls->isRegisterTainted<32>(baseReg);
@@ -309,7 +310,7 @@ void UTILS::computeEA_BI(FUNCARGS_BI)
 //  SINON           source2 = valeur index
 //
 // EA = ADD(source1, source2)
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     
     bool isIndexRegTainted = pTmgrTls->isRegisterTainted<32>(indexReg);
     bool isBaseRegTainted =  pTmgrTls->isRegisterTainted<32>(baseReg);
@@ -341,6 +342,7 @@ void UTILS::computeEA_BD(FUNCARGS_BD)
 //  SINON           source1 = valeur registre de base
 // EA = ADD/SUB (selon signe) (source1, displ)
  
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     // traitement ssi base marquée
     if (pTmgrTls->isRegisterTainted<32>(baseReg)) 
     {
@@ -358,7 +360,7 @@ void UTILS::computeEA_BD(FUNCARGS_BD)
 void UTILS::computeEA_B(FUNCARGS_B)
 {
 // EA = marquage base
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
  
     // traitement ssi base marquée
     if (pTmgrTls->isRegisterTainted<32>(baseReg)) 
@@ -374,7 +376,7 @@ void UTILS::computeEA_ISD(FUNCARGS_ISD)
 // pour construire l'EA, on additionne deux entités : index*scale et displ
 //  SI INDEX MARQUE  IS = index*scale (via SHL); 
 //  EA = ADD ou SUB(IS, displ)
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
    
     // traitement ssi index marqué, sinon ne rien faire
     if (pTmgrTls->isRegisterTainted<32>(indexReg)) 
@@ -407,7 +409,7 @@ void UTILS::computeEA_ISD(FUNCARGS_ISD)
 void UTILS::computeEA_IS(FUNCARGS_IS)
 {
     // SI INDEX MARQUE  EA = index*scale (via SHL)
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
    
     // traitement ssi index marqué, sinon ne rien faire
     if (pTmgrTls->isRegisterTainted<32>(indexReg)) 
@@ -439,7 +441,8 @@ void UTILS::computeEA_BISD(FUNCARGS_BISD)
 //  SINON            source2 = valeur (index*scale +/- displ)
 //
 //  EA = ADD(source1, source2)
-    
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
+
     bool isIndexRegTainted = pTmgrTls->isRegisterTainted<64>(indexReg);
     bool isBaseRegTainted =  pTmgrTls->isRegisterTainted<64>(baseReg);
 
@@ -544,7 +547,7 @@ void UTILS::computeEA_BID(FUNCARGS_BID)
 //  SINON           source2 = valeur (index +/- displ)
 //
 // EA = ADD(source1, source2)
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     
     bool isIndexRegTainted = pTmgrTls->isRegisterTainted<64>(indexReg);
     bool isBaseRegTainted =  pTmgrTls->isRegisterTainted<64>(baseReg);
@@ -589,7 +592,7 @@ void UTILS::computeEA_BI(FUNCARGS_BI)
 //  SINON           source2 = valeur index
 //
 // EA = ADD(source1, source2)
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     
     bool isIndexRegTainted = pTmgrTls->isRegisterTainted<64>(indexReg);
     bool isBaseRegTainted =  pTmgrTls->isRegisterTainted<64>(baseReg);
@@ -620,8 +623,7 @@ void UTILS::computeEA_BD(FUNCARGS_BD)
 //  SI BASE MARQUEE source1 = marquage base
 //  SINON           source1 = valeur registre de base
 // EA = ADD/SUB (selon signe) (source1, displ)
-    TaintManager_Thread *pTmgrTls = 
-        static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
  
     // ATTENTION : en 64BITS, possibilité d'adressage RIP-RELATIVE, non suivi en marquage
     // DONC NE PAS INSTRUMENTER SI C'EST LE CAS
@@ -642,7 +644,7 @@ void UTILS::computeEA_BD(FUNCARGS_BD)
 void UTILS::computeEA_B(FUNCARGS_B)
 {
 // EA = marquage base
- 
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     // traitement ssi base marquée
     if (pTmgrTls->isRegisterTainted<64>(baseReg)) 
     {
@@ -657,7 +659,7 @@ void UTILS::computeEA_ISD(FUNCARGS_ISD)
 // pour construire l'EA, on additionne deux entités : index*scale et displ
 //  SI INDEX MARQUE  IS = index*scale (via SHL); 
 //  EA = ADD ou SUB(IS, displ)
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
    
     // traitement ssi index marqué, sinon ne rien faire
     if (pTmgrTls->isRegisterTainted<64>(indexReg)) 
@@ -690,7 +692,7 @@ void UTILS::computeEA_ISD(FUNCARGS_ISD)
 void UTILS::computeEA_IS(FUNCARGS_IS)
 {
     // SI INDEX MARQUE  EA = index*scale (via SHL)
-    TaintManager_Thread *pTmgrTls = static_cast<TaintManager_Thread*>(PIN_GetThreadData(g_tlsKeyTaint, tid));
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
    
     // traitement ssi index marqué, sinon ne rien faire
     if (pTmgrTls->isRegisterTainted<64>(indexReg)) 

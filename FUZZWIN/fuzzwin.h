@@ -13,44 +13,47 @@
 #include <vector>
 #include <regex>
 #include <set> // table de hachage
-#include <clocale>  // pour passage de la ligne de commande en francais
-
-static const std::string infoHeader
-    (   
-    "; **************************************************\n" 
-    "; *  FUZZWIN : FUZZER AUTOMATIQUE SOUS WINDOWS     *\n" 
-    "; *  v1.0 (c) SEBASTIEN LECOMTE 09/01/2014         *\n"
-    "; *  PIN Version 2.13 kit 62732 et Z3 version 4.3  *\n"
-    "; **************************************************\n" 
-    );
-
-static const std::string helpMessage
-    (
-    "\n"
-    "FuzzWin - Fuzzer automatique sous plateforme Windows\n"
-    "\n"
-    "Usage:  fuzzwin.exe -t <targetExe> - i <firstInput> [options]\n"
-    "\n"
-    "Options:\n"
-    "--help        \t -h : affiche ce message\n"
-    "--keepfiles   \t -k : conserve les fichiers intermédiaires\n"
-    "--range       \t -r : intervalles d'octets à marquer (ex: 1-10;15;17-51)\n"
-    "--dir         \t -d : répertoire de sortie (défaut : './results/')\n"
-    "--maxconstraints -c : nombre maximal de contraintes à récuperer\n"
-    "--maxtime     \t -m : temps limite d'exécution de l'exécutable étudie\n"
-    "--score       \t -s : calcul du score de chaque fichier\n"
-    "--verbose     \t -v : mode verbeux\n"
-    );
 
 typedef uint8_t		UINT8;
 typedef uint32_t	UINT32;
 typedef uint64_t	UINT64;
 typedef std::set<size_t> HashTable; // stockage des hashes des fichiers déjà générés
 
-// solutions fournies par le solveur sont du type
-/* define OFF?? (_BitVec 8) 
+/* solutions fournies par le solveur sont du type
+   define OFF?? (_BitVec 8) 
       #x??    */ 
 #define parseZ3ResultRegex "OFF(\\d+).*\r\n.*([0-9a-f]{2})"
+
+// mode verbeux : affichage des infos sur la console
+#define VERBOSE(x) { if (pGlobals->verbose) { std::cout << x; }}
+
+static const std::string infoHeader
+(   
+"; **************************************************\n" 
+"; *  FUZZWIN : FUZZER AUTOMATIQUE SOUS WINDOWS     *\n" 
+"; *  v1.1 (c) Sebastien LECOMTE 02/03/2014         *\n"
+"; *  PIN Version 2.13 kit 62732 et Z3 version 4.3  *\n"
+"; **************************************************\n" 
+);
+
+static const std::string helpMessage
+(
+"\n"
+"FuzzWin - Fuzzer automatique sous plateforme Windows\n"
+"\n"
+"Usage:  fuzzwin.exe -t <targetExe> - i <firstInput> [options]\n"
+"\n"
+"Options:\n"
+"--help        \t -h : affiche ce message\n"
+"--keepfiles   \t -k : conserve les fichiers intermédiaires\n"
+"--range       \t -r : intervalles d'octets à marquer (ex: 1-10;15;17-51)\n"
+"--dir         \t -d : répertoire de sortie (défaut : './results/')\n"
+"--maxconstraints -c : nombre maximal de contraintes à récuperer\n"
+"--maxtime     \t -m : temps limite d'exécution de l'exécutable étudie\n"
+"--score       \t -s : calcul du score de chaque fichier\n"
+"--verbose     \t -v : mode verbeux\n"
+);
+
 
 // codes définissant le type d'OS pour la détermination des numéros d'appels systèmes
 // Le type d'OS est déterminé par fuzzwin.exe et passé en argument au pintool
@@ -60,7 +63,8 @@ enum OSTYPE
     HOST_X86_XP,
     HOST_X86_2003,
 
-    HOST_X86_VISTA_SP0, // pour cette version, le syscall 'setinformationfile' n'est pas le meme que pour les autres SP...
+    // pour cette version, le syscall 'setinformationfile' est différent des autres SP...
+    HOST_X86_VISTA_SP0, 
     HOST_X86_VISTA,
     HOST_X86_2008 = HOST_X86_VISTA,   // les index des syscalls sont les mêmes
     HOST_X86_2008_R2 = HOST_X86_2008, // les index des syscalls sont les mêmes

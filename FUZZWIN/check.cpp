@@ -1,6 +1,7 @@
 #include "check.h"
 
 HANDLE hTimoutEvent;
+HANDLE hTimerThread;
 
 static DWORD WINAPI timerThread(LPVOID lpParam)
 {
@@ -44,25 +45,28 @@ DWORD debugTarget(CInput *pInput)
     
     if (!bSuccess)
     {
-        if (pGlobals->verbose) std::cout << "erreur createProcess Debug\n";
+        VERBOSE("erreur createProcess Debug\n");
         return 0; // fin de la procédure prématurément
     }
 
     // creation d'un thread "timer" pour stopper le debuggage au bout du temps spécifié
-    HANDLE hTimerThread = CreateThread(
-        nullptr, // attributs de sécurité par défaut
-        0,       // taille de pile par defaut
-        timerThread,    // nom de la fonction du thread
-        pi.hProcess,    // argument à transmettre : le handle du processus surveillé
-        0,              // attributs de creation par défaut
-        nullptr);       // pas besoin du threadId de ce thread
+    if (pGlobals->maxExecutionTime)
+    {
+        hTimerThread = CreateThread(
+            nullptr, // attributs de sécurité par défaut
+            0,       // taille de pile par defaut
+            timerThread,    // nom de la fonction du thread
+            pi.hProcess,    // argument à transmettre : le handle du processus surveillé
+            0,              // attributs de creation par défaut
+            nullptr);       // pas besoin du threadId de ce thread
 
-    // création de l'évenement de fin de debuggage à cause du temps
-    hTimoutEvent = CreateEvent( 
-        nullptr,  // attributs de sécurité par défaut
-        TRUE,     // evenement géré manuellement
-        FALSE,    // état initial non signalé
-        nullptr); // evenement anonyme
+        // création de l'évenement de fin de debuggage à cause du temps
+        hTimoutEvent = CreateEvent( 
+            nullptr,  // attributs de sécurité par défaut
+            TRUE,     // evenement géré manuellement
+            FALSE,    // état initial non signalé
+            nullptr); // evenement anonyme
+    }
 
     /**********************/
     /* DEBUT DU DEBUGGAGE */
@@ -72,7 +76,7 @@ DWORD debugTarget(CInput *pInput)
         // si erreur dans le debuggage : tout stopper et quitter la boucle
         if (!WaitForDebugEvent(&e, INFINITE)) 
         {
-            if (pGlobals->verbose) std::cout << "erreur WaitDebugEvent\n";
+            VERBOSE("erreur WaitDebugEvent\n");
             continueDebug = false;
             break; 
         }
@@ -80,26 +84,27 @@ DWORD debugTarget(CInput *pInput)
         // parmi les evenements, seuls les evenements "DEBUG" nous interessent
         switch (e.dwDebugEventCode) 
         { 
-            // = exception (sauf cas particulier du breakpoint)
-            // en particulier, le breakpoint sera déclenché à la première instruction
-            case EXCEPTION_DEBUG_EVENT:
-                if (e.u.Exception.ExceptionRecord.ExceptionCode != EXCEPTION_BREAKPOINT) 
-                { 
-                    std::cout << "\n\t-------------------------------------------------\n ";
-                    std::cout << "\t@@@ EXCEPTION @@@ Fichier " << pInput->getFileName() << std::endl;
-                    std::cout << "\tAdresse 0x" << std::hex << e.u.Exception.ExceptionRecord.ExceptionAddress << " " ;
-                    std::cout << "code " << e.u.Exception.ExceptionRecord.ExceptionCode << std::dec ;
-                    std::cout << "\n\t-------------------------------------------------\n";
-                    returnCode = e.u.Exception.ExceptionRecord.ExceptionCode;
-                    continueDebug = false;
-                }
-                break;
-            // = fin du programme. Il s'agit soit la fin normale
-            // soit la fin provoqué par le thread "gardien du temps"
-            case EXIT_PROCESS_DEBUG_EVENT:
-                if (pGlobals->verbose) std::cout << " - no crash ;(\n";
-                continueDebug = false;	
-                // quitter la boucle break;
+        // = exception (sauf cas particulier du breakpoint)
+        // en particulier, le breakpoint sera déclenché à la première instruction
+        case EXCEPTION_DEBUG_EVENT:
+            if (e.u.Exception.ExceptionRecord.ExceptionCode != EXCEPTION_BREAKPOINT) 
+            { 
+                std::cout << "\n\t-------------------------------------------------\n ";
+                std::cout << "\t@@@ EXCEPTION @@@ Fichier " << pInput->getFileName() << '\n';
+                std::cout << "\tAdresse 0x" << std::hex << e.u.Exception.ExceptionRecord.ExceptionAddress << " " ;
+                std::cout << "code " << e.u.Exception.ExceptionRecord.ExceptionCode << std::dec ;
+                std::cout << "\n\t-------------------------------------------------\n";
+                returnCode = e.u.Exception.ExceptionRecord.ExceptionCode;
+                continueDebug = false;
+            }
+            break;
+        // = fin du programme. Il s'agit soit la fin normale
+        // soit la fin provoqué par le thread "gardien du temps"
+        case EXIT_PROCESS_DEBUG_EVENT:
+            VERBOSE(" - no crash ;(\n");
+            continueDebug = false;	
+            // quitter la boucle 
+            break;
         }
         // Acquitter dans tous les cas, (exception ou fin de programme)
         ContinueDebugEvent(e.dwProcessId, e.dwThreadId, DBG_CONTINUE);
@@ -111,7 +116,7 @@ DWORD debugTarget(CInput *pInput)
     CloseHandle(pi.hProcess); 
     CloseHandle(pi.hThread);
     // fermeture du handle du thread "gardien du temps"
-    CloseHandle(hTimerThread);
+    if (pGlobals->maxExecutionTime) CloseHandle(hTimerThread);
 
     // en cas d'exception levée, enregistrer l'erreur
     if (returnCode) 

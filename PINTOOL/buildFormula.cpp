@@ -319,7 +319,7 @@ const std::string SolverFormula::getPredicateFormula(TaintManager_Thread *pTmgrT
     case PREDICATE_RCX_NON_ZERO: 	// RCX != 0.
     {
         // récupération de l'objet représentant RCX, et déclaration de celui-ci
-        TaintWordPtr regRCXPtr = pTmgrTls->getRegisterTaint<64>(REG_RCX, flagsOrRegValue);
+        TaintQwordPtr regRCXPtr = pTmgrTls->getRegisterTaint<64>(REG_RCX, flagsOrRegValue);
         this->declareObject(regRCXPtr);
 
         // insertion de nom de l'objet, maintenant qu'il est déclaré, et comparaison à 0

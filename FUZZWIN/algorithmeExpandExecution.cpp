@@ -165,10 +165,8 @@ static std::string callFuzzwin(CInput* pInput)
             ofs.close();
         }
     }	
-    else // si erreur de CreateProcess
-    {
-        if (pGlobals->verbose) std::cout << "erreur process FuzzWin" << GetLastError() << std::endl;
-    }
+    else VERBOSE("erreur process FuzzWin" << GetLastError() << std::endl);
+
     
     return (smtFormula); // retour de la formule SMT2
 }
@@ -190,7 +188,7 @@ ListOfInputs expandExecution(CInput *pInput, HashTable &h, UINT32 *nbFautes)
     formula = callFuzzwin(pInput);
     if (formula.empty())
     {
-        if (pGlobals->verbose)  std::cout << "\tAucune formule recue du pintool !!\n";
+        VERBOSE("\tAucune formule recue du pintool !!\n");
         return result; // aucune formule ou erreur
     }
 
@@ -202,7 +200,7 @@ ListOfInputs expandExecution(CInput *pInput, HashTable &h, UINT32 *nbFautes)
     // si le "bound" est supérieur aux nombre de contraintes => aucune nouvelle entrée, retour
     if (bound >= nbContraintes) 	
     {
-        if (pGlobals->verbose)  std::cout << "\tPas de nouvelles contraintes inversibles\n";
+        VERBOSE("\tPas de nouvelles contraintes inversibles\n");
         return result;
     }
     
@@ -220,7 +218,7 @@ ListOfInputs expandExecution(CInput *pInput, HashTable &h, UINT32 *nbFautes)
     // => boucle sur les contraintes de "bound + 1" à "nbContraintes" inversées et resolues successivement
     for (UINT32 j = bound + 1 ; j <= nbContraintes ; ++j) 
     {	
-        if (pGlobals->verbose)   std::cout << "\tinversion contrainte " << j;
+        VERBOSE("\tinversion contrainte " << j);
             
         // recherche de la prochaine contrainte dans la formule, à partir de la position de la précédente contrainte 
         pos = formula.find("(assert (=", posLastConstraint);          
@@ -271,25 +269,18 @@ ListOfInputs expandExecution(CInput *pInput, HashTable &h, UINT32 *nbFautes)
                 newFile.write(newInputContent.c_str(), newInputContent.size());
                 newFile.close();
 
-                if (pGlobals->verbose)
-                {
-                    std::cout << "-> nouveau fichier " << newChild->getFileName();
-                }
+                VERBOSE("-> nouveau fichier " << newChild->getFileName());
 
                 // test du fichier de suite; si retour nul le fichier est valide, donc l'insérer dans la liste
                 DWORD checkError = debugTarget(newChild);
                 if (!checkError) result.push_back(newChild);
                 else ++*nbFautes;
             }	
-            else // le fichier a déjà été généré (hash présent ou ... collision)
-            {
-                if (pGlobals->verbose) std::cout << "-> deja généré\n";
-            }
+            // le fichier a déjà été généré (hash présent ou ... collision)
+            else VERBOSE("-> deja généré\n");
         }
-        else // pas de solution trouvée par le solveur
-        {
-           if (pGlobals->verbose)  std::cout << " : aucune solution\n";   
-        }
+        // pas de solution trouvée par le solveur
+        else VERBOSE(" : aucune solution\n");   
        
         // enlever la contrainte inversée de la pile du solveur, et remettre l'originale
         sendToSolver("(pop 1)\n" + constraintJ + '\n');

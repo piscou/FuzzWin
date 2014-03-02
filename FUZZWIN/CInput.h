@@ -12,8 +12,8 @@ private:
     UINT32      _refCount;
     UINT32		_bound;	     // numéro de contrainte inversée qui a mené à la création du fichier
     UINT32	    _exceptionCode; // code d'erreur engendré par le fichier. 0 si aucun
-    std::string _filePath;
-    std::string _fileName;      // sans le chemin d'accès
+    std::string _filePath;  // chemin vers le fichier
+    std::string _fileName;  // nom de fichier uniquement (sans le chemin)
     CInput* 	_pFather;
     UINT32      _score;     // score de l'entrée (couverture de code)
 
@@ -60,10 +60,7 @@ public:
 
         // effacement du fichier du disque si le fichier n'a pas provoqué de fautes
         if (!_exceptionCode && !pGlobals->keepFiles) remove(this->_filePath.c_str());
-        if (pGlobals->verbose) 
-        {
-            std::cout << "destruction fichier " << this->_fileName << std::endl;
-        }
+        VERBOSE("\t[INFO] destruction fichier " << this->_fileName << std::endl);
     }
 
     // Accesseurs renvoyant les membres privés de la classe

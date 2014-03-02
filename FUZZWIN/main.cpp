@@ -2,6 +2,7 @@
 #include "algorithmeSearch.h"
 
 #include <ctime>
+#include <clocale>  // pour passage de la ligne de commande en francais
 
 CGlobals *pGlobals;
 

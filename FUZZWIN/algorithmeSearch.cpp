@@ -48,19 +48,17 @@ UINT32 algorithmeSearch()
 
         std::cout << "[!] exécution de " << pCurrentInput->getFileName();
         
-        if (pGlobals->verbose)
+        VERBOSE(" (bound = " << pCurrentInput->getBound() << ')');
+        if (pGlobals->computeScore)
         {
-            std::cout << " (bound = " << pCurrentInput->getBound() << ")";
-            if (pGlobals->computeScore)
-            {
-                std::cout << " (score = " << pCurrentInput->getScore() << ")";
-            }
-            if (pCurrentInput->getFather()) 
-            {
-                std::cout << " (père = " << pCurrentInput->getFather()->getFileName() << ")";
-            }
+            VERBOSE(" (score = " << pCurrentInput->getScore() << ')');
         }
-        std::cout << "\n ";
+        if (pCurrentInput->getFather()) 
+        {
+            VERBOSE(" (père = " << pCurrentInput->getFather()->getFileName() << ')');
+        }
+
+        std::cout << '\n';
 
         // exécution de PIN avec cette entrée (fonction ExpandExecution)
         // et recupération d'une liste de fichiers dérivés
