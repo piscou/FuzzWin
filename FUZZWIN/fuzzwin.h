@@ -27,34 +27,6 @@ typedef std::set<size_t> HashTable; // stockage des hashes des fichiers déjà gén
 // mode verbeux : affichage des infos sur la console
 #define VERBOSE(x) { if (pGlobals->verbose) { std::cout << x; }}
 
-static const std::string infoHeader
-(   
-"; **************************************************\n" 
-"; *  FUZZWIN : FUZZER AUTOMATIQUE SOUS WINDOWS     *\n" 
-"; *  v1.1 (c) Sebastien LECOMTE 02/03/2014         *\n"
-"; *  PIN Version 2.13 kit 62732 et Z3 version 4.3  *\n"
-"; **************************************************\n" 
-);
-
-static const std::string helpMessage
-(
-"\n"
-"FuzzWin - Fuzzer automatique sous plateforme Windows\n"
-"\n"
-"Usage:  fuzzwin.exe -t <targetExe> - i <firstInput> [options]\n"
-"\n"
-"Options:\n"
-"--help        \t -h : affiche ce message\n"
-"--keepfiles   \t -k : conserve les fichiers intermédiaires\n"
-"--range       \t -r : intervalles d'octets à marquer (ex: 1-10;15;17-51)\n"
-"--dir         \t -d : répertoire de sortie (défaut : './results/')\n"
-"--maxconstraints -c : nombre maximal de contraintes à récuperer\n"
-"--maxtime     \t -m : temps limite d'exécution de l'exécutable étudie\n"
-"--score       \t -s : calcul du score de chaque fichier\n"
-"--verbose     \t -v : mode verbeux\n"
-);
-
-
 // codes définissant le type d'OS pour la détermination des numéros d'appels systèmes
 // Le type d'OS est déterminé par fuzzwin.exe et passé en argument au pintool
 enum OSTYPE 
@@ -137,4 +109,88 @@ public:
 
 extern CGlobals *pGlobals;
 
-std::string initialize(int argc, char** argv);
+// détermination de l'OS dynamiquement, inspiré de l'exemple fourni sur MSDN
+// le type d'OS sera passé en argument au pintool
+// pour la surveillance des appels systèmes
+// NB : la version 8.1 du Windows Kit a désormais des fonctions spécifiques
+// mais ne sera pas utilisé ici
+static inline OSTYPE getNativeArchitecture()
+{
+    OSTYPE osType = HOST_UNKNOWN;
+
+    // la fonction GetNativeSystemInfo retourne une structure avec notamment
+    // 'wProcessorArchitecture' qui détermine si OS 32 ou 64bits 
+    SYSTEM_INFO si;
+    ZeroMemory(&si, sizeof(SYSTEM_INFO));
+    GetSystemInfo(&si);
+
+    // GetVersionEx récupère la version de l'OS pour fixer le numéro des syscalls
+    // la structure OSVERSIONINFOEX contient ce que l'on cherche à savoir
+    OSVERSIONINFOEX osvi;
+    ZeroMemory(&osvi, sizeof(osvi));
+    osvi.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEX);
+    GetVersionEx(reinterpret_cast<OSVERSIONINFO*>(&osvi));
+    // version = 10*major + minor ; permet de comparer tout de suite les nombres
+    int osVersion = (10 * osvi.dwMajorVersion) + osvi.dwMinorVersion;
+    
+    // isWow64Process détermine si fuzzwin fonctionne en émulation 64bits.
+    BOOL bIsWow64 = FALSE;
+    IsWow64Process(GetCurrentProcess(), &bIsWow64);
+
+    // Architecture de l'OS = 64 bits, ou bien émulation (Wow64)
+    if ((PROCESSOR_ARCHITECTURE_AMD64 == si.wProcessorArchitecture)	|| bIsWow64)
+    {
+        // Avant Windows 8 (version 6.2), tous les OS 64bits
+        // ont les mêmes tables pour les syscalls
+        if (osVersion < 62)         osType = HOST_X64_BEFORE_WIN8;
+
+        // Windows 8 : version 6.2
+        else if (62 == osVersion)   osType = HOST_X64_WIN80;
+
+        // pour Windows 8.1, getVersionEx est déprécié => TODO FAIRE AUTREMENT
+        else if (63 == osVersion)   osType = HOST_X64_WIN81;
+    }
+    else if (PROCESSOR_ARCHITECTURE_INTEL == si.wProcessorArchitecture)	
+    {
+        switch (osVersion)	
+        {
+        case 50:  // Version 5.0 = Windows 2000
+            osType = HOST_X86_2000;
+            break;
+
+        case 51:  // Version 5.1 = Windows XP
+            osType = HOST_X86_XP;
+            break;
+
+        case 52:  // Version 5.2 = Server 2003. XP 64bits n'est pas considéré car on est en 32bits
+            osType = HOST_X86_2003;
+            break;
+
+        case 60:  // Version 6.0 = Vista ou Server 2008
+            if (VER_NT_WORKSTATION == osvi.wProductType) // Vista => tester le cas SP0
+            {
+                // le syscall 'NtSetInformationFile' diffère entre SP0 et les autres SP
+                // on teste donc si un service pack est présent
+                osType = (osvi.wServicePackMajor) ? HOST_X86_VISTA : HOST_X86_VISTA_SP0;
+            }
+            else osType = HOST_X86_2008;
+            break;
+       
+        case 61:  // Version 6.1 = Seven ou Server 2008 R2
+            osType = (VER_NT_WORKSTATION == osvi.wProductType) ? HOST_X86_SEVEN : HOST_X86_2008_R2;
+            break;
+     
+        case 62:  // Version 6.2 = Windows 8 ou Server 2012
+            osType = (VER_NT_WORKSTATION == osvi.wProductType) ? HOST_X86_WIN80 : HOST_X86_2012;
+            break;
+
+        case 63:  // Version 6.3 = Windows 8.1 ou Server 2012R2 (à voir car GetVersionEx dépréciée)
+            osType = (VER_NT_WORKSTATION == osvi.wProductType) ? HOST_X86_WIN81 : HOST_X86_2012_R2;
+            break;
+      
+        default:  // OS non reconnu donc non supporté 
+            break; 
+        }
+    }
+    return (osType);
+} // getNativeArchitecture

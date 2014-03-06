@@ -1,0 +1,535 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>FUZZWIN_GUIClass</class>
+ <widget class="QMainWindow" name="FUZZWIN_GUIClass">
+  <property name="enabled">
+   <bool>true</bool>
+  </property>
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>622</width>
+    <height>638</height>
+   </rect>
+  </property>
+  <property name="sizePolicy">
+   <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+    <horstretch>0</horstretch>
+    <verstretch>2</verstretch>
+   </sizepolicy>
+  </property>
+  <property name="windowTitle">
+   <string>FUZZWIN V1.2 - 02/03/2014</string>
+  </property>
+  <property name="windowOpacity">
+   <double>1.000000000000000</double>
+  </property>
+  <widget class="QWidget" name="centralWidget">
+   <property name="sizePolicy">
+    <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+     <horstretch>0</horstretch>
+     <verstretch>0</verstretch>
+    </sizepolicy>
+   </property>
+   <layout class="QGridLayout" name="gridLayout_3">
+    <item row="7" column="0">
+     <widget class="QPushButton" name="Q_stopButton">
+      <property name="text">
+       <string>Stop !!</string>
+      </property>
+     </widget>
+    </item>
+    <item row="0" column="5" rowspan="11">
+     <widget class="Line" name="line">
+      <property name="orientation">
+       <enum>Qt::Vertical</enum>
+      </property>
+     </widget>
+    </item>
+    <item row="8" column="0">
+     <widget class="QPushButton" name="Q_quit">
+      <property name="text">
+       <string>Quitter</string>
+      </property>
+     </widget>
+    </item>
+    <item row="6" column="0">
+     <widget class="QPushButton" name="Q_start">
+      <property name="text">
+       <string>GO !!</string>
+      </property>
+     </widget>
+    </item>
+    <item row="2" column="0" rowspan="4">
+     <widget class="QGroupBox" name="groupOptions">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="title">
+       <string>Options</string>
+      </property>
+      <layout class="QGridLayout" name="gridLayout_2">
+       <item row="5" column="0">
+        <widget class="QCheckBox" name="Q_isBytesToTaint">
+         <property name="text">
+          <string>Octets à marquer</string>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="0">
+        <widget class="QCheckBox" name="Q_isScore">
+         <property name="text">
+          <string>Calcul du score</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="0">
+        <widget class="QCheckBox" name="Q_isMaxConstraints">
+         <property name="text">
+          <string>Nombre max contraintes</string>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="0">
+        <widget class="QSpinBox" name="Q_isMaxConstraints_2">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="maximum">
+          <number>100000</number>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="0">
+        <widget class="QCheckBox" name="Q_isMaxTime">
+         <property name="text">
+          <string>Temps Maximal</string>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="0">
+        <widget class="QTimeEdit" name="Q_maxTime">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="displayFormat">
+          <string>mm:ss</string>
+         </property>
+        </widget>
+       </item>
+       <item row="6" column="0">
+        <widget class="QLineEdit" name="Q_bytesToTaint">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
+        </widget>
+       </item>
+       <item row="7" column="0">
+        <widget class="QCheckBox" name="Q_isVerbose">
+         <property name="text">
+          <string>Mode verbeux</string>
+         </property>
+        </widget>
+       </item>
+       <item row="8" column="0" colspan="2">
+        <widget class="QCheckBox" name="Q_isKeepfiles">
+         <property name="text">
+          <string>Garder les fichiers temporaires</string>
+         </property>
+        </widget>
+       </item>
+       <item row="9" column="0">
+        <widget class="QCheckBox" name="Q_isTraceOnly">
+         <property name="text">
+          <string>Trace seulement</string>
+         </property>
+        </widget>
+       </item>
+       <item row="10" column="0">
+        <spacer name="verticalSpacer_2">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>40</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+      </layout>
+     </widget>
+    </item>
+    <item row="1" column="0">
+     <widget class="QGroupBox" name="groupSession">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="title">
+       <string>Session</string>
+      </property>
+      <layout class="QVBoxLayout" name="verticalLayout_3">
+       <item>
+        <widget class="QPushButton" name="Q_selectInitialInput">
+         <property name="text">
+          <string>Entrée initiale</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="Q_selectTarget">
+         <property name="text">
+          <string>Exécutable cible</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="Q_selectResultsDir">
+         <property name="text">
+          <string>Dossier de résultats</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </item>
+    <item row="0" column="6" rowspan="12">
+     <widget class="QGroupBox" name="groupResultats">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="title">
+       <string>Résultats</string>
+      </property>
+      <layout class="QGridLayout" name="gridLayout_4">
+       <item row="7" column="1" colspan="3">
+        <widget class="QLineEdit" name="Q_initialInput">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+        </widget>
+       </item>
+       <item row="11" column="0" colspan="4">
+        <widget class="QTabWidget" name="Q_outTabs">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+           <horstretch>1</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="currentIndex">
+          <number>0</number>
+         </property>
+         <widget class="QWidget" name="Q_tab1">
+          <attribute name="title">
+           <string>Log</string>
+          </attribute>
+          <layout class="QHBoxLayout" name="horizontalLayout_2">
+           <item>
+            <widget class="QTextEdit" name="Q_logWindow"/>
+           </item>
+          </layout>
+         </widget>
+         <widget class="QWidget" name="Q_tab2">
+          <attribute name="title">
+           <string>Entrées</string>
+          </attribute>
+          <layout class="QVBoxLayout" name="verticalLayout_2">
+           <item>
+            <widget class="QTreeView" name="Q_listOfInputs"/>
+           </item>
+          </layout>
+         </widget>
+        </widget>
+       </item>
+       <item row="1" column="1">
+        <widget class="QSpinBox" name="Q_worklistSize">
+         <property name="alignment">
+          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+         </property>
+         <property name="readOnly">
+          <bool>true</bool>
+         </property>
+         <property name="buttonSymbols">
+          <enum>QAbstractSpinBox::NoButtons</enum>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="0">
+        <widget class="QLabel" name="label_WorklistSize">
+         <property name="text">
+          <string>Nombre d'entrées à tester</string>
+         </property>
+        </widget>
+       </item>
+       <item row="8" column="1" colspan="3">
+        <widget class="QLineEdit" name="Q_targetPath">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+        </widget>
+       </item>
+       <item row="9" column="0">
+        <widget class="QLabel" name="label_resultsDir">
+         <property name="text">
+          <string>Dossier de résultats</string>
+         </property>
+        </widget>
+       </item>
+       <item row="6" column="0">
+        <spacer name="verticalSpacer">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeType">
+          <enum>QSizePolicy::Minimum</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>10</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item row="8" column="0">
+        <widget class="QLabel" name="label_targetPath">
+         <property name="text">
+          <string>Exécutable cible</string>
+         </property>
+        </widget>
+       </item>
+       <item row="9" column="1" colspan="3">
+        <widget class="QLineEdit" name="Q_resultsDir">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+        </widget>
+       </item>
+       <item row="7" column="0">
+        <widget class="QLabel" name="label_initialInput">
+         <property name="text">
+          <string>Entrée initiale</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="2">
+        <widget class="QLabel" name="label_elapsedTime">
+         <property name="text">
+          <string>Temps écoulé</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="3">
+        <widget class="QTimeEdit" name="Q_elapsedTime">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="layoutDirection">
+          <enum>Qt::LeftToRight</enum>
+         </property>
+         <property name="autoFillBackground">
+          <bool>false</bool>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+         </property>
+         <property name="readOnly">
+          <bool>true</bool>
+         </property>
+         <property name="buttonSymbols">
+          <enum>QAbstractSpinBox::NoButtons</enum>
+         </property>
+         <property name="displayFormat">
+          <string>HH:mm:ss</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </item>
+    <item row="0" column="0">
+     <widget class="QGroupBox" name="groupConfiguration">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="title">
+       <string>Configuration</string>
+      </property>
+      <layout class="QHBoxLayout" name="horizontalLayout">
+       <item>
+        <widget class="QPushButton" name="Q_selectPin">
+         <property name="text">
+          <string>PIN_ROOT</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="Q_selectZ3">
+         <property name="text">
+          <string>Z3_ROOT</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QMenuBar" name="menuBar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>622</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menuFichier">
+    <property name="title">
+     <string>Fichier</string>
+    </property>
+    <addaction name="actionQuitter"/>
+   </widget>
+   <widget class="QMenu" name="menu">
+    <property name="title">
+     <string>?</string>
+    </property>
+    <addaction name="action_aboutFuzzWin"/>
+   </widget>
+   <addaction name="menuFichier"/>
+   <addaction name="menu"/>
+  </widget>
+  <action name="actionQuitter">
+   <property name="text">
+    <string>Quitter</string>
+   </property>
+  </action>
+  <action name="action_aboutFuzzWin">
+   <property name="text">
+    <string>A propos de FuzzWin</string>
+   </property>
+  </action>
+  <action name="actionA_propos_de_Qt">
+   <property name="text">
+    <string>A propos de Qt</string>
+   </property>
+  </action>
+  <action name="actionA_propos_de_PIN">
+   <property name="text">
+    <string>A propos de PIN</string>
+   </property>
+  </action>
+ </widget>
+ <layoutdefault spacing="6" margin="11"/>
+ <resources>
+  <include location="fuzzwin_gui.qrc"/>
+ </resources>
+ <connections>
+  <connection>
+   <sender>Q_isBytesToTaint</sender>
+   <signal>clicked(bool)</signal>
+   <receiver>Q_bytesToTaint</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>72</x>
+     <y>366</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>92</x>
+     <y>394</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>Q_isMaxConstraints</sender>
+   <signal>clicked(bool)</signal>
+   <receiver>Q_isMaxConstraints_2</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>132</x>
+     <y>317</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>196</x>
+     <y>316</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>Q_isMaxTime</sender>
+   <signal>clicked(bool)</signal>
+   <receiver>Q_maxTime</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>62</x>
+     <y>339</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>190</x>
+     <y>345</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>Q_quit</sender>
+   <signal>clicked(bool)</signal>
+   <receiver>FUZZWIN_GUIClass</receiver>
+   <slot>close()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>159</x>
+     <y>530</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>193</x>
+     <y>545</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+</ui>

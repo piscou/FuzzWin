@@ -45,6 +45,9 @@
     <ClInclude Include="algorithmeExpandExecution.h">
       <Filter>Fichiers d%27en-tête</Filter>
     </ClInclude>
+    <ClInclude Include="initialize.h">
+      <Filter>Fichiers d%27en-tête</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Fichiers d%27en-tête">

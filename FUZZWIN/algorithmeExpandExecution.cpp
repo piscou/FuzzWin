@@ -1,6 +1,7 @@
 #include "algorithmeExpandExecution.h"
 #include "check.h"
 #include "solver.h"
+#include "initialize.h" // pour entete de la formule enregistrée dans le fichier
 
 #include <sstream> // stringstream
 
@@ -86,7 +87,7 @@ static std::string callFuzzwin(CInput* pInput)
     ZeroMemory(&pi, sizeof(pi));
     si.cb = sizeof(si);
     
-    if (CreateProcess (nullptr, (LPSTR) cmdLine.c_str(), nullptr, nullptr, TRUE, NULL, nullptr, nullptr, &si, &pi)) 
+    if (CreateProcess(nullptr, (LPSTR) cmdLine.c_str(), nullptr, nullptr, TRUE, NULL, nullptr, nullptr, &si, &pi)) 
     {          
         /***********************/
         /** CONNEXION AU PIPE **/

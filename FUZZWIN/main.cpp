@@ -1,5 +1,6 @@
 #include "fuzzwin.h"
 #include "algorithmeSearch.h"
+#include "initialize.h"
 
 #include <ctime>
 #include <clocale>  // pour passage de la ligne de commande en francais
