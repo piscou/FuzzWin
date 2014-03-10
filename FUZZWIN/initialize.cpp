@@ -15,17 +15,6 @@ static std::string getExePath()
     return (std::string(buffer).substr(0, pos + 1)); // antislash inclus
 }
 
-// test du type d'exécutable (32 ou 64bits). Si non supporté => quitter
-static int getKindOfExecutable(const std::string &targetPath)
-{
-    DWORD kindOfExe = 0;
-    BOOL  result = GetBinaryType((LPCSTR) targetPath.c_str(), &kindOfExe);
-    
-    // erreur si fichier non exécutable ou si non trouvé
-    if (!result) return (-1);
-    else         return (kindOfExe);
-}
-
 // test de l'existence d'un fichier
 static inline bool testFileExists(const std::string &name)
 {
@@ -192,7 +181,6 @@ std::string initialize(int argc, char** argv)
     ops >> GetOpt::Option('d', "dir", resultDir);
     if (pGlobals->resultDir.empty()) resultDir = exePath + "results";
     
-
     // création du dossier de résultats. 
     BOOL createDirResult = CreateDirectory(resultDir.c_str(), NULL);
     if (!createDirResult && (ERROR_ALREADY_EXISTS == GetLastError()))
@@ -235,7 +223,14 @@ std::string initialize(int argc, char** argv)
     std::string pinPath;
     char* pinRoot = getenv("PIN_ROOT");
     if (nullptr == pinRoot) pinPath = exePath;
-    else                    pinPath = std::string(pinRoot);
+    else                    
+    {
+        pinPath = std::string(pinRoot);
+        
+        // rajout du séparateur si non présent
+        char lastChar = pinPath.back();
+        if ((lastChar != '/') && (lastChar != '\\'))  pinPath += '\\';
+    }
     // repertoire 'root' de Z3. Idem
     std::string z3Path;
     char* z3Root = getenv("Z3_ROOT");

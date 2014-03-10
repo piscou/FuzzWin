@@ -24,8 +24,17 @@ typedef std::set<size_t> HashTable; // stockage des hashes des fichiers déjà gén
       #x??    */ 
 #define parseZ3ResultRegex "OFF(\\d+).*\r\n.*([0-9a-f]{2})"
 
-// mode verbeux : affichage des infos sur la console
-#define VERBOSE(x) { if (pGlobals->verbose) { std::cout << x; }}
+// log de l'exécution : affichage sur la console ou dans la fenetre (GUI)
+#ifdef QT_DLL
+#include "fuzzwin_gui.h"
+#define LOG(x) { QString msg = QString::fromStdString(x); window->sendToLogWindow(msg); }
+
+#else
+#define LOG(x) { std::cout << x; }
+#endif
+
+// mode verbeux 
+#define VERBOSE(x) { if (pGlobals->verbose) LOG(x) }
 
 // codes définissant le type d'OS pour la détermination des numéros d'appels systèmes
 // Le type d'OS est déterminé par fuzzwin.exe et passé en argument au pintool
@@ -92,7 +101,19 @@ public:
     CGlobals() : 
         regexModel(parseZ3ResultRegex, std::regex::ECMAScript),
         maxExecutionTime(0), // aucun maximum de temps
-        maxConstraints(0)    // pas de limite dans le nombre de contraintes
+        maxConstraints(0),   // pas de limite dans le nombre de contraintes
+        // initialisation par défaut des autres variables
+        osType(HOST_UNKNOWN),
+        keepFiles   (false),
+        computeScore(false),
+        verbose     (false),
+        hZ3_process (nullptr),
+        hZ3_stdin   (nullptr),
+        hZ3_stdout  (nullptr),
+        hZ3_thread  (nullptr),
+        hReadFromZ3 (nullptr),
+        hWriteToZ3  (nullptr),
+        hPintoolPipe(nullptr)
         {}
 
     ~CGlobals() 
@@ -194,3 +215,18 @@ static inline OSTYPE getNativeArchitecture()
     }
     return (osType);
 } // getNativeArchitecture
+
+// test du type d'exécutable (32 ou 64bits). Si non supporté => quitter
+static inline int getKindOfExecutable(const std::string &targetPath)
+{
+    DWORD kindOfExe = 0;
+    BOOL  result = GetBinaryType((LPCSTR) targetPath.c_str(), &kindOfExe);
+    
+    // erreur si fichier non exécutable ou si non trouvé
+    if (!result) return (-1);
+    else         return (kindOfExe);
+} // getKindOfExecutable
+
+#if QT_DLL
+
+#endif

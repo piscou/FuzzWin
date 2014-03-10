@@ -80,7 +80,7 @@ bool checkSatFromSolver()
     // lecture des données dans le pipe (1 seule ligne)
     BOOL fSuccess = ReadFile(pGlobals->hReadFromZ3, bufferRead, 32, &nbBytesRead, NULL);
     
-    if( !fSuccess)  std::cout << "erreur de lecture de la reponse du solveur\n";
+    if (!fSuccess)  LOG("erreur de lecture de la reponse du solveur\n")
     else 
     {
         std::string bufferString(bufferRead);
@@ -93,7 +93,7 @@ bool checkSatFromSolver()
 std::string getModelFromSolver()
 {
     char bufferRead[BUFFER_SIZE] = {0}; // buffer de reception des données du solveur
-    std::string result, line;
+    std::string result;
     DWORD nbBytesRead = 0;
  
     sendToSolver("(get-model)\n");
@@ -104,7 +104,7 @@ std::string getModelFromSolver()
         BOOL fSuccess = ReadFile(pGlobals->hReadFromZ3, bufferRead, BUFFER_SIZE, &nbBytesRead, NULL);
         if( !fSuccess) 
         {
-            std::cout << "erreur de lecture de la réponse du solveur\n";
+            LOG("erreur de lecture de la réponse du solveur\n");
             break;
         }
         else result.append(bufferRead, nbBytesRead);

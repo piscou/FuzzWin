@@ -1,4 +1,5 @@
 #include "check.h"
+#include <sstream>
 
 HANDLE hTimoutEvent;
 HANDLE hTimerThread;
@@ -89,12 +90,17 @@ DWORD debugTarget(CInput *pInput)
         case EXCEPTION_DEBUG_EVENT:
             if (e.u.Exception.ExceptionRecord.ExceptionCode != EXCEPTION_BREAKPOINT) 
             { 
-                std::cout << "\n\t-------------------------------------------------\n ";
-                std::cout << "\t@@@ EXCEPTION @@@ Fichier " << pInput->getFileName() << '\n';
-                std::cout << "\tAdresse 0x" << std::hex << e.u.Exception.ExceptionRecord.ExceptionAddress << " " ;
-                std::cout << "code " << e.u.Exception.ExceptionRecord.ExceptionCode << std::dec ;
-                std::cout << "\n\t-------------------------------------------------\n";
-                returnCode = e.u.Exception.ExceptionRecord.ExceptionCode;
+                DWORD exceptionCode = e.u.Exception.ExceptionRecord.ExceptionCode;
+                
+                std::stringstream adressInHex;
+                adressInHex << std::hex << e.u.Exception.ExceptionRecord.ExceptionAddress;
+                
+                LOG("\n\t-------------------------------------------------\n");
+                LOG("\t@@@ EXCEPTION @@@ Fichier " + pInput->getFileName());
+                LOG("\n\tAdresse 0x" + adressInHex.str());
+                LOG(" code " + std::to_string(exceptionCode));
+                LOG("\n\t-------------------------------------------------\n");
+                returnCode = exceptionCode;
                 continueDebug = false;
             }
             break;

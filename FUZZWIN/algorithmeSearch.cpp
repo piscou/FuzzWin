@@ -37,7 +37,7 @@ UINT32 algorithmeSearch()
     /**********************/
     while ( !workList.empty() ) 
     {
-        std::cout << "[" << workList.size() << "] ELEMENTS DANS LA WORKLIST\n";
+        LOG("[" + std::to_string(workList.size()) + "] ELEMENTS DANS LA WORKLIST\n");
         
         // tri des entrées selon leur score (si option activée)
         if (pGlobals->computeScore) workList.sort(sortInputs);
@@ -46,27 +46,27 @@ UINT32 algorithmeSearch()
         CInput* pCurrentInput = workList.back();
         workList.pop_back();
 
-        std::cout << "[!] exécution de " << pCurrentInput->getFileName();
+        LOG("[!] exécution de " + pCurrentInput->getFileName());
         
-        VERBOSE(" (bound = " << pCurrentInput->getBound() << ')');
+        VERBOSE(" (bound = " + std::to_string(pCurrentInput->getBound()) + ')');
         if (pGlobals->computeScore)
         {
-            VERBOSE(" (score = " << pCurrentInput->getScore() << ')');
+            VERBOSE(" (score = " + std::to_string(pCurrentInput->getScore()) + ')');
         }
         if (pCurrentInput->getFather()) 
         {
-            VERBOSE(" (père = " << pCurrentInput->getFather()->getFileName() << ')');
+            VERBOSE(" (père = " + pCurrentInput->getFather()->getFileName() + ')');
         }
 
-        std::cout << '\n';
+        LOG("\n");
 
         // exécution de PIN avec cette entrée (fonction ExpandExecution)
         // et recupération d'une liste de fichiers dérivés
         // la table de hachage permet d'écarter les doublons déjà générés
         auto childInputs = expandExecution(pCurrentInput, hashTable, &nbFautes);
 
-        if (!childInputs.size())  std::cout << "\t pas de nouveaux fichiers\n";   
-        else   std::cout << "\t " << childInputs.size() << " nouveau(x) fichier(s)\n";
+        if (!childInputs.size())  LOG("\t pas de nouveaux fichiers\n")  
+        else   LOG("\t " + std::to_string(childInputs.size()) + " nouveau(x) fichier(s)\n");
 
         // insertion des fichiers dans la liste, et diminution du 
         // refcount de l'objet venant d'être testé

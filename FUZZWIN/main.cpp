@@ -51,7 +51,6 @@ int main(int argc, char *argv[])
         std::cout << ((float) (timeEnd - timeBegin)/CLOCKS_PER_SEC ) << " secondes\n";
         
         std::cout << "\n\tAppuyer sur une touche pour quitter";
-        fflush(stdin);
         getchar();
 
         return (EXIT_SUCCESS);

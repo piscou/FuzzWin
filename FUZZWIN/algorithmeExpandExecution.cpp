@@ -3,8 +3,6 @@
 #include "solver.h"
 #include "initialize.h" // pour entete de la formule enregistrée dans le fichier
 
-#include <sstream> // stringstream
-
 static UINT32 numberOfChilds = 0;	// numérotation des fichiers dérivés
 
 /*********************************/
@@ -68,7 +66,7 @@ static int sendArgumentsToPintool(const std::string &command)
     // si tout n'a pas été écrit ou erreur : le signaler
     if (!fSuccess || cbWritten != commandLength)	
     {   
-        std::cout << "erreur envoi arguments au Pintool" << std::endl;
+        LOG("erreur envoi arguments au Pintool\n");
         return (EXIT_FAILURE);   // erreur
     }
     else return (EXIT_SUCCESS);  // OK
@@ -95,7 +93,8 @@ static std::string callFuzzwin(CInput* pInput)
         BOOL fSuccess = ConnectNamedPipe(pGlobals->hPintoolPipe, NULL);
         if (!fSuccess && GetLastError() != ERROR_PIPE_CONNECTED) 
         {	
-            std::cout << "erreur de connexion au pipe FuzzWin" << GetLastError() << std::endl;
+            LOG("erreur de connexion au pipe FuzzWin, GLE=");
+            LOG(std::to_string(GetLastError()) + '\n');
             return (smtFormula); // formule vide
         }
         
@@ -166,9 +165,10 @@ static std::string callFuzzwin(CInput* pInput)
             ofs.close();
         }
     }	
-    else VERBOSE("erreur process FuzzWin" << GetLastError() << std::endl);
-
-    
+    else
+    {
+        VERBOSE("erreur process FuzzWin" + std::to_string(GetLastError()) + '\n');
+    }
     return (smtFormula); // retour de la formule SMT2
 }
 
@@ -219,7 +219,7 @@ ListOfInputs expandExecution(CInput *pInput, HashTable &h, UINT32 *nbFautes)
     // => boucle sur les contraintes de "bound + 1" à "nbContraintes" inversées et resolues successivement
     for (UINT32 j = bound + 1 ; j <= nbContraintes ; ++j) 
     {	
-        VERBOSE("\tinversion contrainte " << j);
+        VERBOSE("\tinversion contrainte " + std::to_string(j));
             
         // recherche de la prochaine contrainte dans la formule, à partir de la position de la précédente contrainte 
         pos = formula.find("(assert (=", posLastConstraint);          
@@ -270,7 +270,7 @@ ListOfInputs expandExecution(CInput *pInput, HashTable &h, UINT32 *nbFautes)
                 newFile.write(newInputContent.c_str(), newInputContent.size());
                 newFile.close();
 
-                VERBOSE("-> nouveau fichier " << newChild->getFileName());
+                VERBOSE("-> nouveau fichier " + newChild->getFileName());
 
                 // test du fichier de suite; si retour nul le fichier est valide, donc l'insérer dans la liste
                 DWORD checkError = debugTarget(newChild);

@@ -60,7 +60,7 @@ public:
 
         // effacement du fichier du disque si le fichier n'a pas provoqué de fautes
         if (!_exceptionCode && !pGlobals->keepFiles) remove(this->_filePath.c_str());
-        VERBOSE("\t[INFO] destruction fichier " << this->_fileName << std::endl);
+        VERBOSE("\t[INFO] destruction fichier " + this->_fileName + '\n');
     }
 
     // Accesseurs renvoyant les membres privés de la classe
@@ -99,8 +99,6 @@ public:
     // renvoie le contenu du fichier sous la forme de string
     std::string getFileContent() const
     {
-        std::string result;
-
         UINT32 fileSize = this->getFileSize(); // UINT32 => fichier < 2Go...
         std::vector<char> contentWithChars(fileSize);
 
