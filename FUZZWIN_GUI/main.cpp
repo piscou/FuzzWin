@@ -4,7 +4,7 @@
 //#include <qtextcodec.h>
 
 CGlobals *pGlobals;
-FUZZWIN_GUI *window;
+FUZZWIN_GUI *w;
 
 int main(int argc, char *argv[])
 {
@@ -26,10 +26,10 @@ int main(int argc, char *argv[])
     //QLocale::setDefault(loc);
 
     QApplication a(argc, argv);
-    window = new FUZZWIN_GUI;
+    w = new FUZZWIN_GUI;
    
-    window->initialize();
-    window->show();
+    w->initialize();
+    w->show();
     returnValue = a.exec();
 
     delete (pGlobals);
