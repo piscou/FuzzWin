@@ -1,5 +1,6 @@
 #include "initialize.h"
 #include "solver.h" 
+#include "pintoolFuncs.h"
 
 // PARSE COMMAND LINE : GETOPT_PP
 // documentation : https://code.google.com/p/getoptpp/wiki/Documentation?tm=6
@@ -264,23 +265,11 @@ std::string initialize(int argc, char** argv)
         if (!testFileExists(pintool_X64))   return "pintool FuzzWin 64bits absent";
     }
   
-    /**********************************************/
-    /** création des tubes nommé avec le Pintool **/
-    /**********************************************/
-    pGlobals->hPintoolPipe = CreateNamedPipe("\\\\.\\pipe\\fuzzwin",	
-        PIPE_ACCESS_DUPLEX,	// accès en lecture/écriture 
-        PIPE_TYPE_MESSAGE | PIPE_READMODE_MESSAGE | PIPE_WAIT, // mode message, bloquant
-        1,		// une seule instance
-        4096,	// buffer de sortie 
-        4096,	// buffer d'entrée
-        0,		// time-out du client = defaut
-        NULL);	// attributs de securité par defaut
-
-    if (INVALID_HANDLE_VALUE == pGlobals->hPintoolPipe)
-    {
-        return ("Erreur de création du pipe fuzzWin\n");
-    }
-
+    /********************************************/
+    /** création du tube nommé avec le Pintool **/
+    /********************************************/
+    if (!createNamedPipePintool()) 	return ("Erreur de création du pipe fuzzWin");
+  
     /**********************************************************/
     /** création du process Z3 avec redirection stdin/stdout **/ 
     /**********************************************************/
@@ -289,25 +278,6 @@ std::string initialize(int argc, char** argv)
     /***************************************/
     /** Ligne de commande pour le pintool **/ 
     /***************************************/
-
-    // si OS 32 bits, pas la peine de spécifier les modules 64bits
-    if (pGlobals->osType < BEGIN_HOST_64BITS) 
-    {
-        /* $(pin_X86) -t $(pintool_X86) -- $(targetFile) %INPUT% (ajouté a chaque fichier testé) */
-        pGlobals->cmdLinePin = '"' + pin_X86 \
-            + "\" -t \"" + pintool_X86       \
-            + "\" -- \"" + pGlobals->targetPath + "\" ";
-    }
-    else
-    {
-        /* $(pin_X86) -p64 $(pin_X64) -t64 $(pintool_X64) -t $(pintool_X86) 
-        -- $(targetFile) %INPUT% (ajouté a chaque fichier testé) */
-        pGlobals->cmdLinePin = '"' + pin_X86  \
-            + "\" -p64 \"" + pin_X64      \
-            + "\" -t64 \"" + pintool_X64  \
-            + "\" -t \""   + pintool_X86  \
-            + "\" -- \""   + pGlobals->targetPath + "\" ";
-    }
-    
+    pGlobals->buildPinCmdLine(pin_X86, pin_X64, pintool_X86, pintool_X64);
     return ("OK");
 }

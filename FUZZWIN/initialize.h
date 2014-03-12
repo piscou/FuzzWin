@@ -1,15 +1,6 @@
 #pragma once
 #include "fuzzwin.h"
 
-static const std::string infoHeader
-(   
-"; **************************************************\n" 
-"; *  FUZZWIN : FUZZER AUTOMATIQUE SOUS WINDOWS     *\n" 
-"; *  v1.1 (c) Sebastien LECOMTE 02/03/2014         *\n"
-"; *  PIN Version 2.13 kit 62732 et Z3 version 4.3  *\n"
-"; **************************************************\n" 
-);
-
 static const std::string helpMessage
 (
 "\n"

@@ -1,7 +1,6 @@
 #include "fuzzwin.h"
 #include <QtWidgets/QApplication>
 #include <QMessagebox>
-//#include <qtextcodec.h>
 
 CGlobals *pGlobals;
 FUZZWIN_GUI *w;
@@ -18,14 +17,16 @@ int main(int argc, char *argv[])
     pGlobals->osType = getNativeArchitecture();
     if (HOST_UNKNOWN == pGlobals->osType)
     {
-        QMessageBox::critical(nullptr, "Erreur", "L'OS hôte n'est pas supporté : abandon");
+        QMessageBox::critical(nullptr, "Erreur", "OS non supporté", QMessageBox::Close);
         delete (pGlobals);
         return (EXIT_FAILURE);
     }
-    //QLocale loc(QLocale::French, QLocale::France);
-    //QLocale::setDefault(loc);
 
-    QApplication a(argc, argv);
+    QApplication a(argc, argv);    
+    
+    // test de la présence des DLL du pintool
+    QString exePath = a.applicationDirPath();
+
     w = new FUZZWIN_GUI;
    
     w->initialize();

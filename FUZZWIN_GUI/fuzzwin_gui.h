@@ -33,6 +33,14 @@
 #include <QtCore/QUrl>
 #include <QtCore/QFile>
 
+#include <QtWidgets/QFileDialog>
+#include <QtWidgets/QMessageBox>
+
+
+static inline std::string convertToString(const QString &qstr)
+{
+    return (std::string(qstr.toLocal8Bit().constData()));
+}
 
 // Bouton de selection personnalisé
 class FuzzwinButton : public QPushButton
@@ -118,6 +126,12 @@ public:
     void sendToLogWindow(const QString &msg);
 
 private:
+    // chemin des exécutables PIN et Z3
+    QString _pinPath_X86, _pinPath_X64;
+    QString _pintool_X86, _pintool_X64;
+    QString _z3Path;
+
+    
     // taille des widgets
     QSizePolicy _fixedSizePolicy;
 
@@ -189,7 +203,6 @@ private:
     bool _isZ3Launched;
 
     bool checkPinPath(QString &path);
-    bool checkZ3Path (QString &path);
     
     // initialisation des différents groupes d'objets. 
     // Fonctions appelées par le constructeur
@@ -211,6 +224,8 @@ public slots:
     void selectTarget_clicked();       // sélection du programme cible
     void selectResultsDir_clicked();   // sélection du répertoire de résultats
     void quitFuzzwin();
+
+    void go_clicked();
 
     void testGoButton();
 };

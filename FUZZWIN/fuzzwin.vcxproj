@@ -181,6 +181,7 @@
     <ClInclude Include="getopt_pp.h" />
     <ClInclude Include="fuzzwin.h" />
     <ClInclude Include="initialize.h" />
+    <ClInclude Include="pintoolFuncs.h" />
     <ClInclude Include="solver.h" />
   </ItemGroup>
   <ItemGroup>
@@ -190,6 +191,7 @@
     <ClCompile Include="getopt_pp.cpp" />
     <ClCompile Include="initialize.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="pintoolFuncs.cpp" />
     <ClCompile Include="solver.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -1,6 +1,7 @@
 #include "fuzzwin.h"
-#include <qfiledialog>
-#include <qmessagebox>
+#include "solver.h"
+#include "pintoolFuncs.h"
+
 
 // Bouton de selection personnalisé
 FuzzwinButton::FuzzwinButton(QWidget *parent, const QString &text)
@@ -36,8 +37,10 @@ bool FuzzwinButton::getStatus() const
 
 FuzzwinLineEdit::FuzzwinLineEdit(QWidget *parent) : QLineEdit(parent)
 {
+    // accpeter le drag, le drop, mais lecture seule
     this->setDragEnabled(true);   
     this->setAcceptDrops(true);
+    this->setReadOnly(true);
     this->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
 }
 
@@ -61,20 +64,24 @@ void InitialInputLineEdit::dropEvent(QDropEvent *e)
     {
         QUrl url = e->mimeData()->urls().first();
         if ("file" == url.scheme())
-        {
-            e->acceptProposedAction();
+        {           
             QFile path = url.toLocalFile();
-            if (path.exists())
-            {
-                w->_selectInitialInput->setButtonOk();
-                this->setText(path.fileName());
-            }
+            if (QFileInfo(path).isDir())  e->ignore();
             else 
             {
-                w->_selectInitialInput->setButtonError();  
-                this->clear();
+                if (path.exists())
+                {
+                    w->_selectInitialInput->setButtonOk();
+                    this->setText(path.fileName());
+                    e->acceptProposedAction();
+                }
+                else 
+                {
+                    w->_selectInitialInput->setButtonError();  
+                    this->clear();
+                }
+                this->setCursorPosition(0);
             }
-            this->setCursorPosition(0);
         }
     }
 }
@@ -127,7 +134,7 @@ bool TargetPathLineEdit::check(const QString &path)
         break;
 
     default:
-        w->sendToLogWindow("Fichier cible incompatible");  
+        w->sendToLogWindow("Exécutable cible incompatible");  
         break;
     }
     return (checkResult);
@@ -484,7 +491,7 @@ FUZZWIN_GUI::FUZZWIN_GUI() : QMainWindow(nullptr),
     connect(_selectInitialInput,    SIGNAL(clicked()),     this,                SLOT(selectInitialInput_clicked()));
     connect(_selectTarget,          SIGNAL(clicked()),     this,                SLOT(selectTarget_clicked()));
     connect(_selectResultsDir,      SIGNAL(clicked()),     this,                SLOT(selectResultsDir_clicked()));
-
+    connect(_startButton,           SIGNAL(clicked()),     this,                SLOT(go_clicked()));
 }
 
 FUZZWIN_GUI::~FUZZWIN_GUI() {}
@@ -496,7 +503,6 @@ void FUZZWIN_GUI::closeEvent(QCloseEvent *e)
     // si la fonction revient ici, c'est qu'il y a eu abandon => ignorer l'event
     e->ignore();
 }
-
 
 void FUZZWIN_GUI::initialize()
 {
@@ -516,15 +522,28 @@ void FUZZWIN_GUI::initialize()
     }
 
     // pour Z3 : variable d'environnement "Z3_ROOT"
-    QString z3Path = _env.value("Z3_ROOT");
+    _z3Path = _env.value("Z3_ROOT");
     
     // si la variable est renseignée : test de la présence des fichiers de Z3
-    if (! z3Path.isEmpty()) 
+    if (! _z3Path.isEmpty()) 
     {
-        if (this->checkZ3Path(z3Path)) 
+        // ajout du séparateur, si non présent
+        if (!(_z3Path.endsWith('/') || _z3Path.endsWith('\\'))) _z3Path.append(QDir::separator());
+    
+        // chemin vers l'exécutable Z3
+        _z3Path += "bin\\z3.exe";
+    
+        // test de son existence
+        if (QFile::exists(_z3Path))
         {
             this->sendToLogWindow("Répertoire de Z3 : OK");
             _selectZ3->setButtonOk();
+        }
+        else
+        {
+            this->sendToLogWindow("solveur Z3 absent");
+            _z3Path.clear();
+            _selectZ3->setButtonError();
         } 
     }
 }
@@ -577,26 +596,6 @@ bool FUZZWIN_GUI::checkPinPath(QString &path)
     return (result);
 }
 
-bool FUZZWIN_GUI::checkZ3Path(QString &path)
-{
-    bool result = true; // on considere que tout est ok à priori
-
-    // ajout du séparateur, si non présent
-    if (!(path.endsWith('/') || path.endsWith('\\'))) path.append(QDir::separator());
-    
-    // chemin vers Z3
-    QString z3Path = path + "bin\\z3.exe";
-    
-    // test de la présence de Z3
-    if (!QFile::exists(z3Path))
-    {
-        result = false;
-        this->sendToLogWindow("solveur Z3 absent");
-    }
-    
-    return (result);
-}
-
 void FUZZWIN_GUI::sendToLogWindow(const QString &msg)
 {
     QTime thisTime = QDateTime::currentDateTime().time();
@@ -623,18 +622,28 @@ void FUZZWIN_GUI::selectPin_clicked()
 
 void FUZZWIN_GUI::selectZ3_clicked()
 {
-    QString z3Path = QFileDialog::getExistingDirectory(this, 
+    _z3Path = QFileDialog::getExistingDirectory(this, 
         "Sélection du répertoire de Z3",
         QDir::currentPath(),
         QFileDialog::ShowDirsOnly);
 
-    // test de la présence des fichiers indispensables pour Z3
-    if (this->checkZ3Path(z3Path)) 
+    // ajout du séparateur, si non présent
+    if (!(_z3Path.endsWith('/') || _z3Path.endsWith('\\'))) _z3Path.append(QDir::separator());
+    
+    // chemin vers l'exécutable Z3
+    _z3Path += "bin\\z3.exe";
+    
+    // test de son existence
+    if (QFile::exists(_z3Path))
     {
         this->sendToLogWindow("Répertoire de Z3 : OK");
         _selectZ3->setButtonOk();
+    }
+    else
+    {
+        this->sendToLogWindow("solveur Z3 absent");
+        _selectZ3->setButtonError();
     } 
-    else _selectZ3->setButtonError();
 }
 
 void FUZZWIN_GUI::selectInitialInput_clicked()
@@ -712,4 +721,60 @@ void FUZZWIN_GUI::testGoButton()
                       & _selectResultsDir->getStatus();
     
     _startButton->setEnabled(globalStatus);
+}
+
+void FUZZWIN_GUI::go_clicked()
+{
+    // récupération entrée initiale, cible et dossier de resultats
+    pGlobals->firstInputPath = convertToString(_initialInput->text());
+    pGlobals->targetPath     = convertToString(_targetPath->text());
+    pGlobals->resultDir      = convertToString(_resultsDir->text());
+
+    // récupération des options     
+    pGlobals->computeScore   = _scoreEnabled->isChecked();
+    pGlobals->verbose        = _verboseEnabled->isChecked();
+    pGlobals->keepFiles      = _keepfilesEnabled->isChecked();
+    pGlobals->maxConstraints = _maxConstraintsEnabled->isChecked() ? _maxConstraints->value() : 0;
+    
+    if (_maxTimeEnabled->isChecked())
+    {
+        QTime maxTime = _maxTime->time();
+        pGlobals->maxExecutionTime = (60* maxTime.minute()) + maxTime.second();
+    }
+    else  pGlobals->maxExecutionTime = 0;
+   
+    if (_bytesToTaintEnabled->isChecked())
+    {
+         pGlobals->bytesToTaint = convertToString(_listOfBytesToTaint->text());
+    }
+    else  pGlobals->bytesToTaint = "all";
+
+    /********************************************/
+    /** création du tube nommé avec le Pintool **/
+    /********************************************/
+    if (!createNamedPipePintool())
+    {
+        this->sendToLogWindow ("Erreur de création du pipe fuzzWin");
+    }
+    else VERBOSE("Pipe Fuzzwin OK");
+  
+    /**********************************************************/
+    /** création du process Z3 avec redirection stdin/stdout **/ 
+    /**********************************************************/
+    if (!createSolverProcess(convertToString(_z3Path)))
+    {
+        this->sendToLogWindow ("erreur création processus Z3");
+        // fermer le pipe pour éviter erreurs à la prochaine tentative
+        CloseHandle(pGlobals->hPintoolPipe);
+    }
+    else VERBOSE("Process Z3 OK");
+
+    /***************************************/
+    /** Ligne de commande pour le pintool **/ 
+    /***************************************/
+   
+    //pGlobals->buildPinCmdLine(pin_X86, pin_X64, _pintool_X86, _pintool_X64);
+
+    // désaciver le bouton "Go"
+    _startButton->setDisabled(true);
 }
