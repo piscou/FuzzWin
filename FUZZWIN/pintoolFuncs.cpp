@@ -33,7 +33,15 @@ std::string callFuzzwin(CInput* pInput)
     ZeroMemory(&pi, sizeof(pi));
     si.cb = sizeof(si);
     
-    if (CreateProcess(nullptr, (LPSTR) cmdLine.c_str(), nullptr, nullptr, TRUE, NULL, nullptr, nullptr, &si, &pi)) 
+    if (CreateProcess(nullptr, 
+        (LPSTR) cmdLine.c_str(), 
+        NULL,          // process security attributes 
+        NULL,          // primary thread security attributes 
+        TRUE,          // handles are inherited 
+        CREATE_NO_WINDOW,    // creation flags 
+        NULL,          // use parent's environment 
+        NULL,          // use parent's current directory 
+        &si, &pi)) 
     {          
         /***********************/
         /** CONNEXION AU PIPE **/

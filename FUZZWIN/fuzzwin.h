@@ -14,9 +14,9 @@
 #include <regex>
 #include <set> // table de hachage
 
-typedef uint8_t		UINT8;
-typedef uint32_t	UINT32;
-typedef uint64_t	UINT64;
+typedef uint8_t		     UINT8;
+typedef uint32_t	     UINT32;
+typedef uint64_t	     UINT64;
 typedef std::set<size_t> HashTable; // stockage des hashes des fichiers déjà générés
 
 /* solutions fournies par le solveur sont du type
@@ -24,16 +24,8 @@ typedef std::set<size_t> HashTable; // stockage des hashes des fichiers déjà gén
       #x??    */ 
 #define parseZ3ResultRegex "OFF(\\d+).*\r\n.*([0-9a-f]{2})"
 
-// log de l'exécution : affichage sur la console ou dans la fenetre (GUI)
-#ifdef QT_DLL
-#include "fuzzwin_gui.h"
-#define LOG(x) { QString msg = QString::fromStdString(x); w->sendToLogWindow(msg); }
-
-#else
+// log de l'exécution (simple et verbeux)
 #define LOG(x) { std::cout << x; }
-#endif
-
-// mode verbeux 
 #define VERBOSE(x) { if (pGlobals->verbose) LOG(x) }
 
 // codes définissant le type d'OS pour la détermination des numéros d'appels systèmes

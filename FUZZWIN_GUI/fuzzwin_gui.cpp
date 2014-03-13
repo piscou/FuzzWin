@@ -1,234 +1,130 @@
 #include "fuzzwin.h"
 #include "solver.h"
 #include "pintoolFuncs.h"
+#include "algorithmeSearch.h"
 
-
-// Bouton de selection personnalisé
-FuzzwinButton::FuzzwinButton(QWidget *parent, const QString &text)
-    : QPushButton(text, parent),
-    _buttonStatus(false)    // non-OK par défaut
-{
-    // mise au rouge (couleur non-ok à la construction)
-    this->setStyleSheet("background-color:rgb(255,50,20)");  
-}
-
-FuzzwinButton::~FuzzwinButton() {}
-
-void FuzzwinButton::setButtonOk()
-{
-    this->setStyleSheet("background-color:rgb(100,255,100)");
-    this->_buttonStatus = true;
-    w->testGoButton();
-}
-
-void FuzzwinButton::setButtonError()
-{
-    this->setStyleSheet("background-color:rgb(255,50,20)");
-    this->_buttonStatus = false;
-    w->testGoButton();
-}
-
-bool FuzzwinButton::getStatus() const
-{
-    return (this->_buttonStatus);
-}
-
-// lignes de textes personnalisées pour accepter le "drag & drop"
-
-FuzzwinLineEdit::FuzzwinLineEdit(QWidget *parent) : QLineEdit(parent)
-{
-    // accpeter le drag, le drop, mais lecture seule
-    this->setDragEnabled(true);   
-    this->setAcceptDrops(true);
-    this->setReadOnly(true);
-    this->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
-}
-
-void FuzzwinLineEdit::dragEnterEvent(QDragEnterEvent *e)
-{
-    // n'accepter que les URLS
-    if (e->mimeData()->hasUrls()) 
-    {
-        QUrl url = e->mimeData()->urls().first();
-        if ("file" == url.scheme()) e->acceptProposedAction();
-    }
-}
-
-// initial input
-InitialInputLineEdit::InitialInputLineEdit(QWidget *parent) : FuzzwinLineEdit(parent) {}
-
-void InitialInputLineEdit::dropEvent(QDropEvent *e)
-{
-    // n'accepter que les URLS
-    if (e->mimeData()->hasUrls()) 
-    {
-        QUrl url = e->mimeData()->urls().first();
-        if ("file" == url.scheme())
-        {           
-            QFile path = url.toLocalFile();
-            if (QFileInfo(path).isDir())  e->ignore();
-            else 
-            {
-                if (path.exists())
-                {
-                    w->_selectInitialInput->setButtonOk();
-                    this->setText(path.fileName());
-                    e->acceptProposedAction();
-                }
-                else 
-                {
-                    w->_selectInitialInput->setButtonError();  
-                    this->clear();
-                }
-                this->setCursorPosition(0);
-            }
-        }
-    }
-}
-
-// target path
-TargetPathLineEdit::TargetPathLineEdit(QWidget *parent) : FuzzwinLineEdit(parent) {}
-
-void TargetPathLineEdit::dropEvent(QDropEvent *e)
-{
-    // n'accepter que les URLS
-    if (e->mimeData()->hasUrls()) 
-    {
-        QUrl url = e->mimeData()->urls().first();
-        if ("file" == url.scheme())
-        {
-            e->acceptProposedAction();
-            bool result = this->check(url.toLocalFile());
-            if (result)     w->_selectTarget->setButtonOk();
-            else            w->_selectTarget->setButtonError();
-        }
-        this->setCursorPosition(0);
-    }
-}
-
-bool TargetPathLineEdit::check(const QString &path)
-{
-    // conversion QString -> encodage local (avec prise en charge des accents..)
-    std::string filenameLocal(path.toLocal8Bit().constData());
-    bool checkResult = false;    // par défaut, le fichier n'est pas supporté
-
-    switch (getKindOfExecutable(filenameLocal))
-    {
-    case SCS_64BIT_BINARY:
-        if (pGlobals->osType < BEGIN_HOST_64BITS)
-        {
-            w->sendToLogWindow("Exécutable 64 bits non supporté sur OS 32bits");
-        }
-        else 
-        {
-            w->sendToLogWindow("Exécutable 64 bits sélectionné");
-            this->setText(path);
-            checkResult = true;
-        }
-        break;
-
-    case SCS_32BIT_BINARY:
-        w->sendToLogWindow("Exécutable 32bits sélectionné");
-        checkResult = true;
-        this->setText(path);
-        break;
-
-    default:
-        w->sendToLogWindow("Exécutable cible incompatible");  
-        break;
-    }
-    return (checkResult);
-}
-
-// resultsDir
-ResultsDirLineEdit::ResultsDirLineEdit(QWidget *parent) : FuzzwinLineEdit(parent) {}
-
-void ResultsDirLineEdit::dropEvent(QDropEvent *e)
-{
-    // n'accepter que les URLS
-    if (e->mimeData()->hasUrls()) 
-    {
-        QUrl url = e->mimeData()->urls().first();
-        QString path = url.toLocalFile();
-        QFileInfo pathInfo(path);
-        // transformation des liens symboliques en liens complets
-        if (pathInfo.isSymLink()) pathInfo = QFileInfo(pathInfo.symLinkTarget());
-
-        if ("file" == url.scheme() && pathInfo.isDir())
-        {
-            e->acceptProposedAction();
-            switch (this->check(pathInfo.absoluteFilePath()))
-            {
-            case 2: // ok => passage du bouton au vert
-                w->_selectResultsDir->setButtonOk();
-                break;
-            case 1: // erreur => passage du bouton au rouge
-                w->_selectResultsDir->setButtonError();
-                break;
-            case 0: // abandon
-                break;
-            }
-        }
-        this->setCursorPosition(0);
-    }
-}
-
-int ResultsDirLineEdit::check(const QString &dirPath)
-{
-    int checkResult = 0; // par défaut, ne rien faire
-    QDir resultsDir(dirPath);
-
-    // demander confirmation d'effacement du contenu si non vide
-    if (resultsDir.entryInfoList(QDir::NoDotAndDotDot|QDir::AllEntries).count() != 0)
-    {
-        QMessageBox::StandardButton result = QMessageBox::question(
-            this, "Confirmer l'effacement du dossier ?",
-            "Le répertoire suivant existe déjà : " + dirPath + "\n"
-            "Voulez-vous effacer son contenu avant exécution ?",
-            QMessageBox::Ok | QMessageBox::No | QMessageBox::Abort,
-            QMessageBox::No);
-            
-        // Abandon => aucun changement
-        if      (QMessageBox::Abort == result) return (checkResult);
-        // OK => effacement du dossier
-        else if (QMessageBox::Ok    == result)
-        {
-            bool isSuccess = resultsDir.removeRecursively(); // nouveauté Qt 5.0
-            isSuccess &= resultsDir.mkpath("."); 
-
-            if (isSuccess) // tout s'est bien passé
-            {
-                w->sendToLogWindow("Effacement du dossier de résultats -> Ok");
-                checkResult = 2;
-                this->setText(dirPath);     
-            }
-            else
-            {
-                w->sendToLogWindow("Effacement du dossier de résultats -> Erreur");
-                checkResult = 1;
-                this->clear();
-            }
-        }
-        // No => dossier inchangé
-        else
-        {
-            w->sendToLogWindow("Dossier de résultats sélectionné (pas d'effacement)");
-            checkResult = 2;
-            this->setText(dirPath);
-        }
-    }
-    // dossier existant et vide
-    else
-    {
-        w->sendToLogWindow("Dossier de résultats sélectionné (vide)");
-        checkResult = 2;
-        this->setText(dirPath);
-    }
-
-    return (checkResult);
-}
 
 /****** CLASSE GUI *********/
+
+FUZZWIN_GUI::FUZZWIN_GUI() : QMainWindow(nullptr),
+    _env(QProcessEnvironment::systemEnvironment()), // environnement de l'application
+    _fixedSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed) // thauteur et largeur fixes
+{  
+    this->testConfig();
+   
+    _thr = new FuzzwinThread;
+    if (!_thr) QApplication::quit();
+
+    /***********************************/
+    /***** INITIALISATION DE LA GUI ****/
+    /***********************************/
+
+    // création du widget central
+    _centralWidget = new QWidget(this);
+    _centralWidget->setSizePolicy(_fixedSizePolicy);
+
+    // création des groupes d'objets et du menu
+    initGroupConfiguration();
+    initGroupSession();
+    initGroupOptions();
+    initButtons();
+    initGroupResultats();
+    initLines();
+    initMenuBar();
+
+    // positionnement des objets sur une grille H=6, V=4
+    _gCentralLayout = new QGridLayout(_centralWidget);
+    _gCentralLayout->setContentsMargins(11, 11, 11, 11);
+    _gCentralLayout->addWidget(_groupConfiguration, 0, 0, 1, 2);
+    _gCentralLayout->addWidget(_groupSession,       1, 0, 1, 2);
+    _gCentralLayout->addWidget(_groupOptions,       2, 0, 1, 2);
+
+    _gCentralLayout->addWidget(_startButton,        3, 0, 1, 1);
+    _gCentralLayout->addWidget(_saveSessionButton,  3, 1, 1, 1);
+    _gCentralLayout->addWidget(_stopButton,         4, 0, 1, 1);
+    _gCentralLayout->addWidget(_saveConfigButton,   4, 1, 1, 1);
+    _gCentralLayout->addWidget(_quitButton,         5, 0, 1, 1);
+    _gCentralLayout->addWidget(_aboutButton,        5, 1, 1, 1);
+
+    _gCentralLayout->addWidget(_Vline,          0, 2, 6, 1);    
+    _gCentralLayout->addWidget(_groupResultats, 0, 3, 6, 1);
+
+    // affectation à la fenetre et redimension
+    this->setMenuBar(_menuBar);
+    this->setCentralWidget(_centralWidget);
+    this->resize(750, 500);
+
+    // connexion signaux/slots
+    this->connectSignalsToSlots();
+}
+
+FUZZWIN_GUI::~FUZZWIN_GUI() {}
+
+void FUZZWIN_GUI::testConfig()
+{
+    // test de la compatibilité de l'OS
+    pGlobals->osType = getNativeArchitecture();
+    if (HOST_UNKNOWN == pGlobals->osType)
+    {
+        QMessageBox::critical(nullptr, "Erreur", "OS non supporté", QMessageBox::Close);
+        QApplication::quit();
+    }
+
+    // test de la présence des DLL du pintool
+    QString exePath = QApplication::applicationDirPath();
+    _pintool_X86    = QDir::toNativeSeparators(exePath + "/fuzzwinX86.dll");
+    if (!QFile::exists(_pintool_X86))
+    {
+        QMessageBox::critical(nullptr, "Erreur", "pintool FuzzWin 32bits absent");
+        QApplication::quit();
+    }
+
+    // librairie 64bits si besoin
+    if (pGlobals->osType >= BEGIN_HOST_64BITS) 
+    {
+        _pintool_X64 = QDir::toNativeSeparators(exePath + "/fuzzwinX64.dll");
+        if (!QFile::exists(_pintool_X64))
+        {
+            QMessageBox::critical(nullptr, "Erreur", "pintool FuzzWin 64bits absent");
+            QApplication::quit();
+        }
+    }
+}
+
+void FUZZWIN_GUI::initializeEnvironment()
+{
+    // présence "normale" de PIN = via variable d'environnement "PIN_ROOT"
+    QString pinPath = _env.value("PIN_ROOT");
+    
+    // si la variable est renseignée : test de la présence des fichiers de PIN
+    if (! pinPath.isEmpty()) 
+    {
+        if (this->checkPinPath(pinPath)) 
+        {
+            _selectPin->setButtonOk();
+            testGoButton();
+        }
+    }
+
+    // présence "normale" de Z3 = via variable d'environnement "Z3_ROOT"
+    _z3Path = _env.value("Z3_ROOT");
+    
+    // si la variable est renseignée : test de la présence des fichiers de Z3
+    if (! _z3Path.isEmpty()) 
+    {
+        // ajout du séparateur, si non présent
+        if (!(_z3Path.endsWith('/') || _z3Path.endsWith('\\'))) _z3Path.append(QDir::separator());
+    
+        // chemin vers l'exécutable Z3
+        _z3Path = QDir::toNativeSeparators(_z3Path + "bin/z3.exe");
+    
+        // test de son existence
+        if (QFile::exists(_z3Path)) _selectZ3->setButtonOk();
+        else _selectZ3->setButtonError();
+
+        testGoButton();
+    }
+}
 
 void FUZZWIN_GUI::initMenuBar()
 {
@@ -442,45 +338,8 @@ void FUZZWIN_GUI::initLines()
     _Vline->setFrameShadow(QFrame::Sunken);
 }
 
-FUZZWIN_GUI::FUZZWIN_GUI() : QMainWindow(nullptr),
-    _env(QProcessEnvironment::systemEnvironment()), // environnement de l'application
-    _fixedSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed) // thauteur et largeur fixes
-{ 
-    // création du widget central
-    _centralWidget = new QWidget(this);
-    _centralWidget->setSizePolicy(_fixedSizePolicy);
-
-    // création des groupes d'objets et du menu
-    initGroupConfiguration();
-    initGroupSession();
-    initGroupOptions();
-    initButtons();
-    initGroupResultats();
-    initLines();
-    initMenuBar();
-
-    // positionnement des objets sur une grille H=6, V=4
-    _gCentralLayout = new QGridLayout(_centralWidget);
-    _gCentralLayout->setContentsMargins(11, 11, 11, 11);
-    _gCentralLayout->addWidget(_groupConfiguration, 0, 0, 1, 2);
-    _gCentralLayout->addWidget(_groupSession,       1, 0, 1, 2);
-    _gCentralLayout->addWidget(_groupOptions,       2, 0, 1, 2);
-
-    _gCentralLayout->addWidget(_startButton,        3, 0, 1, 1);
-    _gCentralLayout->addWidget(_saveSessionButton,  3, 1, 1, 1);
-    _gCentralLayout->addWidget(_stopButton,         4, 0, 1, 1);
-    _gCentralLayout->addWidget(_saveConfigButton,   4, 1, 1, 1);
-    _gCentralLayout->addWidget(_quitButton,         5, 0, 1, 1);
-    _gCentralLayout->addWidget(_aboutButton,        5, 1, 1, 1);
-
-    _gCentralLayout->addWidget(_Vline,          0, 2, 6, 1);    
-    _gCentralLayout->addWidget(_groupResultats, 0, 3, 6, 1);
-
-    // affectation à la fenetre et redimension
-    this->setMenuBar(_menuBar);
-    this->setCentralWidget(_centralWidget);
-    this->resize(750, 500);
-
+void FUZZWIN_GUI::connectSignalsToSlots()
+{
     // connexion signaux/slots
     connect(_bytesToTaintEnabled,   SIGNAL(clicked(bool)), _listOfBytesToTaint, SLOT(setEnabled(bool)));
     connect(_maxConstraintsEnabled, SIGNAL(clicked(bool)), _maxConstraints,     SLOT(setEnabled(bool)));
@@ -492,9 +351,12 @@ FUZZWIN_GUI::FUZZWIN_GUI() : QMainWindow(nullptr),
     connect(_selectTarget,          SIGNAL(clicked()),     this,                SLOT(selectTarget_clicked()));
     connect(_selectResultsDir,      SIGNAL(clicked()),     this,                SLOT(selectResultsDir_clicked()));
     connect(_startButton,           SIGNAL(clicked()),     this,                SLOT(go_clicked()));
+    connect(_stopButton,            SIGNAL(clicked()),     this,                SLOT(stop_clicked()));
+
+
+    connect(_thr, SIGNAL(sendToGui(QString)), this, SLOT(sendToLogWindow), Qt::QueuedConnection);
 }
 
-FUZZWIN_GUI::~FUZZWIN_GUI() {}
 
 void FUZZWIN_GUI::closeEvent(QCloseEvent *e)
 {
@@ -504,49 +366,8 @@ void FUZZWIN_GUI::closeEvent(QCloseEvent *e)
     e->ignore();
 }
 
-void FUZZWIN_GUI::initialize()
-{
-    // initialisation des boutons
 
-    // pour PIN : variable d'environnement "PIN_ROOT"
-    QString pinPath = _env.value("PIN_ROOT");
-    
-    // si la variable est renseignée : test de la présence des fichiers de PIN
-    if (! pinPath.isEmpty()) 
-    {
-        if (this->checkPinPath(pinPath)) 
-        {
-            this->sendToLogWindow("Répertoire de PIN : OK");
-            _selectPin->setButtonOk();
-        } 
-    }
 
-    // pour Z3 : variable d'environnement "Z3_ROOT"
-    _z3Path = _env.value("Z3_ROOT");
-    
-    // si la variable est renseignée : test de la présence des fichiers de Z3
-    if (! _z3Path.isEmpty()) 
-    {
-        // ajout du séparateur, si non présent
-        if (!(_z3Path.endsWith('/') || _z3Path.endsWith('\\'))) _z3Path.append(QDir::separator());
-    
-        // chemin vers l'exécutable Z3
-        _z3Path += "bin\\z3.exe";
-    
-        // test de son existence
-        if (QFile::exists(_z3Path))
-        {
-            this->sendToLogWindow("Répertoire de Z3 : OK");
-            _selectZ3->setButtonOk();
-        }
-        else
-        {
-            this->sendToLogWindow("solveur Z3 absent");
-            _z3Path.clear();
-            _selectZ3->setButtonError();
-        } 
-    }
-}
 
 bool FUZZWIN_GUI::checkPinPath(QString &path)
 {
@@ -559,15 +380,11 @@ bool FUZZWIN_GUI::checkPinPath(QString &path)
     }
 
     // modules 32 bits 
-    QString pin_X86       = path + "ia32\\bin\\pin.exe";
-    QString pin_X86_VmDll = path + "ia32\\bin\\pinvm.dll";
-
-    // modules 64 bits
-    QString pin_X64       = path + "intel64\\bin\\pin.exe";
-    QString pin_X64_VmDll = path + "intel64\\bin\\pinvm.dll";
+    _pinPath_X86          = QDir::toNativeSeparators(path + "ia32/bin/pin.exe");
+    QString pin_X86_VmDll = QDir::toNativeSeparators(path + "ia32/bin/pinvm.dll");
 
     // test de la présence des fichiers adéquats
-    if (!QFile::exists(pin_X86))
+    if (!QFile::exists(_pinPath_X86))
     {
         result = false;
         this->sendToLogWindow("exécutable PIN 32bits absent");
@@ -581,7 +398,11 @@ bool FUZZWIN_GUI::checkPinPath(QString &path)
     // OS 64 bits : présence obligatoire des modules 64bits
     if (pGlobals->osType >= BEGIN_HOST_64BITS) 
     {
-        if (!QFile::exists(pin_X64))
+        // modules 64 bits
+        _pinPath_X64          = QDir::toNativeSeparators(path + "intel64/bin/pin.exe");
+        QString pin_X64_VmDll = QDir::toNativeSeparators(path + "intel64/bin/pinvm.dll");
+    
+        if (!QFile::exists(_pinPath_X64))
         {
             result = false;
             this->sendToLogWindow("exécutable PIN 64bits absent");
@@ -599,7 +420,7 @@ bool FUZZWIN_GUI::checkPinPath(QString &path)
 void FUZZWIN_GUI::sendToLogWindow(const QString &msg)
 {
     QTime thisTime = QDateTime::currentDateTime().time();
-    QString fullMsg(thisTime.toString("[HH:mm:ss:zzz] : ") + msg + "\n");
+    QString fullMsg(thisTime.toString("[HH:mm:ss.zzz] : ") + msg);
     _logWindow->insertPlainText(fullMsg);
 }
 
@@ -611,6 +432,8 @@ void FUZZWIN_GUI::selectPin_clicked()
         QDir::currentPath(),
         QFileDialog::ShowDirsOnly);
 
+    if (pinPath.isNull()) return;   // bouton "cancel" sélectionné
+
     // test de la présence des fichiers indispensables pour PIN
     if (this->checkPinPath(pinPath)) 
         {
@@ -618,20 +441,26 @@ void FUZZWIN_GUI::selectPin_clicked()
             _selectPin->setButtonOk();
         }
     else _selectPin->setButtonError();
+
+    testGoButton();
 }
 
 void FUZZWIN_GUI::selectZ3_clicked()
 {
-    _z3Path = QFileDialog::getExistingDirectory(this, 
+    QString z3Path = QFileDialog::getExistingDirectory(this, 
         "Sélection du répertoire de Z3",
         QDir::currentPath(),
         QFileDialog::ShowDirsOnly);
+
+    if (z3Path.isNull()) return;    // bouton "cancel" sélectionné
+
+    _z3Path = z3Path;
 
     // ajout du séparateur, si non présent
     if (!(_z3Path.endsWith('/') || _z3Path.endsWith('\\'))) _z3Path.append(QDir::separator());
     
     // chemin vers l'exécutable Z3
-    _z3Path += "bin\\z3.exe";
+    _z3Path += "bin/z3.exe";
     
     // test de son existence
     if (QFile::exists(_z3Path))
@@ -644,6 +473,8 @@ void FUZZWIN_GUI::selectZ3_clicked()
         this->sendToLogWindow("solveur Z3 absent");
         _selectZ3->setButtonError();
     } 
+
+    testGoButton();
 }
 
 void FUZZWIN_GUI::selectInitialInput_clicked()
@@ -658,6 +489,7 @@ void FUZZWIN_GUI::selectInitialInput_clicked()
         _initialInput->setText(filename);
         _initialInput->setCursorPosition(0);
         _selectInitialInput->setButtonOk();
+        testGoButton();
     }
 }
 
@@ -674,6 +506,8 @@ void FUZZWIN_GUI::selectTarget_clicked()
         bool result = _targetPath->check(filename);
         if (result)     w->_selectTarget->setButtonOk();
         else            w->_selectTarget->setButtonError();
+
+        testGoButton();
     }
 }
 
@@ -699,6 +533,7 @@ void FUZZWIN_GUI::selectResultsDir_clicked()
         case 0: // abandon
             break;
         }
+        testGoButton();
     }
 }
 
@@ -726,9 +561,10 @@ void FUZZWIN_GUI::testGoButton()
 void FUZZWIN_GUI::go_clicked()
 {
     // récupération entrée initiale, cible et dossier de resultats
-    pGlobals->firstInputPath = convertToString(_initialInput->text());
-    pGlobals->targetPath     = convertToString(_targetPath->text());
-    pGlobals->resultDir      = convertToString(_resultsDir->text());
+    pGlobals->targetPath     = convertQStringToString(QDir::toNativeSeparators(_targetPath->text()));
+    QString firstInput       = _initialInput->text();
+    QString resultDirectory  = _resultsDir->text();
+    pGlobals->resultDir      = convertQStringToString(QDir::toNativeSeparators(resultDirectory));
 
     // récupération des options     
     pGlobals->computeScore   = _scoreEnabled->isChecked();
@@ -745,27 +581,25 @@ void FUZZWIN_GUI::go_clicked()
    
     if (_bytesToTaintEnabled->isChecked())
     {
-         pGlobals->bytesToTaint = convertToString(_listOfBytesToTaint->text());
+         pGlobals->bytesToTaint = convertQStringToString(_listOfBytesToTaint->text());
     }
     else  pGlobals->bytesToTaint = "all";
 
-    /********************************************/
-    /** création du tube nommé avec le Pintool **/
-    /********************************************/
-    if (!createNamedPipePintool())
-    {
-        this->sendToLogWindow ("Erreur de création du pipe fuzzWin");
-    }
-    else VERBOSE("Pipe Fuzzwin OK");
+    // copie du fichier initial dans le dossier de résultat (sans extension, avec le nom 'input0')
+    QFile::copy(firstInput, resultDirectory + "/input0");
+    pGlobals->firstInputPath = convertQStringToString(QDir::toNativeSeparators(resultDirectory + "/input0"));
+
+    // chemin prérempli pour le fichier de fautes (non créé pour l'instant)
+    pGlobals->faultFile = convertQStringToString(QDir::toNativeSeparators(resultDirectory + "/fault.txt"));
+
+    
   
     /**********************************************************/
     /** création du process Z3 avec redirection stdin/stdout **/ 
     /**********************************************************/
-    if (!createSolverProcess(convertToString(_z3Path)))
+    if (!createSolverProcess(convertQStringToString(_z3Path)))
     {
         this->sendToLogWindow ("erreur création processus Z3");
-        // fermer le pipe pour éviter erreurs à la prochaine tentative
-        CloseHandle(pGlobals->hPintoolPipe);
     }
     else VERBOSE("Process Z3 OK");
 
@@ -773,8 +607,32 @@ void FUZZWIN_GUI::go_clicked()
     /** Ligne de commande pour le pintool **/ 
     /***************************************/
    
-    //pGlobals->buildPinCmdLine(pin_X86, pin_X64, _pintool_X86, _pintool_X64);
+    // effacer les éventuelles données rémanentes
+    pGlobals->cmdLinePin.clear();
 
-    // désaciver le bouton "Go"
+    pGlobals->buildPinCmdLine( 
+        convertQStringToString(_pinPath_X86), convertQStringToString(_pinPath_X64), 
+        convertQStringToString(_pintool_X86), convertQStringToString(_pintool_X64));
+
+    // désactiver le bouton "Go", et activer le "Stop"
     _startButton->setDisabled(true);
+    _stopButton->setEnabled(true);
+
+    // C'EST PARTI MON KIKI
+    //this->launchFuzzing();
+    _thr->start();
+
+
+    /*************** FERMER LE PROCESSUS Z3 SINON CA VA PLANTER !!!!!!
 }
+
+void FUZZWIN_GUI::stop_clicked()
+{
+    // activer le bouton "Go", et désactiver le "Stop"
+    _startButton->setEnabled(true);
+    _stopButton->setDisabled(true);
+
+    // fermer le pipe
+    CloseHandle(pGlobals->hPintoolPipe);
+}
+

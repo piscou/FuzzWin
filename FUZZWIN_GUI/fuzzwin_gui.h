@@ -1,8 +1,11 @@
-#ifndef FUZZWIN_GUI_H
-#define FUZZWIN_GUI_H
+#pragma once
 
 #include <QtCore/QVariant>
 #include <QtCore/QProcess>
+#include <QtCore/QThread>
+#include <QtCore/QMimeData>
+#include <QtCore/QUrl>
+#include <QtCore/QFile>
 
 #include <QtWidgets/QAction>
 #include <QtWidgets/QApplication>
@@ -14,11 +17,9 @@
 #include <QtWidgets/QHBoxLayout>
 #include <QtWidgets/QHeaderView>
 #include <QtWidgets/QLabel>
-#include <QtWidgets/QLineEdit>
 #include <QtWidgets/QMainWindow>
 #include <QtWidgets/QMenu>
 #include <QtWidgets/QMenuBar>
-#include <QtWidgets/QPushButton>
 #include <QtWidgets/QSpinBox>
 #include <QtWidgets/QTabWidget>
 #include <QtWidgets/QTextEdit>
@@ -27,93 +28,20 @@
 #include <QtWidgets/QVBoxLayout>
 #include <QtWidgets/QWidget>
 #include <QtWidgets/QMainWindow>
-#include <QtGui/QDragEnterEvent>
-#include <QtGui/QDropEvent>
-#include <QtCore/QMimeData>
-#include <QtCore/QUrl>
-#include <QtCore/QFile>
-
 #include <QtWidgets/QFileDialog>
 #include <QtWidgets/QMessageBox>
 
+#include "fuzzwin_algorithm.h"
+#include "fuzzwin_widgets.h"
 
-static inline std::string convertToString(const QString &qstr)
+static inline QString convertStringToQString(const std::string &qstr)
 {
-    return (std::string(qstr.toLocal8Bit().constData()));
+    return (QString::fromLocal8Bit(qstr.c_str()));
 }
-
-// Bouton de selection personnalisé
-class FuzzwinButton : public QPushButton
-{
-    Q_OBJECT
-
-private:
-    // booléen pour tester l'état du bouton (donnée ok ou non)
-    bool _buttonStatus;
-
-public:
-    FuzzwinButton(QWidget *parent, const QString &text);
-    ~FuzzwinButton();
-
-    // bouton OK => couleur verte
-    void setButtonOk();
-    // bouton NON_ => couleur rougeatre
-    void setButtonError();
-    // status du bouton
-    bool getStatus() const;
-};
-
-// lignes de textes personnalisées pour accepter le "drag & drop"
-// seul le drag est commun, le drop dépend du type de ligne
-class FuzzwinLineEdit : public QLineEdit
-{
-    Q_OBJECT
-
-public:
-    FuzzwinLineEdit(QWidget *parent);
-protected:
-    void dragEnterEvent(QDragEnterEvent *event);
-};
-
-class InitialInputLineEdit : public FuzzwinLineEdit
-{
-    Q_OBJECT
-
-public:
-    InitialInputLineEdit(QWidget *parent);
-protected:
-    void dropEvent(QDropEvent *event);
-};
-
-class TargetPathLineEdit : public FuzzwinLineEdit
-{
-    Q_OBJECT
-
-public:
-    TargetPathLineEdit(QWidget *parent);
-    bool check(const QString &path);
-
-protected:
-    void dropEvent(QDropEvent *event);
-};
-
-class ResultsDirLineEdit : public FuzzwinLineEdit
-{
-    Q_OBJECT
-
-public:
-    ResultsDirLineEdit(QWidget *parent);
-    // 0 => abandon, 1 => erreur, 2 => ok
-    int check(const QString &dirPath);
-
-protected:
-    void dropEvent(QDropEvent *event);
-};
 
 class FUZZWIN_GUI : public QMainWindow
 {
     Q_OBJECT
-
 public:
     friend class InitialInputLineEdit;
     friend class TargetPathLineEdit;
@@ -122,16 +50,21 @@ public:
     FUZZWIN_GUI();
     ~FUZZWIN_GUI();
 
-    void initialize();  // état des boutons au démarrage
+    void initializeEnvironment();  // état des boutons au démarrage
     void sendToLogWindow(const QString &msg);
 
 private:
+    // variables d'environnement du processus   
+    QProcessEnvironment _env;    
+
+    // implémentation de l'algorithme SAGE (thread à part)
+    QThread *_fuzzwinThread;
+
     // chemin des exécutables PIN et Z3
     QString _pinPath_X86, _pinPath_X64;
     QString _pintool_X86, _pintool_X64;
     QString _z3Path;
 
-    
     // taille des widgets
     QSizePolicy _fixedSizePolicy;
 
@@ -198,13 +131,11 @@ private:
             QVBoxLayout *_vLayout2;
             QTreeWidget *_listOfInputs;
 
-    QProcessEnvironment _env;    // variables d'environnement du processus   
-
-    bool _isZ3Launched;
-
+    
+    // vérification de l'intégrité du dossier racine de PIN
     bool checkPinPath(QString &path);
     
-    // initialisation des différents groupes d'objets. 
+    // initialisation des différents groupes d'objets et connection signal/slots
     // Fonctions appelées par le constructeur
     void initMenuBar();
     void initGroupConfiguration();
@@ -213,10 +144,12 @@ private:
     void initGroupResultats();
     void initButtons();
     void initLines();
+    void connectSignalsToSlots();  
+    void testConfig(); // test de la version de l'OS et de la présence du pintool
 
     // réimplémentation de l'évènement "Close" pour demander confirmation
-    void closeEvent(QCloseEvent *e);
-
+    void closeEvent(QCloseEvent *e);    
+    
 public slots:
     void selectPin_clicked(); // selection du répertoire de PIN
     void selectZ3_clicked(); // sélection du répertoire de Z3
@@ -226,10 +159,9 @@ public slots:
     void quitFuzzwin();
 
     void go_clicked();
+    void stop_clicked();
 
     void testGoButton();
 };
 
 extern FUZZWIN_GUI *w;
-
-#endif // FUZZWIN_GUI_H

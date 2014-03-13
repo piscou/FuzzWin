@@ -50,23 +50,17 @@
     <ClCompile Include="GeneratedFiles\qrc_fuzzwin_gui.cpp">
       <Filter>Generated Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\FUZZWIN\algorithmeExpandExecution.cpp">
+    <ClCompile Include="fuzzwin_algorithm.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\FUZZWIN\check.cpp">
+    <ClCompile Include="fuzzwin_widgets.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\FUZZWIN\solver.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="GeneratedFiles\Debug\moc_fuzzwin_algorithm.cpp">
+      <Filter>Generated Files\Debug</Filter>
     </ClCompile>
-    <ClCompile Include="..\FUZZWIN\algorithmeSearch.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\FUZZWIN\initialize.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\FUZZWIN\pintoolFuncs.cpp">
-      <Filter>Source Files</Filter>
+    <ClCompile Include="GeneratedFiles\Release\moc_fuzzwin_algorithm.cpp">
+      <Filter>Generated Files\Release</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -79,27 +73,18 @@
     <CustomBuild Include="fuzzwin_gui.qrc">
       <Filter>Resource Files</Filter>
     </CustomBuild>
+    <CustomBuild Include="fuzzwin_algorithm.h">
+      <Filter>Header Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="fuzzwin_widgets.h">
+      <Filter>Header Files</Filter>
+    </CustomBuild>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GeneratedFiles\ui_fuzzwin_gui.h">
       <Filter>Generated Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\FUZZWIN\algorithmeSearch.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\FUZZWIN\check.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\FUZZWIN\CInput.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\FUZZWIN\fuzzwin.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\FUZZWIN\solver.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\FUZZWIN\algorithmeExpandExecution.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

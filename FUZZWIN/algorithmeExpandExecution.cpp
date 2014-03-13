@@ -42,14 +42,21 @@ static size_t sendNonInvertedConstraints(const std::string &formula, UINT32 boun
 
 // renvoie l'inverse de la contrainte fournie en argument
 // la contrainte originale (argument fourni) reste inchangée
-static std::string invertConstraint(std::string constraint) 
+static std::string invertConstraint(const std::string &constraint) 
 {
-    size_t pos = constraint.find("true");
+    // copie de la contrainte
+    std::string invertedConstraint(constraint);
+    size_t pos = invertedConstraint.find("true");
     
-    if (pos != std::string::npos)    constraint.replace(pos, 4, "false");   // 'true'  -> 'false' 
-    else  constraint.replace(constraint.find("false"), 5, "true");          // 'false' -> 'true'
-
-    return (constraint);
+    if (pos != std::string::npos)  // 'true'  -> 'false' 
+    {
+        invertedConstraint.replace(pos, 4, "false");   
+    }
+    else  // 'false' -> 'true'
+    {
+        invertedConstraint.replace(invertedConstraint.find("false"), 5, "true");  
+    }
+    return (invertedConstraint);
 }
 
 ListOfInputs expandExecution(CInput *pInput, HashTable &h, UINT32 *nbFautes) 
@@ -110,9 +117,9 @@ ListOfInputs expandExecution(CInput *pInput, HashTable &h, UINT32 *nbFautes)
         sendToSolver("(push 1)\n");
 
         // recherche de la fin de la ligne de la contrainte actuelle (et future précédente contrainte)
-        posLastConstraint = formula.find_first_of('\n', pos);     
+        posLastConstraint    = formula.find_first_of('\n', pos);     
         // extraction de la contrainte, et inversion
-        constraintJ = formula.substr(pos, (posLastConstraint - pos));
+        constraintJ          = formula.substr(pos, (posLastConstraint - pos));
         constraintJ_inverted = invertConstraint(constraintJ);    
 
         // envoi de la contrainte J inversée au solveur, et recherche de la solution
