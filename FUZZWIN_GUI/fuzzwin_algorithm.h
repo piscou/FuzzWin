@@ -4,6 +4,7 @@
 #include <QtCore/QTextStream>
 #include <QtWidgets/QTreeWidgetItem>
 #include <QtCore/QSet>
+#include <QtCore/QDir>
 #include <QtCore/QList>
 #include <QtCore/QCryptographicHash>
 #include <QtCore/QTimer>
@@ -65,7 +66,7 @@ public:
 
 inline bool sortCInputs(CInput* pA, CInput* pB) { return (pA->getScore() < pB->getScore()); }
 
-class FuzzwinAlgorithm : public QThread
+class FuzzwinAlgorithm : public QObject
 {
     Q_OBJECT
 
@@ -132,17 +133,16 @@ private:
 signals:
     void sendToGui(const QString &msg);
     void sendToGuiVerbose(const QString &msg);
-    
+    void newInput(CInput);
+
 public slots:
-    void outOfTimeDebug(); // fonction appelée en cas de dépassement du temps maximal
-    void      algorithmSearch(); // démarrage de l'algo
+    void    outOfTimeDebug(); // fonction appelée en cas de dépassement du temps maximal
+    void    algorithmSearch(); // démarrage de l'algo
 public:
     explicit FuzzwinAlgorithm(const QString &firstInputPath, const QString &targetPath, const QString &resultsDir);  
     ~FuzzwinAlgorithm();
 
     void buildPinCmdLine(const QString &pin_X86,     const QString &pin_X64, 
                          const QString &pintool_X86, const QString &pintool_X64);
-
-    void run();
 
 };

@@ -142,7 +142,7 @@ std::string initialize(int argc, char** argv)
     ops >> GetOpt::Option('d', "dir", pGlobals->resultDir);
 
     // option -c // --maxconstraints : nombre maximal de contraintes
-    ops >> GetOpt::Option('c', "maxconstraints", pGlobals->maxExecutionTime);
+    ops >> GetOpt::Option('c', "maxconstraints", pGlobals->maxConstraints);
     
     // option -m // --maxtime : temps maximal d'execution d'une entree
     ops >> GetOpt::Option('m', "maxtime", pGlobals->maxExecutionTime);

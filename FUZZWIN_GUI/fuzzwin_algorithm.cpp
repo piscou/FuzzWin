@@ -1,4 +1,4 @@
-﻿#include "fuzzwin_algorithm.h"
+#include "fuzzwin_algorithm.h"
 
 /*********************/
 /*** Classe CInput ***/
@@ -12,7 +12,7 @@ CInput::CInput(CInput* pFather, quint32 nb, quint32 b) : QTreeWidgetItem(pFather
 { 	
     // construction du chemin de fichier à partir de celui du père
     // nom du dossier + nouveau nom de fichier
-    _fileInfo = pFather->getFileInfo().absolutePath() + QString("input%1").arg(nb);
+    _fileInfo = pFather->getFileInfo().absolutePath() + QString("/input%1").arg(nb);
 }
 
 // constructeur spécifique 1ere entrée
@@ -33,7 +33,7 @@ QFileInfo CInput::getFileInfo() const 	   { return this->_fileInfo; }
 // renvoie le chemin du fichier concerné (format std::string)
 std::string CInput::getFilePath() const
 {
-    return (qPrintable(_fileInfo.absoluteFilePath()));
+    return (qPrintable(QDir::toNativeSeparators(_fileInfo.absoluteFilePath())));
 }
 
 // renvoie le chemin vers le fichier qui contiendra la formule SMT2
@@ -68,7 +68,7 @@ void CInput::setExceptionCode(const quint32 e) { this->_exceptionCode = e; }
 /*******************************/
 
 FuzzwinAlgorithm::FuzzwinAlgorithm(const QString &firstInputPath, const QString &targetPath, const QString &resultsDir) 
-    : QThread(), 
+    : QObject(), 
     _numberOfChilds(0), 
     _nbFautes(0),
     _regexModel(parseZ3ResultRegex, std::regex::ECMAScript),
@@ -80,6 +80,7 @@ FuzzwinAlgorithm::FuzzwinAlgorithm(const QString &firstInputPath, const QString 
     QFile::copy(firstInputPath, resultsDir + "/input0");
     // construction de la première entrée de la liste de travail
     _currentInput = new CInput(resultsDir + "/input0");   
+
     // calcul de son hash et insertion dans la liste
     QFile firstFile(firstInputPath);
     _hash.reset();
@@ -105,18 +106,18 @@ FuzzwinAlgorithm::FuzzwinAlgorithm(const QString &firstInputPath, const QString 
 FuzzwinAlgorithm::~FuzzwinAlgorithm()
 {
 // fermeture du processus Z3
-        CloseHandle(_hZ3_process); 
-        CloseHandle(_hZ3_thread);
-        // fermeture des différents tubes de communication avec Z3
-        CloseHandle(_hZ3_stdout); 	
-        CloseHandle(_hZ3_stdin);
-        CloseHandle(_hReadFromZ3);	
-        CloseHandle(_hWriteToZ3);
-        // fermeture des tubes nommés avec le pintool Fuzzwin
-        CloseHandle(_hPintoolPipe);
+    CloseHandle(_hZ3_process); 
+    CloseHandle(_hZ3_thread);
+    // fermeture des différents tubes de communication avec Z3
+    CloseHandle(_hZ3_stdout); 	
+    CloseHandle(_hZ3_stdin);
+    CloseHandle(_hReadFromZ3);	
+    CloseHandle(_hWriteToZ3);
+    // fermeture des tubes nommés avec le pintool Fuzzwin
+    CloseHandle(_hPintoolPipe);
 
-        // fermeture du timer
-        delete (_pOutOfTimeDebug);
+    // fermeture du timer
+    delete (_pOutOfTimeDebug);
 }
 
 
@@ -248,7 +249,7 @@ ListOfInputs FuzzwinAlgorithm::expandExecution()
             _hash.addData(newInputContent.c_str(), newInputContent.size());
             QByteArray insertResult = _hash.result().toHex();
             HashTable::const_iterator resultFind = _hashTable.find(insertResult);
-            if (resultFind != _hashTable.constEnd())
+            if (resultFind == _hashTable.constEnd()) // entrée non trouvée => nouvel élément
             {
                 // insertion du hash
                 _hashTable.insert(insertResult);
@@ -266,8 +267,10 @@ ListOfInputs FuzzwinAlgorithm::expandExecution()
 
                 // test du fichier de suite; si retour nul le fichier est valide, donc l'insérer dans la liste
                 DWORD checkError = debugTarget(newChild);
-                if (!checkError) result.push_back(newChild);
+                if (!checkError)  result.push_back(newChild);
                 else ++_nbFautes;
+                
+                emit newInput(*newChild);
             }	
             // le fichier a déjà été généré (hash présent ou ... collision)
             else emit sendToGuiVerbose("-> deja généré\n");
@@ -288,9 +291,18 @@ ListOfInputs FuzzwinAlgorithm::expandExecution()
 
 void FuzzwinAlgorithm::algorithmSearch() 
 {
+    // création du tube nommé avec le Pintool
+    if (!createNamedPipePintool())  emit sendToGui("Erreur de création du pipe fuzzWin\n");
+    else                            emit sendToGuiVerbose("Pipe Fuzzwin OK\n");
+    
+    // création du process Z3 avec redirection stdin/stdout **/ 
+    if (!createSolverProcess(_z3Path))  emit sendToGui("erreur création processus Z3\n");
+    else                                emit sendToGuiVerbose("Process Z3 OK\n");
+    
     // initialisation de la liste de travail avec la première entrée
     ListOfInputs workList;
     workList += _currentInput;
+    QString logMessage;
 
     /**********************/
     /** BOUCLE PRINCIPALE */
@@ -306,14 +318,17 @@ void FuzzwinAlgorithm::algorithmSearch()
         _currentInput = workList.back();
         workList.pop_back();
 
-        emit sendToGui(QString("[!] exécution de %1").arg(_currentInput->getFileInfo().fileName()));
-        emit sendToGuiVerbose(QString("(bound = %1").arg(_currentInput->getBound()));
-        if (_computeScore)
+        logMessage = QString("[!] exécution de %1").arg(_currentInput->getFileInfo().fileName());
+        if (_verbose)
         {
-            emit sendToGuiVerbose(QString(" (score = %1)").arg(_currentInput->getScore()));
+            logMessage += QString(" (bound = %1").arg(_currentInput->getBound());
+            if (_computeScore)
+            {
+                logMessage += QString(" (score = %1)").arg(_currentInput->getScore());
+            }
         }
-        
-        emit sendToGui("\n");
+        logMessage += '\n';
+        emit sendToGui(logMessage);
 
         // exécution de PIN avec cette entrée (fonction ExpandExecution)
         // et recupération d'une liste de fichiers dérivés
@@ -423,7 +438,14 @@ DWORD FuzzwinAlgorithm::debugTarget(CInput *newInput)
             emit sendToGuiVerbose(" - no crash ;(\n");
             continueDebug = false;	
             // fermeture du timer, si toujours actif
-            if (_pOutOfTimeDebug->isActive()) _pOutOfTimeDebug->stop();
+            if (_maxExecutionTime)
+            {
+                if (_pOutOfTimeDebug->isActive()) 
+                {
+                    emit sendToGuiVerbose("out of time");
+                    _pOutOfTimeDebug->stop();
+                }
+            }
             // quitter la boucle 
             break;
         }
@@ -708,7 +730,7 @@ int FuzzwinAlgorithm::createNamedPipePintool()
 // renvoie la ligne de commande complète pour l'appel du pintool
 std::string FuzzwinAlgorithm::getCmdLineFuzzwin() const
 {
-    std::string filePath = qPrintable(_currentInput->getFileInfo().absoluteFilePath());
+    std::string filePath = qPrintable(QDir::toNativeSeparators(_currentInput->getFileInfo().absoluteFilePath()));
     return (_cmdLinePin + '"' + filePath + '"'); 
 }
 
@@ -740,37 +762,4 @@ void FuzzwinAlgorithm::buildPinCmdLine(const QString &pin_X86,     const QString
                     + "\" -t \""   + std::string(qPrintable(pintool_X86))  \
                     + "\" -- \""   + _targetPath + "\" ";
     }
-}
-
-void FuzzwinAlgorithm::run() 
-{    
-    /********************************************/
-    /** création du tube nommé avec le Pintool **/
-    /********************************************/
-    if (!createNamedPipePintool())
-    {
-        emit sendToGui("Erreur de création du pipe fuzzWin\n");
-    }
-    else emit sendToGuiVerbose("Pipe Fuzzwin OK\n");
-    
-    /**********************************************************/
-    /** création du process Z3 avec redirection stdin/stdout **/ 
-    /**********************************************************/
-    if (!createSolverProcess(_z3Path))
-    {
-        emit sendToGui("erreur création processus Z3\n");
-    }
-    else emit sendToGuiVerbose("Process Z3 OK\n");
-    
-    this->exec(); // démarrage de l'évent Loop. 1er évènement => demarrage algorithme
-
-
-#if 0
-    if (nbFautes) // si une faute a été trouvée
-    { 
-        LOG("---> " + std::to_string(nbFautes) + " faute" + ((nbFautes > 1) ? "s " : " "));
-        LOG("!! consultez le fichier fault.txt <---\n");
-    }
-    else LOG("* aucune faute... *\n");
-#endif
 }

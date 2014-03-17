@@ -1,5 +1,6 @@
 #include "check.h"
 #include <sstream>
+#include <iomanip> // setw et setfill
 
 HANDLE hTimoutEvent;
 HANDLE hTimerThread;
@@ -92,13 +93,15 @@ DWORD debugTarget(CInput *pInput)
             { 
                 DWORD exceptionCode = e.u.Exception.ExceptionRecord.ExceptionCode;
                 
-                std::stringstream adressInHex;
-                adressInHex << std::hex << e.u.Exception.ExceptionRecord.ExceptionAddress;
-                
+                std::stringstream details;
+                details << "\n\tAdresse ";
+                details << std::showbase << std::hex;
+                details << (void*)e.u.Exception.ExceptionRecord.ExceptionAddress;
+                details << " code " << exceptionCode;
+
                 LOG("\n\t-------------------------------------------------\n");
                 LOG("\t@@@ EXCEPTION @@@ Fichier " + pInput->getFileName());
-                LOG("\n\tAdresse 0x" + adressInHex.str());
-                LOG(" code " + std::to_string(exceptionCode));
+                LOG(details.str());
                 LOG("\n\t-------------------------------------------------\n");
                 returnCode = exceptionCode;
                 continueDebug = false;

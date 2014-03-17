@@ -452,48 +452,57 @@ void FUZZWIN_GUI::go_clicked()
     QString resultDirectory  = QDir::toNativeSeparators(_resultsDir->text());
     QString targetPath       = QDir::toNativeSeparators(_targetPath->text());
 
-    // création du thread, avec entrée initiale, dossier de résultats et exécutable cible
-    _fuzzwinThread = new FuzzwinAlgorithm(firstInput, resultDirectory, targetPath);
+    // nouveau Thread
+    _pFuzzwinThread = new QThread;
 
-    // récupération des options     
-    _fuzzwinThread->_computeScore   = _scoreEnabled->isChecked();
-    _fuzzwinThread->_verbose        = _verboseEnabled->isChecked();
-    _fuzzwinThread->_keepFiles      = _keepfilesEnabled->isChecked();
-    _fuzzwinThread->_maxConstraints = _maxConstraintsEnabled->isChecked() ? _maxConstraints->value() : 0;
-    
+    // création de l'objet "algorithme", avec entrée initiale, dossier de résultats et exécutable cible
+    FuzzwinAlgorithm *pFuzzwinAlgo = new FuzzwinAlgorithm(firstInput, targetPath, resultDirectory);
+    // affectattion de l'objet au thread
+    pFuzzwinAlgo->moveToThread(_pFuzzwinThread);
+
+    // récupération et transmission des options     
+    pFuzzwinAlgo->_computeScore   = _scoreEnabled->isChecked();
+    pFuzzwinAlgo->_verbose        = _verboseEnabled->isChecked();
+    pFuzzwinAlgo->_keepFiles      = _keepfilesEnabled->isChecked();
+    pFuzzwinAlgo->_maxConstraints = _maxConstraintsEnabled->isChecked() ? _maxConstraints->value() : 0;
+    pFuzzwinAlgo->_osType         = _osType;
+
+
     if (_maxTimeEnabled->isChecked())
     {
         QTime maxTime = _maxTime->time();
-        _fuzzwinThread->_maxExecutionTime = (60* maxTime.minute()) + maxTime.second();
+        pFuzzwinAlgo->_maxExecutionTime = (60* maxTime.minute()) + maxTime.second();
     }
-    else  _fuzzwinThread->_maxExecutionTime = 0;
+    else  pFuzzwinAlgo->_maxExecutionTime = 0;
    
     if (_bytesToTaintEnabled->isChecked())
     {
-         _fuzzwinThread->_bytesToTaint = std::string(qPrintable(_listOfBytesToTaint->text()));
+         pFuzzwinAlgo->_bytesToTaint = std::string(qPrintable(_listOfBytesToTaint->text()));
     }
-    else  _fuzzwinThread->_bytesToTaint = "all";
+    else  pFuzzwinAlgo->_bytesToTaint = "all";
 
     // Ligne de commande pour le pintool 
-    _fuzzwinThread->buildPinCmdLine(_pinPath_X86, _pinPath_X64, _pintool_X86, _pintool_X64);
+    pFuzzwinAlgo->buildPinCmdLine(_pinPath_X86, _pinPath_X64, _pintool_X86, _pintool_X64);
 
     // chemin vers Z3
-    _fuzzwinThread->_z3Path = qPrintable(_z3Path);
+    pFuzzwinAlgo->_z3Path = qPrintable(_z3Path);
 
     // désactiver le bouton "Go", et activer le "Stop"
     _startButton->setDisabled(true);
     _stopButton->setEnabled(true);
 
     // connection des signaux du thread aux slots de la GUI
-    connect(this, SIGNAL(launchAlgorithm()), _fuzzwinThread, SLOT(algorithmSearch()), Qt::QueuedConnection);
-    connect(_fuzzwinThread, SIGNAL(sendToGui(QString)), this, SLOT(sendToLogWindow(QString)), Qt::QueuedConnection);
+    connect(this, SIGNAL(launchAlgorithm()), pFuzzwinAlgo, SLOT(algorithmSearch()));
+    connect(pFuzzwinAlgo, SIGNAL(sendToGui(QString)), this, SLOT(sendToLogWindow(QString)), Qt::QueuedConnection);
     if (_verboseEnabled)
     {
-        connect(_fuzzwinThread, SIGNAL(sendToGuiVerbose(QString)), this, SLOT(sendToLogWindow(QString)), Qt::QueuedConnection);
+        connect(pFuzzwinAlgo, SIGNAL(sendToGuiVerbose(QString)), this, SLOT(sendToLogWindow(QString)), Qt::QueuedConnection);
     }
+    connect(pFuzzwinAlgo, SIGNAL(newInput(CInput)), this, SLOT(updateInputView(CInput)));
+    connect(_pFuzzwinThread, &QThread::finished, this, &QObject::deleteLater);
 
     // C'EST PARTI MON KIKI
-    _fuzzwinThread->run();
+    _pFuzzwinThread->start();
     emit launchAlgorithm();
     sendToLogWindow("bah ca marche passs !!!\n");
 
@@ -509,7 +518,7 @@ void FUZZWIN_GUI::stop_clicked()
     _stopButton->setDisabled(true);
 
     // fermer le thread
-    _fuzzwinThread->terminate();
+    _pFuzzwinThread->terminate();
 }
 
 void FUZZWIN_GUI::checkKindOfExe(const QString &path)
@@ -619,6 +628,15 @@ void FUZZWIN_GUI::checkZ3Path(QString path)
         _selectZ3->setButtonError();
     } 
 }
+
+void FUZZWIN_GUI::updateInputView(CInput input)
+{
+    QStringList data;
+    data << QString("%1").arg(input.getBound()) << input.getFileInfo().fileName();
+    QTreeWidgetItem *newInput = new QTreeWidgetItem(_listOfInputs, data);
+    _listOfInputs->update();
+}
+
 
 void FUZZWIN_GUI::checkDir(const QString &path)
 {

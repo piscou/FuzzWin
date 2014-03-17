@@ -1,11 +1,11 @@
 #include "fuzzwin_widgets.h"
 
-// Bouton de selection personnalisé
+// Bouton de selection personnalisÃ©
 FuzzwinButton::FuzzwinButton(QWidget *parent, const QString &text)
     : QPushButton(text, parent),
-    _buttonStatus(false)    // non-OK par défaut
+    _buttonStatus(false)    // non-OK par dÃ©faut
 {
-    // mise au rouge (couleur non-ok à la construction)
+    // mise au rouge (couleur non-ok Ã  la construction)
     this->setStyleSheet("background-color:rgb(255,50,20)");  
 }
 
@@ -30,9 +30,9 @@ bool FuzzwinButton::getStatus() const
     return (this->_buttonStatus);
 }
 
-// lignes de textes personnalisées pour accepter le "drag & drop"
-// lorsqu'un texte est droppé et conforme, un signal "conforme" est émis (-> bouton au vert)
-// sinon un signal "bad" est émis (-> bouton au rouge)
+// lignes de textes personnalisÃ©es pour accepter le "drag & drop"
+// lorsqu'un texte est droppÃ© et conforme, un signal "conforme" est Ã©mis (-> bouton au vert)
+// sinon un signal "bad" est Ã©mis (-> bouton au rouge)
 
 FuzzwinLineEdit::FuzzwinLineEdit(QWidget *parent) : QLineEdit(parent)
 {

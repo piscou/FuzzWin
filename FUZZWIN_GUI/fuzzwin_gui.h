@@ -45,7 +45,7 @@ private:
     /***** PARTIE NON_GUI *****/
     
     QProcessEnvironment _env;           // variables d'environnement du processus  
-    FuzzwinAlgorithm *_fuzzwinThread;   // thread de l'algo SAGE
+    QThread *_pFuzzwinThread;   // thread de l'algo SAGE
 
     QString _pinPath_X86, _pinPath_X64; // chemin des exécutables PIN  (32/64bits)
     QString _pintool_X86, _pintool_X64; // chemin des DLL des pintools (32/64bits)
@@ -156,5 +156,6 @@ public slots:
         
     void sendToLogWindow(const QString &msg);
     
+    void updateInputView(CInput input);
     void testButtons();
 };
