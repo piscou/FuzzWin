@@ -1,29 +1,145 @@
-#include "fuzzwin_algorithm.h"
+Ôªø#include "fuzzwin_algorithm.h"
 
-FuzzwinAlgorithm::FuzzwinAlgorithm() 
-    : QObject(), _numberOfChilds(0) {}
+/*********************/
+/*** Classe CInput ***/
+/*********************/
+
+// cr√©ation du 'nb' nouvel objet d√©riv√© de l'objet 'pFather' √† la contrainte 'b'
+CInput::CInput(CInput* pFather, quint32 nb, quint32 b) : QTreeWidgetItem(pFather),
+    _bound(b), 
+    _exceptionCode(0),
+    _score(0)
+{ 	
+    // construction du chemin de fichier √† partir de celui du p√®re
+    // nom du dossier + nouveau nom de fichier
+    _fileInfo = pFather->getFileInfo().absolutePath() + QString("input%1").arg(nb);
+}
+
+// constructeur sp√©cifique 1ere entr√©e
+CInput::CInput(const QString &firstInputPath) : QTreeWidgetItem(),
+       _bound(0), 
+       _exceptionCode(0), 
+       _score(0),
+       _fileInfo(firstInputPath)  {}
+
+CInput::~CInput() {}
+
+quint32	  CInput::getBound() const         { return this->_bound; }
+quint32	  CInput::getScore() const         { return this->_score; }
+quint32	  CInput::getExceptionCode() const { return this->_exceptionCode; }
+quint32   CInput::getFileSize() const  { return static_cast<quint32>(_fileInfo.size()); }
+QFileInfo CInput::getFileInfo() const 	   { return this->_fileInfo; }
+
+// renvoie le chemin du fichier concern√© (format std::string)
+std::string CInput::getFilePath() const
+{
+    return (qPrintable(_fileInfo.absoluteFilePath()));
+}
+
+// renvoie le chemin vers le fichier qui contiendra la formule SMT2
+// associ√©e √† l'execution de cette entr√©e (option --keepfiles mise √† TRUE)
+QString CInput::getLogFilePath() const 
+{
+    return (_fileInfo.absoluteFilePath() + ".fzw");
+}
+
+// renvoie le contenu du fichier sous la forme de string
+std::string CInput::getFileContent() const
+{
+    QFile file(_fileInfo.absoluteFilePath());
+        
+    quint32 fileSize = static_cast<quint32>(file.size());
+
+    file.open(QIODevice::ReadOnly);
+    QByteArray content = file.read(file.size());
+
+    return (std::string(content, content.size()));    
+}
+
+// num√©ro de contrainte invers√©e qui a donn√© naissance √† cette entr√©e
+void CInput::setBound(const quint32 b)	      { this->_bound = b; }
+// Affectation d'un score √† cette entr√©e
+void CInput::setScore(const quint32 s)	      { this->_score = s; }
+// num√©ro d'Exception g√©n√©r√© par cette entr√©e
+void CInput::setExceptionCode(const quint32 e) { this->_exceptionCode = e; }
+
+/*******************************/
+/*** Classe FuzzwinAlgorithm ***/
+/*******************************/
+
+FuzzwinAlgorithm::FuzzwinAlgorithm(const QString &firstInputPath, const QString &targetPath, const QString &resultsDir) 
+    : QThread(), 
+    _numberOfChilds(0), 
+    _nbFautes(0),
+    _regexModel(parseZ3ResultRegex, std::regex::ECMAScript),
+    _hash(QCryptographicHash::Md5),
+    _resultDir(resultsDir),
+    _targetPath(qPrintable(targetPath))
+{
+    // copie du fichier initial dans le dossier de r√©sultat (sans extension, avec le nom 'input0')
+    QFile::copy(firstInputPath, resultsDir + "/input0");
+    // construction de la premi√®re entr√©e de la liste de travail
+    _currentInput = new CInput(resultsDir + "/input0");   
+    // calcul de son hash et insertion dans la liste
+    QFile firstFile(firstInputPath);
+    _hash.reset();
+    _hash.addData(&firstFile);
+    _hashTable.insert(_hash.result().toHex());
+
+    // chemin pr√©rempli pour le fichier de fautes (non cr√©√© pour l'instant)
+    _faultFile = resultsDir + "/fault.txt";
+
+    if (_maxExecutionTime)
+    {
+        // pr√©paration du timer pour la partie debug
+        _pOutOfTimeDebug = new QTimer;
+        _pOutOfTimeDebug->setSingleShot(true); // 1 seul d√©compte √† la fois
+        _pOutOfTimeDebug->setInterval(1000*_maxExecutionTime);
+        connect(_pOutOfTimeDebug, SIGNAL(timeout()), this, SLOT(outOfTimeDebug()));
+    }
+    else _pOutOfTimeDebug = nullptr; 
+}
 
 
-size_t FuzzwinAlgorithm::sendNonInvertedConstraints(const std::string &formula, UINT32 bound)
+// destructeur : fermeture des handles
+FuzzwinAlgorithm::~FuzzwinAlgorithm()
+{
+// fermeture du processus Z3
+        CloseHandle(_hZ3_process); 
+        CloseHandle(_hZ3_thread);
+        // fermeture des diff√©rents tubes de communication avec Z3
+        CloseHandle(_hZ3_stdout); 	
+        CloseHandle(_hZ3_stdin);
+        CloseHandle(_hReadFromZ3);	
+        CloseHandle(_hWriteToZ3);
+        // fermeture des tubes nomm√©s avec le pintool Fuzzwin
+        CloseHandle(_hPintoolPipe);
+
+        // fermeture du timer
+        delete (_pOutOfTimeDebug);
+}
+
+
+quint32 FuzzwinAlgorithm::sendNonInvertedConstraints(quint32 bound)
 {
     if (bound) 
     {
-        size_t posBeginOfLine = 0; // position du dÈbut de ligne de la contrainte 'bound'
-        size_t posEndOfLine   = 0; // position du fin de ligne de la contrainte 'bound'
+        quint32 posBeginOfLine = 0; // position du d√©but de ligne de la contrainte 'bound'
+        quint32 posEndOfLine   = 0; // position du fin de ligne de la contrainte 'bound'
     
         // recherche de la contrainte "bound" dans la formule
-        posBeginOfLine	= formula.find("(assert (= C_" + std::to_string((_Longlong) bound));
+        posBeginOfLine	= _formula.find("(assert (= C_" + std::to_string((_Longlong) bound));
         // recherche de la fin de la ligne
-        posEndOfLine	= formula.find_first_of('\n', posBeginOfLine);
-        // extraction des contraintes non inversÈes et envoi au solveur
-        sendToSolver(formula.substr(0, posEndOfLine + 1));
-        return (posEndOfLine); // position de la fin de la derniËre contrainte dans la formule
+        posEndOfLine	= _formula.find_first_of('\n', posBeginOfLine);
+        // extraction des contraintes non invers√©es et envoi au solveur
+        sendToSolver(_formula.substr(0, posEndOfLine + 1));
+        return (static_cast<quint32>(posEndOfLine)); // position de la fin de la derni√®re contrainte dans la formule
     }
     else return (0);
 }
 
 // renvoie l'inverse de la contrainte fournie en argument
-// la contrainte originale (argument fourni) reste inchangÈe
+// la contrainte originale (argument fourni) reste inchang√©e
 std::string FuzzwinAlgorithm::invertConstraint(const std::string &constraint) 
 {
     // copie de la contrainte
@@ -41,70 +157,70 @@ std::string FuzzwinAlgorithm::invertConstraint(const std::string &constraint)
     return (invertedConstraint);
 }
 
-ListOfInputs FuzzwinAlgorithm::expandExecution(CInput *pInput, HashTable &h, UINT32 *nbFautes) 
+ListOfInputs FuzzwinAlgorithm::expandExecution() 
 {  
-    ListOfInputs result;	                // liste de nouveaux objets de type CInput gÈnÈrÈes
-    UINT32	bound = pInput->getBound();     // bound du fichier actuellement ÈtudiÈ
-    size_t pos = 0, posLastConstraint = 0;  // indexs de position dans une chaine de caractËres
+    ListOfInputs result;	                 // liste de nouveaux objets de type CInput g√©n√©r√©es
+    quint32	     bound = _currentInput->getBound(); // bound du fichier actuellement √©tudi√©
+    quint32      pos = 0;
+    quint32      posLastConstraint = 0;      // indexes de position dans une chaine de caract√®res
     
-    std::string formula;                // formule fournie en sortie par le pintool
-    std::string inputContent;           // contenu du fichier ÈtudiÈ
-    std::string	constraintJ;	        // partie de formule associÈe ‡ la contrainte J
-    std::string constraintJ_inverted;   // la mÍme contrainte, inversÈe
+    std::string  inputContent;           // contenu du fichier √©tudi√©
+    std::string	 constraintJ;	        // partie de formule associ√©e √† la contrainte J
+    std::string  constraintJ_inverted;   // la m√™me contrainte, invers√©e
 
     /********************************************************/
-    /** Execution du pintool et rÈcupÈration de la formule **/
+    /** Execution du pintool et r√©cup√©ration de la formule **/
     /********************************************************/
-    formula = callFuzzwin(pInput);
-    if (formula.empty())
+    callFuzzwin(); // formule inscrite dans la variable membre
+    if (_formula.empty())
     {
-        emit sendToGuiVerbose("\tAucune formule recue du pintool !!\n");
+        emit sendToGuiVerbose("Aucune formule recue du pintool !!\n");
         return result; // aucune formule ou erreur
     }
 
-    // rÈcupÈration du nombre de contraintes dans la formule
-    pos = formula.find_last_of('@');
+    // r√©cup√©ration du nombre de contraintes dans la formule
+    pos = _formula.find_last_of('@');
     if (std::string::npos == pos) return result;
-    UINT32 nbContraintes = std::stoi(formula.substr(pos + 1));
+    quint32 nbContraintes = std::stoi(_formula.substr(pos + 1));
 
-    // si le "bound" est supÈrieur aux nombre de contraintes => aucune nouvelle entrÈe, retour
+    // si le "bound" est sup√©rieur aux nombre de contraintes => aucune nouvelle entr√©e, retour
     if (bound >= nbContraintes) 	
     {
-        VERBOSE("\tPas de nouvelles contraintes inversibles\n");
+        emit sendToGuiVerbose("Pas de nouvelles contraintes inversibles\n");
         return result;
     }
     
     /********************************************/
-    /** Traitement et rÈsolution de la formule **/
+    /** Traitement et r√©solution de la formule **/
     /********************************************/
 
-    // les contraintes de 0 ‡ bound ne seront pas inversÈes => les envoyer au solveur
-    // en retour, un index pointant vers la fin de la derniËre contrainte envoyÈe
-    posLastConstraint = sendNonInvertedConstraints(formula, bound);
+    // les contraintes de 0 √† bound ne seront pas invers√©es => les envoyer au solveur
+    // en retour, un index pointant vers la fin de la derni√®re contrainte envoy√©e
+    posLastConstraint = sendNonInvertedConstraints(bound);
     
-    // rÈcupÈration du contenu du fichier cible ÈtudiÈ
-    inputContent = pInput->getFileContent(); 
+    // r√©cup√©ration du contenu du fichier cible √©tudi√©
+    inputContent = _currentInput->getFileContent(); 
 
-    // => boucle sur les contraintes de "bound + 1" ‡ "nbContraintes" inversÈes et resolues successivement
-    for (UINT32 j = bound + 1 ; j <= nbContraintes ; ++j) 
+    // => boucle sur les contraintes de "bound + 1" √† "nbContraintes" invers√©es et resolues successivement
+    for (quint32 j = bound + 1 ; j <= nbContraintes ; ++j) 
     {	
-        VERBOSE("\tinversion contrainte " + std::to_string(j));
+        emit sendToGuiVerbose(QString(" -> inversion contrainte %1").arg(j));
             
-        // recherche de la prochaine contrainte dans la formule, ‡ partir de la position de la prÈcÈdente contrainte 
-        pos = formula.find("(assert (=", posLastConstraint);          
-        // envoi au solveur de toutes les dÈclarations avant la contrainte
-        sendToSolver(formula.substr(posLastConstraint, (pos - posLastConstraint)));
+        // recherche de la prochaine contrainte dans la formule, √† partir de la position de la pr√©c√©dente contrainte 
+        pos = _formula.find("(assert (=", posLastConstraint);          
+        // envoi au solveur de toutes les d√©clarations avant la contrainte
+        sendToSolver(_formula.substr(posLastConstraint, (pos - posLastConstraint)));
         // envoi au solveur de la commande "push 1"
-        // reserve une place sur la pile pour la prochaine dÈclaration (la contrainte inversÈe)
+        // reserve une place sur la pile pour la prochaine d√©claration (la contrainte invers√©e)
         sendToSolver("(push 1)\n");
 
-        // recherche de la fin de la ligne de la contrainte actuelle (et future prÈcÈdente contrainte)
-        posLastConstraint    = formula.find_first_of('\n', pos);     
+        // recherche de la fin de la ligne de la contrainte actuelle (et future pr√©c√©dente contrainte)
+        posLastConstraint    = _formula.find_first_of('\n', pos);     
         // extraction de la contrainte, et inversion
-        constraintJ          = formula.substr(pos, (posLastConstraint - pos));
+        constraintJ          = _formula.substr(pos, (posLastConstraint - pos));
         constraintJ_inverted = invertConstraint(constraintJ);    
 
-        // envoi de la contrainte J inversÈe au solveur, et recherche de la solution
+        // envoi de la contrainte J invers√©e au solveur, et recherche de la solution
         sendToSolver(constraintJ_inverted + '\n');
 
         if (checkSatFromSolver())	// SOLUTION TROUVEE : DEMANDER LES RESULTATS
@@ -112,12 +228,12 @@ ListOfInputs FuzzwinAlgorithm::expandExecution(CInput *pInput, HashTable &h, UIN
             std::string newInputContent(inputContent); // copie du contenu du fichier initial
             std::string solutions;
 
-            // rÈcupÈration des solutions du solveur
+            // r√©cup√©ration des solutions du solveur
             solutions = getModelFromSolver();
                 
-            // modification des octets concernÈs dans le contenu du nouveau fichier
+            // modification des octets concern√©s dans le contenu du nouveau fichier
             int tokens[2] = {1, 2};
-            std::sregex_token_iterator it (solutions.begin(), solutions.end(), pGlobals->regexModel, tokens);
+            std::sregex_token_iterator it (solutions.begin(), solutions.end(), _regexModel, tokens);
             std::sregex_token_iterator end;
             while (it != end) 
             {
@@ -127,126 +243,114 @@ ListOfInputs FuzzwinAlgorithm::expandExecution(CInput *pInput, HashTable &h, UIN
             }
 
             // calcul du hash du nouveau contenu et insertion dans la table de hachage. 
-            // Si duplicat (retour 'false'), ne pas crÈer le fichier
-            auto insertResult = h.insert(pGlobals->fileHash(newInputContent));
-            if (insertResult.second != false)
+            // Si duplicat (retour 'false'), ne pas cr√©er le fichier
+            _hash.reset();
+            _hash.addData(newInputContent.c_str(), newInputContent.size());
+            QByteArray insertResult = _hash.result().toHex();
+            HashTable::const_iterator resultFind = _hashTable.find(insertResult);
+            if (resultFind != _hashTable.constEnd())
             {
-                // fabrication du nouvel objet "fils" ‡ partir du pËre
-                CInput *newChild = new CInput(pInput, ++_numberOfChilds, j);
+                // insertion du hash
+                _hashTable.insert(insertResult);
 
-                // crÈation du fichier et insertion du contenu modifiÈ
-                std::ofstream newFile(newChild->getFileInfo(), std::ios::binary);
+                // fabrication du nouvel objet "fils" √† partir du p√®re
+                CInput *newChild = new CInput(_currentInput, ++_numberOfChilds, j);
+
+                // cr√©ation du fichier et insertion du contenu modifi√©
+                QFile newFile(newChild->getFileInfo().absoluteFilePath());
+                newFile.open(QIODevice::WriteOnly);
                 newFile.write(newInputContent.c_str(), newInputContent.size());
                 newFile.close();
 
-                VERBOSE("-> nouveau fichier " + newChild->getFileName());
+                emit sendToGuiVerbose(QString(" -> nouveau fichier %1").arg(newChild->getFileInfo().fileName()));
 
-                // test du fichier de suite; si retour nul le fichier est valide, donc l'insÈrer dans la liste
+                // test du fichier de suite; si retour nul le fichier est valide, donc l'ins√©rer dans la liste
                 DWORD checkError = debugTarget(newChild);
                 if (!checkError) result.push_back(newChild);
-                else ++*nbFautes;
+                else ++_nbFautes;
             }	
-            // le fichier a dÈj‡ ÈtÈ gÈnÈrÈ (hash prÈsent ou ... collision)
-            else VERBOSE("-> deja gÈnÈrÈ\n");
+            // le fichier a d√©j√† √©t√© g√©n√©r√© (hash pr√©sent ou ... collision)
+            else emit sendToGuiVerbose("-> deja g√©n√©r√©\n");
         }
-        // pas de solution trouvÈe par le solveur
-        else VERBOSE(" : aucune solution\n");   
+        // pas de solution trouv√©e par le solveur
+        else emit sendToGuiVerbose(" : aucune solution\n");   
        
-        // enlever la contrainte inversÈe de la pile du solveur, et remettre l'originale
+        // enlever la contrainte invers√©e de la pile du solveur, et remettre l'originale
         sendToSolver("(pop 1)\n" + constraintJ + '\n');
     } // end for
        
     // effacement de toutes les formules pour laisser une pile vierge
-    // pour le prochain fichier d'entrÈe qui sera testÈ
+    // pour le prochain fichier d'entr√©e qui sera test√©
     sendToSolver("(reset)\n");
 
     return (result);
 }
 
-
-UINT32 FuzzwinAlgorithm::algorithmeSearch() 
+void FuzzwinAlgorithm::algorithmSearch() 
 {
-    ListOfInputs workList;		// liste des fichiers ‡ traiter 
-    HashTable	 hashTable;		// table de hachage des fichiers dÈj‡ traitÈs, pour Èviter les doublons
-    CInput*		 pFirstInput;	// objet reprÈsentant l'entrÈe initiale
-    UINT32		 nbFautes = 0;	// nombre de fautes trouvÈes au cours de l'analyse
-    
-    // crÈation de l'objet reprÈsentant l'entrÈe initiale
-    QString firstFilePath(QString::fromLocal8Bit(pGlobals->firstInputPath.c_str()));
-    pFirstInput = new CInput(firstFilePath);
- 
-    // calcul du hash de la premiËre entrÈe, et insertion dans la liste des hashes
-    hashTable.insert(pGlobals->fileHash(pFirstInput->getFileContent()));
-
-    // initialisation de la liste de travail avec la premiËre entrÈe
-    workList.push_back(pFirstInput);
+    // initialisation de la liste de travail avec la premi√®re entr√©e
+    ListOfInputs workList;
+    workList += _currentInput;
 
     /**********************/
     /** BOUCLE PRINCIPALE */
     /**********************/
     while ( !workList.empty() ) 
     {
-        LOG("[" + std::to_string(workList.size()) + "] ELEMENTS DANS LA WORKLIST\n");
+        emit sendToGui(QString("[%1] ELEMENTS DANS LA WORKLIST\n").arg(workList.size()));
         
-        // tri des entrÈes selon leur score (si option activÈe)
-        if (pGlobals->computeScore) workList.sort(sortInputs);
+        // tri des entr√©es selon leur score (si option activ√©e)
+        if (_computeScore) qSort(workList.begin(), workList.end(), sortCInputs);
 
-        // rÈcupÈration et retrait du fichier ayant le meilleur score (dernier de la liste)
-        CInput* pCurrentInput = workList.back();
+        // r√©cup√©ration et retrait du fichier ayant le meilleur score (dernier de la liste)
+        _currentInput = workList.back();
         workList.pop_back();
 
-        LOG("[!] exÈcution de " + pCurrentInput->getFileName());
+        emit sendToGui(QString("[!] ex√©cution de %1").arg(_currentInput->getFileInfo().fileName()));
+        emit sendToGuiVerbose(QString("(bound = %1").arg(_currentInput->getBound()));
+        if (_computeScore)
+        {
+            emit sendToGuiVerbose(QString(" (score = %1)").arg(_currentInput->getScore()));
+        }
         
-        VERBOSE(" (bound = " + std::to_string(pCurrentInput->getBound()) + ')');
-        if (pGlobals->computeScore)
-        {
-            VERBOSE(" (score = " + std::to_string(pCurrentInput->getScore()) + ')');
-        }
-        if (pCurrentInput->parent()) 
-        {
-            VERBOSE(" (pËre = " + pCurrentInput->getFather()->getFileName() + ')');
-        }
+        emit sendToGui("\n");
 
-        LOG("\n");
+        // ex√©cution de PIN avec cette entr√©e (fonction ExpandExecution)
+        // et recup√©ration d'une liste de fichiers d√©riv√©s
+        // la table de hachage permet d'√©carter les doublons d√©j√† g√©n√©r√©s
+        ListOfInputs childInputs = expandExecution();
 
-        // exÈcution de PIN avec cette entrÈe (fonction ExpandExecution)
-        // et recupÈration d'une liste de fichiers dÈrivÈs
-        // la table de hachage permet d'Ècarter les doublons dÈj‡ gÈnÈrÈs
-        auto childInputs = expandExecution(pCurrentInput, hashTable, &nbFautes);
-
-        if (!childInputs.size())  LOG("\t pas de nouveaux fichiers\n")  
-        else   LOG("\t " + std::to_string(childInputs.size()) + " nouveau(x) fichier(s)\n");
+        // v√©rification de la pr√©sence de nouveaux fichiers, via la taille de la liste
+        quint32 listSize = childInputs.size();
+        if (listSize) emit sendToGui(QString(" -> %1 nouveau(x) fichier(s)\n").arg(listSize));
+        else          emit sendToGui(" -> pas de nouveaux fichiers\n");
 
         // insertion des fichiers dans la liste
-        workList.insert(workList.cbegin(), childInputs.cbegin(), childInputs.cend());
+        workList += childInputs;
 
        // effacement de l'objet si pas d'enfant et s'il est "sain"
-        if (!pCurrentInput->getExceptionCode() && !pCurrentInput->childCount())
+        if (_currentInput->getExceptionCode() && !_currentInput->childCount())
         {
-            delete (pCurrentInput);
+            // si pas d'option 'keepfiles' effacer physiquement le fichier
+            if (!_keepFiles) QFile::remove(toQString(_currentInput->getFilePath()));
+            delete (_currentInput);
         }
     }
-    return (nbFautes);
 }
 
-DWORD WINAPI FuzzwinAlgorithm::timerThread(LPVOID lpParam)
+void FuzzwinAlgorithm::outOfTimeDebug()
 {
-    // handle du processus ‡ monitorer, passÈ en argument
-    HANDLE hProcess = reinterpret_cast<HANDLE>(lpParam);
+    // v√©rification que le processus est toujours actif. si tel est le cas => destruction
+    DWORD exitCode = 0;
+    BOOL status = GetExitCodeProcess(_hDebugProcess, &exitCode);
 
-    // Attente du temps imparti, ou du signal envoyÈ par le thread principal
-    // si timeout atteint, terminer le processus de debuggage
-    DWORD result = WaitForSingleObject(_hTimoutEvent, (DWORD) (pGlobals->maxExecutionTime * 1000));
-
-    if (WAIT_TIMEOUT == result) TerminateProcess(hProcess, 0);    // revoir le code de fin ???
-  
-    return (result);
+    if (STILL_ACTIVE == exitCode) TerminateProcess(_hDebugProcess, 0);    // revoir le code de fin ???
 }
 
-// cette fonction teste si l'entrÈe fait planter le programme
-DWORD FuzzwinAlgorithm::debugTarget(CInput *pInput) 
+// cette fonction teste si l'entr√©e fait planter le programme
+DWORD FuzzwinAlgorithm::debugTarget(CInput *newInput) 
 {
-    // Execution de la cible en mode debug pour rÈcupÈrer la cause et l'emplacement de l'erreur
+    // Execution de la cible en mode debug pour r√©cup√©rer la cause et l'emplacement de l'erreur
     STARTUPINFO         si; 
     PROCESS_INFORMATION pi;
     DEBUG_EVENT         e;
@@ -256,43 +360,29 @@ DWORD FuzzwinAlgorithm::debugTarget(CInput *pInput)
     ZeroMemory(&e,  sizeof(e));
     si.cb = sizeof(si);
     
-    std::string cmdLineDebug(pInput->getCmdLineDebug());	
+    std::string cmdLineDebug(getCmdLineDebug(newInput));	
     DWORD returnCode    = 0; 
     bool  continueDebug = true;
     
     BOOL bSuccess = CreateProcess(
         nullptr,            // passage des arguments par ligne de commande
         (LPSTR) cmdLineDebug.c_str(),
-        nullptr, nullptr,   // attributs de processus et de thread par dÈfaut
-        FALSE,              // pas d'hÈritage des handles
+        nullptr, nullptr,   // attributs de processus et de thread par d√©faut
+        FALSE,              // pas d'h√©ritage des handles
         DEBUG_ONLY_THIS_PROCESS | CREATE_NO_WINDOW, // mode DEBUG, pas de fenetres
-        nullptr, nullptr,   // Environnement et repertoire de travail par dÈfaut
-        &si, &pi);          // Infos en entrÈe et en sortie
+        nullptr, nullptr,   // Environnement et repertoire de travail par d√©faut
+        &si, &pi);          // Infos en entr√©e et en sortie
     
     if (!bSuccess)
     {
-        VERBOSE("erreur createProcess Debug\n");
-        return 0; // fin de la procÈdure prÈmaturÈment
+        emit sendToGuiVerbose("erreur createProcess Debug\n");
+        return 0; // fin de la proc√©dure pr√©matur√©ment
     }
+    // stockage du handle du processus
+    _hDebugProcess = pi.hProcess;
 
-    // creation d'un thread "timer" pour stopper le debuggage au bout du temps spÈcifiÈ
-    if (pGlobals->maxExecutionTime)
-    {
-        _hTimerThread = CreateThread(
-            nullptr, // attributs de sÈcuritÈ par dÈfaut
-            0,       // taille de pile par defaut
-            this->timerThread,  // nom de la fonction du thread
-            pi.hProcess,    // argument ‡ transmettre : le handle du processus surveillÈ
-            0,              // attributs de creation par dÈfaut
-            nullptr);       // pas besoin du threadId de ce thread
-
-        // crÈation de l'Èvenement de fin de debuggage ‡ cause du temps
-        _hTimoutEvent = CreateEvent( 
-            nullptr,  // attributs de sÈcuritÈ par dÈfaut
-            TRUE,     // evenement gÈrÈ manuellement
-            FALSE,    // Ètat initial non signalÈ
-            nullptr); // evenement anonyme
-    }
+    // timer pour stopper le debuggage au bout du temps sp√©cifi√©
+    if (_maxExecutionTime) _pOutOfTimeDebug->start();
 
     /**********************/
     /* DEBUT DU DEBUGGAGE */
@@ -302,7 +392,7 @@ DWORD FuzzwinAlgorithm::debugTarget(CInput *pInput)
         // si erreur dans le debuggage : tout stopper et quitter la boucle
         if (!WaitForDebugEvent(&e, INFINITE)) 
         {
-            VERBOSE("erreur WaitDebugEvent\n");
+            emit sendToGuiVerbose("erreur WaitDebugEvent\n");
             continueDebug = false;
             break; 
         }
@@ -311,28 +401,29 @@ DWORD FuzzwinAlgorithm::debugTarget(CInput *pInput)
         switch (e.dwDebugEventCode) 
         { 
         // = exception (sauf cas particulier du breakpoint)
-        // en particulier, le breakpoint sera dÈclenchÈ ‡ la premiËre instruction
+        // en particulier, le breakpoint sera d√©clench√© √† la premi√®re instruction
         case EXCEPTION_DEBUG_EVENT:
             if (e.u.Exception.ExceptionRecord.ExceptionCode != EXCEPTION_BREAKPOINT) 
             { 
                 DWORD exceptionCode = e.u.Exception.ExceptionRecord.ExceptionCode;
                 UINT64 exceptionAddress = (UINT64) e.u.Exception.ExceptionRecord.ExceptionAddress;
-                QString adressInHex = QString("%1").arg(exceptionAddress, 0, 16);
                 
-                LOG("\n\t-------------------------------------------------\n");
-                LOG("\t@@@ EXCEPTION @@@ Fichier " + pInput->getFileName());
-                LOG("\n\tAdresse 0x" + qPrintable(adressInHex));
-                LOG(" code " + std::to_string(exceptionCode));
-                LOG("\n\t-------------------------------------------------\n");
+                emit sendToGui("-------------------------------------------------\n");
+                emit sendToGui(QString("@@@ EXCEPTION @@@ Fichier %1\n").arg(_currentInput->getFileInfo().fileName()));
+                emit sendToGui(QString("Adresse 0x%1").arg(exceptionAddress, 0, 16));
+                emit sendToGui(QString(" code %1").arg(exceptionCode));
+                emit sendToGui("-------------------------------------------------\n");
                 returnCode = exceptionCode;
                 continueDebug = false;
             }
             break;
         // = fin du programme. Il s'agit soit la fin normale
-        // soit la fin provoquÈ par le thread "gardien du temps"
+        // soit la fin provoqu√© par le thread "gardien du temps"
         case EXIT_PROCESS_DEBUG_EVENT:
-            VERBOSE(" - no crash ;(\n");
+            emit sendToGuiVerbose(" - no crash ;(\n");
             continueDebug = false;	
+            // fermeture du timer, si toujours actif
+            if (_pOutOfTimeDebug->isActive()) _pOutOfTimeDebug->stop();
             // quitter la boucle 
             break;
         }
@@ -340,58 +431,54 @@ DWORD FuzzwinAlgorithm::debugTarget(CInput *pInput)
         ContinueDebugEvent(e.dwProcessId, e.dwThreadId, DBG_CONTINUE);
     }
 
-    // signaler la fin du debug. Si le timer est toujours actif, cela le libËrera
-    SetEvent(_hTimoutEvent);
-    // fermeture des handles du programme dÈbuggÈ
+    // fermeture des handles du programme d√©bugg√©
     CloseHandle(pi.hProcess); 
     CloseHandle(pi.hThread);
-    // fermeture du handle du thread "gardien du temps"
-    if (pGlobals->maxExecutionTime) CloseHandle(_hTimerThread);
 
-    // en cas d'exception levÈe, enregistrer l'erreur
+
+    // en cas d'exception lev√©e, enregistrer l'erreur
     if (returnCode) 
     {
-        // enregistrement de l'erreur dans le fichier des fautes
-        // ouverture en mode "app(end)"
-        std::ofstream fault(pGlobals->faultFile, std::ios::app);
-        fault << pInput->getFilePath();
-        fault << " Exception n∞ " << std::hex << returnCode << std::dec << std::endl;
-        fault.close();
+        // enregistrement de l'erreur dans le fichier des fautes, ouvert en mode "append"
+        QFile faultFile(_faultFile);
+        faultFile.open(QIODevice::Append | QIODevice::Text);
+        QTextStream fault(&faultFile);
+        fault << _faultFile << QString(" Exception n¬∞%1\n").arg(returnCode, 0, 16);
+        faultFile.close();
 
         // enregistrer le code d'erreur dans l'objet
-        pInput->setExceptionCode(returnCode);
+        _currentInput->setExceptionCode(returnCode);
     }
 
     return (returnCode);
 }
 
-
-
-int sendArgumentsToPintool(const std::string &command)
+int FuzzwinAlgorithm::sendArgumentsToPintool(const std::string &command)
 {
     DWORD commandLength = static_cast<DWORD>(command.size());
-    DWORD cbWritten = 0;
+    DWORD cbWritten     = 0;
 
-    BOOL fSuccess = WriteFile(pGlobals->hPintoolPipe, 
+    BOOL fSuccess = WriteFile(_hPintoolPipe, 
         command.c_str(), 
         commandLength, 
         &cbWritten, 
         NULL);
 
-    // si tout n'a pas ÈtÈ Ècrit ou erreur : le signaler
-    if (!fSuccess || cbWritten != commandLength)	
+    // si tout n'a pas √©t√© √©crit ou erreur : le signaler
+    if (!fSuccess || (cbWritten != commandLength))	
     {   
-        LOG("erreur envoi arguments au Pintool\n");
+        emit sendToGui("erreur envoi arguments au Pintool\n");
         return (EXIT_FAILURE);   // erreur
     }
     else return (EXIT_SUCCESS);  // OK
 }
 
-std::string callFuzzwin(CInput* pInput) 
+void FuzzwinAlgorithm::callFuzzwin() 
 {
     // ligne de commande pour appel de PIN avec l'entree etudiee
-    std::string cmdLine(pInput->getCmdLineFuzzwin()); 
-    std::string smtFormula;
+    std::string cmdLine(getCmdLineFuzzwin()); 
+    // mise √† z√©ro de la formule
+    _formula.erase();
   
     STARTUPINFO si;
     PROCESS_INFORMATION pi;
@@ -413,12 +500,10 @@ std::string callFuzzwin(CInput* pInput)
         /***********************/
         /** CONNEXION AU PIPE **/
         /***********************/
-        BOOL fSuccess = ConnectNamedPipe(pGlobals->hPintoolPipe, NULL);
+        BOOL fSuccess = ConnectNamedPipe(_hPintoolPipe, NULL);
         if (!fSuccess && GetLastError() != ERROR_PIPE_CONNECTED) 
         {	
-            LOG("erreur de connexion au pipe FuzzWin, GLE=");
-            LOG(std::to_string(GetLastError()) + '\n');
-            return (smtFormula); // formule vide
+            emit sendToGui(QString("erreur de connexion au pipe FuzzWin, GLE=%1\n").arg(GetLastError()));
         }
         
         /************************************/
@@ -428,47 +513,46 @@ std::string callFuzzwin(CInput* pInput)
         int resultOfSend;
         // 0) Option ici = 'taint'
         resultOfSend = sendArgumentsToPintool("taint");
-        // 1) chemin vers l'entrÈe ÈtudiÈe
-        resultOfSend = sendArgumentsToPintool(pInput->getFilePath());
+        // 1) chemin vers l'entr√©e √©tudi√©e
+        resultOfSend = sendArgumentsToPintool(_currentInput->getFilePath());
         // 2) nombre maximal de contraintes (TODO)
-        resultOfSend = sendArgumentsToPintool(std::to_string(pGlobals->maxConstraints));
+        resultOfSend = sendArgumentsToPintool(std::to_string(_maxConstraints));
         // 3) temps limite d'execution en secomdes
-        resultOfSend = sendArgumentsToPintool(std::to_string(pGlobals->maxExecutionTime));
-        // 4) offset des entrees ‡ etudier
-        resultOfSend = sendArgumentsToPintool(pGlobals->bytesToTaint);
+        resultOfSend = sendArgumentsToPintool(std::to_string(_maxExecutionTime));
+        // 4) offset des entrees √† etudier
+        resultOfSend = sendArgumentsToPintool(_bytesToTaint);
         // 5) type d'OS hote
-        resultOfSend = sendArgumentsToPintool(std::to_string(pGlobals->osType));
+        resultOfSend = sendArgumentsToPintool(std::to_string(_osType));
 
         /********************************************************/
         /** ATTENTE DE L'ARRIVEE DES DONNEES DEPUIS LE PINTOOL **/
         /********************************************************/
-        char buffer[512]; // buffer de rÈcupÈration des donnÈes
+        char buffer[512]; // buffer de r√©cup√©ration des donn√©es
         DWORD cbBytesRead = 0; 
 
         // lecture successive de blocs de 512 octets 
         // et construction progressive de la formule
         do 
         { 
-            fSuccess = ReadFile( 
-                pGlobals->hPintoolPipe,  // pipe handle 
-                &buffer[0],    // buffer to receive reply 
+            fSuccess = ReadFile(_hPintoolPipe,  // pipe handle 
+                &buffer[0],     // buffer to receive reply 
                 512,            // size of buffer 
                 &cbBytesRead,   // number of bytes read 
                 NULL);          // not overlapped 
  
             if ( ! fSuccess && (GetLastError() != ERROR_MORE_DATA) )  break; 
-            // ajout des donnÈes lues au resultat
-            smtFormula.append(&buffer[0], cbBytesRead);
+            // ajout des donn√©es lues au resultat
+            _formula.append(&buffer[0], cbBytesRead);
 
         } while (!fSuccess);  // repetition si ERROR_MORE_DATA 
 
         // deconnexion du pipe
-        DisconnectNamedPipe(pGlobals->hPintoolPipe);
+        DisconnectNamedPipe(_hPintoolPipe);
 
         // attente de la fermeture de l'application
         WaitForSingleObject(pi.hProcess, INFINITE);
         
-        // recupÈration du code de retour du pintool
+        // recup√©ration du code de retour du pintool
         // (NON ENCORE IMPLEMENTE)
         DWORD exitCode = 0;
         GetExitCodeProcess(pi.hProcess, &exitCode);
@@ -478,125 +562,82 @@ std::string callFuzzwin(CInput* pInput)
         CloseHandle(pi.hThread);
 
         // si option 'keepfiles' : sauvegarde de la formule (extension .fzw)
-        if (pGlobals->keepFiles) 
+        if (_keepFiles) 
         {
-            std::ofstream ofs(pInput->getLogFile());
-            ofs << infoHeader;                  // entete (version pin Z3 etc)
-            ofs << "; Fichier instrumentÈ : ";  // fichier d'entree etudiÈ
-            ofs << pInput->getFileName() << std::endl;  
-            ofs << smtFormula;                  // formule brute smt2
-            ofs.close();
+            QFile formulaFile(_currentInput->getLogFilePath());
+            formulaFile.open(QIODevice::WriteOnly | QIODevice::Text);
+            QTextStream formulaStream(&formulaFile);
+            formulaStream << infoHeader.c_str();         // entete (version pin Z3 etc)
+            formulaStream << QString("; Fichier instrument√© : %1\n").arg(_currentInput->getFileInfo().fileName()); // fichier d'entree etudi√©
+            formulaStream <<  _formula.c_str();       // formule brute smt2
+            formulaFile.close();
         }
     }	
-    else
-    {
-        VERBOSE("erreur process FuzzWin" + std::to_string(GetLastError()) + '\n');
-    }
-    return (smtFormula); // retour de la formule SMT2
+    else emit sendToGuiVerbose(QString("erreur process FuzzWin GLE=%1\n").arg(GetLastError()));
 }
 
-
-
-void FuzzwinAlgorithm::launch() 
+bool FuzzwinAlgorithm::sendToSolver(const std::string &data) 
 {
-    
-    /********************************************/
-    /** crÈation du tube nommÈ avec le Pintool **/
-    /********************************************/
-    if (!createNamedPipePintool())
-    {
-        this->sendToLogWindow ("Erreur de crÈation du pipe fuzzWin");
-    }
-    else VERBOSE("Pipe Fuzzwin OK");
-    
-    /**********************************************************/
-    /** crÈation du process Z3 avec redirection stdin/stdout **/ 
-    /**********************************************************/
-    if (!createSolverProcess(convertQStringToString(_z3Path)))
-    {
-        this->sendToLogWindow ("erreur crÈation processus Z3");
-    }
-    else VERBOSE("Process Z3 OK");
-    
-    
-    UINT32 nbFautes = algorithmeSearch();
-
-    LOG("\n******************************\n");
-    LOG("* ---> FIN DE L'ANALYSE <--- *\n");
-    LOG("******************************\n");
-
-    if (nbFautes) // si une faute a ÈtÈ trouvÈe
-    { 
-        LOG("---> " + std::to_string(nbFautes) + " faute" + ((nbFautes > 1) ? "s " : " "));
-        LOG("!! consultez le fichier fault.txt <---\n");
-    }
-    else LOG("* aucune faute... *\n");
-}
-
-
-bool sendToSolver(const std::string &data) 
-{
-    // envoi des donnÈes au solveur
+    // envoi des donn√©es au solveur
     DWORD cbWritten;	
-    if (!WriteFile(pGlobals->hWriteToZ3, data.c_str(), (DWORD) data.size(), &cbWritten, NULL)) 
+    if (!WriteFile(_hWriteToZ3, data.c_str(), (DWORD) data.size(), &cbWritten, NULL)) 
     {
        return false;
     }
     else return true;
 }
 
-bool checkSatFromSolver()
+bool FuzzwinAlgorithm::checkSatFromSolver()
 {
-    char bufferRead[32] = {0}; // 32 caractËres => large, tres large
+    char bufferRead[32] = {0}; // 32 caract√®res => large, tres large
     DWORD nbBytesRead = 0;
-    bool result = false;    // par dÈfaut pas de rÈponse du solveur
+    bool result = false;    // par d√©faut pas de r√©ponse du solveur
     
     sendToSolver("(check-sat)\n");
-    Sleep(10);
+    Sleep(10); // pour permettre l'√©criture des r√©sultats
 
-    // lecture des donnÈes dans le pipe (1 seule ligne)
-    BOOL fSuccess = ReadFile(pGlobals->hReadFromZ3, bufferRead, 32, &nbBytesRead, NULL);
+    // lecture des donn√©es dans le pipe (1 seule ligne)
+    BOOL fSuccess = ReadFile(_hReadFromZ3, bufferRead, 32, &nbBytesRead, NULL);
     
-    if (!fSuccess)  LOG("erreur de lecture de la reponse du solveur\n")
-    else 
+    if (fSuccess)  
     {
         std::string bufferString(bufferRead);
         if ("sat" == bufferString.substr(0,3)) result = true;
     }
+    else emit sendToGui("erreur de lecture de la reponse du solveur\n");
 
     return result;
 } 
 
-std::string getModelFromSolver()
+std::string FuzzwinAlgorithm::getModelFromSolver()
 {
-    char bufferRead[BUFFER_SIZE] = {0}; // buffer de reception des donnÈes du solveur
+    char bufferRead[128] = {0}; // buffer de reception des donn√©es du solveur
     std::string result;
     DWORD nbBytesRead = 0;
  
     sendToSolver("(get-model)\n");
 
-    // lecture des donnÈes dans le pipe
+    // lecture des donn√©es dans le pipe
     while (1)
     {
-        BOOL fSuccess = ReadFile(pGlobals->hReadFromZ3, bufferRead, BUFFER_SIZE, &nbBytesRead, NULL);
+        BOOL fSuccess = ReadFile(_hReadFromZ3, bufferRead, 128, &nbBytesRead, NULL);
         if( !fSuccess) 
         {
-            LOG("erreur de lecture de la rÈponse du solveur\n");
+            emit sendToGui("erreur de lecture de la r√©ponse du solveur\n");
             break;
         }
         else result.append(bufferRead, nbBytesRead);
         
-        // si les derniers caactËres sont )) alors fin du modele
-        // mÈthode un peu 'tricky' de savoir ou cela se termine, mais ca fonctionne !!!
+        // si les derniers caact√®res sont )) alors fin du modele
+        // m√©thode un peu 'tricky' de savoir ou cela se termine, mais ca fonctionne !!!
        std::string last6chars = result.substr(result.size() - 6, 6);
        if (")\r\n)\r\n" == last6chars) break; 
     }
-    return result;
+    return (result);
 } 
 
-
-// Creaation du process Z3, en redirigeant ses entrÈes/sorties standard via des pipes
-bool createSolverProcess(const std::string &solverPath) 
+// Cr√©ation du process Z3, en redirigeant ses entr√©es/sorties standard via des pipes
+bool FuzzwinAlgorithm::createSolverProcess(const std::string &solverPath) 
 {
     SECURITY_ATTRIBUTES saAttr; 
     PROCESS_INFORMATION piProcInfo; 
@@ -610,21 +651,21 @@ bool createSolverProcess(const std::string &solverPath)
     // INITIALISATION DE PROCESSINFO
     ZeroMemory(&piProcInfo, sizeof(PROCESS_INFORMATION));
 
-    // 1) handle de lecture, 2) handle d'Ècriture pour STDOUT de Z3. 
-    // 3) handle de lecture, 4) handle d'Ècriture pour STDIN de Z3.
-    if ( ! CreatePipe(&pGlobals->hReadFromZ3, &pGlobals->hZ3_stdout, &saAttr, 0) )	return false;
-    if ( ! CreatePipe(&pGlobals->hZ3_stdin, &pGlobals->hWriteToZ3, &saAttr, 0) )	return false;
+    // 1) handle de lecture, 2) handle d'√©criture pour STDOUT de Z3. 
+    // 3) handle de lecture, 4) handle d'√©criture pour STDIN de Z3.
+    if ( ! CreatePipe(&_hReadFromZ3, &_hZ3_stdout, &saAttr, 0) )	return false;
+    if ( ! CreatePipe(&_hZ3_stdin,   &_hWriteToZ3, &saAttr, 0) )	return false;
 
-    // Forcer le non-hÈritage des handles
-    if ( ! SetHandleInformation(pGlobals->hReadFromZ3, HANDLE_FLAG_INHERIT, 0))	return false;
-    if ( ! SetHandleInformation(pGlobals->hWriteToZ3, HANDLE_FLAG_INHERIT, 0) )	return false;
+    // Forcer le non-h√©ritage des handles
+    if ( ! SetHandleInformation(_hReadFromZ3, HANDLE_FLAG_INHERIT, 0))	return false;
+    if ( ! SetHandleInformation(_hWriteToZ3,  HANDLE_FLAG_INHERIT, 0) )	return false;
 
     // INITIALISATION DE STARTUPINFO . 
     ZeroMemory(&siStartInfo, sizeof(STARTUPINFO) );
     siStartInfo.cb			 = sizeof(STARTUPINFO); 
-    siStartInfo.hStdError	 = pGlobals->hZ3_stdout;
-    siStartInfo.hStdOutput	 = pGlobals->hZ3_stdout;
-    siStartInfo.hStdInput	 = pGlobals->hZ3_stdin;
+    siStartInfo.hStdError	 = _hZ3_stdout;
+    siStartInfo.hStdOutput	 = _hZ3_stdout;
+    siStartInfo.hStdInput	 = _hZ3_stdin;
     siStartInfo.dwFlags		|= STARTF_USESTDHANDLES;
 
     std::string z3CmdLine(solverPath + " /smt2 /in");
@@ -641,11 +682,95 @@ bool createSolverProcess(const std::string &solverPath)
     { 
         return false;
     }
-    // sauvegarde du handle de l'exÈcutable
-    pGlobals->hZ3_process = piProcInfo.hProcess;
-    pGlobals->hZ3_thread  = piProcInfo.hThread;
+    // sauvegarde du handle de l'ex√©cutable
+    _hZ3_process = piProcInfo.hProcess;
+    _hZ3_thread  = piProcInfo.hThread;
 
     // configuration de Z3 (production de modeles, logique QF-BV, etc...)
     sendToSolver(solverConfig);
-    return	true;	// tout s'est bien passÈ
+    return	true;	// tout s'est bien pass√©
+}
+
+int FuzzwinAlgorithm::createNamedPipePintool()
+{
+    _hPintoolPipe = CreateNamedPipe("\\\\.\\pipe\\fuzzwin",	
+        PIPE_ACCESS_DUPLEX,	// acc√®s en lecture/√©criture 
+        PIPE_TYPE_MESSAGE | PIPE_READMODE_MESSAGE | PIPE_WAIT, // mode message, bloquant
+        1,		// une seule instance
+        4096,	// buffer de sortie 
+        4096,	// buffer d'entr√©e
+        0,		// time-out du client = defaut
+        NULL);	// attributs de securit√© par defaut
+
+    return (INVALID_HANDLE_VALUE != _hPintoolPipe);
+}
+
+// renvoie la ligne de commande compl√®te pour l'appel du pintool
+std::string FuzzwinAlgorithm::getCmdLineFuzzwin() const
+{
+    std::string filePath = qPrintable(_currentInput->getFileInfo().absoluteFilePath());
+    return (_cmdLinePin + '"' + filePath + '"'); 
+}
+
+// renvoie la ligne de commande compl√®te pour l'execution de la cible en mode debug
+std::string FuzzwinAlgorithm::getCmdLineDebug(const CInput *pInput) const
+{
+    std::string filePath = qPrintable(pInput->getFileInfo().absoluteFilePath());
+    return ('"' + _targetPath + "\" \"" + filePath + '"'); 
+}
+
+void FuzzwinAlgorithm::buildPinCmdLine(const QString &pin_X86,     const QString &pin_X64, 
+                                       const QString &pintool_X86, const QString &pintool_X64) 
+{
+    // si OS 32 bits, pas la peine de sp√©cifier les modules 64bits
+    if (_osType < BEGIN_HOST_64BITS) 
+    {
+        /* $(pin_X86) -t $(pintool_X86) -- $(targetFile) %INPUT% (ajout√© a chaque fichier test√©) */
+        _cmdLinePin =  '"'        + std::string(qPrintable(pin_X86))         \
+                     + "\" -t \"" + std::string(qPrintable(pintool_X86))     \
+                     + "\" -- \"" + _targetPath + "\" ";
+    }
+    else
+    {
+        /* $(pin_X86) -p64 $(pin_X64) -t64 $(pintool_X64) -t $(pintool_X86) 
+        -- $(targetFile) %INPUT% (ajout√© a chaque fichier test√©) */
+        _cmdLinePin = '"'          + std::string(qPrintable(pin_X86))      \
+                    + "\" -p64 \"" + std::string(qPrintable(pin_X64))      \
+                    + "\" -t64 \"" + std::string(qPrintable(pintool_X64))  \
+                    + "\" -t \""   + std::string(qPrintable(pintool_X86))  \
+                    + "\" -- \""   + _targetPath + "\" ";
+    }
+}
+
+void FuzzwinAlgorithm::run() 
+{    
+    /********************************************/
+    /** cr√©ation du tube nomm√© avec le Pintool **/
+    /********************************************/
+    if (!createNamedPipePintool())
+    {
+        emit sendToGui("Erreur de cr√©ation du pipe fuzzWin\n");
+    }
+    else emit sendToGuiVerbose("Pipe Fuzzwin OK\n");
+    
+    /**********************************************************/
+    /** cr√©ation du process Z3 avec redirection stdin/stdout **/ 
+    /**********************************************************/
+    if (!createSolverProcess(_z3Path))
+    {
+        emit sendToGui("erreur cr√©ation processus Z3\n");
+    }
+    else emit sendToGuiVerbose("Process Z3 OK\n");
+    
+    this->exec(); // d√©marrage de l'√©vent Loop. 1er √©v√®nement => demarrage algorithme
+
+
+#if 0
+    if (nbFautes) // si une faute a √©t√© trouv√©e
+    { 
+        LOG("---> " + std::to_string(nbFautes) + " faute" + ((nbFautes > 1) ? "s " : " "));
+        LOG("!! consultez le fichier fault.txt <---\n");
+    }
+    else LOG("* aucune faute... *\n");
+#endif
 }

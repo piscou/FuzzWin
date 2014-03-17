@@ -3,9 +3,6 @@
 #include <QtCore/QVariant>
 #include <QtCore/QProcess>
 #include <QtCore/QThread>
-#include <QtCore/QMimeData>
-#include <QtCore/QUrl>
-#include <QtCore/QFile>
 
 #include <QtWidgets/QAction>
 #include <QtWidgets/QApplication>
@@ -27,44 +24,36 @@
 #include <QtWidgets/QTreeWidget>
 #include <QtWidgets/QVBoxLayout>
 #include <QtWidgets/QWidget>
-#include <QtWidgets/QMainWindow>
 #include <QtWidgets/QFileDialog>
-#include <QtWidgets/QMessageBox>
 
-#include "fuzzwin_algorithm.h"
+#include "globals.h"
+#include "fuzzwin_algorithm.h"  // classe fuzzwinThread
 #include "fuzzwin_widgets.h"
-
-static inline QString convertStringToQString(const std::string &qstr)
-{
-    return (QString::fromLocal8Bit(qstr.c_str()));
-}
 
 class FUZZWIN_GUI : public QMainWindow
 {
     Q_OBJECT
+
 public:
-    friend class InitialInputLineEdit;
-    friend class TargetPathLineEdit;
-    friend class ResultsDirLineEdit;
-    
     FUZZWIN_GUI();
     ~FUZZWIN_GUI();
 
     void initializeEnvironment();  // état des boutons au démarrage
-    void sendToLogWindow(const QString &msg);
+
 
 private:
-    // variables d'environnement du processus   
-    QProcessEnvironment _env;    
+    /***** PARTIE NON_GUI *****/
+    
+    QProcessEnvironment _env;           // variables d'environnement du processus  
+    FuzzwinAlgorithm *_fuzzwinThread;   // thread de l'algo SAGE
 
-    // implémentation de l'algorithme SAGE (thread à part)
-    QThread *_fuzzwinThread;
+    QString _pinPath_X86, _pinPath_X64; // chemin des exécutables PIN  (32/64bits)
+    QString _pintool_X86, _pintool_X64; // chemin des DLL des pintools (32/64bits)
+    QString _z3Path;                    // chemin vers Z3
 
-    // chemin des exécutables PIN et Z3
-    QString _pinPath_X86, _pinPath_X64;
-    QString _pintool_X86, _pintool_X64;
-    QString _z3Path;
+    OSTYPE _osType;     // type d'OS Natif (version de Windows + archi 32/64)
 
+    /***** PARTIE GUI *****/
     // taille des widgets
     QSizePolicy _fixedSizePolicy;
 
@@ -131,10 +120,7 @@ private:
             QVBoxLayout *_vLayout2;
             QTreeWidget *_listOfInputs;
 
-    
-    // vérification de l'intégrité du dossier racine de PIN
-    bool checkPinPath(QString &path);
-    
+
     // initialisation des différents groupes d'objets et connection signal/slots
     // Fonctions appelées par le constructeur
     void initMenuBar();
@@ -149,19 +135,26 @@ private:
 
     // réimplémentation de l'évènement "Close" pour demander confirmation
     void closeEvent(QCloseEvent *e);    
-    
+ 
+signals:
+    void launchAlgorithm();
+
 public slots:
     void selectPin_clicked(); // selection du répertoire de PIN
     void selectZ3_clicked(); // sélection du répertoire de Z3
     void selectInitialInput_clicked(); // sélection de l'entrée initiale
     void selectTarget_clicked();       // sélection du programme cible
     void selectResultsDir_clicked();   // sélection du répertoire de résultats
-    void quitFuzzwin();
-
     void go_clicked();
     void stop_clicked();
-
-    void testGoButton();
+    void quitFuzzwin();
+    
+    void checkPinPath(QString path);  // vérification de l'intégrité du dossier racine de PIN
+    void checkZ3Path(QString path);
+    void checkKindOfExe(const QString &path); // vérification du type d'exécutable sélectionné
+    void checkDir(const QString &path); // vérification du dossier de résultats (effacement si besoin)
+        
+    void sendToLogWindow(const QString &msg);
+    
+    void testButtons();
 };
-
-extern FUZZWIN_GUI *w;

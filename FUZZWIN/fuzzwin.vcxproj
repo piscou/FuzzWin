@@ -183,6 +183,7 @@
     <ClInclude Include="initialize.h" />
     <ClInclude Include="pintoolFuncs.h" />
     <ClInclude Include="solver.h" />
+    <ClInclude Include="utilities.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="algorithmeExpandExecution.cpp" />

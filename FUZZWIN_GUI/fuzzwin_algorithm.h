@@ -1,128 +1,148 @@
 #pragma once
-#include <QtCore/QObject>
+#include <QtCore/QThread>
 #include <QtCore/QFileInfo>
+#include <QtCore/QTextStream>
 #include <QtWidgets/QTreeWidgetItem>
-#include "fuzzwin.h"
+#include <QtCore/QSet>
+#include <QtCore/QList>
+#include <QtCore/QCryptographicHash>
+#include <QtCore/QTimer>
+
+
+#include <process.h>
+#include <cstdint>  // uint8_t etc...	
+#include <regex>
+
+#include "utilities.hpp" // getKindOfExe, OS_TYPE, getNativeArchitecture, commun avec la ligne de commande
+
 
 class CInput;
 class FuzzwinAlgorithm;
 
-typedef std::list<CInput*>  ListOfInputs;
+typedef QList<CInput*>          ListOfInputs;
+typedef QSet<QByteArray>        HashTable;
+
+/* solutions fournies par le solveur sont du type
+   define OFF?? (_BitVec 8) 
+      #x??    */ 
+#define parseZ3ResultRegex "OFF(\\d+).*\r\n.*([0-9a-f]{2})"
+
+static inline QString toQString(const std::string &qstr)
+{
+    return (QString::fromLocal8Bit(qstr.c_str()));
+}
 
 class CInput : public QTreeWidgetItem
 {
 private:
-    UINT32	  _bound;	     // numéro de contrainte inversée qui a mené à la création du fichier
-    UINT32	  _exceptionCode; // code d'erreur engendré par le fichier. 0 si aucun
-    QFileInfo _fileInfo;  // chemin vers le fichier
-    UINT32    _score;     // score de l'entrée (couverture de code)
+    quint32	  _bound;	      // numéro de contrainte inversée qui a mené à la création du fichier
+    quint32	  _exceptionCode; // code d'erreur engendré par le fichier. 0 si aucun
+    QFileInfo _fileInfo;      // chemin vers le fichier
+    quint32    _score;        // score de l'entrée (couverture de code)
 
 public:
     // création du 'nb' nouvel objet dérivé de l'objet 'pFather' à la contrainte 'b'
-    CInput(CInput* pFather, UINT64 nb, UINT32 b) : QTreeWidgetItem(pFather),
-        _bound(b), 
-        _exceptionCode(0),
-        _score(0)
-    { 	
-        // construction du chemin de fichier à partir de celui du père
-        // nom du dossier + nouveau nom de fichier
-        _fileInfo = pFather->getFileInfo().absolutePath() + QString("input%1").arg(nb);
-    }
-
+    CInput(CInput* pFather, quint32 nb, quint32 b);
     // constructeur spécifique 1ere entrée
-    CInput(const QString &firstInputPath) : QTreeWidgetItem(),
-       _bound(0), 
-       _exceptionCode(0), 
-       _score(0),
-       _fileInfo(firstInputPath)  {}
+    CInput(const QString &firstInputPath);
 
-    ~CInput() 
-    {   
-        // effacement du fichier du disque si l'option est déactivée
-        if (!pGlobals->keepFiles) QFile::remove(_fileInfo.filePath());
-    }
+    ~CInput();
 
-    // Accesseurs renvoyant les membres privés de la classe
-    UINT32	getBound() const         { return this->_bound; }
-    UINT32	getScore() const         { return this->_score; }
-    UINT32	getExceptionCode() const { return this->_exceptionCode; }
-    QFileInfo getFileInfo() const 	 { return this->_fileInfo; }
+    quint32	  getBound() const;  
+    quint32	  getScore() const; 
+    quint32	  getExceptionCode() const;
+    quint32   getFileSize() const;
+    QFileInfo getFileInfo() const;
 
-    // numéro de contrainte inversée qui a donné naissance à cette entrée
-    void setBound(const UINT32 b)	{ this->_bound = b; }
-    // Affectation d'un score à cette entrée
-    void setScore(const UINT32 s)	{ this->_score = s; }
-    // numéro d'Exception généré par cette entrée
-    void setExceptionCode(const UINT32 e)	{ this->_exceptionCode = e; }
-
-    // renvoie la taille de l'entrée en octets
-    UINT32 getFileSize() const
-    {
-        return static_cast<UINT32>(_fileInfo.size());
-    }
-
-    // renvoie le chemin vers le fichier qui contiendra la formule SMT2
-    // associée à l'execution de cette entrée (option --keepfiles mise à TRUE)
-    std::string getLogFile() const 
-    {
-        QString logFileName(_fileInfo.absoluteFilePath() + ".fzw");
-        return (qPrintable(logFileName));
-    }
-
-    // renvoie le contenu du fichier sous la forme de string
-    std::string getFileContent() const
-    {
-        QFile file(_fileInfo.absoluteFilePath());
-        
-        UINT32 fileSize = static_cast<UINT32>(file.size());
-
-        file.open(QIODevice::ReadOnly);
-        QByteArray content = file.read(file.size());
-
-        return (std::string(content, content.size()));    
-    }
-
-    // renvoie la ligne de commande complète pour l'appel du pintool
-    std::string getCmdLineFuzzwin() const
-    {
-        std::string filePath = qPrintable(_fileInfo.absoluteFilePath());
-        return (pGlobals->cmdLinePin + '"' + filePath + '"'); 
-    }
-
-    // renvoie la ligne de commande complète pour l'execution de la cible en mode debug
-    std::string getCmdLineDebug() const
-    {
-        std::string filePath = qPrintable(_fileInfo.absoluteFilePath());
-        return ('"' + pGlobals->targetPath + "\" \"" + filePath + '"'); 
-    }
+    std::string getFilePath() const;
+    QString     getLogFilePath() const; 
+    std::string getFileContent() const;
+    
+    void setBound(const quint32 b);
+    void setScore(const quint32 s);
+    void setExceptionCode(const quint32 e);
 };
 
-inline bool sortInputs(CInput* pA, CInput* pB) { return (pA->getScore() < pB->getScore()); }
+inline bool sortCInputs(CInput* pA, CInput* pB) { return (pA->getScore() < pB->getScore()); }
 
-
-
-class FuzzwinAlgorithm : public QObject
+class FuzzwinAlgorithm : public QThread
 {
     Q_OBJECT
 
-private:
-    UINT32 _numberOfChilds;	// numérotation des fichiers dérivés
-    HANDLE _hTimoutEvent;
-    HANDLE _hTimerThread;
+public: // initialisation à la construction du thread, et récup du nombre de fautes à la fin
 
-    size_t       sendNonInvertedConstraints(const std::string &formula, UINT32 bound);
+    QString     _resultDir;         // dossier de résultats
+    QString     _faultFile;         // fichier texte retracant les fautes trouvées
+    std::string _targetPath;        // exécutable fuzzé
+    std::string _bytesToTaint;      // intervalles d'octets à surveiller
+    std::string _z3Path;            // chemin vers le solveur Z3
+
+    std::string _formula;           // formule retournée par le pintool
+
+    std::string _cmdLinePin;	    // ligne de commande du pintool, pré-rédigée
+    quint32     _nbFautes;          // nombre de fautes trouvées au cours de l'analyse
+
+    bool    _keepFiles;         // les fichiers sont gardés dans le dossier de resultat
+    bool    _computeScore;      // option pour calculer le score de chaque entrée
+    bool    _verbose;           // mode verbeux
+    
+    quint32  _maxExecutionTime;  // temps maximal d'execution 
+    quint32  _maxConstraints;    // nombre maximal de contraintes à récupérer
+
+    OSTYPE _osType;             // type d'OS natif
+
+private:
+    HANDLE _hZ3_process;	// handle du process Z3
+    HANDLE _hZ3_thread;	// handle du thread Z3
+    HANDLE _hZ3_stdout;	// handle du pipe correspondant à la sortie de Z3(= son stdout)
+    HANDLE _hZ3_stdin;	// handle du pipe correspondant à l'entrée de Z3 (= son stdin)
+    HANDLE _hReadFromZ3;	// handle pour lire les résultats de Z3
+    HANDLE _hWriteToZ3;	// handle pour envoyer des données vers Z3
+    HANDLE _hPintoolPipe; // handle du named pipe avec le pintool Fuzzwin
+    HANDLE _hDebugProcess;   // handle du programme en cours de déboggage
+
+    quint32    _numberOfChilds;	// numérotation des fichiers dérivés
+    
+    HashTable          _hashTable;
+    QCryptographicHash _hash;
+
+    QTimer *_pOutOfTimeDebug;
+
+    CInput          *_currentInput; // entrée en cours de test
+    const std::regex _regexModel; // pour parser les resultats du solveur
+
+// méthodes privées 
+    quint32      sendNonInvertedConstraints(quint32 bound);
     std::string  invertConstraint(const std::string &constraint);
-    ListOfInputs expandExecution(CInput *pInput, HashTable &h, UINT32 *nbFautes);
-    UINT32       algorithmeSearch(); 
-    DWORD        debugTarget(CInput *pInput);
-    DWORD WINAPI timerThread(LPVOID lpParam);
+    ListOfInputs expandExecution();
+ 
+    DWORD        debugTarget(CInput *newInput);
+    int          sendArgumentsToPintool(const std::string &command);
+    void         callFuzzwin();
+    bool         sendToSolver(const std::string &data);
+    bool         checkSatFromSolver();
+    std::string  getModelFromSolver();
+    bool         createSolverProcess(const std::string &solverPath);
+    int          createNamedPipePintool();
+    // renvoie la ligne de commande complète pour l'appel du pintool avec l'entrée actuelle
+    std::string  getCmdLineFuzzwin() const;
+    // renvoie la ligne de commande complète pour l'execution de la cible en mode debug
+    std::string  getCmdLineDebug(const CInput *pInput) const;
 
 signals:
     void sendToGui(const QString &msg);
     void sendToGuiVerbose(const QString &msg);
     
+public slots:
+    void outOfTimeDebug(); // fonction appelée en cas de dépassement du temps maximal
+    void      algorithmSearch(); // démarrage de l'algo
 public:
-    FuzzwinAlgorithm();
-    void launch();
+    explicit FuzzwinAlgorithm(const QString &firstInputPath, const QString &targetPath, const QString &resultsDir);  
+    ~FuzzwinAlgorithm();
+
+    void buildPinCmdLine(const QString &pin_X86,     const QString &pin_X64, 
+                         const QString &pintool_X86, const QString &pintool_X64);
+
+    void run();
 
 };
