@@ -45,7 +45,7 @@ FUZZWIN_GUI::FUZZWIN_GUI() : QMainWindow(nullptr),
     // affectation à la fenetre et redimension
     this->setMenuBar(_menuBar);
     this->setCentralWidget(_centralWidget);
-    this->resize(750, 500);
+    this->resize(700, 500);
 
     // connexion signaux/slots
     this->connectSignalsToSlots();
@@ -190,8 +190,11 @@ void FUZZWIN_GUI::initGroupResultats()
     _worklistSize->setReadOnly(true);
     _worklistSize->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
     _worklistSize->setButtonSymbols(QAbstractSpinBox::NoButtons);    
-    _worklistSize->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+    _worklistSize->setSizePolicy(_fixedSizePolicy);
     
+    _saveLog = new QPushButton("Sauvegarder Log");
+    _saveLog->setSizePolicy(_fixedSizePolicy);
+
     _labelElapsedTime = new QLabel("Temps écoulé", _groupResultats);
     _labelElapsedTime->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
     _elapsedTime      = new QTimeEdit(_groupResultats);
@@ -199,7 +202,7 @@ void FUZZWIN_GUI::initGroupResultats()
     _elapsedTime->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
     _elapsedTime->setReadOnly(true);
     _elapsedTime->setButtonSymbols(QAbstractSpinBox::NoButtons);
-    _elapsedTime->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+    _elapsedTime->setSizePolicy(_fixedSizePolicy);
 
     _labelInitialInput = new QLabel("Entrée initiale",_groupResultats);
     _labelInitialInput->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
@@ -226,6 +229,9 @@ void FUZZWIN_GUI::initGroupResultats()
 
     _logTab    = new QWidget();
     _logWindow = new QTextEdit(_logTab);
+    // changement de la police => courier
+    _logWindow->setFont(QFont("Lucida console", 8));
+    _logWindow->setReadOnly(true);
     _hLayout2  = new QHBoxLayout(_logTab);
     _hLayout2->setContentsMargins(11, 11, 11, 11);
     _hLayout2->addWidget(_logWindow);
@@ -233,21 +239,23 @@ void FUZZWIN_GUI::initGroupResultats()
 
     _entriesTab   = new QWidget();    
     _listOfInputs = new QTreeWidget(_entriesTab);
+    _listOfInputs->setFont(QFont("Lucida console", 8));
     _listOfInputs->setColumnCount(4);
     _listOfInputs->setSortingEnabled(true);
-    _listOfInputs->setFont(QFont("Times New Roman", 9));
     _listOfInputs->setAcceptDrops(false);    
+
     QStringList columnNames;
     columnNames << "Nom" << "Contraintes marquées" << "Dont inversées" << "Fautes";
     _listOfInputs->setHeaderLabels(columnNames);
+      
+    QTreeWidgetItem *firstInput = new QTreeWidgetItem(columnNames);
+    _listOfInputs->addTopLevelItem(firstInput);
+    
     for (int i = 0 ; i < _listOfInputs->columnCount() ; ++i)
     {
         _listOfInputs->resizeColumnToContents(i);
-    }
-        
-    QTreeWidgetItem *firstInput = new QTreeWidgetItem(columnNames);
-    _listOfInputs->addTopLevelItem(firstInput);
-        
+    } 
+
     _vLayout2     = new QVBoxLayout(_entriesTab);
     _vLayout2->setContentsMargins(11, 11, 11, 11);
     _vLayout2->addWidget(_listOfInputs);
@@ -273,7 +281,9 @@ void FUZZWIN_GUI::initGroupResultats()
     _gLayout2->addWidget(_labelResultsDir,   3, 0, 1, 1);
     _gLayout2->addWidget(_resultsDir,        3, 1, 1, 3);
     
-    _gLayout2->addWidget(_Tabs,              4, 0, 1, 4);
+    _gLayout2->addWidget(_Tabs,              4, 0, 1, 4); 
+    
+    _gLayout2->addWidget(_saveLog,           5, 0, 1, 4, Qt::AlignCenter);
 }
     
 void FUZZWIN_GUI::initButtons()
@@ -340,6 +350,8 @@ void FUZZWIN_GUI::connectSignalsToSlots()
     connect(_targetPath,   SIGNAL(newTargetDropped(QString)), this, SLOT(checkKindOfExe(QString)));
     connect(_resultsDir,   SIGNAL(newDirDropped(QString)),    this, SLOT(checkDir(QString)));
 
+    // autoscroll de la fenetre de log
+    connect(_logWindow, SIGNAL(textChanged()), this, SLOT(autoScrollLogWindow()));
     // bouton GO FUZZING !!
     connect(_startButton, SIGNAL(clicked()), this, SLOT(go_clicked()));
     
@@ -356,9 +368,18 @@ void FUZZWIN_GUI::closeEvent(QCloseEvent *e)
 
 void FUZZWIN_GUI::sendToLogWindow(const QString &msg)
 {
-    QTime thisTime = QDateTime::currentDateTime().time();
-    QString fullMsg(thisTime.toString("[HH:mm:ss.zzz] : ") + msg);
+    QString fullMsg(QDateTime::currentDateTime().time().toString("HH:mm:ss.zzz %1").arg(msg));
+    // s'assurer que le curseur est bien à la dernière ligne...
+    _logWindow->moveCursor(QTextCursor::End);
     _logWindow->insertPlainText(fullMsg);
+}
+
+void FUZZWIN_GUI::sendToLogWindowRed(const QString &msg)
+{
+    QString fullMsg(QDateTime::currentDateTime().time().toString("HH:mm:ss.zzz %1").arg(msg));
+    _logWindow->setTextColor(QColor(Qt::red));
+    _logWindow->insertPlainText(fullMsg);
+    _logWindow->setTextColor(QColor(Qt::black));
 }
 
 void FUZZWIN_GUI::selectPin_clicked()
@@ -456,55 +477,56 @@ void FUZZWIN_GUI::go_clicked()
     _pFuzzwinThread = new QThread;
 
     // création de l'objet "algorithme", avec entrée initiale, dossier de résultats et exécutable cible
-    FuzzwinAlgorithm *pFuzzwinAlgo = new FuzzwinAlgorithm(firstInput, targetPath, resultDirectory);
+    _pFuzzwinAlgo = new FuzzwinAlgorithm(firstInput, targetPath, resultDirectory);
     // affectattion de l'objet au thread
-    pFuzzwinAlgo->moveToThread(_pFuzzwinThread);
+    _pFuzzwinAlgo->moveToThread(_pFuzzwinThread);
 
     // récupération et transmission des options     
-    pFuzzwinAlgo->_computeScore   = _scoreEnabled->isChecked();
-    pFuzzwinAlgo->_verbose        = _verboseEnabled->isChecked();
-    pFuzzwinAlgo->_keepFiles      = _keepfilesEnabled->isChecked();
-    pFuzzwinAlgo->_maxConstraints = _maxConstraintsEnabled->isChecked() ? _maxConstraints->value() : 0;
-    pFuzzwinAlgo->_osType         = _osType;
+    _pFuzzwinAlgo->_computeScore   = _scoreEnabled->isChecked();
+    _pFuzzwinAlgo->_verbose        = _verboseEnabled->isChecked();
+    _pFuzzwinAlgo->_keepFiles      = _keepfilesEnabled->isChecked();
+    _pFuzzwinAlgo->_maxConstraints = _maxConstraintsEnabled->isChecked() ? _maxConstraints->value() : 0;
+    _pFuzzwinAlgo->_osType         = _osType;
 
 
     if (_maxTimeEnabled->isChecked())
     {
         QTime maxTime = _maxTime->time();
-        pFuzzwinAlgo->_maxExecutionTime = (60* maxTime.minute()) + maxTime.second();
+        _pFuzzwinAlgo->_maxExecutionTime = (60* maxTime.minute()) + maxTime.second();
     }
-    else  pFuzzwinAlgo->_maxExecutionTime = 0;
+    else  _pFuzzwinAlgo->_maxExecutionTime = 0;
    
     if (_bytesToTaintEnabled->isChecked())
     {
-         pFuzzwinAlgo->_bytesToTaint = std::string(qPrintable(_listOfBytesToTaint->text()));
+         _pFuzzwinAlgo->_bytesToTaint = std::string(qPrintable(_listOfBytesToTaint->text()));
     }
-    else  pFuzzwinAlgo->_bytesToTaint = "all";
+    else  _pFuzzwinAlgo->_bytesToTaint = "all";
 
     // Ligne de commande pour le pintool 
-    pFuzzwinAlgo->buildPinCmdLine(_pinPath_X86, _pinPath_X64, _pintool_X86, _pintool_X64);
+    _pFuzzwinAlgo->buildPinCmdLine(_pinPath_X86, _pinPath_X64, _pintool_X86, _pintool_X64);
 
     // chemin vers Z3
-    pFuzzwinAlgo->_z3Path = qPrintable(_z3Path);
+    _pFuzzwinAlgo->_z3Path = qPrintable(_z3Path);
 
     // désactiver le bouton "Go", et activer le "Stop"
     _startButton->setDisabled(true);
     _stopButton->setEnabled(true);
 
     // connection des signaux du thread aux slots de la GUI
-    connect(this, SIGNAL(launchAlgorithm()), pFuzzwinAlgo, SLOT(algorithmSearch()));
-    connect(pFuzzwinAlgo, SIGNAL(sendToGui(QString)), this, SLOT(sendToLogWindow(QString)), Qt::QueuedConnection);
-    if (_verboseEnabled)
+    connect(this, SIGNAL(launchAlgorithm()), _pFuzzwinAlgo, SLOT(algorithmSearch()));
+    connect(_pFuzzwinAlgo, SIGNAL(sendToGui(QString)), this, SLOT(sendToLogWindow(QString)), Qt::QueuedConnection);
+    if (_verboseEnabled->isChecked())
     {
-        connect(pFuzzwinAlgo, SIGNAL(sendToGuiVerbose(QString)), this, SLOT(sendToLogWindow(QString)), Qt::QueuedConnection);
+        connect(_pFuzzwinAlgo, SIGNAL(sendToGuiVerbose(QString)), this, SLOT(sendToLogWindow(QString)), Qt::QueuedConnection);
     }
-    connect(pFuzzwinAlgo, SIGNAL(newInput(CInput)), this, SLOT(updateInputView(CInput)));
-    connect(_pFuzzwinThread, &QThread::finished, this, &QObject::deleteLater);
+    connect(_pFuzzwinAlgo, SIGNAL(newInput(CInput)), this, SLOT(updateInputView(CInput)));
+    connect(_pFuzzwinAlgo, SIGNAL(sendNbFautes(quint32)), this, SLOT(algoFinished(quint32)));
+
+    connect(_pFuzzwinThread, SIGNAL(finished()), _pFuzzwinAlgo, SLOT(deleteLater()));
 
     // C'EST PARTI MON KIKI
     _pFuzzwinThread->start();
     emit launchAlgorithm();
-    sendToLogWindow("bah ca marche passs !!!\n");
 
     //emit sendToGui("\n******************************\n");
     //emit sendToGui("* ---> FIN DE L'ANALYSE <--- *\n");
@@ -518,7 +540,7 @@ void FUZZWIN_GUI::stop_clicked()
     _stopButton->setDisabled(true);
 
     // fermer le thread
-    _pFuzzwinThread->terminate();
+    //_pFuzzwinThread->terminate();
 }
 
 void FUZZWIN_GUI::checkKindOfExe(const QString &path)
@@ -573,13 +595,13 @@ void FUZZWIN_GUI::checkPinPath(QString path)
     // test de la présence des fichiers adéquats
     if (!QFile::exists(_pinPath_X86))
     {
-        this->sendToLogWindow("exécutable PIN 32bits absent");
+        this->sendToLogWindow("exécutable PIN 32bits absent\n");
 
         goodNess &= false;
     }
     if (!QFile::exists(pin_X86_VmDll))
     {
-        this->sendToLogWindow("librairie PIN_VM 32bits absente");
+        this->sendToLogWindow("librairie PIN_VM 32bits absente\n");
         goodNess &= false;
     }
 
@@ -592,19 +614,23 @@ void FUZZWIN_GUI::checkPinPath(QString path)
     
         if (!QFile::exists(_pinPath_X64))
         {
-            sendToLogWindow("exécutable PIN 64bits absent");
+            sendToLogWindow("exécutable PIN 64bits absent\n");
             goodNess &= false;
         }
         if (!QFile::exists(pin_X64_VmDll))
         {
-            sendToLogWindow("librairie PIN_VM 64bits absente");
+            sendToLogWindow("librairie PIN_VM 64bits absente\n");
             goodNess &= false;
         }
     }
     // si tout est bon (aucun 'false' rencontré) => bouton au vert
     // sinon bouton au rouge
-    if (goodNess) _selectPin->setButtonOk();
-    else          _selectPin->setButtonError();
+    if (goodNess) 
+    {
+        sendToLogWindow("Répertoire de PIN : OK\n");
+        _selectPin->setButtonOk();
+    }
+    else  _selectPin->setButtonError();
 }
 
 void FUZZWIN_GUI::checkZ3Path(QString path)
@@ -618,13 +644,13 @@ void FUZZWIN_GUI::checkZ3Path(QString path)
     // test de son existence
     if (QFile::exists(path))
     {
-        sendToLogWindow("Répertoire de Z3 : OK");
+        sendToLogWindow("Répertoire de Z3 : OK\n");
         _z3Path = path;
         _selectZ3->setButtonOk();
     }
     else
     {
-        sendToLogWindow("solveur Z3 absent");
+        sendToLogWindow("solveur Z3 absent\n");
         _selectZ3->setButtonError();
     } 
 }
@@ -636,7 +662,6 @@ void FUZZWIN_GUI::updateInputView(CInput input)
     QTreeWidgetItem *newInput = new QTreeWidgetItem(_listOfInputs, data);
     _listOfInputs->update();
 }
-
 
 void FUZZWIN_GUI::checkDir(const QString &path)
 {
@@ -691,3 +716,29 @@ void FUZZWIN_GUI::checkDir(const QString &path)
     }
     _resultsDir->setCursorPosition(0);
 }
+
+void FUZZWIN_GUI::algoFinished(quint32 nbFautes)
+{
+    if (!nbFautes)
+    {
+        QMessageBox::information(this, "Fin de l'opération", "Aucune faute trouvée", QMessageBox::Ok);
+    }
+    else
+    {
+        QMessageBox::critical(this, "Fin de l'opération", 
+            QString("%1 faute(s) trouvée(s)").arg(nbFautes), QMessageBox::Ok);
+    }
+    // arret de l'eventloop du thread
+    _pFuzzwinThread->quit();
+    _pFuzzwinThread->wait();    
+    
+    // activer le bouton "Go", et désactiver le "Stop"
+    _startButton->setEnabled(true);
+    _stopButton->setDisabled(true);
+}
+
+void FUZZWIN_GUI::autoScrollLogWindow()
+{
+    _logWindow->verticalScrollBar()->setValue(_logWindow->verticalScrollBar()->maximum());
+}
+

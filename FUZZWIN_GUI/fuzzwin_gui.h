@@ -25,6 +25,7 @@
 #include <QtWidgets/QVBoxLayout>
 #include <QtWidgets/QWidget>
 #include <QtWidgets/QFileDialog>
+#include <QtWidgets/QScrollBar>
 
 #include "globals.h"
 #include "fuzzwin_algorithm.h"  // classe fuzzwinThread
@@ -44,8 +45,9 @@ public:
 private:
     /***** PARTIE NON_GUI *****/
     
-    QProcessEnvironment _env;           // variables d'environnement du processus  
-    QThread *_pFuzzwinThread;   // thread de l'algo SAGE
+    QProcessEnvironment _env;         // variables d'environnement du processus  
+    QThread *_pFuzzwinThread;         // thread de l'algo SAGE
+    FuzzwinAlgorithm *_pFuzzwinAlgo;  // algorithme sage (lancé dans le thread)
 
     QString _pinPath_X86, _pinPath_X64; // chemin des exécutables PIN  (32/64bits)
     QString _pintool_X86, _pintool_X64; // chemin des DLL des pintools (32/64bits)
@@ -103,6 +105,7 @@ private:
     QGridLayout *_gLayout2;
         QLabel      *_labelWorklistSize;
         QSpinBox    *_worklistSize;
+        QPushButton *_saveLog;
         QLabel      *_labelElapsedTime;
         QLabel      *_labelInitialInput;
         InitialInputLineEdit   *_initialInput;    
@@ -155,7 +158,11 @@ public slots:
     void checkDir(const QString &path); // vérification du dossier de résultats (effacement si besoin)
         
     void sendToLogWindow(const QString &msg);
-    
+    void sendToLogWindowRed(const QString &msg);
+
+    void algoFinished(quint32 nbFautes);
+    void autoScrollLogWindow();
+
     void updateInputView(CInput input);
     void testButtons();
 };

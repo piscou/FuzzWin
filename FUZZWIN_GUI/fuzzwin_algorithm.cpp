@@ -169,6 +169,8 @@ ListOfInputs FuzzwinAlgorithm::expandExecution()
     std::string	 constraintJ;	        // partie de formule associée à la contrainte J
     std::string  constraintJ_inverted;   // la même contrainte, inversée
 
+    QString      logMsg; // uniquement en mode verbose
+
     /********************************************************/
     /** Execution du pintool et récupération de la formule **/
     /********************************************************/
@@ -184,10 +186,12 @@ ListOfInputs FuzzwinAlgorithm::expandExecution()
     if (std::string::npos == pos) return result;
     quint32 nbContraintes = std::stoi(_formula.substr(pos + 1));
 
+    emit sendToGuiVerbose(QString("  %1 contraintes extraites\n").arg(nbContraintes));
+
     // si le "bound" est supérieur aux nombre de contraintes => aucune nouvelle entrée, retour
     if (bound >= nbContraintes) 	
     {
-        emit sendToGuiVerbose("Pas de nouvelles contraintes inversibles\n");
+        emit sendToGuiVerbose("  Pas de nouvelles contraintes inversibles\n");
         return result;
     }
     
@@ -205,7 +209,7 @@ ListOfInputs FuzzwinAlgorithm::expandExecution()
     // => boucle sur les contraintes de "bound + 1" à "nbContraintes" inversées et resolues successivement
     for (quint32 j = bound + 1 ; j <= nbContraintes ; ++j) 
     {	
-        emit sendToGuiVerbose(QString(" -> inversion contrainte %1").arg(j));
+        logMsg = QString(" -> inversion contrainte %1").arg(j);
             
         // recherche de la prochaine contrainte dans la formule, à partir de la position de la précédente contrainte 
         pos = _formula.find("(assert (=", posLastConstraint);          
@@ -263,7 +267,7 @@ ListOfInputs FuzzwinAlgorithm::expandExecution()
                 newFile.write(newInputContent.c_str(), newInputContent.size());
                 newFile.close();
 
-                emit sendToGuiVerbose(QString(" -> nouveau fichier %1").arg(newChild->getFileInfo().fileName()));
+                logMsg += QString(" -> nouveau fichier %1").arg(newChild->getFileInfo().fileName());
 
                 // test du fichier de suite; si retour nul le fichier est valide, donc l'insérer dans la liste
                 DWORD checkError = debugTarget(newChild);
@@ -273,11 +277,11 @@ ListOfInputs FuzzwinAlgorithm::expandExecution()
                 emit newInput(*newChild);
             }	
             // le fichier a déjà été généré (hash présent ou ... collision)
-            else emit sendToGuiVerbose("-> deja généré\n");
+            else logMsg += "-> deja généré\n";
         }
         // pas de solution trouvée par le solveur
-        else emit sendToGuiVerbose(" : aucune solution\n");   
-       
+        else emit sendToGuiVerbose(logMsg + " : aucune solution\n");   
+
         // enlever la contrainte inversée de la pile du solveur, et remettre l'originale
         sendToSolver("(pop 1)\n" + constraintJ + '\n');
     } // end for
@@ -292,12 +296,20 @@ ListOfInputs FuzzwinAlgorithm::expandExecution()
 void FuzzwinAlgorithm::algorithmSearch() 
 {
     // création du tube nommé avec le Pintool
-    if (!createNamedPipePintool())  emit sendToGui("Erreur de création du pipe fuzzWin\n");
-    else                            emit sendToGuiVerbose("Pipe Fuzzwin OK\n");
+    if (!createNamedPipePintool())
+    {
+        emit sendToGui("Erreur de création du pipe fuzzWin\n");
+        return;
+    }
+    else emit sendToGuiVerbose("Pipe Fuzzwin OK\n");
     
     // création du process Z3 avec redirection stdin/stdout **/ 
-    if (!createSolverProcess(_z3Path))  emit sendToGui("erreur création processus Z3\n");
-    else                                emit sendToGuiVerbose("Process Z3 OK\n");
+    if (!createSolverProcess(_z3Path))
+    {  
+        emit sendToGui("erreur création processus Z3\n");
+        return;
+    }
+    else emit sendToGuiVerbose("Process Z3 OK\n");
     
     // initialisation de la liste de travail avec la première entrée
     ListOfInputs workList;
@@ -326,6 +338,7 @@ void FuzzwinAlgorithm::algorithmSearch()
             {
                 logMessage += QString(" (score = %1)").arg(_currentInput->getScore());
             }
+            logMessage += ')';
         }
         logMessage += '\n';
         emit sendToGui(logMessage);
@@ -351,6 +364,8 @@ void FuzzwinAlgorithm::algorithmSearch()
             delete (_currentInput);
         }
     }
+    // fin de l'algorithme : envoi des données à la GUI
+    emit sendNbFautes(_nbFautes);
 }
 
 void FuzzwinAlgorithm::outOfTimeDebug()
@@ -407,7 +422,6 @@ DWORD FuzzwinAlgorithm::debugTarget(CInput *newInput)
         // si erreur dans le debuggage : tout stopper et quitter la boucle
         if (!WaitForDebugEvent(&e, INFINITE)) 
         {
-            emit sendToGuiVerbose("erreur WaitDebugEvent\n");
             continueDebug = false;
             break; 
         }

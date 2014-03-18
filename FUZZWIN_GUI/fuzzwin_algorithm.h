@@ -134,6 +134,7 @@ signals:
     void sendToGui(const QString &msg);
     void sendToGuiVerbose(const QString &msg);
     void newInput(CInput);
+    void sendNbFautes(quint32);
 
 public slots:
     void    outOfTimeDebug(); // fonction appelée en cas de dépassement du temps maximal
