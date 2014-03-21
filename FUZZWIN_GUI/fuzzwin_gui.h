@@ -27,9 +27,13 @@
 #include <QtWidgets/QFileDialog>
 #include <QtWidgets/QScrollBar>
 
+#include <QtGui/QStandardItemModel>
+
 #include "globals.h"
 #include "fuzzwin_algorithm.h"  // classe fuzzwinThread
 #include "fuzzwin_widgets.h"
+#include "fuzzwin_modelview.h"
+#include "qhexview.h"
 
 class FUZZWIN_GUI : public QMainWindow
 {
@@ -39,8 +43,9 @@ public:
     FUZZWIN_GUI();
     ~FUZZWIN_GUI();
 
-    void initializeEnvironment();  // état des boutons au démarrage
-
+    // test de la version de l'OS et de la présence du pintool
+    // détermine également le marquage des boutons au démarrage
+    int testConfig();  
 
 private:
     /***** PARTIE NON_GUI *****/
@@ -59,12 +64,6 @@ private:
     // taille des widgets
     QSizePolicy _fixedSizePolicy;
 
-    // menu
-    QMenuBar *_menuBar;
-        QMenu    *_menuFichier;
-        QAction  *_action_Quitter;
-        QMenu    *_menuAbout;
-        QAction  *_action_AboutFuzzWin;
     // disposition globale
     QWidget     *_centralWidget;
     QGridLayout *_gCentralLayout;    
@@ -95,8 +94,6 @@ private:
         QCheckBox   *_traceOnlyEnabled;
     // boutons de commande
     QPushButton *_startButton;
-    QPushButton *_saveSessionButton;
-    QPushButton *_saveConfigButton;
     QPushButton *_stopButton;
     QPushButton *_quitButton;
     QPushButton *_aboutButton;
@@ -105,7 +102,7 @@ private:
     QGridLayout *_gLayout2;
         QLabel      *_labelWorklistSize;
         QSpinBox    *_worklistSize;
-        QPushButton *_saveLog;
+        
         QLabel      *_labelElapsedTime;
         QLabel      *_labelInitialInput;
         InitialInputLineEdit   *_initialInput;    
@@ -114,27 +111,29 @@ private:
         QLabel      *_labelResultsDir;
         ResultsDirLineEdit   *_resultsDir;
         QTimeEdit   *_elapsedTime;
-        // partie tabs
-        QTabWidget  *_Tabs;
-            QWidget     *_logTab;
-            QHBoxLayout *_hLayout2;
-            QTextEdit   *_logWindow;
-            QWidget     *_entriesTab;
-            QVBoxLayout *_vLayout2;
-            QTreeWidget *_listOfInputs;
-
+    // partie tabs
+    QTabWidget  *_Tabs;
+        QWidget     *_logTab;
+        QHBoxLayout *_hLayout2;
+        QTextEdit   *_logWindow;
+        QWidget     *_entriesTab;
+        QVBoxLayout *_vLayout2;
+        QTreeView   *_inputsView;
+        TreeModel   *_inputsModel;
+    // boutons de sauvegarde
+    QPushButton *_saveLogButton;
+    QPushButton *_saveConfigButton;
 
     // initialisation des différents groupes d'objets et connection signal/slots
     // Fonctions appelées par le constructeur
-    void initMenuBar();
+
     void initGroupConfiguration();
     void initGroupSession();
     void initGroupOptions();
     void initGroupResultats();
     void initButtons();
     void initLines();
-    void connectSignalsToSlots();  
-    void testConfig(); // test de la version de l'OS et de la présence du pintool
+    void connectSignalsToSlots();   
 
     // réimplémentation de l'évènement "Close" pour demander confirmation
     void closeEvent(QCloseEvent *e);    
@@ -150,6 +149,8 @@ public slots:
     void selectResultsDir_clicked();   // sélection du répertoire de résultats
     void go_clicked();
     void stop_clicked();
+    void saveLog_clicked(); 
+    void saveConfig_clicked(); 
     void quitFuzzwin();
     
     void checkPinPath(QString path);  // vérification de l'intégrité du dossier racine de PIN
@@ -157,8 +158,7 @@ public slots:
     void checkKindOfExe(const QString &path); // vérification du type d'exécutable sélectionné
     void checkDir(const QString &path); // vérification du dossier de résultats (effacement si besoin)
         
-    void sendToLogWindow(const QString &msg);
-    void sendToLogWindowRed(const QString &msg);
+    void logWithTime(const QString &msg);
 
     void algoFinished(quint32 nbFautes);
     void autoScrollLogWindow();

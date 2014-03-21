@@ -140,10 +140,9 @@ public slots:
     void    outOfTimeDebug(); // fonction appelée en cas de dépassement du temps maximal
     void    algorithmSearch(); // démarrage de l'algo
 public:
-    explicit FuzzwinAlgorithm(const QString &firstInputPath, const QString &targetPath, const QString &resultsDir);  
+    explicit FuzzwinAlgorithm(const QString &firstInputPath, const QString &targetPath, const QString &resultsDir, quint32 maxtime);  
     ~FuzzwinAlgorithm();
 
     void buildPinCmdLine(const QString &pin_X86,     const QString &pin_X64, 
                          const QString &pintool_X86, const QString &pintool_X64);
-
 };

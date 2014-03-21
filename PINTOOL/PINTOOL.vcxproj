@@ -420,6 +420,8 @@ del "$(TargetDir)$(TargetName).exp"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="binary.h" />
+    <ClInclude Include="binary.hpp" />
     <ClInclude Include="bitbyte.h" />
     <ClInclude Include="bitbyte.hpp" />
     <ClInclude Include="convert.h" />
@@ -438,7 +440,6 @@ del "$(TargetDir)$(TargetName).exp"</Command>
     <ClInclude Include="shift.hpp" />
     <ClInclude Include="stringop.hpp" />
     <ClInclude Include="unconditional_branch.h" />
-    <ClInclude Include="binary.hpp" />
     <ClInclude Include="dataxfer.hpp">
       <FileType>Document</FileType>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</ExcludedFromBuild>
@@ -447,7 +448,6 @@ del "$(TargetDir)$(TargetName).exp"</Command>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="architecture.h" />
-    <ClInclude Include="binary.h" />
     <ClInclude Include="call.h" />
     <ClInclude Include="cmov.h" />
     <ClInclude Include="conditional_branch.h" />

@@ -67,7 +67,7 @@ void CInput::setExceptionCode(const quint32 e) { this->_exceptionCode = e; }
 /*** Classe FuzzwinAlgorithm ***/
 /*******************************/
 
-FuzzwinAlgorithm::FuzzwinAlgorithm(const QString &firstInputPath, const QString &targetPath, const QString &resultsDir) 
+FuzzwinAlgorithm::FuzzwinAlgorithm(const QString &firstInputPath, const QString &targetPath, const QString &resultsDir, quint32 maxtime) 
     : QObject(), 
     _numberOfChilds(0), 
     _nbFautes(0),
@@ -90,17 +90,21 @@ FuzzwinAlgorithm::FuzzwinAlgorithm(const QString &firstInputPath, const QString 
     // chemin prérempli pour le fichier de fautes (non créé pour l'instant)
     _faultFile = resultsDir + "/fault.txt";
 
-    if (_maxExecutionTime)
+    if (maxtime)
     {
+        _maxExecutionTime = maxtime;
         // préparation du timer pour la partie debug
         _pOutOfTimeDebug = new QTimer;
         _pOutOfTimeDebug->setSingleShot(true); // 1 seul décompte à la fois
         _pOutOfTimeDebug->setInterval(1000*_maxExecutionTime);
         connect(_pOutOfTimeDebug, SIGNAL(timeout()), this, SLOT(outOfTimeDebug()));
     }
-    else _pOutOfTimeDebug = nullptr; 
+    else
+    {
+        _pOutOfTimeDebug = nullptr; 
+        _maxExecutionTime = 0;
+    }
 }
-
 
 // destructeur : fermeture des handles
 FuzzwinAlgorithm::~FuzzwinAlgorithm()
@@ -405,6 +409,7 @@ DWORD FuzzwinAlgorithm::debugTarget(CInput *newInput)
     
     if (!bSuccess)
     {
+        int gle = GetLastError();
         emit sendToGuiVerbose("erreur createProcess Debug\n");
         return 0; // fin de la procédure prématurément
     }
@@ -454,7 +459,7 @@ DWORD FuzzwinAlgorithm::debugTarget(CInput *newInput)
             // fermeture du timer, si toujours actif
             if (_maxExecutionTime)
             {
-                if (_pOutOfTimeDebug->isActive()) 
+                if (!_pOutOfTimeDebug->isActive()) 
                 {
                     emit sendToGuiVerbose("out of time");
                     _pOutOfTimeDebug->stop();
@@ -751,7 +756,7 @@ std::string FuzzwinAlgorithm::getCmdLineFuzzwin() const
 // renvoie la ligne de commande complète pour l'execution de la cible en mode debug
 std::string FuzzwinAlgorithm::getCmdLineDebug(const CInput *pInput) const
 {
-    std::string filePath = qPrintable(pInput->getFileInfo().absoluteFilePath());
+    std::string filePath = qPrintable(QDir::toNativeSeparators(pInput->getFileInfo().absoluteFilePath()));
     return ('"' + _targetPath + "\" \"" + filePath + '"'); 
 }
 

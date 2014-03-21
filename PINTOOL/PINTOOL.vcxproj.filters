@@ -1,21 +1,16 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="binary.cpp" />
-    <ClCompile Include="bitbyte.cpp" />
     <ClCompile Include="call.cpp" />
     <ClCompile Include="cmov.cpp" />
     <ClCompile Include="conditional_branch.cpp" />
     <ClCompile Include="convert.cpp" />
-    <ClCompile Include="dataxfer.cpp" />
-    <ClCompile Include="decimal.cpp" />
     <ClCompile Include="flagop.cpp" />
     <ClCompile Include="initialize.cpp" />
     <ClCompile Include="instrumentation.cpp" />
     <ClCompile Include="logical.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="misc.cpp" />
-    <ClCompile Include="ObjectSource.cpp" />
     <ClCompile Include="pop.cpp" />
     <ClCompile Include="push.cpp" />
     <ClCompile Include="ret.cpp" />
@@ -24,16 +19,30 @@
     <ClCompile Include="shift.cpp" />
     <ClCompile Include="stringop.cpp" />
     <ClCompile Include="syscalls.cpp" />
-    <ClCompile Include="TaintObject.cpp" />
     <ClCompile Include="buildFormula.cpp" />
     <ClCompile Include="unconditional_branch.cpp" />
     <ClCompile Include="utils.cpp" />
+    <ClCompile Include="binary.cpp">
+      <Filter>Binary</Filter>
+    </ClCompile>
+    <ClCompile Include="bitbyte.cpp">
+      <Filter>BitByte</Filter>
+    </ClCompile>
+    <ClCompile Include="dataxfer.cpp">
+      <Filter>Dataxfer</Filter>
+    </ClCompile>
+    <ClCompile Include="decimal.cpp">
+      <Filter>Decimal</Filter>
+    </ClCompile>
+    <ClCompile Include="ObjectSource.cpp">
+      <Filter>Taint classes</Filter>
+    </ClCompile>
+    <ClCompile Include="TaintObject.cpp">
+      <Filter>Taint classes</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="bitbyte.h" />
-    <ClInclude Include="bitbyte.hpp" />
     <ClInclude Include="convert.h" />
-    <ClInclude Include="decimal.h" />
     <ClInclude Include="enumOsType.h" />
     <ClInclude Include="flagop.h" />
     <ClInclude Include="misc.hpp" />
@@ -48,29 +57,69 @@
     <ClInclude Include="shift.hpp" />
     <ClInclude Include="stringop.hpp" />
     <ClInclude Include="unconditional_branch.h" />
-    <ClInclude Include="binary.hpp" />
-    <ClInclude Include="dataxfer.hpp" />
     <ClInclude Include="utils.hpp" />
     <ClInclude Include="architecture.h" />
-    <ClInclude Include="binary.h" />
     <ClInclude Include="call.h" />
     <ClInclude Include="cmov.h" />
     <ClInclude Include="conditional_branch.h" />
-    <ClInclude Include="dataxfer.h" />
     <ClInclude Include="instrumentation.h" />
     <ClInclude Include="logical.h" />
     <ClInclude Include="logical.hpp" />
     <ClInclude Include="misc.h" />
-    <ClInclude Include="ObjectSource.h" />
     <ClInclude Include="pop.h" />
     <ClInclude Include="push.h" />
     <ClInclude Include="relations.h" />
     <ClInclude Include="shift.h" />
     <ClInclude Include="stringop.h" />
     <ClInclude Include="syscalls.h" />
-    <ClInclude Include="TaintManager.h" />
-    <ClInclude Include="TaintObject.h" />
     <ClInclude Include="buildFormula.h" />
     <ClInclude Include="utils.h" />
+    <ClInclude Include="binary.h">
+      <Filter>Binary</Filter>
+    </ClInclude>
+    <ClInclude Include="binary.hpp">
+      <Filter>Binary</Filter>
+    </ClInclude>
+    <ClInclude Include="bitbyte.h">
+      <Filter>BitByte</Filter>
+    </ClInclude>
+    <ClInclude Include="bitbyte.hpp">
+      <Filter>BitByte</Filter>
+    </ClInclude>
+    <ClInclude Include="dataxfer.h">
+      <Filter>Dataxfer</Filter>
+    </ClInclude>
+    <ClInclude Include="dataxfer.hpp">
+      <Filter>Dataxfer</Filter>
+    </ClInclude>
+    <ClInclude Include="decimal.h">
+      <Filter>Decimal</Filter>
+    </ClInclude>
+    <ClInclude Include="ObjectSource.h">
+      <Filter>Taint classes</Filter>
+    </ClInclude>
+    <ClInclude Include="TaintManager.h">
+      <Filter>Taint classes</Filter>
+    </ClInclude>
+    <ClInclude Include="TaintObject.h">
+      <Filter>Taint classes</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Binary">
+      <UniqueIdentifier>{198e73f5-c4cd-45c5-bbfa-82eeff377375}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="BitByte">
+      <UniqueIdentifier>{4dc6e1d3-2c74-4c56-84ce-e3112bab5c55}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Dataxfer">
+      <UniqueIdentifier>{a447a623-a2c3-458c-8ec3-68458d1e83fe}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Decimal">
+      <UniqueIdentifier>{6d067931-3ba3-4e91-9755-e90f71c17a18}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Taint classes">
+      <UniqueIdentifier>{5225693a-71d1-48eb-a602-14444e4d72c7}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
 </Project>

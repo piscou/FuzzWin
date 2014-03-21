@@ -47,9 +47,6 @@
     <ClCompile Include="GeneratedFiles\Release\moc_fuzzwin_gui.cpp">
       <Filter>Generated Files\Release</Filter>
     </ClCompile>
-    <ClCompile Include="GeneratedFiles\qrc_fuzzwin_gui.cpp">
-      <Filter>Generated Files</Filter>
-    </ClCompile>
     <ClCompile Include="fuzzwin_algorithm.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -68,16 +65,28 @@
     <ClCompile Include="GeneratedFiles\Release\moc_fuzzwin_widgets.cpp">
       <Filter>Generated Files\Release</Filter>
     </ClCompile>
+    <ClCompile Include="fuzzwin_modelview.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="GeneratedFiles\Debug\moc_fuzzwin_modelview.cpp">
+      <Filter>Generated Files\Debug</Filter>
+    </ClCompile>
+    <ClCompile Include="GeneratedFiles\Release\moc_fuzzwin_modelview.cpp">
+      <Filter>Generated Files\Release</Filter>
+    </ClCompile>
+    <ClCompile Include="qhexview.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="GeneratedFiles\Debug\moc_qhexview.cpp">
+      <Filter>Generated Files\Debug</Filter>
+    </ClCompile>
+    <ClCompile Include="GeneratedFiles\Release\moc_qhexview.cpp">
+      <Filter>Generated Files\Release</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="fuzzwin_gui.h">
       <Filter>Header Files</Filter>
-    </CustomBuild>
-    <CustomBuild Include="fuzzwin_gui.ui">
-      <Filter>Form Files</Filter>
-    </CustomBuild>
-    <CustomBuild Include="fuzzwin_gui.qrc">
-      <Filter>Resource Files</Filter>
     </CustomBuild>
     <CustomBuild Include="fuzzwin_algorithm.h">
       <Filter>Header Files</Filter>
@@ -85,16 +94,19 @@
     <CustomBuild Include="fuzzwin_widgets.h">
       <Filter>Header Files</Filter>
     </CustomBuild>
+    <CustomBuild Include="fuzzwin_modelview.h">
+      <Filter>Header Files</Filter>
+    </CustomBuild>
+    <CustomBuild Include="qhexview.h">
+      <Filter>Header Files</Filter>
+    </CustomBuild>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="GeneratedFiles\ui_fuzzwin_gui.h">
-      <Filter>Generated Files</Filter>
-    </ClInclude>
     <ClInclude Include="globals.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
-    <ResourceCompile Include="FUZZWIN_GUI.rc" />
+    <ClInclude Include="resource.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
