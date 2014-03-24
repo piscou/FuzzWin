@@ -102,10 +102,10 @@
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="globals.h">
+    <ClInclude Include="resource.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="resource.h">
+    <ClInclude Include="..\FUZZWIN\utilities.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

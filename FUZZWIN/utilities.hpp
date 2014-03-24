@@ -2,6 +2,13 @@
 #include <windows.h>
 #include <string>	
 
+/* solutions fournies par le solveur sont du type
+   define OFF?? (_BitVec 8) 
+      #x??    */ 
+#ifndef parseZ3ResultRegex
+#define parseZ3ResultRegex "OFF(\\d+).*\r\n.*([0-9a-f]{2})"
+#endif
+
 // codes définissant le type d'OS pour la détermination des numéros d'appels systèmes
 // Le type d'OS est déterminé par fuzzwin.exe et passé en argument au pintool
 enum OSTYPE 
@@ -43,7 +50,7 @@ static const std::string infoHeader
 (   
 "; **************************************************\n" 
 "; *  FUZZWIN : FUZZER AUTOMATIQUE SOUS WINDOWS     *\n" 
-"; *  v1.1 (c) Sebastien LECOMTE 02/03/2014         *\n"
+"; *  v1.2 (c) Sebastien LECOMTE 02/03/2014         *\n"
 "; *  PIN Version 2.13 kit 62732 et Z3 version 4.3  *\n"
 "; **************************************************\n" 
 );
@@ -144,3 +151,19 @@ static inline int getKindOfExecutable(const std::string &targetPath)
     if (!result) return (-1);
     else         return (kindOfExe);
 } // getKindOfExecutable
+
+
+// Partie pure GUI : définition de préprocesseur QT_DLL présente
+#if QT_DLL
+
+#ifndef FUZZWIN_GUI_DEFINES
+
+#define FUZZWIN_GUI_DEFINES
+#define TIMESTAMP     QDateTime::currentDateTime().time().toString("HH:mm:ss.zzz ")
+#define TEXTRED(x)    QString("<font color=\"Red\">"##x##"</font>")
+#define TEXTGREEN(x)  QString("<font color=\"Green\">"##x##"</font>")
+#define LINEFEED      QString("<br>")
+
+#endif
+
+#endif

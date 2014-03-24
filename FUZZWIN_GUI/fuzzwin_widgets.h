@@ -12,8 +12,6 @@
 #include <QtWidgets/QPushButton>
 #include <QtWidgets/QLineEdit>
 
-#include "globals.h"
-
 // Bouton de selection personnalisé
 class FuzzwinButton : public QPushButton
 {

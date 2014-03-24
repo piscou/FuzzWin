@@ -29,7 +29,6 @@
 
 #include <QtGui/QStandardItemModel>
 
-#include "globals.h"
 #include "fuzzwin_algorithm.h"  // classe fuzzwinThread
 #include "fuzzwin_widgets.h"
 #include "fuzzwin_modelview.h"
@@ -158,9 +157,9 @@ public slots:
     void checkKindOfExe(const QString &path); // vérification du type d'exécutable sélectionné
     void checkDir(const QString &path); // vérification du dossier de résultats (effacement si besoin)
         
-    void logWithTime(const QString &msg);
+    void log(const QString &msg);
 
-    void algoFinished(quint32 nbFautes);
+    void algoFinished(int nbFautes);
     void autoScrollLogWindow();
 
     void updateInputView(CInput input);

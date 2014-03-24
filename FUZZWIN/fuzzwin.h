@@ -9,7 +9,7 @@
 #include <fstream>	// ofstream / ifstream
 #include <string>	
 #include <regex>
-#include <set> // table de hachage
+#include <set> // liste des hashes des fichiers déjà générés
 
 #include "utilities.hpp"
 
@@ -17,11 +17,6 @@ typedef uint8_t		     UINT8;
 typedef uint32_t	     UINT32;
 typedef uint64_t	     UINT64;
 typedef std::set<size_t> HashTable; // stockage des hashes des fichiers déjà générés
-
-/* solutions fournies par le solveur sont du type
-   define OFF?? (_BitVec 8) 
-      #x??    */ 
-static std::string parseZ3ResultRegex("OFF(\\d+).*\r\n.*([0-9a-f]{2})");
 
 // log de l'exécution (simple et verbeux)
 #define LOG(x) { std::cout << x; }

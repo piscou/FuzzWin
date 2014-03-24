@@ -9,7 +9,6 @@
 #include <QtCore/QCryptographicHash>
 #include <QtCore/QTimer>
 
-
 #include <process.h>
 #include <cstdint>  // uint8_t etc...	
 #include <regex>
@@ -23,11 +22,6 @@ class FuzzwinAlgorithm;
 typedef QList<CInput*>          ListOfInputs;
 typedef QSet<QByteArray>        HashTable;
 
-/* solutions fournies par le solveur sont du type
-   define OFF?? (_BitVec 8) 
-      #x??    */ 
-#define parseZ3ResultRegex "OFF(\\d+).*\r\n.*([0-9a-f]{2})"
-
 static inline QString toQString(const std::string &qstr)
 {
     return (QString::fromLocal8Bit(qstr.c_str()));
@@ -39,7 +33,7 @@ private:
     quint32	  _bound;	      // numéro de contrainte inversée qui a mené à la création du fichier
     quint32	  _exceptionCode; // code d'erreur engendré par le fichier. 0 si aucun
     QFileInfo _fileInfo;      // chemin vers le fichier
-    quint32    _score;        // score de l'entrée (couverture de code)
+    quint32   _score;         // score de l'entrée (couverture de code)
 
 public:
     // création du 'nb' nouvel objet dérivé de l'objet 'pFather' à la contrainte 'b'
@@ -131,10 +125,10 @@ private:
     std::string  getCmdLineDebug(const CInput *pInput) const;
 
 signals:
-    void sendToGui(const QString &msg);
-    void sendToGuiVerbose(const QString &msg);
+    void sendToGui(const QString &);
+    void sendToGuiVerbose(const QString &);
     void newInput(CInput);
-    void sendNbFautes(quint32);
+    void sendNbFautes(int);
 
 public slots:
     void    outOfTimeDebug(); // fonction appelée en cas de dépassement du temps maximal

@@ -1,4 +1,5 @@
 #include "fuzzwin_gui.h"
+#include "utilities.hpp"
 
 /****** CLASSE GUI *********/
 
@@ -377,13 +378,11 @@ void FUZZWIN_GUI::closeEvent(QCloseEvent *e)
     e->ignore();
 }
 
-void FUZZWIN_GUI::logWithTime(const QString &msg)
+void FUZZWIN_GUI::log(const QString &msg)
 {
-    QString header(QDateTime::currentDateTime().time().toString("HH:mm:ss.zzz "));
-    QString fullMsg(header + msg + '\n');
     // s'assurer que le curseur est bien à la dernière ligne avant insertion...
     _logWindow->moveCursor(QTextCursor::End);
-    _logWindow->insertPlainText(fullMsg);
+    _logWindow->insertHtml(msg);
 }
 
 void FUZZWIN_GUI::selectPin_clicked()
@@ -516,16 +515,18 @@ void FUZZWIN_GUI::go_clicked()
     _stopButton->setEnabled(true);
 
     // connection des signaux du thread aux slots de la GUI
-    connect(this, SIGNAL(launchAlgorithm()), _pFuzzwinAlgo, SLOT(algorithmSearch()));
-    connect(_pFuzzwinAlgo, SIGNAL(sendToGui(QString)), this, SLOT(logWithTime(QString)), Qt::QueuedConnection);
-    if (_verboseEnabled->isChecked())
-    {
-        connect(_pFuzzwinAlgo, SIGNAL(sendToGuiVerbose(QString)), this, SLOT(logWithTime(QString)), Qt::QueuedConnection);
-    }
-    connect(_pFuzzwinAlgo, SIGNAL(newInput(CInput)), this, SLOT(updateInputView(CInput)));
-    connect(_pFuzzwinAlgo, SIGNAL(sendNbFautes(quint32)), this, SLOT(algoFinished(quint32)));
+    connect(this,          SIGNAL(launchAlgorithm()), _pFuzzwinAlgo, SLOT(algorithmSearch()));
+    connect(_pFuzzwinAlgo, SIGNAL(sendToGui(QString)),    this, SLOT(log(QString)), Qt::QueuedConnection);
+
+    connect(_pFuzzwinAlgo, SIGNAL(newInput(CInput)),      this, SLOT(updateInputView(CInput)));
+    connect(_pFuzzwinAlgo, SIGNAL(sendNbFautes(int)), this, SLOT(algoFinished(int)));
 
     connect(_pFuzzwinThread, SIGNAL(finished()), _pFuzzwinAlgo, SLOT(deleteLater()));
+
+    if (_verboseEnabled->isChecked())
+    {
+        connect(_pFuzzwinAlgo, SIGNAL(sendToGuiVerbose(QString)), this, SLOT(log(QString)), Qt::QueuedConnection);
+    }
 
     // C'EST PARTI MON KIKI
     _pFuzzwinThread->start();
@@ -585,25 +586,25 @@ void FUZZWIN_GUI::checkKindOfExe(const QString &path)
     case SCS_64BIT_BINARY:
         if (_osType < BEGIN_HOST_64BITS)
         {
-            logWithTime("Exécutable 64 bits non supporté sur OS 32bits");
+            log(TEXTRED("Exécutable 64 bits non supporté sur OS 32bits") + LINEFEED);
             _selectTarget->setButtonError();
         }
         else 
         {
-            logWithTime("Exécutable 64 bits sélectionné");
+            log(TEXTGREEN("Exécutable 64 bits sélectionné") + LINEFEED);
             _selectTarget->setButtonOk();
             _targetPath->setText(path);
         }
         break;
 
     case SCS_32BIT_BINARY:
-        logWithTime("Exécutable 32bits sélectionné");
+        log(TEXTGREEN("Exécutable 32bits sélectionné") + LINEFEED);
         _selectTarget->setButtonOk();
         _targetPath->setText(path);
         break;
 
     default:
-        logWithTime("Exécutable cible incompatible");
+        log(TEXTRED("Exécutable cible incompatible") + LINEFEED);
         _selectTarget->setButtonError();
         break;
     }
@@ -627,13 +628,13 @@ void FUZZWIN_GUI::checkPinPath(QString path)
     // test de la présence des fichiers adéquats
     if (!QFile::exists(_pinPath_X86))
     {
-        this->logWithTime("exécutable PIN 32bits absent");
+        this->log(TEXTRED("exécutable PIN 32bits absent") + LINEFEED);
 
         goodNess &= false;
     }
     if (!QFile::exists(pin_X86_VmDll))
     {
-        this->logWithTime("librairie PIN_VM 32bits absente");
+        this->log(TEXTRED("librairie PIN_VM 32bits absente") + LINEFEED);
         goodNess &= false;
     }
 
@@ -646,12 +647,12 @@ void FUZZWIN_GUI::checkPinPath(QString path)
     
         if (!QFile::exists(_pinPath_X64))
         {
-            logWithTime("exécutable PIN 64bits absent");
+            log(TEXTRED("exécutable PIN 64bits absent") + LINEFEED);
             goodNess &= false;
         }
         if (!QFile::exists(pin_X64_VmDll))
         {
-            logWithTime("librairie PIN_VM 64bits absente");
+            log(TEXTRED("librairie PIN_VM 64bits absente") + LINEFEED);
             goodNess &= false;
         }
     }
@@ -659,7 +660,7 @@ void FUZZWIN_GUI::checkPinPath(QString path)
     // sinon bouton au rouge
     if (goodNess) 
     {
-        logWithTime("Répertoire de PIN : OK");
+        log(TEXTGREEN("Répertoire de PIN : OK") + LINEFEED);
         _selectPin->setButtonOk();
     }
     else  _selectPin->setButtonError();
@@ -676,13 +677,13 @@ void FUZZWIN_GUI::checkZ3Path(QString path)
     // test de son existence
     if (QFile::exists(path))
     {
-        logWithTime("Répertoire de Z3 : OK");
+        log(TEXTGREEN("Répertoire de Z3 : OK") + LINEFEED);
         _z3Path = path;
         _selectZ3->setButtonOk();
     }
     else
     {
-        logWithTime("solveur Z3 absent");
+        log(TEXTRED("solveur Z3 absent") + LINEFEED);
         _selectZ3->setButtonError();
     } 
 }
@@ -719,13 +720,13 @@ void FUZZWIN_GUI::checkDir(const QString &path)
 
             if (isSuccess) // tout s'est bien passé
             {
-                logWithTime("Effacement du dossier de résultats -> Ok");
+                log(TIMESTAMP + "Effacement du dossier de résultats -> Ok" + LINEFEED);
                 _selectResultsDir->setButtonOk();
                 _resultsDir->setText(path);     
             }
             else
             {
-                logWithTime("Effacement du dossier de résultats -> Erreur");
+                log(TIMESTAMP + TEXTRED("Effacement du dossier de résultats -> Erreur") + LINEFEED);
                 _selectResultsDir->setButtonError();
                 _resultsDir->clear();
             }
@@ -733,7 +734,7 @@ void FUZZWIN_GUI::checkDir(const QString &path)
         // No => dossier inchangé
         else
         {
-            logWithTime("Dossier de résultats sélectionné (pas d'effacement)");
+            log("Dossier de résultats sélectionné (pas d'effacement)");
             _selectResultsDir->setButtonOk();
             _resultsDir->setText(path);
 
@@ -742,14 +743,14 @@ void FUZZWIN_GUI::checkDir(const QString &path)
     // dossier existant et vide
     else
     {
-         logWithTime("Dossier de résultats sélectionné (vide)");
+         log("Dossier de résultats sélectionné (vide)" + LINEFEED);
         _selectResultsDir->setButtonOk();
         _resultsDir->setText(path);
     }
     _resultsDir->setCursorPosition(0);
 }
 
-void FUZZWIN_GUI::algoFinished(quint32 nbFautes)
+void FUZZWIN_GUI::algoFinished(int nbFautes)
 {
     if (!nbFautes)
     {
@@ -773,4 +774,3 @@ void FUZZWIN_GUI::autoScrollLogWindow()
 {
     _logWindow->verticalScrollBar()->setValue(_logWindow->verticalScrollBar()->maximum());
 }
-
