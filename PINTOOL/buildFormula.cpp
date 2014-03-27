@@ -197,7 +197,7 @@ const std::string SolverFormula::getPredicateFormula(TaintManager_Thread *pTmgrT
         }
 
         // si egaux, flag vaut 0 dans cas LESS et 1 dans cas NOT_LESS
-        result += (PREDICATE_LESS == pred) ? ") #b0 #b1)" : ") #b1 #b0)";
+        result += (PREDICATE_LESS == pred) ? ") false true)" : ") true false)";
         break;
     }
 

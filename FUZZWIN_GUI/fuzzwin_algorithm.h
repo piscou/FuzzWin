@@ -13,7 +13,18 @@
 #include <cstdint>  // uint8_t etc...	
 #include <regex>
 
-#include "utilities.hpp" // getKindOfExe, OS_TYPE, getNativeArchitecture, commun avec la ligne de commande
+#include "../fuzzwin_common.h" // getKindOfExe, OS_TYPE, getNativeArchitecture, commun avec la ligne de commande
+
+#ifndef GUI_DEFINES
+
+#define GUI_DEFINES
+#include <QDateTime>
+#define TIMESTAMP     QDateTime::currentDateTime().time().toString("HH:mm:ss.zzz ")
+#define TEXTRED(x)    QString("<font color=\"Red\">"##x##"</font>")
+#define TEXTGREEN(x)  QString("<font color=\"Green\">"##x##"</font>")
+#define LINEFEED      QString("<br>")
+
+#endif
 
 
 class CInput;
@@ -58,7 +69,6 @@ public:
     void setExceptionCode(const quint32 e);
 };
 
-inline bool sortCInputs(CInput* pA, CInput* pB) { return (pA->getScore() < pB->getScore()); }
 
 class FuzzwinAlgorithm : public QObject
 {

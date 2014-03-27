@@ -1,11 +1,11 @@
-#include "pintoolFuncs.h"
+#include "fuzzwin_algo.h"
 
-int sendArgumentsToPintool(const std::string &command)
+int FuzzwinAlgorithm::sendArgumentToPintool(const std::string &command) const
 {
-    DWORD commandLength = static_cast<DWORD>(command.size());
-    DWORD cbWritten = 0;
+    UINT32 commandLength = static_cast<UINT32>(command.size());
+    DWORD  cbWritten = 0;
 
-    BOOL fSuccess = WriteFile(pGlobals->hPintoolPipe, 
+    BOOL fSuccess = WriteFile(_hPintoolPipe, 
         command.c_str(), 
         commandLength, 
         &cbWritten, 
@@ -14,17 +14,20 @@ int sendArgumentsToPintool(const std::string &command)
     // si tout n'a pas été écrit ou erreur : le signaler
     if (!fSuccess || cbWritten != commandLength)	
     {   
-        LOG("erreur envoi arguments au Pintool\n");
-        return (EXIT_FAILURE);   // erreur
+        this->logTimeStamp();
+        this->log("erreur envoi arguments au Pintool");
+        this->logEndOfLine();
+        return (EXIT_FAILURE);
     }
-    else return (EXIT_SUCCESS);  // OK
+    else return (EXIT_SUCCESS);
 }
 
-std::string callFuzzwin(CInput* pInput) 
+void FuzzwinAlgorithm::callPintool() 
 {
     // ligne de commande pour appel de PIN avec l'entree etudiee
-    std::string cmdLine(pInput->getCmdLineFuzzwin()); 
-    std::string smtFormula;
+    std::string cmdLine(this->getCmdLinePintool()); 
+    // mise à zéro de la formule
+    _formula.erase();
   
     STARTUPINFO si;
     PROCESS_INFORMATION pi;
@@ -46,12 +49,13 @@ std::string callFuzzwin(CInput* pInput)
         /***********************/
         /** CONNEXION AU PIPE **/
         /***********************/
-        BOOL fSuccess = ConnectNamedPipe(pGlobals->hPintoolPipe, NULL);
+        BOOL fSuccess = ConnectNamedPipe(_hPintoolPipe, NULL);
         if (!fSuccess && GetLastError() != ERROR_PIPE_CONNECTED) 
         {	
-            LOG("erreur de connexion au pipe FuzzWin, GLE=");
-            LOG(std::to_string(GetLastError()) + '\n');
-            return (smtFormula); // formule vide
+            this->logTimeStamp();
+            this->log("erreur de connexion au pipe FuzzWin GLE=" + std::to_string(GetLastError()));
+            this->logEndOfLine();
+            return; // formule vide
         }
         
         /************************************/
@@ -60,17 +64,17 @@ std::string callFuzzwin(CInput* pInput)
 
         int resultOfSend;
         // 0) Option ici = 'taint'
-        resultOfSend = sendArgumentsToPintool("taint");
+        resultOfSend = sendArgumentToPintool("taint");
         // 1) chemin vers l'entrée étudiée
-        resultOfSend = sendArgumentsToPintool(pInput->getFilePath());
-        // 2) nombre maximal de contraintes (TODO)
-        resultOfSend = sendArgumentsToPintool(std::to_string(pGlobals->maxConstraints));
+        resultOfSend = sendArgumentToPintool(_pCurrentInput->getFilePath());
+        // 2) nombre maximal de contraintes
+        resultOfSend = sendArgumentToPintool(std::to_string(_maxConstraints));
         // 3) temps limite d'execution en secomdes
-        resultOfSend = sendArgumentsToPintool(std::to_string(pGlobals->maxExecutionTime));
+        resultOfSend = sendArgumentToPintool(std::to_string(_maxExecutionTime));
         // 4) offset des entrees à etudier
-        resultOfSend = sendArgumentsToPintool(pGlobals->bytesToTaint);
+        resultOfSend = sendArgumentToPintool(_bytesToTaint);
         // 5) type d'OS hote
-        resultOfSend = sendArgumentsToPintool(std::to_string(pGlobals->osType));
+        resultOfSend = sendArgumentToPintool(std::to_string(_osType));
 
         /********************************************************/
         /** ATTENTE DE L'ARRIVEE DES DONNEES DEPUIS LE PINTOOL **/
@@ -82,8 +86,7 @@ std::string callFuzzwin(CInput* pInput)
         // et construction progressive de la formule
         do 
         { 
-            fSuccess = ReadFile( 
-                pGlobals->hPintoolPipe,  // pipe handle 
+            fSuccess = ReadFile(_hPintoolPipe,  // pipe handle 
                 &buffer[0],    // buffer to receive reply 
                 512,            // size of buffer 
                 &cbBytesRead,   // number of bytes read 
@@ -91,12 +94,12 @@ std::string callFuzzwin(CInput* pInput)
  
             if ( ! fSuccess && (GetLastError() != ERROR_MORE_DATA) )  break; 
             // ajout des données lues au resultat
-            smtFormula.append(&buffer[0], cbBytesRead);
+            _formula.append(&buffer[0], cbBytesRead);
 
         } while (!fSuccess);  // repetition si ERROR_MORE_DATA 
 
         // deconnexion du pipe
-        DisconnectNamedPipe(pGlobals->hPintoolPipe);
+        DisconnectNamedPipe(_hPintoolPipe);
 
         // attente de la fermeture de l'application
         WaitForSingleObject(pi.hProcess, INFINITE);
@@ -111,26 +114,27 @@ std::string callFuzzwin(CInput* pInput)
         CloseHandle(pi.hThread);
 
         // si option 'keepfiles' : sauvegarde de la formule (extension .fzw)
-        if (pGlobals->keepFiles) 
+        if (_keepFiles) 
         {
-            std::ofstream ofs(pInput->getLogFile());
+            std::ofstream ofs(_pCurrentInput->getLogFile());
             ofs << infoHeader;                  // entete (version pin Z3 etc)
             ofs << "; Fichier instrumenté : ";  // fichier d'entree etudié
-            ofs << pInput->getFileName() << std::endl;  
-            ofs << smtFormula;                  // formule brute smt2
+            ofs << _pCurrentInput->getFileName() << std::endl;  
+            ofs << _formula;                  // formule brute smt2
             ofs.close();
         }
     }	
     else
     {
-        VERBOSE("erreur process FuzzWin" + std::to_string(GetLastError()) + '\n');
+        this->logVerboseTimeStamp();
+        this->logVerbose("erreur process FuzzWin GLE=" + std::to_string(GetLastError()));
+        this->logVerboseEndOfLine();
     }
-    return (smtFormula); // retour de la formule SMT2
 }
 
-int createNamedPipePintool()
+int FuzzwinAlgorithm::createNamedPipePintool()
 {
-    pGlobals->hPintoolPipe = CreateNamedPipe("\\\\.\\pipe\\fuzzwin",	
+    _hPintoolPipe = CreateNamedPipe("\\\\.\\pipe\\fuzzwin",	
         PIPE_ACCESS_DUPLEX,	// accès en lecture/écriture 
         PIPE_TYPE_MESSAGE | PIPE_READMODE_MESSAGE | PIPE_WAIT, // mode message, bloquant
         1,		// une seule instance
@@ -139,5 +143,11 @@ int createNamedPipePintool()
         0,		// time-out du client = defaut
         NULL);	// attributs de securité par defaut
 
-    return (INVALID_HANDLE_VALUE != pGlobals->hPintoolPipe);
+    return (INVALID_HANDLE_VALUE != _hPintoolPipe);
+}
+
+// renvoie la ligne de commande complète pour l'appel du pintool
+std::string FuzzwinAlgorithm::getCmdLinePintool() const
+{
+    return (_cmdLinePin + '"' + _pCurrentInput->getFilePath() + '"'); 
 }

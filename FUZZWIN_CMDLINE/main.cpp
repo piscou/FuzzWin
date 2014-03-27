@@ -1,38 +1,42 @@
-#include "fuzzwin.h"
-#include "algorithmeSearch.h"
-#include "initialize.h"
+#include "fuzzwin_cmdLine.h"
 
 #include <ctime>
 #include <clocale>  // pour passage de la ligne de commande en francais
 
-CGlobals *pGlobals;
-
 int main(int argc, char *argv[]) 
 {
+    int returnCode = EXIT_FAILURE;  // pessimisme
+
     // passage en Francais !!!!
     std::locale locFrench("French_France.1252");
     std::locale::global(locFrench);
 
-    // initialisation des variables globales
-    pGlobals = new CGlobals;
-  
-    if (!pGlobals) return (EXIT_FAILURE);
+    // test de la compatibilité de l'OS
+    OSTYPE osType = getNativeArchitecture();
+    if (HOST_UNKNOWN == osType)
+    {
+        std::cout << "OS non supporté : abandon\n";
+        exit(EXIT_FAILURE);
+    }
+    
+    FuzzwinAlgorithm_cmdLine *algo = new FuzzwinAlgorithm_cmdLine(osType);
+    if (!algo) return (EXIT_FAILURE);
 
-    // initialisation du programme (arguments, etc...)
+    // initialisation des variables à partir de la ligne de commande
     // vaut "OK" si tout s'est bien passé, ou le message d'erreur sinon
-    std::string initResult(initialize(argc, argv));
+    std::string initResult = algo->initialize(argc, argv);
 
     if ("OK" == initResult)   
     {
-        // stockage du top départ du fuzzing
-        clock_t timeBegin = clock();
-  
         // appel de l'algorithme "SAGE" : fonction SEARCH
-        UINT32 nbFautes = algorithmeSearch();
-
+        clock_t timeBegin = clock();
+        algo->start();
+        // récupération du nombre de fautes trouvées
         clock_t timeEnd = clock();
-
-        delete (pGlobals);
+        UINT32 nbFautes = algo->getNumberOfFaults();
+        
+        // permet de lancer une autre ligne de commande de suite (fermeture des handles)
+       // delete (algo); 
 
         std::cout << std::endl;
         std::cout << "******************************\n";
@@ -42,7 +46,7 @@ int main(int argc, char *argv[])
         if (nbFautes) // si une faute a été trouvée
         { 
             std::cout << "---> " << nbFautes << " faute";
-            if (nbFautes > 1) std::cout << "s";
+            if (nbFautes > 1) std::cout << 's';
             std::cout << " !! consultez le fichier fault.txt <---\n";
         }
         else std::cout << "* aucune faute... *\n";
@@ -50,15 +54,18 @@ int main(int argc, char *argv[])
         std::cout << "statistiques de temps : ";
         std::cout << ((float) (timeEnd - timeBegin)/CLOCKS_PER_SEC ) << " secondes\n";
         
-        std::cout << "\n\tAppuyer sur une touche pour quitter";
+        std::cout << "\nAppuyer sur une touche pour quitter";
+        fflush(stdin);
         getchar();
 
-        return (EXIT_SUCCESS);
+        returnCode = EXIT_SUCCESS;
     }
     else
     {
         std::cout << initResult << " --> ABANDON !!!" << std::endl;
-        delete (pGlobals);
-        return (EXIT_FAILURE);
+        delete (algo);
+        returnCode = EXIT_FAILURE;
     }
+
+    return (returnCode);
 }

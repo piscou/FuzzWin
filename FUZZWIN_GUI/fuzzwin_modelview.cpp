@@ -111,7 +111,6 @@ TreeModel::TreeModel(const QStringList &headers, QObject *parent)
     : QAbstractItemModel(parent)
 {
     QVector<QVariant> headerData;
-    int index = 0;
     foreach (QString header, headers)  headerData << header;
 
     rootItem = new FuzzwinItem(headerData);

@@ -3,9 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2012
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PINTOOL", "PINTOOL\PINTOOL.vcxproj", "{E535A52C-8237-4B5A-8A50-5CE162AB679C}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "FUZZWIN", "FUZZWIN\fuzzwin.vcxproj", "{016C7F1E-D4F9-4811-A61F-57B34284592F}"
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "FUZZWIN_GUI", "FUZZWIN_GUI\FUZZWIN_GUI.vcxproj", "{B12702AD-ABFB-343A-A199-8E24837244A3}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "FUZZWIN_CMDLINE", "FUZZWIN_CMDLINE\fuzzwin.vcxproj", "{016C7F1E-D4F9-4811-A61F-57B34284592F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -31,6 +31,20 @@ Global
 		{E535A52C-8237-4B5A-8A50-5CE162AB679C}.Release|x64.ActiveCfg = Release|x64
 		{E535A52C-8237-4B5A-8A50-5CE162AB679C}.Release|x64.Build.0 = Release|x64
 		{E535A52C-8237-4B5A-8A50-5CE162AB679C}.Release|x64.Deploy.0 = Release|x64
+		{B12702AD-ABFB-343A-A199-8E24837244A3}.Debug|Mixed Platforms.ActiveCfg = Debug|Win32
+		{B12702AD-ABFB-343A-A199-8E24837244A3}.Debug|Mixed Platforms.Build.0 = Debug|Win32
+		{B12702AD-ABFB-343A-A199-8E24837244A3}.Debug|Mixed Platforms.Deploy.0 = Debug|Win32
+		{B12702AD-ABFB-343A-A199-8E24837244A3}.Debug|Win32.ActiveCfg = Debug|Win32
+		{B12702AD-ABFB-343A-A199-8E24837244A3}.Debug|Win32.Build.0 = Debug|Win32
+		{B12702AD-ABFB-343A-A199-8E24837244A3}.Debug|Win32.Deploy.0 = Debug|Win32
+		{B12702AD-ABFB-343A-A199-8E24837244A3}.Debug|x64.ActiveCfg = Debug|x64
+		{B12702AD-ABFB-343A-A199-8E24837244A3}.Release|Mixed Platforms.ActiveCfg = Release|Win32
+		{B12702AD-ABFB-343A-A199-8E24837244A3}.Release|Mixed Platforms.Build.0 = Release|Win32
+		{B12702AD-ABFB-343A-A199-8E24837244A3}.Release|Mixed Platforms.Deploy.0 = Release|Win32
+		{B12702AD-ABFB-343A-A199-8E24837244A3}.Release|Win32.ActiveCfg = Release|Win32
+		{B12702AD-ABFB-343A-A199-8E24837244A3}.Release|Win32.Build.0 = Release|Win32
+		{B12702AD-ABFB-343A-A199-8E24837244A3}.Release|Win32.Deploy.0 = Release|Win32
+		{B12702AD-ABFB-343A-A199-8E24837244A3}.Release|x64.ActiveCfg = Release|x64
 		{016C7F1E-D4F9-4811-A61F-57B34284592F}.Debug|Mixed Platforms.ActiveCfg = Debug|Win32
 		{016C7F1E-D4F9-4811-A61F-57B34284592F}.Debug|Mixed Platforms.Build.0 = Debug|Win32
 		{016C7F1E-D4F9-4811-A61F-57B34284592F}.Debug|Mixed Platforms.Deploy.0 = Debug|Win32
@@ -49,20 +63,6 @@ Global
 		{016C7F1E-D4F9-4811-A61F-57B34284592F}.Release|x64.ActiveCfg = Release|x64
 		{016C7F1E-D4F9-4811-A61F-57B34284592F}.Release|x64.Build.0 = Release|x64
 		{016C7F1E-D4F9-4811-A61F-57B34284592F}.Release|x64.Deploy.0 = Release|x64
-		{B12702AD-ABFB-343A-A199-8E24837244A3}.Debug|Mixed Platforms.ActiveCfg = Debug|Win32
-		{B12702AD-ABFB-343A-A199-8E24837244A3}.Debug|Mixed Platforms.Build.0 = Debug|Win32
-		{B12702AD-ABFB-343A-A199-8E24837244A3}.Debug|Mixed Platforms.Deploy.0 = Debug|Win32
-		{B12702AD-ABFB-343A-A199-8E24837244A3}.Debug|Win32.ActiveCfg = Debug|Win32
-		{B12702AD-ABFB-343A-A199-8E24837244A3}.Debug|Win32.Build.0 = Debug|Win32
-		{B12702AD-ABFB-343A-A199-8E24837244A3}.Debug|Win32.Deploy.0 = Debug|Win32
-		{B12702AD-ABFB-343A-A199-8E24837244A3}.Debug|x64.ActiveCfg = Debug|x64
-		{B12702AD-ABFB-343A-A199-8E24837244A3}.Release|Mixed Platforms.ActiveCfg = Release|Win32
-		{B12702AD-ABFB-343A-A199-8E24837244A3}.Release|Mixed Platforms.Build.0 = Release|Win32
-		{B12702AD-ABFB-343A-A199-8E24837244A3}.Release|Mixed Platforms.Deploy.0 = Release|Win32
-		{B12702AD-ABFB-343A-A199-8E24837244A3}.Release|Win32.ActiveCfg = Release|Win32
-		{B12702AD-ABFB-343A-A199-8E24837244A3}.Release|Win32.Build.0 = Release|Win32
-		{B12702AD-ABFB-343A-A199-8E24837244A3}.Release|Win32.Deploy.0 = Release|Win32
-		{B12702AD-ABFB-343A-A199-8E24837244A3}.Release|x64.ActiveCfg = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

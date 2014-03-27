@@ -302,18 +302,18 @@ void FuzzwinAlgorithm::algorithmSearch()
     // création du tube nommé avec le Pintool
     if (!createNamedPipePintool())
     {
-        emit sendToGui("Erreur de création du pipe fuzzWin\n");
+        emit sendToGui(TIMESTAMP + TEXTRED("Erreur de création du pipe fuzzWin") + LINEFEED);
         return;
     }
-    else emit sendToGuiVerbose("Pipe Fuzzwin OK\n");
+    else emit sendToGuiVerbose(TIMESTAMP + TEXTGREEN("Pipe Fuzzwin OK") + LINEFEED);
     
     // création du process Z3 avec redirection stdin/stdout **/ 
     if (!createSolverProcess(_z3Path))
     {  
-        emit sendToGui("erreur création processus Z3\n");
+        emit sendToGui(TIMESTAMP + TEXTRED("erreur création processus Z3") + LINEFEED);
         return;
     }
-    else emit sendToGuiVerbose("Process Z3 OK\n");
+    else emit sendToGuiVerbose(TIMESTAMP + TEXTGREEN("Process Z3 OK") + LINEFEED);
     
     // initialisation de la liste de travail avec la première entrée
     ListOfInputs workList;
@@ -325,7 +325,7 @@ void FuzzwinAlgorithm::algorithmSearch()
     /**********************/
     while ( !workList.empty() ) 
     {
-        emit sendToGui(QString("[%1] ELEMENTS DANS LA WORKLIST\n").arg(workList.size()));
+        emit sendToGui(TIMESTAMP + QString("[%1] ELEMENTS DANS LA WORKLIST\n").arg(workList.size()) + LINEFEED);
         
         // tri des entrées selon leur score (si option activée)
         if (_computeScore) qSort(workList.begin(), workList.end(), sortCInputs);
@@ -344,8 +344,7 @@ void FuzzwinAlgorithm::algorithmSearch()
             }
             logMessage += ')';
         }
-        logMessage += '\n';
-        emit sendToGui(logMessage);
+        emit sendToGui(logMessage + LINEFEED);
 
         // exécution de PIN avec cette entrée (fonction ExpandExecution)
         // et recupération d'une liste de fichiers dérivés
@@ -354,8 +353,9 @@ void FuzzwinAlgorithm::algorithmSearch()
 
         // vérification de la présence de nouveaux fichiers, via la taille de la liste
         quint32 listSize = childInputs.size();
-        if (listSize) emit sendToGui(QString(" -> %1 nouveau(x) fichier(s)\n").arg(listSize));
-        else          emit sendToGui(" -> pas de nouveaux fichiers\n");
+        if (listSize) emit sendToGui(QString(" -> %1 nouveau(x) fichier(s)").arg(listSize));
+        else          emit sendToGui(" -> pas de nouveaux fichiers");
+        emit sendToGui(LINEFEED);
 
         // insertion des fichiers dans la liste
         workList += childInputs;
@@ -410,7 +410,7 @@ DWORD FuzzwinAlgorithm::debugTarget(CInput *newInput)
     if (!bSuccess)
     {
         int gle = GetLastError();
-        emit sendToGuiVerbose("erreur createProcess Debug\n");
+        emit sendToGuiVerbose(TIMESTAMP + TEXTRED("erreur createProcess Debug") + LINEFEED);
         return 0; // fin de la procédure prématurément
     }
     // stockage du handle du processus
@@ -442,11 +442,11 @@ DWORD FuzzwinAlgorithm::debugTarget(CInput *newInput)
                 DWORD exceptionCode = e.u.Exception.ExceptionRecord.ExceptionCode;
                 UINT64 exceptionAddress = (UINT64) e.u.Exception.ExceptionRecord.ExceptionAddress;
                 
-                emit sendToGui("-------------------------------------------------\n");
-                emit sendToGui(QString("@@@ EXCEPTION @@@ Fichier %1\n").arg(_currentInput->getFileInfo().fileName()));
+                emit sendToGui(TIMESTAMP + "-----------------------------------" + LINEFEED);
+                emit sendToGui(QString("@@@ EXCEPTION @@@ Fichier %1\n").arg(newInput->getFileInfo().fileName()) + LINEFEED);
                 emit sendToGui(QString("Adresse 0x%1").arg(exceptionAddress, 0, 16));
-                emit sendToGui(QString(" code %1").arg(exceptionCode));
-                emit sendToGui("-------------------------------------------------\n");
+                emit sendToGui(QString(" code %1").arg(exceptionCode, 0, 16) + LINEFEED);
+                emit sendToGui(TIMESTAMP + "-----------------------------------" + LINEFEED);
                 returnCode = exceptionCode;
                 continueDebug = false;
             }
@@ -454,14 +454,14 @@ DWORD FuzzwinAlgorithm::debugTarget(CInput *newInput)
         // = fin du programme. Il s'agit soit la fin normale
         // soit la fin provoqué par le thread "gardien du temps"
         case EXIT_PROCESS_DEBUG_EVENT:
-            emit sendToGuiVerbose(" - no crash ;(\n");
+            emit sendToGuiVerbose(" - no crash ;(" + LINEFEED);
             continueDebug = false;	
             // fermeture du timer, si toujours actif
             if (_maxExecutionTime)
             {
                 if (!_pOutOfTimeDebug->isActive()) 
                 {
-                    emit sendToGuiVerbose("out of time");
+                    emit sendToGuiVerbose("out of time" + LINEFEED);
                     _pOutOfTimeDebug->stop();
                 }
             }
@@ -635,7 +635,7 @@ bool FuzzwinAlgorithm::checkSatFromSolver()
     bool result = false;    // par défaut pas de réponse du solveur
     
     sendToSolver("(check-sat)\n");
-    Sleep(10); // pour permettre l'écriture des résultats
+    Sleep(10); // pour permettre l'écriture des résultats (tricky)
 
     // lecture des données dans le pipe (1 seule ligne)
     BOOL fSuccess = ReadFile(_hReadFromZ3, bufferRead, 32, &nbBytesRead, NULL);
@@ -645,7 +645,7 @@ bool FuzzwinAlgorithm::checkSatFromSolver()
         std::string bufferString(bufferRead);
         if ("sat" == bufferString.substr(0,3)) result = true;
     }
-    else emit sendToGui("erreur de lecture de la reponse du solveur\n");
+    else emit sendToGui(TIMESTAMP + TEXTRED("erreur de lecture de la reponse du solveur\n") + LINEFEED);
 
     return result;
 } 
