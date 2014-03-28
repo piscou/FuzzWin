@@ -182,7 +182,7 @@ UINT32 CInput::getFileSize() const
 
 // renvoie le chemin vers le fichier qui contiendra la formule SMT2
 // associée à l'execution de cette entrée (option --keepfiles mise à TRUE)
-std::string CInput::getLogFile() const { return (_filePath + ".fzw"); }
+std::string CInput::getLogFile() const { return (_filePath + ".smt2"); }
 
 // renvoie le contenu du fichier sous la forme de string
 std::string CInput::getFileContent() const

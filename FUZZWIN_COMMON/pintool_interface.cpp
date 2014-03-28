@@ -113,14 +113,29 @@ void FuzzwinAlgorithm::callPintool()
         CloseHandle(pi.hProcess); 
         CloseHandle(pi.hThread);
 
-        // si option 'keepfiles' : sauvegarde de la formule (extension .fzw)
+        // si option 'keepfiles' : sauvegarde de la formule (extension .smt2)
         if (_keepFiles) 
         {
             std::ofstream ofs(_pCurrentInput->getLogFile());
-            ofs << infoHeader;                  // entete (version pin Z3 etc)
+            ofs << infoHeader << '\n';          // entete (version pin Z3 etc)
+            ofs << '\n';
             ofs << "; Fichier instrumenté : ";  // fichier d'entree etudié
-            ofs << _pCurrentInput->getFileName() << std::endl;  
-            ofs << _formula;                  // formule brute smt2
+            ofs << _pCurrentInput->getFileName();  
+            if (_verbose) // ajout de l'arbre généalogique
+            {
+                CInput *pFather = _pCurrentInput->getFather();
+                ofs << '(';
+                while (pFather)
+                {
+                    ofs << " <- " << pFather->getFileName();
+                    pFather = pFather->getFather();
+                }
+                ofs << ')';
+            }
+            ofs << "\n\n";
+            ofs << solverConfig;    // configuration du solveur
+            ofs << "\n\n";
+            ofs << _formula;        // formule brute smt2
             ofs.close();
         }
     }	

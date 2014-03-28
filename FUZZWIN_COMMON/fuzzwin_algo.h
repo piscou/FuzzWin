@@ -29,11 +29,12 @@ typedef std::set<std::string> HashTable; // stockage des hashes (MD5 base64) des
 
 static const std::string solverConfig
     (
-    "(set-option :auto-config false)"   \
-    "(set-option :produce-models true)" \
-    "(set-option :print-success false)" \
-    "(set-option :relevancy 0)"         \
-    "(set-option :smtlib2_compliant true)"  \
+    "(set-option :auto-config false)\n"   \
+    "(set-option :produce-models true)\n" \
+    "(set-option :produce-proofs false)\n" \
+    "(set-option :print-success false)\n" \
+    "(set-option :relevancy 0)\n"         \
+    "(set-option :smtlib2_compliant true)\n"  \
     "(set-logic QF_AUFBV)"
     );
 

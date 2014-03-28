@@ -33,4 +33,4 @@ set EXE="CheminVersExecutable32bits"
 --keepfiles ^
 --verbose
 
-pause
+REM pause

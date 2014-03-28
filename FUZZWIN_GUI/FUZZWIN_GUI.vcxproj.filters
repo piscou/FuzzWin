@@ -33,6 +33,12 @@
       <Extensions>cpp;moc</Extensions>
       <SourceControlFiles>False</SourceControlFiles>
     </Filter>
+    <Filter Include="Header Files\Fuzzwin_common">
+      <UniqueIdentifier>{b8a1d2cf-9943-4dab-aec8-2cf260e61739}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Fuzzwin_common">
+      <UniqueIdentifier>{68063ab0-e3c2-48bb-8fde-28f92d97b8f8}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -83,6 +89,21 @@
     <ClCompile Include="GeneratedFiles\Release\moc_qhexview.cpp">
       <Filter>Generated Files\Release</Filter>
     </ClCompile>
+    <ClCompile Include="..\FUZZWIN_COMMON\fuzzwin_algo.cpp">
+      <Filter>Source Files\Fuzzwin_common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\FUZZWIN_COMMON\md5.cpp">
+      <Filter>Source Files\Fuzzwin_common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\FUZZWIN_COMMON\pintool_interface.cpp">
+      <Filter>Source Files\Fuzzwin_common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\FUZZWIN_COMMON\debug_interface.cpp">
+      <Filter>Source Files\Fuzzwin_common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\FUZZWIN_COMMON\solver_interface.cpp">
+      <Filter>Source Files\Fuzzwin_common</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="fuzzwin_gui.h">
@@ -102,11 +123,17 @@
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="resource.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="..\FUZZWIN_COMMON\fuzzwin_algo.h">
+      <Filter>Header Files\Fuzzwin_common</Filter>
     </ClInclude>
-    <ClInclude Include="..\FUZZWIN\utilities.hpp">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="..\FUZZWIN_COMMON\md5.h">
+      <Filter>Header Files\Fuzzwin_common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\FUZZWIN_COMMON\osType.h">
+      <Filter>Header Files\Fuzzwin_common</Filter>
+    </ClInclude>
+    <ClInclude Include="resource.h">
+      <Filter>Resource Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

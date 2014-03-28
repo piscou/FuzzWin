@@ -1674,7 +1674,7 @@ void SolverFormula::final()
     finalFormula = formulaHeader + this->_formula.str() + formulaFooter;
 #else
     // MODE RELEASE : insertion du nombre total de contraintes 
-    this->_formula << "@" << std::dec << this->_iAssert;
+    this->_formula << ";@" << std::dec << this->_iAssert;
     finalFormula = this->_formula.str();
 #endif
 

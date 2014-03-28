@@ -29,10 +29,68 @@
 
 #include <QtGui/QStandardItemModel>
 
-#include "fuzzwin_algorithm.h"  // classe fuzzwinThread
+//#include "fuzzwin_algorithm.h"  // classe fuzzwinThread
 #include "fuzzwin_widgets.h"
 #include "fuzzwin_modelview.h"
 #include "qhexview.h"
+
+#include "../FUZZWIN_COMMON/fuzzwin_algo.h"
+
+#include <QDateTime>
+#define TIMESTAMP     QDateTime::currentDateTime().time().toString("[HH:mm:ss:zzz] ")
+#define LINEFEED      QString("<br>")
+#define TEXTRED(x)    QString("<font color=\"Red\">"##x##"</font>")
+#define TEXTGREEN(x)  QString("<font color=\"Green\">"##x##"</font>")
+
+class ArgumentsForAlgorithm // structure pour initialiser l'algo en mode GUI
+{
+public:
+    /* donnnées de session */
+    std::string _resultsDir;     // dossier de résultats
+    std::string _targetPath;     // exécutable fuzzé
+    std::string _firstInputPath; // entrée initiale
+    
+    /* outils externes */
+    std::string  _z3Path;   // chemin vers le solveur Z3
+    std::string  _pinPath;  // chemin vers PIN
+
+    /* Options pour le fuzzing */
+    UINT32 _maxExecutionTime;  // temps maximal d'execution 
+    UINT32 _maxConstraints;    // nombre maximal de contraintes à récupérer
+    bool   _keepFiles;         // les fichiers sont gardés dans le dossier de resultat
+    bool   _computeScore;      // option pour calculer le score de chaque entrée
+    bool   _verbose;           // mode verbeux
+    bool   _timeStamp;         // ajout de l'heure aux lignes de log
+    bool   _hashFiles;         // calcul du hash de chaque entrée pour éviter les collisions
+    bool   _traceonly;         // simple trace d'exécution de l'entrée initiale
+    std::string _bytesToTaint; // intervalles d'octets à surveiller 
+};
+
+// création de la classe algorithme adapté à la ligne de commande
+
+class FuzzwinAlgorithm_GUI : public FuzzwinAlgorithm, public QObject
+{    
+    Q_OBJECT
+
+private:
+    /**  implémentation des méthodes virtuelles pures **/
+
+    void log(const std::string &msg) const;        // envoi en console
+    void logVerbose(const std::string &msg) const; // idem en mode verbose
+    void logVerboseEndOfLine() const;
+    void logEndOfLine() const;
+    void logTimeStamp() const;
+    void logVerboseTimeStamp() const;
+
+signals: // signal émis (log)
+    void sendToGui(const QString&) const;
+
+public:
+    explicit FuzzwinAlgorithm_GUI(OSTYPE osType);
+
+    // initialisation des variables de la classe. Renvoie 0 si erreur
+    int initialize(ArgumentsForAlgorithm *pArgs);
+};
 
 class FUZZWIN_GUI : public QMainWindow
 {
@@ -51,7 +109,7 @@ private:
     
     QProcessEnvironment _env;         // variables d'environnement du processus  
     QThread *_pFuzzwinThread;         // thread de l'algo SAGE
-    FuzzwinAlgorithm *_pFuzzwinAlgo;  // algorithme sage (lancé dans le thread)
+    FuzzwinAlgorithm *_pFuzzwinAlgo;  // objet algorithme sage (lancé dans le thread supra)
 
     QString _pinPath_X86, _pinPath_X64; // chemin des exécutables PIN  (32/64bits)
     QString _pintool_X86, _pintool_X64; // chemin des DLL des pintools (32/64bits)
@@ -137,9 +195,6 @@ private:
     // réimplémentation de l'évènement "Close" pour demander confirmation
     void closeEvent(QCloseEvent *e);    
  
-signals:
-    void launchAlgorithm();
-
 public slots:
     void selectPin_clicked(); // selection du répertoire de PIN
     void selectZ3_clicked(); // sélection du répertoire de Z3

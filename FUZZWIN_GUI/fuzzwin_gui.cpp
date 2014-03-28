@@ -1,5 +1,56 @@
 #include "fuzzwin_gui.h"
-#include "utilities.hpp"
+
+/**** CLASSE ALGORITHME ****/
+
+FuzzwinAlgorithm_GUI::FuzzwinAlgorithm_GUI(OSTYPE osType) 
+    : FuzzwinAlgorithm(osType) {}
+
+/**  implémentation des méthodes virtuelles pures **/
+
+void FuzzwinAlgorithm_GUI::log(const std::string &msg) const
+{
+    emit sendToGui(QString::fromLocal8Bit(msg.c_str()));
+}
+
+void FuzzwinAlgorithm_GUI::logVerbose(const std::string &msg) const
+{
+    if (_verbose) emit sendToGui(QString::fromLocal8Bit(msg.c_str()));
+}
+
+void FuzzwinAlgorithm_GUI::logVerboseEndOfLine() const
+{
+    if (_verbose) emit sendToGui(LINEFEED);
+}
+
+void FuzzwinAlgorithm_GUI::logEndOfLine() const
+{
+    emit sendToGui(LINEFEED);
+}
+
+void FuzzwinAlgorithm_GUI::logTimeStamp() const
+{
+    emit sendToGui(TIMESTAMP);
+}
+
+void FuzzwinAlgorithm_GUI::logVerboseTimeStamp() const
+{
+    if (_verbose) emit sendToGui(TIMESTAMP);
+}
+
+// initialisation des variables de la classe. Renvoie 0 si erreur
+int initialize(ArgumentsForAlgorithm *pArgs)
+{
+    // recopie des variables d'une classe à une autre
+    // + cération de _pCurrentInput
+    // + recopie input dans dossier de résultats
+    // (NB : il a déjà été créé et vierge par la GUI)
+    // + construction de _cmdLinePin à partir de PIN_ROOT et des pintools et de l'archi 32/64
+    // + création named pipe + création processus solveur
+
+    // EN GROS REPRENDRE INITIALIZE DE LA CMD  !!! :)::):)
+
+}
+
 
 /****** CLASSE GUI *********/
 
@@ -487,7 +538,7 @@ void FUZZWIN_GUI::go_clicked()
     _pFuzzwinThread = new QThread;
 
     // création de l'objet "algorithme", avec entrée initiale, dossier de résultats et exécutable cible
-    _pFuzzwinAlgo = new FuzzwinAlgorithm(firstInput, targetPath, resultDirectory, maxTime);
+    _pFuzzwinAlgo = new FuzzwinAlgorithm_GUI(firstInput, targetPath, resultDirectory, maxTime);
     // affectattion de l'objet au thread
     _pFuzzwinAlgo->moveToThread(_pFuzzwinThread);
 

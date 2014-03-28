@@ -36,10 +36,10 @@
     <ClInclude Include="..\FUZZWIN_COMMON\md5.h">
       <Filter>Fichiers d%27en-tête\Fuzzwin_common</Filter>
     </ClInclude>
-    <ClInclude Include="osType.h">
+    <ClInclude Include="..\FUZZWIN_COMMON\fuzzwin_algo.h">
       <Filter>Fichiers d%27en-tête\Fuzzwin_common</Filter>
     </ClInclude>
-    <ClInclude Include="..\FUZZWIN_COMMON\fuzzwin_algo.h">
+    <ClInclude Include="..\FUZZWIN_COMMON\osType.h">
       <Filter>Fichiers d%27en-tête\Fuzzwin_common</Filter>
     </ClInclude>
   </ItemGroup>

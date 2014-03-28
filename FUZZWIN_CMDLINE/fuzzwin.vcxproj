@@ -176,6 +176,7 @@
   <ItemGroup>
     <ClInclude Include="..\FUZZWIN_COMMON\fuzzwin_algo.h" />
     <ClInclude Include="..\FUZZWIN_COMMON\md5.h" />
+    <ClInclude Include="..\FUZZWIN_COMMON\osType.h" />
     <ClInclude Include="getopt_pp.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
       </ExcludedFromBuild>
@@ -184,7 +185,6 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
       </ExcludedFromBuild>
     </ClInclude>
-    <ClInclude Include="osType.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\FUZZWIN_COMMON\debug_interface.cpp" />

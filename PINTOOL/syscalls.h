@@ -1,5 +1,7 @@
 #pragma once
 #include "pintool.h"
+// les types d'OS supportés sont dans un fichier commun pintool / algo SAGE
+#include "../FUZZWIN_COMMON/osType.h"
 #include <map>
 
 // valeur utilisée pour faire un fseek avec le syscall SetInformationFile
@@ -81,38 +83,6 @@ public:
     WINDOWS::PLARGE_INTEGER pOffsetFromStart;
     // pointeur vers taille de la vue
     WINDOWS::PSIZE_T pViewSize;
-};
-
-// codes définissant le type d'OS 32bits pour la détermination des 
-// numéros d'appels systèmes, inspiré de l'exemple fourni sur MSDN
-// http://msdn.microsoft.com/en-us/library/ms724429(v=vs.85).aspx
-// pour les OS 64bits, les numéros des syscalls sont identiques
-// quelque soit la version de Windows
-enum OSTYPE 
-{
-    HOST_X86_2000,
-    HOST_X86_XP,
-    HOST_X86_2003,
-
-    HOST_X86_VISTA_SP0, // pour cette version, le syscall 'setinformationfile' n'est pas le meme que pour les autres SP...
-    HOST_X86_VISTA,
-    HOST_X86_2008 = HOST_X86_VISTA,   // les index des syscalls sont les mêmes
-    HOST_X86_2008_R2 = HOST_X86_2008, // les index des syscalls sont les mêmes
-   
-    HOST_X86_SEVEN,
-    
-    HOST_X86_WIN80,
-    HOST_X86_2012 = HOST_X86_WIN80, 
-    
-    HOST_X86_WIN81,
-    HOST_X86_2012_R2 = HOST_X86_WIN81, // a priori ce sont les memes
-    
-    BEGIN_HOST_64BITS,
-    HOST_X64_BEFORE_WIN8 = BEGIN_HOST_64BITS,
-    HOST_X64_WIN80,
-    HOST_X64_WIN81,
-    HOST_UNKNOWN,
-    HOST_END = HOST_UNKNOWN
 };
 
 // types de syscalls qui sont suivis dans le pintool
