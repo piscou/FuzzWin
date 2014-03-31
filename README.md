@@ -1,8 +1,8 @@
-FuzzWin V1.0
-============
+FuzzWin
+=======
 
 Auteur : Sébastien LECOMTE   
-Version 1.0 du 26/02/2014
+Version 1.3.1 du 31/03/2014
 **************************
 
 Installation
