@@ -26,24 +26,32 @@ static const int index64[64] = {
 /**** constante associée à cette table ****/
 static const UINT64 debruijn64 = 0x03f79d71b4cb0a89;
 
-/***  BSF  ***/
-/* int bitScanForward(U64 bb) 
+/**** conversion predicate->string ****/
+static const std::string predicateToString[PREDICATE_LAST] = 
 {
-    assert (bb != 0);
-    return index64[((bb ^ (bb-1)) * debruijn64) >> 58];
-} */
-
-/***  BSR  ***/
-/* int bitScanReverse(U64 bb) {
-   assert (bb != 0);
-   bb |= bb >> 1; 
-   bb |= bb >> 2;
-   bb |= bb >> 4;
-   bb |= bb >> 8;
-   bb |= bb >> 16;
-   bb |= bb >> 32;
-   return index64[(bb * debruijn64) >> 58];
-} */
+    "",     // PREDICATE_ALWAYS_TRUE
+    "",     // PREDICATE_INVALID
+    "B",    // PREDICATE_BELOW 
+    "BE",   // BELOW_OR_EQUAL
+    "L",    // LESS
+    "LE",   // LESS_OR_EQUAL
+    "NB",   // NOT_BELOW
+    "NBE",  // NOT_BELOW_OR_EQUAL
+    "NL",   // NOT_LESS
+    "NLE",  // NOT_LESS_OR_EQUAL
+    "NO",   // NOT_OVERFLOW
+    "NP",   // NOT_PARITY
+    "NS",   // NOT_SIGN
+    "NZ",   // NOT_ZERO
+    "O",    // OVERFLOW
+    "P",    // PARITY
+    "S",    // SIGN
+    "Z",    // ZERO
+    "CXZ",  // CX_NON_ZERO
+    "ECXZ", // ECX_NON_ZERO
+    "RCXZ", // RCX_NON_ZERO
+    "SAVED_GCX" // SAVED_GCX_NON_ZERO
+};
 
 class SolverFormula
 {
@@ -84,21 +92,18 @@ private:
     // NB : le tableau est une liste de 64 valeurs sur 64bits
     // qq soit la taille utilisée dans BSF/BSR : il faudra 
     // faire un zero_extend de la source scannée
-    std::string getDeBruijnArray();
-
+    const std::string getDeBruijnArray();
+    
+    // renvoie la valeur symbolique (variable booléenne) du prédicat fourni en argument
+    const std::string getPredicateFormula(TaintManager_Thread *pTmgrTls, 
+                                            PREDICATE pred, ADDRINT flagsOrRegValue);
 public:
     SolverFormula();
 
-    // traduit une contrainte dépendant des flags 
-    void addConstraint_OVERFLOW (TaintManager_Thread *pTmgrTls, ADDRINT insAddress, bool isTaken);
-    void addConstraint_PARITY   (TaintManager_Thread *pTmgrTls, ADDRINT insAddress, bool isTaken);
-    void addConstraint_SIGN     (TaintManager_Thread *pTmgrTls, ADDRINT insAddress, bool isTaken);
-    void addConstraint_ZERO     (TaintManager_Thread *pTmgrTls, ADDRINT insAddress, bool isTaken);
-    void addConstraint_BELOW    (TaintManager_Thread *pTmgrTls, ADDRINT insAddress, bool isTaken);
-    void addConstraint_LESS          (TaintManager_Thread *pTmgrTls, ADDRINT insAddress, bool isTaken, ADDRINT flagsValue);
-    void addConstraint_LESS_OR_EQUAL (TaintManager_Thread *pTmgrTls, ADDRINT insAddress, bool isTaken, ADDRINT flagsValue);
-    void addConstraint_BELOW_OR_EQUAL(TaintManager_Thread *pTmgrTls, ADDRINT insAddress, bool isTaken, ADDRINT flagsValue);
-
+    // ajoute une contrainte sur un saut conditionnel (Jcc) marqué
+    void addConstraintJcc(TaintManager_Thread *pTmgrTls, PREDICATE pred, bool isTaken,
+                           ADDRINT insAddress, ADDRINT flagsOrRegValue = 0); 
+    
     // fabrication de la formule finale, et envoi dans le pipe
     void final();
 };

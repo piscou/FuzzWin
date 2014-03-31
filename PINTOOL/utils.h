@@ -1,47 +1,117 @@
 #pragma once 
 #include "TaintManager.h"
 
+// Macros composant les arguments utilisés lors de l'insertion d'une fonction d'analyse 
+// pour construire un objet représentant l'adressage indirect d'une opérande mémoire 
+// ces arguments seront ajoutés à une IARGLIST
+
+#define IARGLIST_BISD IARG_UINT32,    baseReg, /* registre de base utilisé*/ \
+                      IARG_REG_VALUE, baseReg, /* valeur lors du callback */ \
+                      IARG_UINT32,    indexReg,/* registre d'index utilisé*/ \
+                      IARG_REG_VALUE, indexReg, /* valeur lors du callback*/ \
+                      IARG_UINT32,    scale,    /* valeur du scale        */ \
+                      IARG_UINT32,    displ     /* déplacement (ici casté)*/ 
+#define FUNCARGS_BISD THREADID tid,                        \
+                      REG baseReg,  ADDRINT baseRegValue,  \
+                      REG indexReg, ADDRINT indexRegValue, \
+                      UINT32 scale,                        \
+                      INT32 displ                          \
+                      ADDRESS_DEBUG
+
+#define IARGLIST_BIS  IARG_UINT32,    baseReg, /* registre de base utilisé*/ \
+                      IARG_REG_VALUE, baseReg, /* valeur lors du callback */ \
+                      IARG_UINT32,    indexReg,/* registre d'index utilisé*/ \
+                      IARG_REG_VALUE, indexReg, /* valeur lors du callback*/ \
+                      IARG_UINT32,    scale     /* valeur du scale */
+#define FUNCARGS_BIS  THREADID tid,                        \
+                      REG baseReg,  ADDRINT baseRegValue,  \
+                      REG indexReg, ADDRINT indexRegValue, \
+                      UINT32 scale                         \
+                      ADDRESS_DEBUG
+
+#define IARGLIST_BID  IARG_UINT32,    baseReg, /* registre de base utilisé*/ \
+                      IARG_REG_VALUE, baseReg, /* valeur lors du callback */ \
+                      IARG_UINT32,    indexReg,/* registre d'index utilisé*/ \
+                      IARG_REG_VALUE, indexReg, /* valeur lors du callback*/ \
+                      IARG_UINT32,    displ     /* déplacement (ici casté)*/ 
+#define FUNCARGS_BID  THREADID tid,                        \
+                      REG baseReg,  ADDRINT baseRegValue,  \
+                      REG indexReg, ADDRINT indexRegValue, \
+                      INT32 displ                          \
+                      ADDRESS_DEBUG
+
+#define IARGLIST_BI   IARG_UINT32,    baseReg, /* registre de base utilisé*/ \
+                      IARG_REG_VALUE, baseReg, /* valeur lors du callback */ \
+                      IARG_UINT32,    indexReg,/* registre d'index utilisé*/ \
+                      IARG_REG_VALUE, indexReg  /* valeur lors du callback*/ 
+#define FUNCARGS_BI   THREADID tid,                        \
+                      REG baseReg,  ADDRINT baseRegValue,  \
+                      REG indexReg, ADDRINT indexRegValue  \
+                      ADDRESS_DEBUG
+
+#define IARGLIST_BD   IARG_UINT32,    baseReg, /* registre de base utilisé */\
+                      IARG_REG_VALUE, baseReg, /* valeur lors du callback */ \
+                      IARG_UINT32,    displ    /* déplacement (ici casté)*/ 
+#define FUNCARGS_BD   THREADID tid,                        \
+                      REG baseReg,  ADDRINT baseRegValue,  \
+                      INT32 displ                          \
+                      ADDRESS_DEBUG
+
+#define IARGLIST_B    IARG_UINT32,    baseReg, /* registre de base utilisé */\
+                      IARG_REG_VALUE, baseReg  /* valeur lors du callback */ 
+#define FUNCARGS_B    THREADID tid,                        \
+                      REG baseReg,  ADDRINT baseRegValue   \
+                      ADDRESS_DEBUG
+
+#define IARGLIST_ISD  IARG_UINT32,    indexReg,/* registre d'index utilisé*/ \
+                      IARG_REG_VALUE, indexReg, /* valeur lors du callback*/ \
+                      IARG_UINT32,    scale,    /* valeur du scale        */ \
+                      IARG_UINT32,    displ     /* déplacement (ici casté)*/
+#define FUNCARGS_ISD  THREADID tid,                        \
+                      REG indexReg, ADDRINT indexRegValue, \
+                      UINT32 scale,                        \
+                      INT32 displ                          \
+                      ADDRESS_DEBUG
+
+#define IARGLIST_IS   IARG_UINT32,    indexReg,/* registre d'index utilisé*/ \
+                      IARG_REG_VALUE, indexReg, /* valeur lors du callback*/ \
+                      IARG_UINT32,    scale     /* valeur du scale        */
+#define FUNCARGS_IS   THREADID tid,                        \
+                      REG indexReg, ADDRINT indexRegValue, \
+                      UINT32 scale                         \
+                      ADDRESS_DEBUG
+
+// Macro de construction d'une liste d'arguments
+#define _MAKE_ARGS_EA(x)   callback = (AFUNPTR) UTILS::computeEA_##x##; \
+                           IARGLIST_AddArguments(args, IARG_THREAD_ID,  \
+                           IARGLIST_##x##, CALLBACK_DEBUG IARG_END); 
+
+
 namespace UTILS 
 {
-// Callbacks pour les instructions non gérées => démarquage destination(s)
+
 void cUNHANDLED(INS &ins);
 
-// démarquage rapide registre par callback 
-template<UINT32 lengthInBits> void PIN_FAST_ANALYSIS_CALL uREG(THREADID tid, REG reg)
-{  
-    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
-    pTmgrTls->unTaintRegister<lengthInBits>(reg); 
-}
+void cGetKindOfEA(const INS &ins);
 
-// démarquage rapide mémoire par callback. Pas de template car taille indéfinie 
-inline void PIN_FAST_ANALYSIS_CALL uMEM(ADDRINT address, UINT32 sizeInBytes)
-{  
-    ADDRINT lastAddress = address + sizeInBytes;
-    while (address++ < lastAddress)    pTmgrGlobal->unTaintMemory<8>(address);
-}
 
-inline void PIN_FAST_ANALYSIS_CALL uFLAGS(THREADID tid)  
-{  
-    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
-    pTmgrTls->unTaintAllFlags(); 
-}
+template<UINT32 len> 
+void PIN_FAST_ANALYSIS_CALL uREG  (THREADID tid, REG reg);
+void PIN_FAST_ANALYSIS_CALL uMEM  (ADDRINT address, UINT32 sizeInBytes);
+void PIN_FAST_ANALYSIS_CALL uFLAGS(THREADID tid);
 
 // calcule et stocke un objet correspondant au marquage de l'adresse indirecte
 // l'adresse est calculée sur 32bits (x86) ou 64bits (x64) et stockée dans TaintManager
-// a charge de l'appelant de l'adapter à la longueur réelle de l'adresse effective (OperandSize)
-// 3 surcharges : 
-// 1) Base et Index Présents : cas BISD
-// 2) Index Présent (déplacement nul ou non): cas ISD
-// 3) Base Présent et déplacement (nul ou non) : cas BD.
-// pour plus de détails voir la définition dans utils.cpp
+// l'appelant pourra alors l'adapter à la longueur réelle de l'adresse effective (OperandSize)
 
-#if TARGET_IA32
-void computeTaintEffectiveAddress(THREADID tid, REG baseReg,  ADDRINT baseRegValue,  REG indexReg, ADDRINT indexRegValue, INT32 displ, UINT32 scale);
-void computeTaintEffectiveAddress(THREADID tid, REG indexReg, ADDRINT indexRegValue, INT32 displ,  UINT32 scale);
-void computeTaintEffectiveAddress(THREADID tid, REG baseReg,  ADDRINT baseRegValue,  INT32 displ);
-#else
-void computeTaintEffectiveAddress(THREADID tid, REG baseReg,  ADDRINT baseRegValue,  REG indexReg, ADDRINT indexRegValue, INT32 displ, UINT32 scale);
-void computeTaintEffectiveAddress(THREADID tid, REG indexReg, ADDRINT indexRegValue, INT32 displ,  UINT32 scale);
-void computeTaintEffectiveAddress(THREADID tid, REG baseReg,  ADDRINT baseRegValue,  INT32 displ);
-#endif
+void computeEA_BISD(FUNCARGS_BISD);
+void computeEA_BIS (FUNCARGS_BIS);
+void computeEA_BID (FUNCARGS_BID);
+void computeEA_BI  (FUNCARGS_BI);
+void computeEA_BD  (FUNCARGS_BD);
+void computeEA_B   (FUNCARGS_B);
+void computeEA_ISD (FUNCARGS_ISD);
+void computeEA_IS  (FUNCARGS_IS);
 } // namespace UTILS
+
+#include "utils.hpp"

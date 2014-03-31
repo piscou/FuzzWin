@@ -21,7 +21,7 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>{016C7F1E-D4F9-4811-A61F-57B34284592F}</ProjectGuid>
     <RootNamespace>SAGE</RootNamespace>
-    <ProjectName>FUZZWIN</ProjectName>
+    <ProjectName>FUZZWIN_CMDLINE</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -67,7 +67,7 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <OutDir>$(SolutionDir)BUILD\</OutDir>
+    <OutDir>$(SolutionDir)BUILD\x86\</OutDir>
     <TargetName>fuzzwin</TargetName>
     <CodeAnalysisRuleSet>ExtendedCorrectnessRules.ruleset</CodeAnalysisRuleSet>
     <LibraryPath>$(LibraryPath)</LibraryPath>
@@ -78,11 +78,11 @@
     <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
     <LibraryPath>$(LibraryPath)</LibraryPath>
     <IncludePath>$(IncludePath)</IncludePath>
-    <OutDir>$(SolutionDir)BUILD\</OutDir>
+    <OutDir>$(SolutionDir)BUILD\x64\</OutDir>
     <IntDir>$(Configuration)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <OutDir>$(SolutionDir)BUILD\</OutDir>
+    <OutDir>$(SolutionDir)BUILD\x86\</OutDir>
     <TargetName>fuzzwin</TargetName>
     <IncludePath>$(IncludePath)</IncludePath>
     <LibraryPath>$(LibraryPath)</LibraryPath>
@@ -93,7 +93,7 @@
     <IncludePath>$(IncludePath)</IncludePath>
     <LibraryPath>$(LibraryPath)</LibraryPath>
     <CodeAnalysisRuleSet>ExtendedCorrectnessRules.ruleset</CodeAnalysisRuleSet>
-    <OutDir>$(SolutionDir)BUILD\</OutDir>
+    <OutDir>$(SolutionDir)BUILD\x64\</OutDir>
     <IntDir>$(Configuration)\</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -174,22 +174,38 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="algorithmeSearch.h" />
-    <ClInclude Include="algorithmeExpandExecution.h" />
-    <ClInclude Include="check.h" />
-    <ClInclude Include="CInput.h" />
-    <ClInclude Include="getopt_pp.h" />
-    <ClInclude Include="fuzzwin.h" />
-    <ClInclude Include="solver.h" />
+    <ClInclude Include="..\FUZZWIN_COMMON\CInput.h" />
+    <ClInclude Include="..\FUZZWIN_COMMON\fuzzwin_algo.h" />
+    <ClInclude Include="..\FUZZWIN_COMMON\md5.h" />
+    <ClInclude Include="..\FUZZWIN_COMMON\osType.h" />
+    <ClInclude Include="getopt_pp.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="fuzzwin_cmdLine.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </ExcludedFromBuild>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="algorithmeExpandExecution.cpp" />
-    <ClCompile Include="algorithmeSearch.cpp" />
-    <ClCompile Include="check.cpp" />
-    <ClCompile Include="getopt_pp.cpp" />
-    <ClCompile Include="initialize.cpp" />
-    <ClCompile Include="main.cpp" />
-    <ClCompile Include="solver.cpp" />
+    <ClCompile Include="..\FUZZWIN_COMMON\CInput.cpp" />
+    <ClCompile Include="..\FUZZWIN_COMMON\debug_interface.cpp" />
+    <ClCompile Include="..\FUZZWIN_COMMON\fuzzwin_algo.cpp" />
+    <ClCompile Include="..\FUZZWIN_COMMON\md5.cpp" />
+    <ClCompile Include="..\FUZZWIN_COMMON\pintool_interface.cpp" />
+    <ClCompile Include="..\FUZZWIN_COMMON\solver_interface.cpp" />
+    <ClCompile Include="getopt_pp.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="fuzzwin_cmdLine.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="main.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </ExcludedFromBuild>
+    </ClCompile>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

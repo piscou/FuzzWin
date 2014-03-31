@@ -14,7 +14,7 @@
 
 // le kit 62376 de PIN provoque un warning de cast (C4244) à la compilation
 #pragma warning( push )
-#pragma warning( disable : 4244 ) // cast de ADDRINT en UINT32 dans REGSET.PH
+#pragma warning( disable : 4244 )
 #include "pin.h"
 #pragma warning( pop )
 
@@ -22,7 +22,7 @@
 #include <iostream> 
 
 // Namespace obligatoire pour eviter les confilts WINAPI / PIN
-namespace WINDOWS  
+namespace WINDOWS 
 {
 #include <windows.h>
 }
@@ -31,7 +31,7 @@ namespace WINDOWS
 // selon l'architecture 32/64 bits
 #include "architecture.h"
 
-// le type DWORD n'est pas défini par PIN
+/* les types DWORD et HANDLE ne sont pas définis par PIN */
 typedef unsigned long DWORD; 
 typedef WINDOWS::HANDLE HANDLE;
 
@@ -95,6 +95,7 @@ extern KNOB<std::string> KnobInputFile;
 extern KNOB<UINT32>      KnobMaxExecutionTime;
 extern KNOB<std::string> KnobBytesToTaint;
 extern KNOB<UINT32>      KnobMaxConstraints;
+extern KNOB<UINT32>      KnobOsType;
 extern KNOB<std::string> KnobOption;
 extern KNOB<UINT32>      KnobOsType;
 
@@ -178,7 +179,7 @@ template<> class registerACC<64>
 template<UINT32 lengthInBits> class registerIO 
 { public:  static inline REG getReg() { return REG_INVALID_ ; }};
 template<> class registerIO<8> 
-{ public:  static inline REG getReg() { return REG_AH; }}; // tricky mais c'est comme cela que MUL est implémenté par Intel
+{ public:  static inline REG getReg() { return REG_AH; }}; // 8 bits = AH et non DH (cf. instr MUL)
 template<> class registerIO<16> 
 { public:  static inline REG getReg() { return REG_DX; }};
 template<> class registerIO<32>
@@ -204,7 +205,8 @@ template<> class minusOne<64>
 template<UINT32 lengthInBits> ADDRINT getMemoryValue(ADDRINT address)
 {
     ADDRINT returnValue = 0;
-    // déréférencement de 'lengthInBits>>3' octets à partir de 'address'. EquivalengthInBitst à Memcpy pour PIN
+    // déréférencement de 'lengthInBits>>3' octets à partir de 'address'
+    // Equivalent de Memcpy pour PIN
     PIN_SafeCopy(&returnValue, reinterpret_cast<ADDRINT*>(address), lengthInBits >> 3);
     return (returnValue);
 }

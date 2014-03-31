@@ -1,0 +1,66 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="getopt_pp.cpp">
+      <Filter>Fichiers sources</Filter>
+    </ClCompile>
+    <ClCompile Include="main.cpp">
+      <Filter>Fichiers sources</Filter>
+    </ClCompile>
+    <ClCompile Include="..\FUZZWIN_COMMON\md5.cpp">
+      <Filter>Fichiers sources\Fuzzwin_common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\FUZZWIN_COMMON\fuzzwin_algo.cpp">
+      <Filter>Fichiers sources\Fuzzwin_common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\FUZZWIN_COMMON\pintool_interface.cpp">
+      <Filter>Fichiers sources\Fuzzwin_common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\FUZZWIN_COMMON\solver_interface.cpp">
+      <Filter>Fichiers sources\Fuzzwin_common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\FUZZWIN_COMMON\debug_interface.cpp">
+      <Filter>Fichiers sources\Fuzzwin_common</Filter>
+    </ClCompile>
+    <ClCompile Include="fuzzwin_cmdLine.cpp">
+      <Filter>Fichiers sources</Filter>
+    </ClCompile>
+    <ClCompile Include="..\FUZZWIN_COMMON\CInput.cpp">
+      <Filter>Fichiers sources\Fuzzwin_common</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="getopt_pp.h">
+      <Filter>Fichiers d%27en-tête</Filter>
+    </ClInclude>
+    <ClInclude Include="fuzzwin_cmdLine.h">
+      <Filter>Fichiers d%27en-tête</Filter>
+    </ClInclude>
+    <ClInclude Include="..\FUZZWIN_COMMON\md5.h">
+      <Filter>Fichiers d%27en-tête\Fuzzwin_common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\FUZZWIN_COMMON\fuzzwin_algo.h">
+      <Filter>Fichiers d%27en-tête\Fuzzwin_common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\FUZZWIN_COMMON\osType.h">
+      <Filter>Fichiers d%27en-tête\Fuzzwin_common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\FUZZWIN_COMMON\CInput.h">
+      <Filter>Fichiers d%27en-tête\Fuzzwin_common</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Fichiers d%27en-tête">
+      <UniqueIdentifier>{2e86418a-45a3-4301-85b5-736368b86d03}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Fichiers sources">
+      <UniqueIdentifier>{474f4531-7354-49e1-8315-0bb55409df41}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Fichiers d%27en-tête\Fuzzwin_common">
+      <UniqueIdentifier>{b62ebaa8-ddda-483d-913e-a4315f7adffe}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Fichiers sources\Fuzzwin_common">
+      <UniqueIdentifier>{00348dcf-03f9-4d23-905b-3c505de532bf}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

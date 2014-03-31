@@ -30,4 +30,13 @@ void sZERO    (THREADID tid, bool isTaken, ADDRINT insAddress);
 void sLESS    (THREADID tid, bool isTaken, ADDRINT eflagsValue, ADDRINT insAddress);
 void sBELOW_OR_EQUAL(THREADID tid, bool isTaken, ADDRINT eflagsValue, ADDRINT insAddress);
 void sLESS_OR_EQUAL (THREADID tid, bool isTaken, ADDRINT eflagsValue, ADDRINT insAddress);
+
+void sNOT_BELOW   (THREADID tid, bool isTaken, ADDRINT insAddress);
+void sNOT_SIGN    (THREADID tid, bool isTaken, ADDRINT insAddress);
+void sNOT_OVERFLOW(THREADID tid, bool isTaken, ADDRINT insAddress);
+void sNOT_PARITY  (THREADID tid, bool isTaken, ADDRINT insAddress);
+void sNOT_ZERO    (THREADID tid, bool isTaken, ADDRINT insAddress);
+void sNOT_LESS    (THREADID tid, bool isTaken, ADDRINT eflagsValue, ADDRINT insAddress);
+void sNOT_BELOW_OR_EQUAL(THREADID tid, bool isTaken, ADDRINT eflagsValue, ADDRINT insAddress);
+void sNOT_LESS_OR_EQUAL (THREADID tid, bool isTaken, ADDRINT eflagsValue, ADDRINT insAddress);
 } // namespace CONDITIONAL_BR

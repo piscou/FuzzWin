@@ -47,7 +47,11 @@ void DATAXFER::cMOV(INS &ins)
 
         if (!regSize) return;   // registre destination non suivi
         else if (INS_IsMemoryRead(ins)) // Mémoire -> Registre
-        {           
+        {                     
+            /**********************/
+            UTILS::cGetKindOfEA(ins);
+            /**********************/
+
             switch (regSize)
             {
             case 1:	callback = (AFUNPTR) sMOV_MR<8>;  break;

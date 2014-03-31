@@ -147,7 +147,7 @@ template<UINT32 lengthInBits> void STRINGOP::sSCAS(THREADID tid, ADDRINT address
         // marquage flags 
         BINARY::fTaintCMP<lengthInBits>(pTmgrTls, srcDest, src);
         // déclaration de la contrainte
-        g_pFormula->addConstraint_ZERO(pTmgrTls, insAddress, strInfo.isREPZ);
+        g_pFormula->addConstraintJcc(pTmgrTls, PREDICATE_ZERO, strInfo.isREPZ, insAddress);
     }
 } // sSCAS
 
@@ -176,6 +176,6 @@ template<UINT32 lengthInBits> void STRINGOP::sCMPS
         BINARY::fTaintCMP<lengthInBits>(pTmgrTls, srcDest, src);	
         
         // déclaration de la contrainte s'il y avait un préfixe REP (codes 1 REPE = 0 et 2)
-        if (repCode)  g_pFormula->addConstraint_ZERO(pTmgrTls, insAddress, (repCode == 1) ? true : false); 
+        if (repCode)  g_pFormula->addConstraintJcc(pTmgrTls, PREDICATE_ZERO, (repCode == 1), insAddress); 
     }
 } // sCMPS

@@ -172,6 +172,7 @@ void FLAGOP::sSAHF(THREADID tid ADDRESS_DEBUG)
 
 void FLAGOP::sSALC(THREADID tid, ADDRINT regALValue, ADDRINT insAddress)
 {
+#if 0
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
 
     // insertion de la contrainte, si CF était marqué
@@ -188,4 +189,5 @@ void FLAGOP::sSALC(THREADID tid, ADDRINT regALValue, ADDRINT insAddress)
     // la contrainte sur sa valeur a été exprimée via CF
     // cf comportement identique que SETcc
     pTmgrTls->unTaintRegister<8>(REG_AL);
+#endif
 } // sSALC

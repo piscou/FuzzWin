@@ -69,7 +69,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>false</LinkIncremental>
     <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
-    <OutDir>$(SolutionDir)BUILD\</OutDir>
+    <OutDir>$(SolutionDir)BUILD\x86\</OutDir>
     <TargetExt>.dll</TargetExt>
     <IncludePath>$(PIN_ROOT)source\include\pin;$(PIN_ROOT)source\include\pin\gen;$(PIN_ROOT)extras\xed2-ia32\include;$(PIN_ROOT)extras\components\include;$(IncludePath)</IncludePath>
     <LibraryPath>$(PIN_ROOT)ia32\lib;$(PIN_ROOT)ia32\lib-ext;$(PIN_ROOT)extras\xed2-ia32\lib;$(LibraryPath)</LibraryPath>
@@ -85,13 +85,13 @@
     <LinkIncremental>false</LinkIncremental>
     <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
     <TargetName>fuzzwinX64</TargetName>
-    <OutDir>$(SolutionDir)BUILD\</OutDir>
+    <OutDir>$(SolutionDir)BUILD\x64\</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
     <IncludePath>$(PIN_ROOT)source\include\pin;$(PIN_ROOT)source\include\pin\gen;$(PIN_ROOT)extras\xed2-ia32\include;$(PIN_ROOT)extras\components\include;$(IncludePath)</IncludePath>
     <LibraryPath>$(PIN_ROOT)ia32\lib;$(PIN_ROOT)ia32\lib-ext;$(PIN_ROOT)extras\xed2-ia32\lib;$(LibraryPath)</LibraryPath>
-    <OutDir>$(SolutionDir)BUILD\</OutDir>
+    <OutDir>$(SolutionDir)BUILD\x86\</OutDir>
     <TargetExt>.dll</TargetExt>
     <GenerateManifest />
     <ExecutablePath>$(VCInstallDir)bin;$(WindowsSdkDir)bin\NETFX 4.0 Tools;$(WindowsSdkDir)bin;$(VSInstallDir)Common7\Tools\bin;$(VSInstallDir)Common7\tools;$(VSInstallDir)Common7\ide;$(ProgramFiles)\HTML Help Workshop;$(FrameworkSDKDir)\bin;$(MSBuildToolsPath32);$(VSInstallDir);$(SystemRoot)\SysWow64;$(FxCopDir);$(PATH);</ExecutablePath>
@@ -104,7 +104,7 @@
     <IncludePath>$(PIN_ROOT)source\include\pin;$(PIN_ROOT)source\include\pin\gen;$(PIN_ROOT)extras\xed2-intel64\include;$(PIN_ROOT)extras\components\include;$(IncludePath)</IncludePath>
     <LibraryPath>$(PIN_ROOT)intel64\lib;$(PIN_ROOT)intel64\lib-ext;$(PIN_ROOT)extras\xed2-intel64\lib;$(LibraryPath)</LibraryPath>
     <TargetName>fuzzwinX64</TargetName>
-    <OutDir>$(SolutionDir)BUILD\</OutDir>
+    <OutDir>$(SolutionDir)BUILD\x64\</OutDir>
     <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -420,6 +420,8 @@ del "$(TargetDir)$(TargetName).exp"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="binary.h" />
+    <ClInclude Include="binary.hpp" />
     <ClInclude Include="bitbyte.h" />
     <ClInclude Include="bitbyte.hpp" />
     <ClInclude Include="convert.h" />
@@ -438,15 +440,14 @@ del "$(TargetDir)$(TargetName).exp"</Command>
     <ClInclude Include="shift.hpp" />
     <ClInclude Include="stringop.hpp" />
     <ClInclude Include="unconditional_branch.h" />
-    <ClInclude Include="binary.hpp" />
     <ClInclude Include="dataxfer.hpp">
       <FileType>Document</FileType>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</ExcludedFromBuild>
     </ClInclude>
+    <ClInclude Include="utils.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="architecture.h" />
-    <ClInclude Include="binary.h" />
     <ClInclude Include="call.h" />
     <ClInclude Include="cmov.h" />
     <ClInclude Include="conditional_branch.h" />
