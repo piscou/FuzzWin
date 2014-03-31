@@ -99,8 +99,9 @@ bool FuzzwinAlgorithm::createSolverProcess(const std::string &solverPath)
     siStartInfo.dwFlags		|= STARTF_USESTDHANDLES;
 
     std::string z3CmdLine(solverPath + " /smt2 /in");
+    
     // Creation du processus Z3
-    if (!CreateProcess(NULL, (LPSTR) z3CmdLine.c_str(),     // command line 
+    if (!CreateProcess(NULL, (LPSTR) z3CmdLine.c_str(), 
         NULL,          // process security attributes 
         NULL,          // primary thread security attributes 
         TRUE,          // handles are inherited 

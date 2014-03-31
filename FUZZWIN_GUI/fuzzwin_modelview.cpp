@@ -1,6 +1,5 @@
 #include "fuzzwin_modelview.h"
 
-
 #include <QStringList>
 
 

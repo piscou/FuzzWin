@@ -2,8 +2,24 @@
 
 /**** CLASSE ALGORITHME ****/
 
-FuzzwinAlgorithm_GUI::FuzzwinAlgorithm_GUI(OSTYPE osType) 
-    : FuzzwinAlgorithm(osType) {}
+FuzzwinAlgorithm_GUI::FuzzwinAlgorithm_GUI(OSTYPE osType, ArgumentsForAlgorithm *pArgs) 
+    : FuzzwinAlgorithm(osType) 
+{
+    _resultsDir     = pArgs->_resultsDir;
+    _targetPath     = pArgs->_targetPath;
+    _firstInputPath = pArgs->_firstInputPath;
+    _bytesToTaint   = pArgs->_bytesToTaint;
+    _z3Path         = pArgs->_z3Path;
+    _cmdLinePin     = pArgs->_cmdLinePin;
+    
+    _maxConstraints   = pArgs->_maxConstraints;
+    _maxExecutionTime = pArgs->_maxExecutionTime;
+    _keepFiles        = pArgs->_keepFiles;
+    _computeScore     = pArgs->_computeScore;
+    _verbose          = pArgs->_verbose;
+    _timeStamp        = pArgs->_timeStamp;
+    _hashFiles        = pArgs->_hashFiles;
+}
 
 /**  implémentation des méthodes virtuelles pures **/
 
@@ -37,26 +53,28 @@ void FuzzwinAlgorithm_GUI::logVerboseTimeStamp() const
     if (_verbose) emit sendToGui(TIMESTAMP);
 }
 
-// initialisation des variables de la classe. Renvoie 0 si erreur
-int initialize(ArgumentsForAlgorithm *pArgs)
-{
-    // recopie des variables d'une classe à une autre
-    // + cération de _pCurrentInput
-    // + recopie input dans dossier de résultats
-    // (NB : il a déjà été créé et vierge par la GUI)
-    // + construction de _cmdLinePin à partir de PIN_ROOT et des pintools et de l'archi 32/64
-    // + création named pipe + création processus solveur
-
-    // EN GROS REPRENDRE INITIALIZE DE LA CMD  !!! :)::):)
-
+void FuzzwinAlgorithm_GUI::finishSpecific() 
+{ 
+    // envoi du résultat via un signal
+    emit sendNbFautes(_nbFautes);
 }
 
+void FuzzwinAlgorithm_GUI::notifyAlgoIsPaused() 
+{ 
+    // envoi de la mise en pause effectuée par un signal
+    emit pauseIsEffective();
+}
+
+void FuzzwinAlgorithm_GUI::wrapStartFromGui() { this->start(); }
+void FuzzwinAlgorithm_GUI::wrapStopFromGui()  { this->stop();  }
+void FuzzwinAlgorithm_GUI::wrapPauseFromGui() { this->pause(); }
 
 /****** CLASSE GUI *********/
 
 FUZZWIN_GUI::FUZZWIN_GUI() : QMainWindow(nullptr),
-    _env(QProcessEnvironment::systemEnvironment()), // environnement de l'application
-    _fixedSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed) // thauteur et largeur fixes
+    _env(QProcessEnvironment::systemEnvironment()),           // environnement de l'application
+    _fixedSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed), // hauteur et largeur fixes
+    _startButtonStatus(STATUS_START)   // Bouton "Start" initialisé avec le texte "Start"
 {  
     /***********************************/
     /***** INITIALISATION DE LA GUI ****/
@@ -91,7 +109,7 @@ FUZZWIN_GUI::FUZZWIN_GUI() : QMainWindow(nullptr),
 
     // affectation à la fenetre et redimension
     this->setCentralWidget(_centralWidget);
-    this->resize(700, 500);
+    this->resize(800, 500);
 
     // connexion signaux/slots
     this->connectSignalsToSlots();
@@ -417,7 +435,7 @@ void FUZZWIN_GUI::connectSignalsToSlots()
     connect(_saveConfigButton,   SIGNAL (clicked()), this, SLOT(saveConfig_clicked()));
 
     // bouton Go/resume (traitement selon le texte du bouton)
-    connect(_startButton,  SIGNAL(clicked()), this, SLOT(go_clicked()));    
+    connect(_startButton,  SIGNAL(clicked()), this, SLOT(start_clicked()));    
     connect(_stopButton,   SIGNAL(clicked()), this, SLOT(stop_clicked()));
 }
 
@@ -520,88 +538,170 @@ void FUZZWIN_GUI::testButtons()
     _startButton->setEnabled(globalStatus);
 }
 
-void FUZZWIN_GUI::go_clicked()
-{
-    // tout passer en séparateurs uniformes
-    QString firstInput       = QDir::toNativeSeparators(_initialInput->text());
-    QString resultDirectory  = QDir::toNativeSeparators(_resultsDir->text());
-    QString targetPath       = QDir::toNativeSeparators(_targetPath->text());
+void FUZZWIN_GUI::start_clicked()
+{ 
+    /*************************************************/ 
+    /*  "GO" -->>--> "PAUSE" -->>-> "RESUME" ->>-+   */
+    /*                  |                        |   */
+    /*                  +----------<<<-----------+   */
+    /*************************************************/
 
-    // récupération du temps d'exécution (nécessaire au constructeur de l'algorithme)
-    quint32 maxTime = 0;
-    if (_maxTimeEnabled->isChecked())
+    switch (_startButtonStatus) // état actuel du bouton
     {
-        maxTime = (60* _maxTime->time().minute()) + _maxTime->time().second();
+    case STATUS_START:     
+        this->startSession();           // démarrage de l'algorithme
+        _stopButton->setEnabled(true);  // activer le bouton "Stop"
+        // changement du status du bouton "start" -> "pause", et activation du bouton "stop"
+        _startButton->setText("Pause");
+        _startButtonStatus = STATUS_PAUSE;
+        _stopButton->setEnabled(true);
+        break;
+    case STATUS_PAUSE:  
+        emit pauseAlgorithm();          // envoyer un message de pause à l'algo.     
+        // désactiver les boutons tant que l'algorithme n'a pas été mis en pause
+        _startButton->setDisabled(true);
+        _stopButton->setDisabled(true);
+        break;
+    case STATUS_RESUME: 
+        // relance de l'algorithme
+        emit launchAlgorithm();          // envoyer un message de pause à l'algo. 
+        // session reprise => afficher le texte "pause" et fixer le status associé
+        _startButton->setText("Pause");
+        _startButtonStatus = STATUS_PAUSE;
+        break;
     }
-    
-    // nouveau Thread
-    _pFuzzwinThread = new QThread;
+}
 
-    // création de l'objet "algorithme", avec entrée initiale, dossier de résultats et exécutable cible
-    _pFuzzwinAlgo = new FuzzwinAlgorithm_GUI(firstInput, targetPath, resultDirectory, maxTime);
-    // affectattion de l'objet au thread
-    _pFuzzwinAlgo->moveToThread(_pFuzzwinThread);
+void FUZZWIN_GUI::startSession()
+{
+    /*********************************/
+    /** ARGUMENTS POUR L'ALGORITHME **/
+    /*********************************/
+
+    // nouvelle structure pour les arguments
+    ArgumentsForAlgorithm args;
+    ZeroMemory(&args, sizeof(args));
+
+    args._resultsDir     = std::string(qPrintable(QDir::toNativeSeparators(_resultsDir->text())));
+    args._firstInputPath = std::string(qPrintable(QDir::toNativeSeparators(_initialInput->text())));
+    args._targetPath     = std::string(qPrintable(QDir::toNativeSeparators(_targetPath->text())));
+    args._z3Path         = std::string(qPrintable(QDir::toNativeSeparators(_z3Path))); 
+
+    // si OS 32 bits, pas la peine de spécifier les modules 64bits
+    if (_osType < BEGIN_HOST_64BITS) 
+    {
+        /* $(pin_X86) -t $(pintool_X86) -- $(targetFile) %INPUT% (ajouté a chaque fichier testé) */
+        args._cmdLinePin =  '"'   + std::string(qPrintable(_pinPath_X86))   \
+                     + "\" -t \"" + std::string(qPrintable(_pintool_X86))   \
+                     + "\" -- \"" + args._targetPath \
+                     + "\" ";
+    }
+    else
+    {
+        /* $(pin_X86) -p64 $(pin_X64) -t64 $(pintool_X64) -t $(pintool_X86) 
+        -- $(targetFile) %INPUT% (ajouté a chaque fichier testé) */
+        args._cmdLinePin = '"' + std::string(qPrintable(_pinPath_X86))     \
+                + "\" -p64 \"" + std::string(qPrintable(_pinPath_X64))     \
+                + "\" -t64 \"" + std::string(qPrintable(_pintool_X64))     \
+                + "\" -t \""   + std::string(qPrintable(_pintool_X86))     \
+                + "\" -- \""   + args._targetPath \
+                + "\" ";
+    }
 
     // récupération et transmission des options     
-    _pFuzzwinAlgo->_computeScore   = _scoreEnabled->isChecked();
-    _pFuzzwinAlgo->_verbose        = _verboseEnabled->isChecked();
-    _pFuzzwinAlgo->_keepFiles      = _keepfilesEnabled->isChecked();
-    _pFuzzwinAlgo->_maxConstraints = _maxConstraintsEnabled->isChecked() ? _maxConstraints->value() : 0;
-    _pFuzzwinAlgo->_osType         = _osType;
+    args._computeScore   = _scoreEnabled->isChecked();
+    args._verbose        = _verboseEnabled->isChecked();
+    args._keepFiles      = _keepfilesEnabled->isChecked();
+    args._maxConstraints = _maxConstraintsEnabled->isChecked() ? _maxConstraints->value() : 0;
 
+    // non encore implémentés
+    args._timeStamp = true;
+    args._hashFiles = true;
+    args._traceonly = false;
+
+    // récupération du temps d'exécution (nécessaire au constructeur de l'algorithme)
+    if (_maxTimeEnabled->isChecked())
+    {
+        args._maxExecutionTime = (60 * _maxTime->time().minute()) 
+                                     + _maxTime->time().second();
+    }
     if (_bytesToTaintEnabled->isChecked())
     {
-         _pFuzzwinAlgo->_bytesToTaint = std::string(qPrintable(_listOfBytesToTaint->text()));
+         args._bytesToTaint = std::string(qPrintable(_listOfBytesToTaint->text()));
     }
-    else  _pFuzzwinAlgo->_bytesToTaint = "all";
+    else args._bytesToTaint = "all";
 
-    // Ligne de commande pour le pintool 
-    _pFuzzwinAlgo->buildPinCmdLine(_pinPath_X86, _pinPath_X64, _pintool_X86, _pintool_X64);
+    /*****************************************************************/
+    /** CREATION DE L'ALGORITHME ET AFFECTATION A UN NOUVEAU THREAD **/
+    /*****************************************************************/
+    _pFuzzwinThread = new QThread;  
 
-    // chemin vers Z3
-    _pFuzzwinAlgo->_z3Path = qPrintable(_z3Path);
-
-    // désactiver le bouton "Go", et activer le "Stop"
-    _startButton->setDisabled(true);
-    _stopButton->setEnabled(true);
-
-    // connection des signaux du thread aux slots de la GUI
-    connect(this,          SIGNAL(launchAlgorithm()), _pFuzzwinAlgo, SLOT(algorithmSearch()));
-    connect(_pFuzzwinAlgo, SIGNAL(sendToGui(QString)),    this, SLOT(log(QString)), Qt::QueuedConnection);
-
-    connect(_pFuzzwinAlgo, SIGNAL(newInput(CInput)),      this, SLOT(updateInputView(CInput)));
-    connect(_pFuzzwinAlgo, SIGNAL(sendNbFautes(int)), this, SLOT(algoFinished(int)));
-
-    connect(_pFuzzwinThread, SIGNAL(finished()), _pFuzzwinAlgo, SLOT(deleteLater()));
-
-    if (_verboseEnabled->isChecked())
-    {
-        connect(_pFuzzwinAlgo, SIGNAL(sendToGuiVerbose(QString)), this, SLOT(log(QString)), Qt::QueuedConnection);
+    // création de l'objet "algorithme" et finalisation de l'algo
+    _pFuzzwinAlgo = new FuzzwinAlgorithm_GUI(_osType, &args);
+    // création des outils internes et externes
+    if (EXIT_FAILURE == _pFuzzwinAlgo->finalizeInitialization())
+    { 
+        delete (_pFuzzwinThread);
+        delete (_pFuzzwinAlgo);
+        return;
     }
 
-    // C'EST PARTI MON KIKI
+    // affectation de l'algo au thread
+    _pFuzzwinAlgo->moveToThread(_pFuzzwinThread);
+    // connections des signaux et slots
+    this->connectGUIToAlgo();
+
+    // C'EST PARTI MON KIKI : démarrage du thread, et signel de lancement envoyé à l'algorithme
     _pFuzzwinThread->start();
     emit launchAlgorithm();
+}
 
-    //emit sendToGui("\n******************************\n");
-    //emit sendToGui("* ---> FIN DE L'ANALYSE <--- *\n");
-    //emit sendToGui("******************************\n");
+void FUZZWIN_GUI::connectGUIToAlgo()
+{
+    // connection des signaux/slots entre la GUI et l'algorithme
+    
+    // SENS GUI->ALGO
+    connect(this, SIGNAL(launchAlgorithm()), _pFuzzwinAlgo, SLOT(wrapStartFromGui()));
+    connect(this, SIGNAL(pauseAlgorithm()),  _pFuzzwinAlgo, SLOT(wrapPauseFromGui()), Qt::DirectConnection);
+    connect(this, SIGNAL(stopAlgorithm()),   _pFuzzwinAlgo, SLOT(wrapStopFromGui()),  Qt::DirectConnection);
+   
+    // SENS ALGO->GUI
+    connect(_pFuzzwinAlgo, SIGNAL(sendToGui(QString)),  this, SLOT(log(QString)),      Qt::QueuedConnection);
+    connect(_pFuzzwinAlgo, SIGNAL(sendNbFautes(int)),   this, SLOT(algoFinished(int)), Qt::QueuedConnection);
+    connect(_pFuzzwinAlgo, SIGNAL(pauseIsEffective()),  this, SLOT(sessionPaused()),   Qt::QueuedConnection);
+    // SIGNZL FIN DE THREAD
+    connect(_pFuzzwinThread, SIGNAL(finished()), _pFuzzwinAlgo, SLOT(deleteLater()));
+}
+
+// slot appelé par un signal de l'algorithme, lorsque celui-ci a été mis en pause
+void FUZZWIN_GUI::sessionPaused()
+{
+    // session mise en pause => afficher le texte "Resume" et fixer le status associé
+    _startButton->setText("Resume");
+    _startButtonStatus = STATUS_RESUME;
+    // activer les boutons
+    _startButton->setEnabled(true);
+    _stopButton->setEnabled(true);
 }
 
 void FUZZWIN_GUI::stop_clicked()
 {
+    emit stopAlgorithm();
     // activer le bouton "Go", et désactiver le "Stop"
+    
     _startButton->setEnabled(true);
     _stopButton->setDisabled(true);
+     
+    _pFuzzwinThread->terminate();
+    _pFuzzwinThread->wait();
 
-    // fermer le thread
-    //_pFuzzwinThread->terminate();
+    delete (_pFuzzwinThread);
 }
 
 void FUZZWIN_GUI::saveLog_clicked()
 {
     // sauvegarde du contenu du widget '_logWindow' dans un fichier
-    QString filename = QFileDialog::getSaveFileName(this, "Sélection du nom de fichier", QDir::currentPath());
+    QString filename = QFileDialog::getSaveFileName(this, "Sélection du nom de fichier", QDir::currentPath(), ".log");
 
     if (filename.isNull()) return;  // bouton 'annuler' 
 
@@ -741,8 +841,8 @@ void FUZZWIN_GUI::checkZ3Path(QString path)
 
 void FUZZWIN_GUI::updateInputView(CInput input)
 {
-    QStringList data;
-    data << QString("%1").arg(input.getBound()) << input.getFileInfo().fileName();
+   // QStringList data;
+    //data << QString("%1").arg(input.getBound()) << input.getFileInfo().fileName();
 //    QTreeWidgetItem *newInput = new QTreeWidgetItem(_listOfInputs, data);
   //  _listOfInputs->update();
 }
@@ -819,6 +919,8 @@ void FUZZWIN_GUI::algoFinished(int nbFautes)
     // activer le bouton "Go", et désactiver le "Stop"
     _startButton->setEnabled(true);
     _stopButton->setDisabled(true);
+
+    delete (_pFuzzwinThread);
 }
 
 void FUZZWIN_GUI::autoScrollLogWindow()

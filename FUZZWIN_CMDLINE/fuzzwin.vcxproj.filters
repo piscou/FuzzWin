@@ -25,6 +25,9 @@
     <ClCompile Include="fuzzwin_cmdLine.cpp">
       <Filter>Fichiers sources</Filter>
     </ClCompile>
+    <ClCompile Include="..\FUZZWIN_COMMON\CInput.cpp">
+      <Filter>Fichiers sources\Fuzzwin_common</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="getopt_pp.h">
@@ -40,6 +43,9 @@
       <Filter>Fichiers d%27en-tête\Fuzzwin_common</Filter>
     </ClInclude>
     <ClInclude Include="..\FUZZWIN_COMMON\osType.h">
+      <Filter>Fichiers d%27en-tête\Fuzzwin_common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\FUZZWIN_COMMON\CInput.h">
       <Filter>Fichiers d%27en-tête\Fuzzwin_common</Filter>
     </ClInclude>
   </ItemGroup>

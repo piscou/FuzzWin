@@ -103,112 +103,12 @@ std::string getAbsoluteFilePath(const std::string &s)
     else         return (std::string(absolutepath));
 }
 
-/*************************************************/
-/* CLASSES DE BASE (DERIVEES DANS CMDLINE ET GUI */
-/*************************************************/
-
-/*********************************************/
-/* CINPUT : description d'une entrée de test */
-/*********************************************/
-
-CInput::CInput(const std::string &firstInputPath, bool keepfiles)
-    : _keepFiles(keepfiles),
-    _refCount(1),
-    _bound(0), 
-    _exceptionCode(0), 
-    _score(0),
-    _filePath(firstInputPath), 
-    _pFather(nullptr)    // pas de père pour la première entrée
-{
-    std::string::size_type pos = std::string(firstInputPath).find_last_of("\\/");
-    this->_fileName = firstInputPath.substr(pos + 1); // antislash exclus 
-}
-
-// création du 'nb' nouvel objet dérivé de l'objet 'pFather' à la contrainte 'b'
-CInput::CInput(CInput* pFather, UINT64 nb, UINT32 b) 
-    : _keepFiles(pFather->_keepFiles),
-    _refCount(1),  // sachant qu'à 0 il est detruit
-    _bound(b), 
-    _exceptionCode(0),
-    _pFather(pFather),
-    _score(0),
-    _fileName("input" + std::to_string((_Longlong) nb))
-{ 	
-    // construction du chemin de fichier à partir de celui du père
-    std::string fatherFilePath = pFather->getFilePath();
-    std::string::size_type pos = fatherFilePath.rfind(pFather->getFileName());
-    this->_filePath = fatherFilePath.substr(0, pos) + this->_fileName;
-
-    // nouvel enfant : augmentation du refCount du père (qui existe forcément)
-    this->_pFather->incRefCount();
-}
-
-CInput::~CInput()
-{    
-    // effacement du fichier, si l'option 'keepfiles' n'est pas spécifiée
-    // ET que l'entrée n'a pas provoquée de fautes
-    if (!_keepFiles && !_exceptionCode)  remove(this->_filePath.c_str());
-}
-
-// Accesseurs renvoyant les membres privés de la classe
-CInput* CInput::getFather() const { return _pFather; }
-UINT32  CInput::getBound() const  { return _bound; }
-UINT32  CInput::getScore() const  { return _score; }
-UINT32  CInput::getExceptionCode() const       { return _exceptionCode; }
-const std::string& CInput::getFilePath() const { return _filePath; }
-const std::string& CInput::getFileName() const { return _fileName; }
-
-// numéro de contrainte inversée qui a donné naissance à cette entrée
-void CInput::setBound(const UINT32 b)	{ _bound = b; }
-// Affectation d'un score à cette entrée
-void CInput::setScore(const UINT32 s)	{ _score = s; }
-// numéro d'Exception généré par cette entrée
-void CInput::setExceptionCode(const UINT32 e)	{ _exceptionCode = e; }
-
-// gestion de la vie des objets "CInput" : refCount basique
-void   CInput::incRefCount()       { _refCount++; }
-UINT32 CInput::decRefCount()       { return (--_refCount); }
-UINT32 CInput::getRefCount() const { return (_refCount); }
-
-// renvoie la taille de l'entrée en octets
-UINT32 CInput::getFileSize() const
-{
-    std::ifstream in(_filePath.c_str(), std::ifstream::in | std::ifstream::binary);
-    in.seekg(0, std::ifstream::end);
-    UINT32 length = static_cast<UINT32>(in.tellg()); 
-    in.close();
-    return (length);
-}
-
-// renvoie le chemin vers le fichier qui contiendra la formule SMT2
-// associée à l'execution de cette entrée (option --keepfiles mise à TRUE)
-std::string CInput::getLogFile() const { return (_filePath + ".smt2"); }
-
-// renvoie le contenu du fichier sous la forme de string
-std::string CInput::getFileContent() const
-{
-    UINT32 fileSize = this->getFileSize(); // UINT32 => fichier < 2Go...
-    std::vector<char> contentWithChars(fileSize);
-
-    // ouverture en mode binaire, lecture et retour des données
-    std::ifstream is (_filePath.c_str(), std::ifstream::binary);
-    is.read(&contentWithChars[0], fileSize);
-
-    return (std::string(contentWithChars.begin(), contentWithChars.end()));    
-}
-
-// fonction de tri de la liste d'entrées de tests
-bool sortCInputs(CInput* pA, CInput* pB) 
-{ 
-    return (pA->getScore() < pB->getScore()); 
-}
-
 /*********************/
 /* FUZZWIN_ALGORITHM */
 /*********************/
 
 FuzzwinAlgorithm::FuzzwinAlgorithm(OSTYPE osType)
-    : _osType(osType), 
+    : _osType(osType), _status(ALGORITHM_CREATED),
       _hZ3_process (nullptr), _hZ3_stdin(nullptr),  _hZ3_stdout(nullptr),   _hZ3_thread(nullptr),
       _hReadFromZ3 (nullptr), _hWriteToZ3(nullptr), _hPintoolPipe(nullptr), _hTimer(nullptr),
       _regexModel(parseZ3ResultRegex, std::regex::ECMAScript),
@@ -227,6 +127,152 @@ FuzzwinAlgorithm::~FuzzwinAlgorithm()
     if (_maxExecutionTime) CloseHandle(this->_hTimer);
 }
 
+int FuzzwinAlgorithm::finalizeInitialization()
+{
+    /********************************************************/
+    /** construction liste de travail et fichier de fautes **/
+    /********************************************************/
+    // recopie de l'entrée initiale dans le dossier de résultat (sans extension, avec le nom 'input0')
+    std::string input0Path(_resultsDir + "\\input0");
+    // copie de l'entrée initiale dans le dossier de résultat
+    if (!CopyFile(_firstInputPath.c_str(), input0Path.c_str(), false))
+    {
+        this->log("erreur de recopie du fichier initial");
+        this->logEndOfLine();
+        return (EXIT_FAILURE);
+    }
+    
+    _pCurrentInput = new CInput(_resultsDir + "\\input0", _keepFiles); 
+    // calcul du hash de la première entrée, et insertion dans la liste des hashes
+    // seulement si l'option est présente
+    if (_hashFiles)
+    {
+        _hashTable.insert(calculateHash(
+            _pCurrentInput->getFileContent().c_str(), 
+            _pCurrentInput->getFileContent().size()));
+    }
+
+    // initialisation de la liste de travail avec la première entrée
+    _workList.push_back(_pCurrentInput);
+
+    // chemin prérempli pour le fichier de fautes (non créé pour l'instant)
+    _faultFile = _resultsDir + "\\fault.txt";
+    
+    /********************************************/
+    /** création du tube nommé avec le Pintool **/
+    /********************************************/
+    this->logVerbose("Tube nommé avec pintool   : ");
+    if (this->createNamedPipePintool())
+    {
+        this->logVerbose("OK");
+        this->logVerboseEndOfLine();
+    }
+    else 
+    {
+        this->logVerbose("ERREUR");
+        return (EXIT_FAILURE);
+    }
+
+    /**********************************************************/
+    /** création du process Z3 avec redirection stdin/stdout **/ 
+    /**********************************************************/
+    this->logVerbose("Processus du solveur  : ");
+    if (this->createSolverProcess(_z3Path))
+    {
+        this->logVerbose("OK");
+        this->logVerboseEndOfLine();
+    }
+    else 
+    {
+        this->logVerbose("ERREUR");
+        return (EXIT_FAILURE);
+    }
+  
+    /*****************************************/
+    /*** CREATION DU TIMER (SI NECESSAIRE) ***/
+    /*****************************************/
+    if (_maxExecutionTime)
+    {
+        this->logVerbose("Création du timer   : ");
+        _hTimer = CreateWaitableTimer(NULL /* attricuts par défaut */, TRUE /* timer manuel */, NULL /* anonyme */);
+        if (NULL == _hTimer) 
+        {
+            this->logVerbose("ERREUR");
+            return (EXIT_FAILURE);
+        }
+        else
+        {
+            this->logVerbose("OK");
+            this->logVerboseEndOfLine();
+        }
+    }
+    return (EXIT_SUCCESS);
+}
+
+void FuzzwinAlgorithm::start()
+{
+    _status = ALGORITHM_RUNNING;
+    this->algorithmSearch(); 
+    
+    // retour de la procédure, traitement selon le status
+    switch (_status)
+    {
+    case ALGORITHM_STOPPED: // arret volontaire par utilisateur
+        this->logTimeStamp();
+        this->log("Arret par l'utilisateur");
+        this->logEndOfLine();
+        /*** PAS DE BREAK : POURSUITE SUR LA PROCEDURE DE FIN **/
+
+    case ALGORITHM_RUNNING: // fin "normale"
+        this->logEndOfLine();
+        this->log("******************************");
+        this->logEndOfLine();
+        this->log("* ---> FIN DE L'ANALYSE <--- *");
+        this->logEndOfLine();
+        this->log("******************************");
+        this->logEndOfLine();
+
+        if (_nbFautes) // si une faute a été trouvée
+        { 
+            this->log("---> " + std::to_string(_nbFautes) + " faute(s)");
+            this->log(" cf. fichier 'fault.txt' <---");
+            this->logEndOfLine();
+        }
+        else
+        {
+            this->log("  aucune faute...");
+            this->logEndOfLine();
+        }
+
+        // appel de la fin spécifique (GUI ou cmdline)
+        this->finishSpecific();
+
+        break;
+
+    case ALGORITHM_PAUSED:
+        // ne rien faire si ce n'est confirmer à l'utilisateur
+        this->logTimeStamp();
+        this->log("Pause par l'utilisateur");
+        this->logEndOfLine();
+        this->notifyAlgoIsPaused();
+        break;
+    }
+}
+
+void FuzzwinAlgorithm::pause()
+{
+    _algoMutex.lock();
+    _status = ALGORITHM_PAUSED;
+    _algoMutex.unlock();
+}
+
+void FuzzwinAlgorithm::stop()
+{
+    _algoMutex.lock();
+    _status = ALGORITHM_STOPPED;
+    _algoMutex.unlock();
+}
+
 /************************/
 /**  ALGORITHME SEARCH **/
 /************************/
@@ -242,22 +288,11 @@ FuzzwinAlgorithm::~FuzzwinAlgorithm()
 
 void FuzzwinAlgorithm::algorithmSearch() 
 {
-    // calcul du hash de la première entrée, et insertion dans la liste des hashes
-    // seulement si l'option est présente
-    if (_hashFiles)
-    {
-        _hashTable.insert(calculateHash(
-            _pCurrentInput->getFileContent().c_str(), 
-            _pCurrentInput->getFileContent().size()));
-    }
-
-    // initialisation de la liste de travail avec la première entrée
-    _workList.push_back(_pCurrentInput);
-
     /**********************/
     /** BOUCLE PRINCIPALE */
     /**********************/
-    while ( !_workList.empty() ) 
+    // boucle tant qu'il y a des fichiers
+    while ( !_workList.empty()) 
     {
         this->logTimeStamp();
         this->log(std::to_string(_workList.size()) + " élément(s) dans la liste de travail");
@@ -302,7 +337,11 @@ void FuzzwinAlgorithm::algorithmSearch()
         _workList.insert(_workList.cbegin(), childInputs.cbegin(), childInputs.cend());
         // mise à jour des refcount des ancêtres, avec destruiction si nécessaire
         this->updateRefCounts(_pCurrentInput);
+
+        // si l'utilisateur a actionné un bouton : SORTIR DE LA BOUCLE
+        if (ALGORITHM_RUNNING != _status) break;
     }
+    // la valeur de '_status' déterminera la suite à donner (simple pause ou fin)
 }
 
 void FuzzwinAlgorithm::updateRefCounts(CInput *pInput) const
@@ -531,7 +570,3 @@ ListOfInputs FuzzwinAlgorithm::expandExecution()
 
     return (result);
 }
-
-UINT32 FuzzwinAlgorithm::getNumberOfFaults() const { return _nbFautes; }
-
-void FuzzwinAlgorithm::start() { this->algorithmSearch(); }

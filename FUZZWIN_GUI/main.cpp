@@ -1,6 +1,5 @@
 #include "fuzzwin_gui.h"
 #include <QtWidgets/QApplication>
-#include <QMessagebox>
 
 int main(int argc, char *argv[])
 {

@@ -53,17 +53,8 @@
     <ClCompile Include="GeneratedFiles\Release\moc_fuzzwin_gui.cpp">
       <Filter>Generated Files\Release</Filter>
     </ClCompile>
-    <ClCompile Include="fuzzwin_algorithm.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="fuzzwin_widgets.cpp">
       <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="GeneratedFiles\Debug\moc_fuzzwin_algorithm.cpp">
-      <Filter>Generated Files\Debug</Filter>
-    </ClCompile>
-    <ClCompile Include="GeneratedFiles\Release\moc_fuzzwin_algorithm.cpp">
-      <Filter>Generated Files\Release</Filter>
     </ClCompile>
     <ClCompile Include="GeneratedFiles\Debug\moc_fuzzwin_widgets.cpp">
       <Filter>Generated Files\Debug</Filter>
@@ -104,12 +95,12 @@
     <ClCompile Include="..\FUZZWIN_COMMON\solver_interface.cpp">
       <Filter>Source Files\Fuzzwin_common</Filter>
     </ClCompile>
+    <ClCompile Include="..\FUZZWIN_COMMON\CInput.cpp">
+      <Filter>Source Files\Fuzzwin_common</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="fuzzwin_gui.h">
-      <Filter>Header Files</Filter>
-    </CustomBuild>
-    <CustomBuild Include="fuzzwin_algorithm.h">
       <Filter>Header Files</Filter>
     </CustomBuild>
     <CustomBuild Include="fuzzwin_widgets.h">
@@ -134,6 +125,9 @@
     </ClInclude>
     <ClInclude Include="resource.h">
       <Filter>Resource Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\FUZZWIN_COMMON\CInput.h">
+      <Filter>Header Files\Fuzzwin_common</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

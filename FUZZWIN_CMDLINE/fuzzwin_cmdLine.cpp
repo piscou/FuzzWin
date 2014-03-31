@@ -99,7 +99,6 @@ int FuzzwinAlgorithm_cmdLine::deleteDirectory(const std::string &refcstrRootDire
 // parse la ligne de commande, lance le solveur, créé le pipe, etc...
 std::string FuzzwinAlgorithm_cmdLine::initialize(int argc, char** argv) 
 {
-    std::string initialInputPath;               // chemin vers l'entrée initiale
     std::string exePath = this->getExePath();   // dossier racine de l'exécutable
     
     // parsing de la ligne de commande
@@ -127,8 +126,11 @@ std::string FuzzwinAlgorithm_cmdLine::initialize(int argc, char** argv)
 
         // test du type d'exécutable (32 ou 64 bits)
         int kindOfExe = getKindOfExecutable(_targetPath);
-        if (kindOfExe < 0)  return (_targetPath + " : fichier introuvable ou non exécutable");
-        
+        if (kindOfExe < 0) 
+        {
+            this->log(_targetPath + " : fichier introuvable ou non exécutable");
+            return ("");
+        }
         // exécutable 64bits sur OS 32bits => problème
         else if ((SCS_64BIT_BINARY == kindOfExe) && (_osType < BEGIN_HOST_64BITS))
         {
@@ -138,9 +140,9 @@ std::string FuzzwinAlgorithm_cmdLine::initialize(int argc, char** argv)
     else return ("argument -t (exécutable cible) absent");    
 
     // argument -i // --initial : premier fichier d'entrée
-    if (ops >> GetOpt::Option<std::string>('i', "initial", initialInputPath))
+    if (ops >> GetOpt::Option<std::string>('i', "initial", _firstInputPath))
     {
-        if (!testFileExists(initialInputPath))  return ("fichier initial non trouvé"); 
+        if (!testFileExists(_firstInputPath))  return ("fichier initial non trouvé"); 
     }
     else return ("argument -i (fichier initial) absent");
 
@@ -221,18 +223,8 @@ std::string FuzzwinAlgorithm_cmdLine::initialize(int argc, char** argv)
     else            this->logVerbose("non");
     this->logVerboseEndOfLine();
 
-    // recopie de l'entrée initiale dans le dossier de résultat (sans extension, avec le nom 'input0')
-    std::string firstFilePath(_resultsDir + "\\input0");
-    // copie de l'entrée initiale dans le dossier de résultat
-    if (!CopyFile(initialInputPath.c_str(), firstFilePath.c_str(), false))
-    {
-        return ("erreur de recopie du fichier initial");
-    }
-    // construction de l'objet représentant cette première entrée 
-    _pCurrentInput = new CInput(firstFilePath, _keepFiles);
-    // chemin prérempli pour le fichier de fautes (non créé pour l'instant) + conversion en chemin absolu
-    _faultFile = getAbsoluteFilePath(_resultsDir + "\\fault.txt");
-  
+    
+
     /**********************************************************************/
     /** Construction des chemins d'accès aux outils externes (PIN et Z3) **/
     /**********************************************************************/
@@ -268,12 +260,6 @@ std::string FuzzwinAlgorithm_cmdLine::initialize(int argc, char** argv)
     pin_X64_VmDll = pinPath + "intel64\\bin\\pinvm.dll";
     pintool_X64   = exePath + "fuzzwinX64.dll";
     
-    // chemin vers Z3
-    z3Path += "\\bin\\z3.exe";
-    
-    // test de la présence des fichiers adéquats
-    if (!testFileExists(z3Path))        return "solveur z3 absent";
-    
     if (!testFileExists(pin_X86))       return "executable PIN 32bits absent";
     if (!testFileExists(pin_X86_VmDll)) return "librairie PIN_VM 32bits absente";
     if (!testFileExists(pintool_X86))   return "pintool FuzzWin 32bits absent";
@@ -284,36 +270,12 @@ std::string FuzzwinAlgorithm_cmdLine::initialize(int argc, char** argv)
         if (!testFileExists(pin_X64_VmDll)) return "librairie PIN_VM 64bits absente";
         if (!testFileExists(pintool_X64))   return "pintool FuzzWin 64bits absent";
     }
-  
-    /********************************************/
-    /** création du tube nommé avec le Pintool **/
-    /********************************************/
-    this->logVerbose("Tube nommé avec pintool   : ");
-    if (this->createNamedPipePintool())
-    {
-        this->logVerbose("OK");
-        this->logVerboseEndOfLine();
-    }
-    else 
-    {
-        this->logVerbose("ERREUR");
-        return ("");
-    }
 
-    /**********************************************************/
-    /** création du process Z3 avec redirection stdin/stdout **/ 
-    /**********************************************************/
-    this->logVerbose("Processus du solveur  : ");
-    if (this->createSolverProcess(z3Path))
-    {
-        this->logVerbose("OK");
-        this->logVerboseEndOfLine();
-    }
-    else 
-    {
-        this->logVerbose("ERREUR");
-        return ("");
-    }
+    // chemin vers Z3 et test de son existence
+    z3Path += "\\bin\\z3.exe";
+    if (!testFileExists(z3Path))        return "solveur z3 absent";
+    _z3Path = z3Path;
+   
 
     /***************************************/
     /** Ligne de commande pour le pintool **/ 
@@ -338,14 +300,11 @@ std::string FuzzwinAlgorithm_cmdLine::initialize(int argc, char** argv)
             + "\" -- \""   + _targetPath + "\" ";
     }
 
-    /*****************************************/
-    /*** CREATION DU TIMER (SI NECESSAIRE) ***/
-    /*****************************************/
-    if (_maxExecutionTime)
-    {
-        _hTimer = CreateWaitableTimer(NULL /* attricuts par défaut */, TRUE /* timer manuel */, NULL /* anonyme */);
-        if (NULL == _hTimer) return ("Erreur de création du timer");
-    }
+    // création des outils internes et externes
+    if (EXIT_FAILURE == this->finalizeInitialization()) return ("");
+
+    // top départ chrono
+    _timeBegin = clock();
 
     this->logVerbose("!!! LANCEMENT DE L'ALGORITHME !!!");
     this->logVerboseEndOfLine();
@@ -394,4 +353,13 @@ void FuzzwinAlgorithm_cmdLine::logVerboseTimeStamp() const
 void FuzzwinAlgorithm_cmdLine::logVerboseEndOfLine() const 
 { 
     if (_verbose) std::cout << std::endl;  
+}
+
+// fin de l'algorithme : affichage des résultats à l'écran
+void FuzzwinAlgorithm_cmdLine::finishSpecific()
+{
+    // fin du chrono, et affichage du temps écoulé
+    this->log("statistiques de temps : ");
+    this->log(std::to_string((float) (clock() - _timeBegin)/CLOCKS_PER_SEC ) + " secondes");
+    this->logEndOfLine();
 }

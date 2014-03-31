@@ -1,5 +1,6 @@
 #pragma once
 #include <iostream>
+#include <ctime> // statistiques de temps
 
 #include "../FUZZWIN_COMMON/fuzzwin_algo.h"
 
@@ -8,8 +9,10 @@
 class FuzzwinAlgorithm_cmdLine : public FuzzwinAlgorithm
 {    
 private:  
-    /**  implémentation des méthodes virtuelles pures **/
-
+    clock_t _timeBegin, _timeEnd;
+    
+    /**  implémentation des méthodes virtuelles pures de log **/
+    
     void log(const std::string &msg) const;        // envoi en console
     void logVerbose(const std::string &msg) const; // idem en mode verbose
     void logVerboseEndOfLine() const;
@@ -29,4 +32,8 @@ public:
 
     // initialisation des variables de la classe
     std::string initialize(int argc, char** argv);
+
+    // implémentation des méthodes virtuelles pures de contrôle de l'algorithme
+    void finishSpecific();
+    void notifyAlgoIsPaused() {} // non implémenté pour l'instant
 };
