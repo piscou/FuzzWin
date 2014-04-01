@@ -1,4 +1,4 @@
-#include "fuzzwin_algo.h"
+#include "algorithm.h"
 
 OSTYPE getNativeArchitecture()
 {
@@ -119,8 +119,8 @@ FuzzwinAlgorithm::~FuzzwinAlgorithm()
     // fermeture du processus Z3
     CloseHandle(_hZ3_process); CloseHandle(_hZ3_thread);
     // fermeture des différents tubes de communication avec Z3
-    CloseHandle(_hZ3_stdout); 	CloseHandle(_hZ3_stdin);
-    CloseHandle(_hReadFromZ3);	CloseHandle(_hWriteToZ3);
+    CloseHandle(_hZ3_stdout);  CloseHandle(_hZ3_stdin);
+    CloseHandle(_hReadFromZ3); CloseHandle(_hWriteToZ3);
     // fermeture des tubes nommés avec le pintool Fuzzwin
     CloseHandle(_hPintoolPipe);
     // fermeture handle du timer
@@ -149,7 +149,7 @@ int FuzzwinAlgorithm::finalizeInitialization()
     {
         _hashTable.insert(calculateHash(
             _pCurrentInput->getFileContent().c_str(), 
-            _pCurrentInput->getFileContent().size()));
+            (int) _pCurrentInput->getFileContent().size()));
     }
 
     // initialisation de la liste de travail avec la première entrée
@@ -161,7 +161,7 @@ int FuzzwinAlgorithm::finalizeInitialization()
     /********************************************/
     /** création du tube nommé avec le Pintool **/
     /********************************************/
-    this->logVerbose("Tube nommé avec pintool   : ");
+    this->logVerbose("Tube nommé avec pintool    : ");
     if (this->createNamedPipePintool())
     {
         this->logVerbose("OK");
@@ -176,7 +176,7 @@ int FuzzwinAlgorithm::finalizeInitialization()
     /**********************************************************/
     /** création du process Z3 avec redirection stdin/stdout **/ 
     /**********************************************************/
-    this->logVerbose("Processus du solveur  : ");
+    this->logVerbose("Processus du solveur       : ");
     if (this->createSolverProcess(_z3Path))
     {
         this->logVerbose("OK");
@@ -209,7 +209,7 @@ int FuzzwinAlgorithm::finalizeInitialization()
     return (EXIT_SUCCESS);
 }
 
-void FuzzwinAlgorithm::start()
+void FuzzwinAlgorithm::run()
 {
     _status = ALGORITHM_RUNNING;
     this->algorithmSearch(); 
@@ -221,7 +221,7 @@ void FuzzwinAlgorithm::start()
         this->logTimeStamp();
         this->log("Arret par l'utilisateur");
         this->logEndOfLine();
-        /*** PAS DE BREAK : POURSUITE SUR LA PROCEDURE DE FIN **/
+        /*** PAS DE BREAK : POURSUITE SUR LA PROCEDURE DE FIN NORMALE **/
 
     case ALGORITHM_RUNNING: // fin "normale"
         this->logEndOfLine();
@@ -245,7 +245,7 @@ void FuzzwinAlgorithm::start()
         }
 
         // appel de la fin spécifique (GUI ou cmdline)
-        this->finishSpecific();
+        this->algorithmFinished();
 
         break;
 
@@ -254,7 +254,17 @@ void FuzzwinAlgorithm::start()
         this->logTimeStamp();
         this->log("Pause par l'utilisateur");
         this->logEndOfLine();
+
         this->notifyAlgoIsPaused();
+        break;
+
+    case ALGORITHM_TRACEONLY_FINISHED:
+        // ne rien faire si ce n'est confirmer à l'utilisateur
+        this->logTimeStamp();
+        this->log("Trace disponible dans " + _resultsDir + "\\input0.smt2");
+        this->logEndOfLine();
+
+        this->algorithmTraceOnlyFinished();
         break;
     }
 }
@@ -291,8 +301,8 @@ void FuzzwinAlgorithm::algorithmSearch()
     /**********************/
     /** BOUCLE PRINCIPALE */
     /**********************/
-    // boucle tant qu'il y a des fichiers
-    while ( !_workList.empty()) 
+    // boucle tant qu'il y a des fichiers, ou qu'un arret (pause ou stop) a été demandé.
+    while ( !_workList.empty() && (ALGORITHM_RUNNING == _status)) 
     {
         this->logTimeStamp();
         this->log(std::to_string(_workList.size()) + " élément(s) dans la liste de travail");
@@ -325,6 +335,13 @@ void FuzzwinAlgorithm::algorithmSearch()
         // la table de hachage permet d'écarter les doublons déjà générés
         ListOfInputs childInputs = expandExecution();
 
+        // si mode "traceonly : sortir de la boucle de suite
+        if  (_traceOnly) 
+        {
+            _status = ALGORITHM_TRACEONLY_FINISHED;
+            break;
+        }
+
         this->logTimeStamp();
 
         if (!childInputs.size())  this->log("  pas de nouveaux fichiers");  
@@ -337,9 +354,6 @@ void FuzzwinAlgorithm::algorithmSearch()
         _workList.insert(_workList.cbegin(), childInputs.cbegin(), childInputs.cend());
         // mise à jour des refcount des ancêtres, avec destruiction si nécessaire
         this->updateRefCounts(_pCurrentInput);
-
-        // si l'utilisateur a actionné un bouton : SORTIR DE LA BOUCLE
-        if (ALGORITHM_RUNNING != _status) break;
     }
     // la valeur de '_status' déterminera la suite à donner (simple pause ou fin)
 }
@@ -384,17 +398,17 @@ void FuzzwinAlgorithm::updateRefCounts(CInput *pInput) const
 //	 (fin de la boucle j)
 // retour de la liste des fichiers ainsi générés
 
-UINT32 FuzzwinAlgorithm::sendNonInvertedConstraints(UINT32 bound)
+size_t FuzzwinAlgorithm::sendNonInvertedConstraints(UINT32 bound)
 {
     if (bound) 
     {
-        UINT32 posBeginOfLine = 0; // position du début de ligne de la contrainte 'bound'
-        UINT32 posEndOfLine   = 0; // position du fin de ligne de la contrainte 'bound'
+        size_t posBeginOfLine = 0; // position du début de ligne de la contrainte 'bound'
+        size_t posEndOfLine   = 0; // position du fin de ligne de la contrainte 'bound'
     
         // recherche de la contrainte "bound" dans la formule
-        posBeginOfLine	= _formula.find("(assert (= C_" + std::to_string((_Longlong) bound));
+        posBeginOfLine	= (UINT32) _formula.find("(assert (= C_" + std::to_string((_Longlong) bound));
         // recherche de la fin de la ligne
-        posEndOfLine	= _formula.find_first_of('\n', posBeginOfLine);
+        posEndOfLine	= (UINT32) _formula.find_first_of('\n', posBeginOfLine);
         // extraction des contraintes non inversées et envoi au solveur
         sendToSolver(_formula.substr(0, posEndOfLine + 1));
         return (posEndOfLine); // position de la fin de la dernière contrainte dans la formule
@@ -408,7 +422,7 @@ std::string FuzzwinAlgorithm::invertConstraint(const std::string &constraint)
 {
     // copie de la contrainte
     std::string invertedConstraint(constraint);
-    UINT32 pos = invertedConstraint.find("true");
+    size_t pos = invertedConstraint.find("true"); // 
     
     if (pos != std::string::npos)  // 'true'  -> 'false' 
     {
@@ -425,8 +439,8 @@ ListOfInputs FuzzwinAlgorithm::expandExecution()
 {  
     ListOfInputs result;	                          // liste de nouveaux objets de type CInput générées
     UINT32	     bound = _pCurrentInput->getBound();  // bound du fichier actuellement étudié
-    UINT32       pos = 0;
-    UINT32       posLastConstraint = 0;  // indexs de position dans une chaine de caractères
+    size_t       pos = 0;
+    size_t       posLastConstraint = 0;  // indexs de position dans une chaine de caractères
     
     std::string  inputContent;         // contenu du fichier étudié
     std::string	 constraintJ;	       // partie de formule associée à la contrainte J
@@ -445,6 +459,9 @@ ListOfInputs FuzzwinAlgorithm::expandExecution()
         return (result); // aucune formule ou erreur
     }
 
+    // mode traceonly : on en reste là (result est ici vide)
+    if (_traceOnly) return (result);
+
     // récupération du nombre de contraintes dans la formule
     pos = _formula.find_last_of('@');
     if (std::string::npos == pos) return result;
@@ -457,7 +474,7 @@ ListOfInputs FuzzwinAlgorithm::expandExecution()
     // si le "bound" est supérieur aux nombre de contraintes => aucune nouvelle entrée, retour
     if (bound >= nbContraintes) 	
     {
-        this->logTimeStamp();
+        this->logVerboseTimeStamp();
         this->logVerbose("    Pas de nouvelles contraintes inversibles");
         this->logVerboseEndOfLine();
         return (result);
@@ -525,7 +542,7 @@ ListOfInputs FuzzwinAlgorithm::expandExecution()
             if (_hashFiles)
             {
                 auto insertResult = _hashTable.insert(
-                    calculateHash(newInputContent.c_str(), newInputContent.size()));
+                    calculateHash(newInputContent.c_str(), (int) newInputContent.size()));
                 
                 if (insertResult.second == false) // le hash est présent : le fichier existe déjà !!
                 {
@@ -547,10 +564,10 @@ ListOfInputs FuzzwinAlgorithm::expandExecution()
 
                 this->logVerbose(" -> nouveau fichier " + newChild->getFileName());
 
-                // test du fichier de suite; si retour nul le fichier est valide, donc l'insérer dans la liste
-                UINT32 checkError = this->debugTarget(newChild);
-                if (!checkError) result.push_back(newChild);
-                else ++_nbFautes;
+                // test du fichier de suite
+                // si retour nul le fichier est valide, donc l'insérer dans la liste
+                // sinon ne SURTOUT PAS l'insérer dans la liste : il va faire planter le pintool
+                if (!this->debugTarget(newChild)) result.push_back(newChild);
             }	     
         }
         // pas de solution trouvée par le solveur

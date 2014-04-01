@@ -1,4 +1,4 @@
-#include "fuzzwin_cmdLine.h"
+#include "algorithm_cmdLine.h"
 
 #include <clocale>  // pour passage de la ligne de commande en francais
 
@@ -28,7 +28,7 @@ int main(int argc, char *argv[])
     if ("OK" == initResult)   
     {
         // lancement de l'algorithme
-        algo->start();
+        algo->run();
         
         std::cout << "\nAppuyer sur une touche pour quitter";
         fflush(stdin);
@@ -36,11 +36,7 @@ int main(int argc, char *argv[])
 
         returnCode = EXIT_SUCCESS;
     }
-    else
-    {
-        std::cout << initResult << " --> ABANDON !!!" << std::endl;
-        returnCode = EXIT_FAILURE;
-    }
+    else std::cout << initResult << " --> ABANDON !!!" << std::endl;
     
     delete (algo);
     return (returnCode);

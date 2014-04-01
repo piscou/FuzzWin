@@ -60,6 +60,7 @@ protected:
         ALGORITHM_CREATED,      // classe créée, mais algo non encore exécuté
         ALGORITHM_PAUSED, 
         ALGORITHM_STOPPED,
+        ALGORITHM_TRACEONLY_FINISHED
     } _status;
 
     OSTYPE   _osType;   // type d'OS natif
@@ -85,6 +86,7 @@ protected:
     bool   _verbose;           // mode verbeux
     bool   _timeStamp;         // ajout de l'heure aux lignes de log
     bool   _hashFiles;         // calcul du hash de chaque entrée pour éviter les collisions
+    bool   _traceOnly;         // mode 'traceOnly' : une seule exécution avec l'entrée sélectionnée (pas de solveur)
 
     HANDLE  _hZ3_process;  // handle du process Z3
     HANDLE  _hZ3_thread;   // handle du thread Z3
@@ -118,7 +120,7 @@ protected:
     /* partie algorithme pur (fuzzwin_algo.cpp) */
     void         algorithmSearch();  
     ListOfInputs expandExecution(); 
-    UINT32       sendNonInvertedConstraints(UINT32 bound);
+    size_t       sendNonInvertedConstraints(UINT32 bound);
     std::string  invertConstraint(const std::string &constraint);
     void         updateRefCounts(CInput *pInput) const;   
 
@@ -147,7 +149,7 @@ public:
     explicit FuzzwinAlgorithm(OSTYPE osType);
     ~FuzzwinAlgorithm();
 
-    // initialisation commune à otutes les classes dérivées : 
+    // initialisation commune à toutes les classes dérivées : 
     // initialisation de la liste de travail et du fichier de fautes
     // création du pipe pintool et du processus du solveur
     // renvoie EXIT_FAILURE en cas de souci
@@ -155,10 +157,12 @@ public:
 
     // procédures de contrôle. 
     // Les méthodes "finish" et "notification de mise en pause" sont spécifique cmdline ou GUI
-    void start();
-    void pause();                 // non implémenté pour l'instant en cmdline
-    void stop();                  // non implémenté pour l'instant en cmdline
-    virtual void finishSpecific()     = 0;
-    virtual void notifyAlgoIsPaused() = 0;  // non implémenté pour l'instant en cmdline
+    void run();
+    void pause();                 
+    void stop();   
+    virtual void faultFound() = 0;
+    virtual void algorithmFinished()  = 0;
+    virtual void notifyAlgoIsPaused() = 0; 
+    virtual void algorithmTraceOnlyFinished() = 0;
     
 };

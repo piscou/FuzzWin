@@ -174,31 +174,25 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="..\FUZZWIN_COMMON\CInput.h" />
-    <ClInclude Include="..\FUZZWIN_COMMON\fuzzwin_algo.h" />
-    <ClInclude Include="..\FUZZWIN_COMMON\md5.h" />
-    <ClInclude Include="..\FUZZWIN_COMMON\osType.h" />
+    <ClInclude Include="..\ALGORITHME\algorithm.h" />
+    <ClInclude Include="..\ALGORITHME\CInput.h" />
+    <ClInclude Include="..\ALGORITHME\md5.h" />
+    <ClInclude Include="..\ALGORITHME\osType.h" />
+    <ClInclude Include="algorithm_cmdLine.h" />
     <ClInclude Include="getopt_pp.h">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-      </ExcludedFromBuild>
-    </ClInclude>
-    <ClInclude Include="fuzzwin_cmdLine.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
       </ExcludedFromBuild>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\FUZZWIN_COMMON\CInput.cpp" />
-    <ClCompile Include="..\FUZZWIN_COMMON\debug_interface.cpp" />
-    <ClCompile Include="..\FUZZWIN_COMMON\fuzzwin_algo.cpp" />
-    <ClCompile Include="..\FUZZWIN_COMMON\md5.cpp" />
-    <ClCompile Include="..\FUZZWIN_COMMON\pintool_interface.cpp" />
-    <ClCompile Include="..\FUZZWIN_COMMON\solver_interface.cpp" />
+    <ClCompile Include="..\ALGORITHME\algorithm.cpp" />
+    <ClCompile Include="..\ALGORITHME\CInput.cpp" />
+    <ClCompile Include="..\ALGORITHME\debug_interface.cpp" />
+    <ClCompile Include="..\ALGORITHME\md5.cpp" />
+    <ClCompile Include="..\ALGORITHME\pintool_interface.cpp" />
+    <ClCompile Include="..\ALGORITHME\solver_interface.cpp" />
+    <ClCompile Include="algorithm_cmdLine.cpp" />
     <ClCompile Include="getopt_pp.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-      </ExcludedFromBuild>
-    </ClCompile>
-    <ClCompile Include="fuzzwin_cmdLine.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
       </ExcludedFromBuild>
     </ClCompile>

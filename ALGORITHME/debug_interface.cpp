@@ -1,4 +1,4 @@
-#include "fuzzwin_algo.h"
+#include "algorithm.h"
 
 // cette fonction teste si l'entrée fait planter le programme
 DWORD FuzzwinAlgorithm::debugTarget(CInput *pNewInput) 
@@ -100,7 +100,11 @@ DWORD FuzzwinAlgorithm::debugTarget(CInput *pNewInput)
                 this->logEndOfLine();
                 this->logEndOfLine();
 
-                returnCode    = exceptionCode;
+                returnCode = exceptionCode;
+
+                // actions à mener lors de la découverte d'une faute
+                this->faultFound();
+
                 continueDebug = false;
             }
             break;

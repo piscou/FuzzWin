@@ -2,7 +2,7 @@
 // documentation : https://code.google.com/p/getoptpp/wiki/Documentation?tm=6
 // seule modiifcation apportée au code : désactivation du warning 4290
 #include "getopt_pp.h"
-#include "fuzzwin_cmdLine.h"
+#include "algorithm_cmdLine.h"
 
 static const std::string helpMessage
 (
@@ -12,6 +12,7 @@ static const std::string helpMessage
 "Usage:  fuzzwin.exe -t <targetExe> - i <firstInput> [options]\n"
 "\n"
 "Options:\n"
+"--verbose / -v\t : mode verbeux\n"
 "--help        \t : affiche ce message\n"
 "--traceonly   \t : génération d'une seule trace avec le fichier d'entrée\n"
 "--keepfiles   \t : conserve les fichiers intermédiaires\n"
@@ -20,7 +21,6 @@ static const std::string helpMessage
 "--maxconstraints : nombre maximal de contraintes à récupérer\n"
 "--maxtime     \t : temps limite d'exécution de l'exécutable étudie\n"
 "--score       \t : calcul du score de chaque fichier\n"
-"--verbose     \t : mode verbeux\n"
 "--timestamp   \t : ajout de l'heure aux lignes de log\n"
 );
 
@@ -115,7 +115,7 @@ std::string FuzzwinAlgorithm_cmdLine::initialize(int argc, char** argv)
     std::cout << infoHeader << std::endl;
     
     // option --verbose : mode verbeux. Option présente = activée
-    ops >> GetOpt::OptionPresent("verbose", _verbose);
+    ops >> GetOpt::OptionPresent('v', "verbose", _verbose);
     this->logVerbose("Mode verbeux ON"); 
     this->logVerboseEndOfLine();
 
@@ -178,52 +178,57 @@ std::string FuzzwinAlgorithm_cmdLine::initialize(int argc, char** argv)
     
     // option --range : liste type impression des octets a tester (défaut = "all")
     ops >> GetOpt::Option<std::string>("range", _bytesToTaint, "all");
-    this->logVerbose("Octets à suivre           : " + _bytesToTaint);
+    this->logVerbose("Octets à suivre            : " + _bytesToTaint);
     this->logVerboseEndOfLine();
     
     // option --maxconstraints : nombre maximal de contraintes (défaut = 0)
     ops >> GetOpt::Option<UINT32>("maxconstraints", _maxConstraints, 0);   
-    this->logVerbose("Contraintes max           : ");
+    this->logVerbose("Contraintes max            : ");
     if (_maxConstraints) this->logVerbose(std::to_string(_maxConstraints));
     else                 this->logVerbose("N/A");
     this->logVerboseEndOfLine();
     
     // option --maxtime : temps maximal d'execution d'une entree (défaut = 0)
     ops >> GetOpt::Option<UINT32>("maxtime", _maxExecutionTime, 0);
-    this->logVerbose("Temps max                 : ");
+    this->logVerbose("Temps max                  : ");
     if (_maxExecutionTime) this->logVerbose(std::to_string(_maxExecutionTime));
     else                   this->logVerbose("N/A");
     this->logVerboseEndOfLine();
 
     // option --keepfiles : conservation de tous les fichiers. Option présente = activée
     ops >> GetOpt::OptionPresent("keepfiles", _keepFiles);
-    this->logVerbose("Option keepfiles          : ");
+    this->logVerbose("Option keepfiles           : ");
     if (_keepFiles) this->logVerbose("oui");
     else            this->logVerbose("non");
     this->logVerboseEndOfLine();
 
     // option --score : calcul du score de chaque nouveau fichier. Option présente = activée
     ops >> GetOpt::OptionPresent("score", _computeScore);
-    this->logVerbose("Option score              : ");
+    this->logVerbose("Option score               : ");
     if (_computeScore) this->logVerbose("oui");
     else               this->logVerbose("non");
     this->logVerboseEndOfLine();
  
     // option --timestamp : ajout de l'heure aux lignes de log
     ops >> GetOpt::OptionPresent("timestamp", _timeStamp);
-    this->logVerbose("Horodatage des log        : ");
+    this->logVerbose("Horodatage des log         : ");
     if (_timeStamp) this->logVerbose("oui");
     else            this->logVerbose("non");
     this->logVerboseEndOfLine();
 
     // option --hash : calcul des hash des fichiers pour éviter les doublons
     ops >> GetOpt::OptionPresent("hash", _hashFiles);
-    this->logVerbose("Hash des fichiers         : ");
+    this->logVerbose("Hash des fichiers          : ");
     if (_hashFiles) this->logVerbose("oui");
     else            this->logVerbose("non");
     this->logVerboseEndOfLine();
 
-    
+    // option --traceonly : une seule exécution avec l'entrée sélectionnée
+    ops >> GetOpt::OptionPresent("traceonly", _traceOnly);
+    this->logVerbose("Mode sélectionné          : ");
+    if (_traceOnly) this->logVerbose(" traceonly");
+    else            this->logVerbose(" normal");
+    this->logVerboseEndOfLine();
 
     /**********************************************************************/
     /** Construction des chemins d'accès aux outils externes (PIN et Z3) **/
@@ -356,7 +361,7 @@ void FuzzwinAlgorithm_cmdLine::logVerboseEndOfLine() const
 }
 
 // fin de l'algorithme : affichage des résultats à l'écran
-void FuzzwinAlgorithm_cmdLine::finishSpecific()
+void FuzzwinAlgorithm_cmdLine::algorithmFinished()
 {
     // fin du chrono, et affichage du temps écoulé
     this->log("statistiques de temps : ");

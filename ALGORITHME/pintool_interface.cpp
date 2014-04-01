@@ -1,4 +1,4 @@
-#include "fuzzwin_algo.h"
+#include "algorithm.h"
 
 int FuzzwinAlgorithm::sendArgumentToPintool(const std::string &command) const
 {
@@ -113,8 +113,8 @@ void FuzzwinAlgorithm::callPintool()
         CloseHandle(pi.hProcess); 
         CloseHandle(pi.hThread);
 
-        // si option 'keepfiles' : sauvegarde de la formule (extension .smt2)
-        if (_keepFiles) 
+        // si option 'keepfiles' ou 'traceonly': sauvegarde de la formule (extension .smt2)
+        if (_keepFiles || _traceOnly) 
         {
             std::ofstream ofs(_pCurrentInput->getLogFile());
             ofs << infoHeader << '\n';          // entete (version pin Z3 etc)

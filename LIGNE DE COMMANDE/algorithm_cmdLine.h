@@ -2,7 +2,7 @@
 #include <iostream>
 #include <ctime> // statistiques de temps
 
-#include "../FUZZWIN_COMMON/fuzzwin_algo.h"
+#include "../ALGORITHME/algorithm.h"
 
 // création de la classe algorithme adapté à la ligne de commande
 
@@ -34,6 +34,8 @@ public:
     std::string initialize(int argc, char** argv);
 
     // implémentation des méthodes virtuelles pures de contrôle de l'algorithme
-    void finishSpecific();
-    void notifyAlgoIsPaused() {} // non implémenté pour l'instant
+    void algorithmFinished();
+    void algorithmTraceOnlyFinished() {} // non implémenté pour l'instant
+    void notifyAlgoIsPaused()         {} // non implémenté pour l'instant
+    void faultFound()           { ++_nbFautes; }
 };

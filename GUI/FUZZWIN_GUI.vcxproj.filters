@@ -33,11 +33,11 @@
       <Extensions>cpp;moc</Extensions>
       <SourceControlFiles>False</SourceControlFiles>
     </Filter>
-    <Filter Include="Header Files\Fuzzwin_common">
-      <UniqueIdentifier>{b8a1d2cf-9943-4dab-aec8-2cf260e61739}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\Fuzzwin_common">
+    <Filter Include="Source Files\Algorithme">
       <UniqueIdentifier>{68063ab0-e3c2-48bb-8fde-28f92d97b8f8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Algorithme">
+      <UniqueIdentifier>{b8a1d2cf-9943-4dab-aec8-2cf260e61739}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -80,23 +80,32 @@
     <ClCompile Include="GeneratedFiles\Release\moc_qhexview.cpp">
       <Filter>Generated Files\Release</Filter>
     </ClCompile>
-    <ClCompile Include="..\FUZZWIN_COMMON\fuzzwin_algo.cpp">
-      <Filter>Source Files\Fuzzwin_common</Filter>
+    <ClCompile Include="..\ALGORITHME\algorithm.cpp">
+      <Filter>Source Files\Algorithme</Filter>
     </ClCompile>
-    <ClCompile Include="..\FUZZWIN_COMMON\md5.cpp">
-      <Filter>Source Files\Fuzzwin_common</Filter>
+    <ClCompile Include="..\ALGORITHME\CInput.cpp">
+      <Filter>Source Files\Algorithme</Filter>
     </ClCompile>
-    <ClCompile Include="..\FUZZWIN_COMMON\pintool_interface.cpp">
-      <Filter>Source Files\Fuzzwin_common</Filter>
+    <ClCompile Include="..\ALGORITHME\debug_interface.cpp">
+      <Filter>Source Files\Algorithme</Filter>
     </ClCompile>
-    <ClCompile Include="..\FUZZWIN_COMMON\debug_interface.cpp">
-      <Filter>Source Files\Fuzzwin_common</Filter>
+    <ClCompile Include="..\ALGORITHME\md5.cpp">
+      <Filter>Source Files\Algorithme</Filter>
     </ClCompile>
-    <ClCompile Include="..\FUZZWIN_COMMON\solver_interface.cpp">
-      <Filter>Source Files\Fuzzwin_common</Filter>
+    <ClCompile Include="..\ALGORITHME\pintool_interface.cpp">
+      <Filter>Source Files\Algorithme</Filter>
     </ClCompile>
-    <ClCompile Include="..\FUZZWIN_COMMON\CInput.cpp">
-      <Filter>Source Files\Fuzzwin_common</Filter>
+    <ClCompile Include="..\ALGORITHME\solver_interface.cpp">
+      <Filter>Source Files\Algorithme</Filter>
+    </ClCompile>
+    <ClCompile Include="GeneratedFiles\Debug\moc_algorithm_gui.cpp">
+      <Filter>Generated Files\Debug</Filter>
+    </ClCompile>
+    <ClCompile Include="GeneratedFiles\Release\moc_algorithm_gui.cpp">
+      <Filter>Generated Files\Release</Filter>
+    </ClCompile>
+    <ClCompile Include="algorithm_gui.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -112,22 +121,25 @@
     <CustomBuild Include="qhexview.h">
       <Filter>Header Files</Filter>
     </CustomBuild>
+    <CustomBuild Include="algorithm_gui.h">
+      <Filter>Header Files</Filter>
+    </CustomBuild>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\FUZZWIN_COMMON\fuzzwin_algo.h">
-      <Filter>Header Files\Fuzzwin_common</Filter>
-    </ClInclude>
-    <ClInclude Include="..\FUZZWIN_COMMON\md5.h">
-      <Filter>Header Files\Fuzzwin_common</Filter>
-    </ClInclude>
-    <ClInclude Include="..\FUZZWIN_COMMON\osType.h">
-      <Filter>Header Files\Fuzzwin_common</Filter>
-    </ClInclude>
     <ClInclude Include="resource.h">
       <Filter>Resource Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\FUZZWIN_COMMON\CInput.h">
-      <Filter>Header Files\Fuzzwin_common</Filter>
+    <ClInclude Include="..\ALGORITHME\algorithm.h">
+      <Filter>Header Files\Algorithme</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ALGORITHME\CInput.h">
+      <Filter>Header Files\Algorithme</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ALGORITHME\md5.h">
+      <Filter>Header Files\Algorithme</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ALGORITHME\osType.h">
+      <Filter>Header Files\Algorithme</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

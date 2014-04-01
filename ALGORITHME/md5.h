@@ -82,6 +82,6 @@ void md5_append(md5_state_t *pms, const md5_byte_t *data, int nbytes);
 void md5_finish(md5_state_t *pms, md5_byte_t digest[16]);
 
 // SPECIFIQUE POUR FUZZWIN
-std::string calculateHash(const char* content, size_t length);
+std::string calculateHash(const char* content, int length);
 
 #endif /* md5_INCLUDED */

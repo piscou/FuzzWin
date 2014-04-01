@@ -428,7 +428,7 @@ static std::string base64_encode(unsigned char const* bytes_to_encode, unsigned 
 }
 
 // fonctions retravaillé pour FuzzWin (encodage base64)
-std::string calculateHash(const char* content, size_t length) 
+std::string calculateHash(const char* content, int length) 
 {
     md5_state_t state;
     md5_byte_t	digest[16];

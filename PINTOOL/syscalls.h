@@ -1,7 +1,7 @@
 #pragma once
 #include "pintool.h"
 // les types d'OS supportés sont dans un fichier commun pintool / algo SAGE
-#include "../FUZZWIN_COMMON/osType.h"
+#include "../ALGORITHME/osType.h"
 #include <map>
 
 // valeur utilisée pour faire un fseek avec le syscall SetInformationFile

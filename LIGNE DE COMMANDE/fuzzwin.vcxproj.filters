@@ -1,0 +1,66 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="getopt_pp.cpp">
+      <Filter>Fichiers sources</Filter>
+    </ClCompile>
+    <ClCompile Include="main.cpp">
+      <Filter>Fichiers sources</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ALGORITHME\algorithm.cpp">
+      <Filter>Fichiers sources\Algorithme</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ALGORITHME\CInput.cpp">
+      <Filter>Fichiers sources\Algorithme</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ALGORITHME\debug_interface.cpp">
+      <Filter>Fichiers sources\Algorithme</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ALGORITHME\md5.cpp">
+      <Filter>Fichiers sources\Algorithme</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ALGORITHME\pintool_interface.cpp">
+      <Filter>Fichiers sources\Algorithme</Filter>
+    </ClCompile>
+    <ClCompile Include="..\ALGORITHME\solver_interface.cpp">
+      <Filter>Fichiers sources\Algorithme</Filter>
+    </ClCompile>
+    <ClCompile Include="algorithm_cmdLine.cpp">
+      <Filter>Fichiers sources</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="getopt_pp.h">
+      <Filter>Fichiers d%27en-tête</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ALGORITHME\algorithm.h">
+      <Filter>Fichiers d%27en-tête\Algorithme</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ALGORITHME\CInput.h">
+      <Filter>Fichiers d%27en-tête\Algorithme</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ALGORITHME\md5.h">
+      <Filter>Fichiers d%27en-tête\Algorithme</Filter>
+    </ClInclude>
+    <ClInclude Include="..\ALGORITHME\osType.h">
+      <Filter>Fichiers d%27en-tête\Algorithme</Filter>
+    </ClInclude>
+    <ClInclude Include="algorithm_cmdLine.h">
+      <Filter>Fichiers d%27en-tête</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Fichiers d%27en-tête">
+      <UniqueIdentifier>{2e86418a-45a3-4301-85b5-736368b86d03}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Fichiers sources">
+      <UniqueIdentifier>{474f4531-7354-49e1-8315-0bb55409df41}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Fichiers d%27en-tête\Algorithme">
+      <UniqueIdentifier>{b62ebaa8-ddda-483d-913e-a4315f7adffe}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Fichiers sources\Algorithme">
+      <UniqueIdentifier>{00348dcf-03f9-4d23-905b-3c505de532bf}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

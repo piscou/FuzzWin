@@ -1,4 +1,4 @@
-#include "fuzzwin_algo.h"
+#include "algorithm.h"
 
 bool FuzzwinAlgorithm::sendToSolver(const std::string &data) const
 {

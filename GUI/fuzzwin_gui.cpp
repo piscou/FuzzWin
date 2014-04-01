@@ -1,74 +1,5 @@
 #include "fuzzwin_gui.h"
 
-/**** CLASSE ALGORITHME ****/
-
-FuzzwinAlgorithm_GUI::FuzzwinAlgorithm_GUI(OSTYPE osType, ArgumentsForAlgorithm *pArgs) 
-    : FuzzwinAlgorithm(osType) 
-{
-    _resultsDir     = pArgs->_resultsDir;
-    _targetPath     = pArgs->_targetPath;
-    _firstInputPath = pArgs->_firstInputPath;
-    _bytesToTaint   = pArgs->_bytesToTaint;
-    _z3Path         = pArgs->_z3Path;
-    _cmdLinePin     = pArgs->_cmdLinePin;
-    
-    _maxConstraints   = pArgs->_maxConstraints;
-    _maxExecutionTime = pArgs->_maxExecutionTime;
-    _keepFiles        = pArgs->_keepFiles;
-    _computeScore     = pArgs->_computeScore;
-    _verbose          = pArgs->_verbose;
-    _timeStamp        = pArgs->_timeStamp;
-    _hashFiles        = pArgs->_hashFiles;
-}
-
-/**  implémentation des méthodes virtuelles pures **/
-
-void FuzzwinAlgorithm_GUI::log(const std::string &msg) const
-{
-    emit sendToGui(QString::fromLocal8Bit(msg.c_str()));
-}
-
-void FuzzwinAlgorithm_GUI::logVerbose(const std::string &msg) const
-{
-    if (_verbose) emit sendToGui(QString::fromLocal8Bit(msg.c_str()));
-}
-
-void FuzzwinAlgorithm_GUI::logVerboseEndOfLine() const
-{
-    if (_verbose) emit sendToGui(LINEFEED);
-}
-
-void FuzzwinAlgorithm_GUI::logEndOfLine() const
-{
-    emit sendToGui(LINEFEED);
-}
-
-void FuzzwinAlgorithm_GUI::logTimeStamp() const
-{
-    emit sendToGui(TIMESTAMP);
-}
-
-void FuzzwinAlgorithm_GUI::logVerboseTimeStamp() const
-{
-    if (_verbose) emit sendToGui(TIMESTAMP);
-}
-
-void FuzzwinAlgorithm_GUI::finishSpecific() 
-{ 
-    // envoi du résultat via un signal
-    emit sendNbFautes(_nbFautes);
-}
-
-void FuzzwinAlgorithm_GUI::notifyAlgoIsPaused() 
-{ 
-    // envoi de la mise en pause effectuée par un signal
-    emit pauseIsEffective();
-}
-
-void FuzzwinAlgorithm_GUI::wrapStartFromGui() { this->start(); }
-void FuzzwinAlgorithm_GUI::wrapStopFromGui()  { this->stop();  }
-void FuzzwinAlgorithm_GUI::wrapPauseFromGui() { this->pause(); }
-
 /****** CLASSE GUI *********/
 
 FUZZWIN_GUI::FUZZWIN_GUI() : QMainWindow(nullptr),
@@ -114,8 +45,6 @@ FUZZWIN_GUI::FUZZWIN_GUI() : QMainWindow(nullptr),
     // connexion signaux/slots
     this->connectSignalsToSlots();
 }
-
-FUZZWIN_GUI::~FUZZWIN_GUI() {}
 
 int FUZZWIN_GUI::testConfig()
 {
@@ -204,7 +133,9 @@ void FUZZWIN_GUI::initGroupOptions()
     _maxTimeEnabled        = new QCheckBox("Temps maximal",                 _groupOptions);    
     _verboseEnabled        = new QCheckBox("Mode verbeux",                  _groupOptions);
     _keepfilesEnabled      = new QCheckBox("Garder fichiers temporaires",   _groupOptions);
-    _traceOnlyEnabled      = new QCheckBox("Trace seulement",               _groupOptions);    
+    _traceOnlyEnabled      = new QCheckBox("Trace seulement",               _groupOptions); 
+    _timeStampEnabled      = new QCheckBox("Horodatage des logs",           _groupOptions);
+    _hashFilesEnabled      = new QCheckBox("Hash des entrées générées",     _groupOptions);
     
     _maxConstraints        = new QSpinBox(_groupOptions);
     _maxTime               = new QTimeEdit(_groupOptions);
@@ -213,8 +144,6 @@ void FUZZWIN_GUI::initGroupOptions()
     _maxConstraints->setEnabled(false);     // tant que la case n'est pas cochée
     _maxTime->setEnabled(false);            // tant que la case n'est pas cochée
     _listOfBytesToTaint->setEnabled(false); // tant que la case n'est pas cochée
-
-    _traceOnlyEnabled->setEnabled(false);   // NON IMPLEMENTEE ENCORE
 
     _gLayout1 = new QGridLayout(_groupOptions);
     _gLayout1->setContentsMargins(11, 11, 11, 11);
@@ -228,46 +157,30 @@ void FUZZWIN_GUI::initGroupOptions()
     _gLayout1->addWidget(_verboseEnabled,        7, 0, 1, 1);    
     _gLayout1->addWidget(_keepfilesEnabled,      8, 0, 1, 1);
     _gLayout1->addWidget(_traceOnlyEnabled,      9, 0, 1, 1);
+    _gLayout1->addWidget(_timeStampEnabled,      10, 0, 1, 1);
+    _gLayout1->addWidget(_hashFilesEnabled,      11, 0, 1, 1);
 }
     
 void FUZZWIN_GUI::initGroupResultats()
 {
     _groupResultats = new QGroupBox("Résultats", _centralWidget);
 
-    _labelWorklistSize = new QLabel("Taille de la liste de travail", _groupResultats);
-    _worklistSize      = new QSpinBox(_groupResultats);
-    _worklistSize->setReadOnly(true);
-    _worklistSize->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
-    _worklistSize->setButtonSymbols(QAbstractSpinBox::NoButtons);    
-    _worklistSize->setSizePolicy(_fixedSizePolicy);
-    
-    
-
-    _labelElapsedTime = new QLabel("Temps écoulé", _groupResultats);
-    _labelElapsedTime->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
-    _elapsedTime      = new QTimeEdit(_groupResultats);
-    _elapsedTime->setLayoutDirection(Qt::LeftToRight);
-    _elapsedTime->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
-    _elapsedTime->setReadOnly(true);
-    _elapsedTime->setButtonSymbols(QAbstractSpinBox::NoButtons);
-    _elapsedTime->setSizePolicy(_fixedSizePolicy);
-
     _labelInitialInput = new QLabel("Entrée initiale",_groupResultats);
-    _labelInitialInput->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+    _labelInitialInput->setSizePolicy(_fixedSizePolicy);
     _initialInput      = new InitialInputLineEdit(_groupResultats);
     _initialInput->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
     _initialInput->setAcceptDrops(true);
     _initialInput->setDragEnabled(true);
 
     _labelTargetPath = new QLabel("Exécutable cible", _groupResultats);
-    _labelTargetPath->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+    _labelTargetPath->setSizePolicy(_fixedSizePolicy);
     _targetPath      = new TargetPathLineEdit(_groupResultats);
     _targetPath->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
     _targetPath->setAcceptDrops(true);
     _targetPath->setDragEnabled(true);
 
     _labelResultsDir  = new QLabel("Dossier de résultats", _groupResultats);
-    _labelResultsDir->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+    _labelResultsDir->setSizePolicy(_fixedSizePolicy);
     _resultsDir       = new ResultsDirLineEdit(_groupResultats);
     _resultsDir->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
     _resultsDir->setAcceptDrops(true);
@@ -277,7 +190,7 @@ void FUZZWIN_GUI::initGroupResultats()
 
     _logTab    = new QWidget();
     _logWindow = new QTextEdit(_logTab);
-    // changement de la police => courier
+    // changement de la police => davantage "console"
     _logWindow->setFont(QFont("Lucida console", 8));
     _logWindow->setReadOnly(true);
     _hLayout2  = new QHBoxLayout(_logTab);
@@ -331,6 +244,13 @@ void FUZZWIN_GUI::initGroupResultats()
     }
 #endif
 
+    _labelFaultsFound = new QLabel("Nombre de fautes trouvées", _groupResultats);
+    _faultsFound      = new QSpinBox(_groupResultats);
+    _faultsFound->setReadOnly(true);
+    _faultsFound->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
+    _faultsFound->setButtonSymbols(QAbstractSpinBox::NoButtons);    
+    _faultsFound->setSizePolicy(_fixedSizePolicy);
+
     _saveLogButton = new QPushButton("Sauvegarder Log");
     _saveLogButton->setSizePolicy(_fixedSizePolicy);
     _saveLogButton->setMinimumWidth(150);
@@ -349,25 +269,22 @@ void FUZZWIN_GUI::initGroupResultats()
 
     _gLayout2 = new QGridLayout(_groupResultats);
     _gLayout2->setContentsMargins(11, 11, 11, 11);    
-    _gLayout2->addWidget(_labelWorklistSize, 0, 0, 1, 1);
-    _gLayout2->addWidget(_worklistSize,      0, 1, 1, 1);
 
-    _gLayout2->addWidget(_labelElapsedTime,  0, 2, 1, 1);
-    _gLayout2->addWidget(_elapsedTime,       0, 3, 1, 1);
+    _gLayout2->addWidget(_labelInitialInput, 0, 0, 1, 1);
+    _gLayout2->addWidget(_initialInput,      0, 1, 1, 3);
 
-    _gLayout2->addWidget(_labelInitialInput, 1, 0, 1, 1);
-    _gLayout2->addWidget(_initialInput,      1, 1, 1, 3);
+    _gLayout2->addWidget(_labelTargetPath,   1, 0, 1, 1);
+    _gLayout2->addWidget(_targetPath,        1, 1, 1, 3);    
 
-    _gLayout2->addWidget(_labelTargetPath,   2, 0, 1, 1);
-    _gLayout2->addWidget(_targetPath,        2, 1, 1, 3);    
-
-    _gLayout2->addWidget(_labelResultsDir,   3, 0, 1, 1);
-    _gLayout2->addWidget(_resultsDir,        3, 1, 1, 3);
+    _gLayout2->addWidget(_labelResultsDir,   2, 0, 1, 1);
+    _gLayout2->addWidget(_resultsDir,        2, 1, 1, 3);
     
-    _gLayout2->addWidget(_Tabs,              4, 0, 1, 4); 
+    _gLayout2->addWidget(_Tabs,              3, 0, 1, 4); 
     
-    _gLayout2->addWidget(_saveLogButton,     5, 0, 1, 2, Qt::AlignCenter);
-    _gLayout2->addWidget(_saveConfigButton,  5, 2, 1, 2, Qt::AlignCenter);
+    _gLayout2->addWidget(_labelFaultsFound,  4, 0, 1, 1);
+    _gLayout2->addWidget(_faultsFound,       4, 1, 1, 1);
+    _gLayout2->addWidget(_saveLogButton,     4, 2, 1, 1, Qt::AlignCenter);
+    _gLayout2->addWidget(_saveConfigButton,  4, 3, 1, 1, Qt::AlignCenter);
 }
     
 void FUZZWIN_GUI::initButtons()
@@ -424,15 +341,15 @@ void FUZZWIN_GUI::connectSignalsToSlots()
     connect(_selectResultsDir,   SIGNAL(buttonStatusChanged()),  this, SLOT(testButtons()));
 
     // signaux émis par le drop de fichiers sur les lignes de texte
-    connect(_targetPath,   SIGNAL(newTargetDropped(QString)),   this,   SLOT(checkKindOfExe(QString)));
-    connect(_resultsDir,   SIGNAL(newDirDropped   (QString)),   this,   SLOT(checkDir(QString)));
-    connect(_initialInput, SIGNAL(conformData()),  _selectInitialInput, SLOT(setButtonOk()));
+    connect(_targetPath,    SIGNAL(newTargetDropped(QString)),   this,   SLOT(checkKindOfExe(QString)));
+    connect(_resultsDir,    SIGNAL(newDirDropped   (QString)),   this,   SLOT(checkDir(QString)));
+    connect(_initialInput,  SIGNAL(conformData()),  _selectInitialInput, SLOT(setButtonOk()));
     
     // autoscroll de la fenetre de log
-    connect(_logWindow, SIGNAL(textChanged()), this, SLOT(autoScrollLogWindow()));
+    connect(_logWindow,     SIGNAL(textChanged()), this,   SLOT(autoScrollLogWindow()));
     // sauvegarde des logs
-    connect(_saveLogButton,   SIGNAL (clicked()), this, SLOT(saveLog_clicked()));
-    connect(_saveConfigButton,   SIGNAL (clicked()), this, SLOT(saveConfig_clicked()));
+    connect(_saveLogButton,    SIGNAL (clicked()), this, SLOT(saveLog_clicked()));
+    connect(_saveConfigButton, SIGNAL (clicked()), this, SLOT(saveConfig_clicked()));
 
     // bouton Go/resume (traitement selon le texte du bouton)
     connect(_startButton,  SIGNAL(clicked()), this, SLOT(start_clicked()));    
@@ -613,11 +530,9 @@ void FUZZWIN_GUI::startSession()
     args._verbose        = _verboseEnabled->isChecked();
     args._keepFiles      = _keepfilesEnabled->isChecked();
     args._maxConstraints = _maxConstraintsEnabled->isChecked() ? _maxConstraints->value() : 0;
-
-    // non encore implémentés
-    args._timeStamp = true;
-    args._hashFiles = true;
-    args._traceonly = false;
+    args._timeStamp      = _timeStampEnabled->isChecked();
+    args._hashFiles      = _hashFilesEnabled->isChecked();
+    args._traceOnly      = _traceOnlyEnabled->isChecked();
 
     // récupération du temps d'exécution (nécessaire au constructeur de l'algorithme)
     if (_maxTimeEnabled->isChecked())
@@ -666,9 +581,13 @@ void FUZZWIN_GUI::connectGUIToAlgo()
     connect(this, SIGNAL(stopAlgorithm()),   _pFuzzwinAlgo, SLOT(wrapStopFromGui()),  Qt::DirectConnection);
    
     // SENS ALGO->GUI
-    connect(_pFuzzwinAlgo, SIGNAL(sendToGui(QString)),  this, SLOT(log(QString)),      Qt::QueuedConnection);
-    connect(_pFuzzwinAlgo, SIGNAL(sendNbFautes(int)),   this, SLOT(algoFinished(int)), Qt::QueuedConnection);
-    connect(_pFuzzwinAlgo, SIGNAL(pauseIsEffective()),  this, SLOT(sessionPaused()),   Qt::QueuedConnection);
+    connect(_pFuzzwinAlgo, SIGNAL(sendToGui(QString)),      this,     SLOT(log(QString)),    Qt::QueuedConnection);
+    connect(_pFuzzwinAlgo, SIGNAL(sendAlgorithmFinished()), this,     SLOT(algoFinished()),  Qt::QueuedConnection);
+    connect(_pFuzzwinAlgo, SIGNAL(sendTraceOnlyFinished()), this,     SLOT(algoTraceOnlyFinished()),  Qt::QueuedConnection);
+    
+    connect(_pFuzzwinAlgo, SIGNAL(pauseIsEffective()),      this,     SLOT(sessionPaused()), Qt::QueuedConnection);
+    connect(_pFuzzwinAlgo, SIGNAL(setFaultsFound(int)), _faultsFound, SLOT(setValue(int)),   Qt::QueuedConnection);
+    
     // SIGNZL FIN DE THREAD
     connect(_pFuzzwinThread, SIGNAL(finished()), _pFuzzwinAlgo, SLOT(deleteLater()));
 }
@@ -687,9 +606,11 @@ void FUZZWIN_GUI::sessionPaused()
 void FUZZWIN_GUI::stop_clicked()
 {
     emit stopAlgorithm();
-    // activer le bouton "Go", et désactiver le "Stop"
     
+    // activer le bouton "Go", et désactiver le "Stop"
     _startButton->setEnabled(true);
+    _startButton->setText("Démarrer");
+    _startButtonStatus = STATUS_START;
     _stopButton->setDisabled(true);
      
     _pFuzzwinThread->terminate();
@@ -700,8 +621,13 @@ void FUZZWIN_GUI::stop_clicked()
 
 void FUZZWIN_GUI::saveLog_clicked()
 {
+    QString filter = "*.log";
     // sauvegarde du contenu du widget '_logWindow' dans un fichier
-    QString filename = QFileDialog::getSaveFileName(this, "Sélection du nom de fichier", QDir::currentPath(), ".log");
+    QString filename = QFileDialog::getSaveFileName(this, 
+        "Sélection du nom de fichier", 
+        QDir::currentPath(), 
+        "Fichier de log (*.log)", 
+        &filter);
 
     if (filename.isNull()) return;  // bouton 'annuler' 
 
@@ -901,9 +827,10 @@ void FUZZWIN_GUI::checkDir(const QString &path)
     _resultsDir->setCursorPosition(0);
 }
 
-void FUZZWIN_GUI::algoFinished(int nbFautes)
+void FUZZWIN_GUI::algoFinished()
 {
-    if (!nbFautes)
+    int nbFautes = _faultsFound->value();
+    if (!_faultsFound->value())
     {
         QMessageBox::information(this, "Fin de l'opération", "Aucune faute trouvée", QMessageBox::Ok);
     }
@@ -914,13 +841,28 @@ void FUZZWIN_GUI::algoFinished(int nbFautes)
     }
     // arret de l'eventloop du thread
     _pFuzzwinThread->quit();
-    _pFuzzwinThread->wait();    
-    
-    // activer le bouton "Go", et désactiver le "Stop"
-    _startButton->setEnabled(true);
-    _stopButton->setDisabled(true);
+    _pFuzzwinThread->wait();   
+    delete (_pFuzzwinThread);   
 
-    delete (_pFuzzwinThread);
+    // préparation pour une nouvelle session
+    _startButton->setEnabled(true);
+    _startButton->setText("Démarrer");
+    _startButtonStatus = STATUS_START;
+    _stopButton->setDisabled(true);
+}
+
+void FUZZWIN_GUI::algoTraceOnlyFinished()
+{
+    // arret de l'eventloop du thread
+    _pFuzzwinThread->quit();
+    _pFuzzwinThread->wait();   
+    delete (_pFuzzwinThread);   
+
+    // préparation pour une nouvelle session
+    _startButton->setEnabled(true);
+    _startButton->setText("Démarrer");
+    _startButtonStatus = STATUS_START;
+    _stopButton->setDisabled(true);
 }
 
 void FUZZWIN_GUI::autoScrollLogWindow()
