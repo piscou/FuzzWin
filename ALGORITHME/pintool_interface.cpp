@@ -118,24 +118,27 @@ void FuzzwinAlgorithm::callPintool()
         {
             std::ofstream ofs(_pCurrentInput->getLogFile());
             ofs << infoHeader << '\n';          // entete (version pin Z3 etc)
-            ofs << '\n';
             ofs << "; Fichier instrumenté : ";  // fichier d'entree etudié
             ofs << _pCurrentInput->getFileName();  
-            if (_verbose) // ajout de l'arbre généalogique
+            
+            // ajout de l'arbre généalogique (si objet non-root et mode verbeux)
+            CInput *pFather = _pCurrentInput->getFather();
+            if (_verbose && pFather) 
             {
-                CInput *pFather = _pCurrentInput->getFather();
                 ofs << '(';
-                while (pFather)
+                do // boucle récursive de déclaration des parents de chaque fichier
                 {
                     ofs << " <- " << pFather->getFileName();
                     pFather = pFather->getFather();
-                }
+                } while (pFather);
                 ofs << ')';
             }
             ofs << "\n\n";
             ofs << solverConfig;    // configuration du solveur
             ofs << "\n\n";
             ofs << _formula;        // formule brute smt2
+            ofs << "\n\n";
+            ofs << "(check-sat)\n(get-model)\n";    // commandes de lancement et de récupération des résultats
             ofs.close();
         }
     }	
