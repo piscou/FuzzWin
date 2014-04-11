@@ -5,21 +5,23 @@
 FuzzwinAlgorithm_GUI::FuzzwinAlgorithm_GUI(OSTYPE osType, ArgumentsForAlgorithm *pArgs) 
     : FuzzwinAlgorithm(osType) 
 {
+    // données de l'algorithme
     _resultsDir     = pArgs->_resultsDir;
     _targetPath     = pArgs->_targetPath;
     _firstInputPath = pArgs->_firstInputPath;
-    _bytesToTaint   = pArgs->_bytesToTaint;
+
+    // données pour les modules externes
     _z3Path         = pArgs->_z3Path;
     _cmdLinePin     = pArgs->_cmdLinePin;
     
-    _maxConstraints   = pArgs->_maxConstraints;
-    _maxExecutionTime = pArgs->_maxExecutionTime;
+    // options de l'algorithme
     _keepFiles        = pArgs->_keepFiles;
     _computeScore     = pArgs->_computeScore;
     _verbose          = pArgs->_verbose;
     _timeStamp        = pArgs->_timeStamp;
     _hashFiles        = pArgs->_hashFiles;
     _traceOnly        = pArgs->_traceOnly;
+    _maxExecutionTime = pArgs->_maxExecutionTime;
 }
 
 /**  implémentation des méthodes virtuelles pures **/

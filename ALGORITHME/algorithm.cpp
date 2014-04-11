@@ -127,8 +127,38 @@ FuzzwinAlgorithm::~FuzzwinAlgorithm()
     if (_maxExecutionTime) CloseHandle(this->_hTimer);
 }
 
-int FuzzwinAlgorithm::finalizeInitialization()
+int FuzzwinAlgorithm::finalizeInitialization(
+    const std::string &pin_X86,     const std::string &pin_X64,
+    const std::string &pintool_X86, const std::string &pintool_X64, 
+    const std::string &cmdLineOptions)
 {
+    /***************************************/
+    /** Ligne de commande pour le pintool **/ 
+    /***************************************/
+
+    // si OS 32 bits, pas la peine de spécifier les modules 64bits
+    if (_osType < BEGIN_HOST_64BITS) 
+    {
+        /* $(pin_X86) -t $(pintool_X86) -- $(targetFile) %INPUT% (ajouté a chaque fichier testé) */
+        _cmdLinePin = "\"" + pin_X86 + "\" " \
+             + "-follow_execv " \
+             + "-t \"" + pintool_X86  + "\" " \
+             + cmdLineOptions \
+             + " -- \"" + _targetPath + "\" ";
+    }
+    else
+    {
+        /* $(pin_X86) -p64 $(pin_X64) -t64 $(pintool_X64) -t $(pintool_X86) 
+        -- $(targetFile) %INPUT% (ajouté a chaque fichier testé) */
+        _cmdLinePin = "\"" + pin_X86 + "\" " \
+            + "-follow_execv " \
+            + "-p64 \"" + pin_X64     + "\" " \
+            + "-t64 \"" + pintool_X64 + "\" " \
+            + "-t \""   + pintool_X86 + "\" " \
+            + cmdLineOptions \
+            + " -- \""   + _targetPath + "\" ";
+    }
+    
     /********************************************************/
     /** construction liste de travail et fichier de fautes **/
     /********************************************************/
@@ -369,12 +399,12 @@ void FuzzwinAlgorithm::updateRefCounts(CInput *pInput) const
     {
         CInput *pFather = pInput->getFather();
 
+        // si un ancêtre existe : diminution de son RefCount (recursivité)
+        if (pFather) this->updateRefCounts(pFather);
+
         this->logVerboseTimeStamp();
         this->logVerbose("    destruction objet " + pInput->getFileName());
         this->logVerboseEndOfLine();
-  
-        // si un ancêtre existe : diminution de son RefCount (recursivité)
-        if (pFather) this->updateRefCounts(pFather);
 
         // destruction de l'objet actuel
         delete (pInput);

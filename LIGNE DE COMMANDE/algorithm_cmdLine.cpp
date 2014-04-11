@@ -4,6 +4,8 @@
 #include "getopt_pp.h"
 #include "algorithm_cmdLine.h"
 
+#include <chrono>
+
 static const std::string helpMessage
 (
 "\n"
@@ -11,17 +13,18 @@ static const std::string helpMessage
 "\n"
 "Usage:  fuzzwin.exe -t <targetExe> - i <firstInput> [options]\n"
 "\n"
-"Options:\n"
-"--verbose / -v\t : mode verbeux\n"
-"--help        \t : affiche ce message\n"
-"--traceonly   \t : génération d'une seule trace avec le fichier d'entrée\n"
-"--keepfiles   \t : conserve les fichiers intermédiaires\n"
-"--range       \t : intervalles d'octets à marquer (ex: 1-10;15;17-51)\n"
-"--dir         \t : répertoire de sortie spécifique (défaut : './results/')\n"
-"--maxconstraints : nombre maximal de contraintes à récupérer\n"
-"--maxtime     \t : temps limite d'exécution de l'exécutable étudie\n"
-"--score       \t : calcul du score de chaque fichier\n"
-"--timestamp   \t : ajout de l'heure aux lignes de log\n"
+"Options pour l'algorithme:\n"
+" --verbose / -v\t : mode verbeux\n"
+" --help        \t : affiche ce message\n"
+" --traceonly   \t : génération d'une seule trace avec le fichier d'entrée\n"
+" --keepfiles   \t : conserve les fichiers intermédiaires\n"
+" --dir         \t : répertoire de sortie spécifique (défaut : './results/')\n"
+" --score       \t : calcul du score de chaque fichier\n"
+" --timestamp   \t : ajout de l'heure aux lignes de log\n"
+"Options pour le pintool:\n"
+" --maxconstraints : nombre maximal de contraintes à récupérer\n"
+" --maxtime     \t : temps limite d'exécution de l'exécutable étudie\n"
+" --range       \t : intervalles d'octets à marquer (ex: 1-10;15;17-51)\n"
 );
 
 FuzzwinAlgorithm_cmdLine::FuzzwinAlgorithm_cmdLine(OSTYPE osType)
@@ -99,8 +102,18 @@ int FuzzwinAlgorithm_cmdLine::deleteDirectory(const std::string &refcstrRootDire
 // parse la ligne de commande, lance le solveur, créé le pipe, etc...
 std::string FuzzwinAlgorithm_cmdLine::initialize(int argc, char** argv) 
 {
+    /** OPTIONS DU PINTOOL ***/
+    UINT32 maxConstraints;    // nombre maximal de contraintes à récupérer
+    bool   logTaint;          // log du marquage de données
+    bool   logAsm;            // log de dessasemblage du programme
+    std::string  bytesToTaint;   // intervalles d'octets à surveiller
+
     std::string exePath = this->getExePath();   // dossier racine de l'exécutable
     
+    // options de ligne de commande pour le pintool en mode "marquage"
+    std::string cmdLineOptions("-option taint"); 
+    cmdLineOptions += " -os " + std::to_string(_osType);
+
     // parsing de la ligne de commande
     GetOpt::GetOpt_pp ops(argc, argv);
 
@@ -176,25 +189,6 @@ std::string FuzzwinAlgorithm_cmdLine::initialize(int argc, char** argv)
     // prise du dossier de résultats en chemin absolu
     _resultsDir = getAbsoluteFilePath(_resultsDir);
     
-    // option --range : liste type impression des octets a tester (défaut = "all")
-    ops >> GetOpt::Option<std::string>("range", _bytesToTaint, "all");
-    this->logVerbose("Octets à suivre            : " + _bytesToTaint);
-    this->logVerboseEndOfLine();
-    
-    // option --maxconstraints : nombre maximal de contraintes (défaut = 0)
-    ops >> GetOpt::Option<UINT32>("maxconstraints", _maxConstraints, 0);   
-    this->logVerbose("Contraintes max            : ");
-    if (_maxConstraints) this->logVerbose(std::to_string(_maxConstraints));
-    else                 this->logVerbose("N/A");
-    this->logVerboseEndOfLine();
-    
-    // option --maxtime : temps maximal d'execution d'une entree (défaut = 0)
-    ops >> GetOpt::Option<UINT32>("maxtime", _maxExecutionTime, 0);
-    this->logVerbose("Temps max                  : ");
-    if (_maxExecutionTime) this->logVerbose(std::to_string(_maxExecutionTime));
-    else                   this->logVerbose("N/A");
-    this->logVerboseEndOfLine();
-
     // option --keepfiles : conservation de tous les fichiers. Option présente = activée
     ops >> GetOpt::OptionPresent("keepfiles", _keepFiles);
     this->logVerbose("Option keepfiles           : ");
@@ -230,6 +224,69 @@ std::string FuzzwinAlgorithm_cmdLine::initialize(int argc, char** argv)
     else            this->logVerbose(" normal");
     this->logVerboseEndOfLine();
 
+    /*** OPTIONS POUR LE PINTOOL ***/
+
+    // option --range : liste type impression des octets a tester
+    // si option non présente : tout marquer
+    ops >> GetOpt::Option<std::string>("range", bytesToTaint, "");
+    this->logVerbose("Octets à suivre            : ");
+    if (bytesToTaint.empty())
+    {
+        this->logVerbose("N/A");
+    }
+    else
+    {
+        this->logVerbose(bytesToTaint);
+        cmdLineOptions += " -range " + bytesToTaint;
+    }
+    this->logVerboseEndOfLine();
+    
+    // option --maxconstraints : nombre maximal de contraintes (défaut = 0)
+    ops >> GetOpt::Option<UINT32>("maxconstraints", maxConstraints, 0);   
+    this->logVerbose("Contraintes max            : ");
+    if (maxConstraints)
+    {
+        this->logVerbose(std::to_string(maxConstraints));
+        cmdLineOptions += " -maxconstraints " + std::to_string(maxConstraints);
+    }
+    else this->logVerbose("N/A");
+    this->logVerboseEndOfLine();
+    
+    // option --maxtime : temps maximal d'execution d'une entree (défaut = 0)
+    // ATTENTION : variable memebre de l'algorithme
+    ops >> GetOpt::Option<UINT32>("maxtime", _maxExecutionTime, 0);
+    this->logVerbose("Temps max                  : ");
+    if (_maxExecutionTime)
+    {
+        this->logVerbose(std::to_string(_maxExecutionTime));
+        cmdLineOptions += " -maxtime " + std::to_string(_maxExecutionTime);
+        
+    }
+    else this->logVerbose("N/A");
+    this->logVerboseEndOfLine();
+
+    // option --logasm : log de dessasemblage des instructions exécutées
+    ops >> GetOpt::OptionPresent("logasm", logAsm);
+    this->logVerbose("Log de dessasemblage       : ");
+    if (logAsm)
+    {
+        this->logVerbose("oui");
+        cmdLineOptions += " -logasm ";
+    }
+    else this->logVerbose("non");
+    this->logVerboseEndOfLine();
+   
+    // option --logtaint : log de marquage des instructions exécutées
+    ops >> GetOpt::OptionPresent("logtaint", logTaint);
+    this->logVerbose("Log de marquage           : ");
+    if (logTaint)
+    {
+        this->logVerbose("oui");
+        cmdLineOptions += " -logtaint ";
+    }
+    else this->logVerbose("non");
+    this->logVerboseEndOfLine();
+
     /**********************************************************************/
     /** Construction des chemins d'accès aux outils externes (PIN et Z3) **/
     /**********************************************************************/
@@ -258,12 +315,12 @@ std::string FuzzwinAlgorithm_cmdLine::initialize(int argc, char** argv)
     // modules 32 bits 
     pin_X86       = pinPath + "ia32\\bin\\pin.exe";
     pin_X86_VmDll = pinPath + "ia32\\bin\\pinvm.dll";
-    pintool_X86   = exePath + "fuzzwinX86.dll";
+    pintool_X86   = exePath + "..\\pintool\\fuzzwinX86.dll";
 
     // modules 64 bits
     pin_X64       = pinPath + "intel64\\bin\\pin.exe";
     pin_X64_VmDll = pinPath + "intel64\\bin\\pinvm.dll";
-    pintool_X64   = exePath + "fuzzwinX64.dll";
+    pintool_X64   = exePath + "..\\pintool\\fuzzwinX64.dll";
     
     if (!testFileExists(pin_X86))       return "executable PIN 32bits absent";
     if (!testFileExists(pin_X86_VmDll)) return "librairie PIN_VM 32bits absente";
@@ -281,35 +338,14 @@ std::string FuzzwinAlgorithm_cmdLine::initialize(int argc, char** argv)
     if (!testFileExists(z3Path))        return "solveur z3 absent";
     _z3Path = z3Path;
    
-
-    /***************************************/
-    /** Ligne de commande pour le pintool **/ 
-    /***************************************/
-
-    // si OS 32 bits, pas la peine de spécifier les modules 64bits
-    if (_osType < BEGIN_HOST_64BITS) 
-    {
-        /* $(pin_X86) -t $(pintool_X86) -- $(targetFile) %INPUT% (ajouté a chaque fichier testé) */
-        _cmdLinePin = '"' + pin_X86 \
-             + "\" -t \"" + pintool_X86  \
-             + "\" -- \"" + _targetPath + "\" ";
-    }
-    else
-    {
-        /* $(pin_X86) -p64 $(pin_X64) -t64 $(pintool_X64) -t $(pintool_X86) 
-        -- $(targetFile) %INPUT% (ajouté a chaque fichier testé) */
-        _cmdLinePin = '"'  + pin_X86  \
-            + "\" -p64 \"" + pin_X64  \
-            + "\" -t64 \"" + pintool_X64  \
-            + "\" -t \""   + pintool_X86  \
-            + "\" -- \""   + _targetPath + "\" ";
-    }
-
     // création des outils internes et externes
-    if (EXIT_FAILURE == this->finalizeInitialization()) return ("");
+    int result = this->finalizeInitialization(
+        pin_X86, pin_X64, pintool_X86, pintool_X64, cmdLineOptions);
+
+    if (EXIT_FAILURE == result) return ("");
 
     // top départ chrono
-    _timeBegin = clock();
+    _timeBegin = std::chrono::system_clock::now();
 
     this->logVerbose("!!! LANCEMENT DE L'ALGORITHME !!!");
     this->logVerboseEndOfLine();
@@ -325,12 +361,12 @@ void FuzzwinAlgorithm_cmdLine::log(const std::string &msg) const
     std::cout << msg; 
 }
 
-// horodatage
+// horodatage. TODO : rendre la fonction portable (pas d'appel à l'API Windows...)
 void FuzzwinAlgorithm_cmdLine::logTimeStamp() const 
 { 
     SYSTEMTIME st;
     char timeStamp[32];    
-    
+
     if (!_timeStamp) return;
 
     GetLocalTime(&st);
@@ -364,7 +400,36 @@ void FuzzwinAlgorithm_cmdLine::logVerboseEndOfLine() const
 void FuzzwinAlgorithm_cmdLine::algorithmFinished()
 {
     // fin du chrono, et affichage du temps écoulé
+    _timeEnd = std::chrono::system_clock::now();
+
+    std::string timeElapsed;
+    auto timeElapsedInMilis = std::chrono::duration_cast<std::chrono::milliseconds>(_timeEnd - _timeBegin);
+
+    auto hoursElapsed  = std::chrono::duration_cast<std::chrono::hours>  (timeElapsedInMilis);  
+    if (hoursElapsed.count())
+    {
+        timeElapsed = std::to_string(hoursElapsed.count()) + "h ";
+        timeElapsedInMilis -= std::chrono::duration_cast<std::chrono::milliseconds>(hoursElapsed);
+    }
+
+    auto minutesElapsed = std::chrono::duration_cast<std::chrono::minutes>(timeElapsedInMilis);
+    if (minutesElapsed.count())
+    {
+        timeElapsed += std::to_string(minutesElapsed.count()) + "m ";
+        timeElapsedInMilis -= std::chrono::duration_cast<std::chrono::milliseconds>(minutesElapsed);
+    }
+
+    auto secondsElapsed = std::chrono::duration_cast<std::chrono::seconds>(timeElapsedInMilis);
+    if (secondsElapsed.count())
+    {
+        timeElapsed += std::to_string(secondsElapsed.count()) + "s ";
+        timeElapsedInMilis -= std::chrono::duration_cast<std::chrono::milliseconds>(secondsElapsed);
+    }
+    
+    timeElapsed += std::to_string(timeElapsedInMilis.count()) + "ms";
+
+
     this->log("statistiques de temps : ");
-    this->log(std::to_string((float) (clock() - _timeBegin)/CLOCKS_PER_SEC ) + " secondes");
+    this->log(timeElapsed);
     this->logEndOfLine();
 }

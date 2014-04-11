@@ -1,6 +1,6 @@
 #pragma once
 #include <iostream>
-#include <ctime> // statistiques de temps
+#include <chrono>
 
 #include "../ALGORITHME/algorithm.h"
 
@@ -9,7 +9,7 @@
 class FuzzwinAlgorithm_cmdLine : public FuzzwinAlgorithm
 {    
 private:  
-    clock_t _timeBegin, _timeEnd;
+    std::chrono::system_clock::time_point _timeBegin, _timeEnd;
     
     /**  implémentation des méthodes virtuelles pures de log **/
     

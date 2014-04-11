@@ -21,16 +21,15 @@ public:
     std::string _z3Path;     // chemin vers le solveur Z3
     std::string _cmdLinePin; // ligne de commande pré-remplie pour PIN
 
-    /* Options pour le fuzzing */
-    UINT32  _maxExecutionTime;  // temps maximal d'execution 
-    UINT32  _maxConstraints;    // nombre maximal de contraintes à récupérer
+    /* Options pour l'algorithme */
     bool    _keepFiles;         // les fichiers sont gardés dans le dossier de resultat
     bool    _computeScore;      // option pour calculer le score de chaque entrée
     bool    _verbose;           // mode verbeux
     bool    _timeStamp;         // ajout de l'heure aux lignes de log
     bool    _hashFiles;         // calcul du hash de chaque entrée pour éviter les collisions
     bool    _traceOnly;         // simple trace d'exécution de l'entrée initiale
-    std::string _bytesToTaint;      // intervalles d'octets à surveiller 
+    UINT32 _maxExecutionTime;   // temps maximal d'exécution (pour tuer le processus de la cible lancé en débug)
+  
 };
 
 // création de la classe algorithme adapté à la ligne de commande

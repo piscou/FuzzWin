@@ -149,6 +149,5 @@ $RECYCLE.BIN/
 # Mac crap
 .DS_Store
 
-FUZZWIN_GUI/GeneratedFiles/qrc_fuzzwin_gui.cpp
-FUZZWIN_GUI/GeneratedFiles/ui_fuzzwin_gui.h
-FUZZWIN_GUI/fuzzwin_gui.ui
+# locals files for dev
+PINTOOL_STANDALONE.bat

@@ -69,43 +69,47 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>false</LinkIncremental>
     <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
-    <OutDir>$(SolutionDir)BUILD\x86\</OutDir>
+    <OutDir>$(SolutionDir)BUILD\pintool\</OutDir>
     <TargetExt>.dll</TargetExt>
-    <IncludePath>$(PIN_ROOT)source\include\pin;$(PIN_ROOT)source\include\pin\gen;$(PIN_ROOT)extras\xed2-ia32\include;$(PIN_ROOT)extras\components\include;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir);$(ProjectDir)core\;$(ProjectDir)categories\;$(PIN_ROOT)source\include\pin;$(PIN_ROOT)source\include\pin\gen;$(PIN_ROOT)extras\xed2-ia32\include;$(PIN_ROOT)extras\components\include;$(IncludePath)</IncludePath>
     <LibraryPath>$(PIN_ROOT)ia32\lib;$(PIN_ROOT)ia32\lib-ext;$(PIN_ROOT)extras\xed2-ia32\lib;$(LibraryPath)</LibraryPath>
     <GenerateManifest />
     <ExecutablePath>$(VCInstallDir)bin;$(WindowsSdkDir)bin\NETFX 4.0 Tools;$(WindowsSdkDir)bin;$(VSInstallDir)Common7\Tools\bin;$(VSInstallDir)Common7\tools;$(VSInstallDir)Common7\ide;$(ProgramFiles)\HTML Help Workshop;$(FrameworkSDKDir)\bin;$(MSBuildToolsPath32);$(VSInstallDir);$(SystemRoot)\SysWow64;$(FxCopDir);$(PATH);</ExecutablePath>
     <TargetName>fuzzwinX86</TargetName>
+    <IntDir>$(SolutionDir)TEMP\$(Platform)\$(Configuration)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <TargetExt>.dll</TargetExt>
-    <IncludePath>$(PIN_ROOT)source\include\pin;$(PIN_ROOT)source\include\pin\gen;$(PIN_ROOT)extras\xed2-intel64\include;$(PIN_ROOT)extras\components\include;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir);$(ProjectDir)core\;$(ProjectDir)categories\;$(PIN_ROOT)source\include\pin;$(PIN_ROOT)source\include\pin\gen;$(PIN_ROOT)extras\xed2-intel64\include;$(PIN_ROOT)extras\components\include;$(IncludePath)</IncludePath>
     <LibraryPath>$(PIN_ROOT)intel64\lib;$(PIN_ROOT)intel64\lib-ext;$(PIN_ROOT)extras\xed2-intel64\lib;$(LibraryPath)</LibraryPath>
     <GenerateManifest />
     <LinkIncremental>false</LinkIncremental>
     <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
     <TargetName>fuzzwinX64</TargetName>
-    <OutDir>$(SolutionDir)BUILD\x64\</OutDir>
+    <OutDir>$(SolutionDir)BUILD\pintool\</OutDir>
+    <IntDir>$(SolutionDir)TEMP\$(Platform)\$(Configuration)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(PIN_ROOT)source\include\pin;$(PIN_ROOT)source\include\pin\gen;$(PIN_ROOT)extras\xed2-ia32\include;$(PIN_ROOT)extras\components\include;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir);$(ProjectDir)core\;$(ProjectDir)categories\;$(ProjectDir);$(ProjectDir)core\;$(ProjectDir)categories\;$(PIN_ROOT)source\include\pin;$(PIN_ROOT)source\include\pin\gen;$(PIN_ROOT)extras\xed2-ia32\include;$(PIN_ROOT)extras\components\include;$(IncludePath)</IncludePath>
     <LibraryPath>$(PIN_ROOT)ia32\lib;$(PIN_ROOT)ia32\lib-ext;$(PIN_ROOT)extras\xed2-ia32\lib;$(LibraryPath)</LibraryPath>
-    <OutDir>$(SolutionDir)BUILD\x86\</OutDir>
+    <OutDir>$(SolutionDir)BUILD\pintool\</OutDir>
     <TargetExt>.dll</TargetExt>
     <GenerateManifest />
     <ExecutablePath>$(VCInstallDir)bin;$(WindowsSdkDir)bin\NETFX 4.0 Tools;$(WindowsSdkDir)bin;$(VSInstallDir)Common7\Tools\bin;$(VSInstallDir)Common7\tools;$(VSInstallDir)Common7\ide;$(ProgramFiles)\HTML Help Workshop;$(FrameworkSDKDir)\bin;$(MSBuildToolsPath32);$(VSInstallDir);$(SystemRoot)\SysWow64;$(FxCopDir);$(PATH);</ExecutablePath>
     <TargetName>fuzzwinX86</TargetName>
+    <IntDir>$(SolutionDir)TEMP\$(Platform)\$(Configuration)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <TargetExt>.dll</TargetExt>
     <GenerateManifest />
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(PIN_ROOT)source\include\pin;$(PIN_ROOT)source\include\pin\gen;$(PIN_ROOT)extras\xed2-intel64\include;$(PIN_ROOT)extras\components\include;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir);$(ProjectDir)core\;$(ProjectDir)categories\;$(PIN_ROOT)source\include\pin;$(PIN_ROOT)source\include\pin\gen;$(PIN_ROOT)extras\xed2-intel64\include;$(PIN_ROOT)extras\components\include;$(IncludePath)</IncludePath>
     <LibraryPath>$(PIN_ROOT)intel64\lib;$(PIN_ROOT)intel64\lib-ext;$(PIN_ROOT)extras\xed2-intel64\lib;$(LibraryPath)</LibraryPath>
     <TargetName>fuzzwinX64</TargetName>
-    <OutDir>$(SolutionDir)BUILD\x64\</OutDir>
+    <OutDir>$(SolutionDir)BUILD\pintool\</OutDir>
     <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
+    <IntDir>$(SolutionDir)TEMP\$(Platform)\$(Configuration)\</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -121,7 +125,7 @@
       <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
       <TreatWarningAsError>
       </TreatWarningAsError>
-      <OmitFramePointers>false</OmitFramePointers>
+      <OmitFramePointers>true</OmitFramePointers>
       <TreatWChar_tAsBuiltInType>
       </TreatWChar_tAsBuiltInType>
       <ForceConformanceInForLoopScope>
@@ -420,82 +424,76 @@ del "$(TargetDir)$(TargetName).exp"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="binary.h" />
-    <ClInclude Include="binary.hpp" />
-    <ClInclude Include="bitbyte.h" />
-    <ClInclude Include="bitbyte.hpp" />
-    <ClInclude Include="convert.h" />
-    <ClInclude Include="decimal.h" />
-    <ClInclude Include="enumOsType.h" />
-    <ClInclude Include="flagop.h" />
-    <ClInclude Include="misc.hpp" />
+    <ClInclude Include="Categories\Binary\binary.h" />
+    <ClInclude Include="Categories\Binary\binary.hpp" />
+    <ClInclude Include="Categories\Bitbyte\bitbyte.h" />
+    <ClInclude Include="Categories\Bitbyte\bitbyte.hpp" />
+    <ClInclude Include="Categories\Call\call.h" />
+    <ClInclude Include="Categories\Cmov\cmov.h" />
+    <ClInclude Include="Categories\ConditionalBranch\conditional_branch.h" />
+    <ClInclude Include="Categories\Convert\convert.h" />
+    <ClInclude Include="Categories\Dataxfer\dataxfer.h" />
+    <ClInclude Include="Categories\Dataxfer\dataxfer.hpp" />
+    <ClInclude Include="Categories\Decimal\decimal.h" />
+    <ClInclude Include="Categories\Flagop\flagop.h" />
+    <ClInclude Include="Categories\Logical\logical.h" />
+    <ClInclude Include="Categories\Logical\logical.hpp" />
+    <ClInclude Include="Categories\Misc\misc.h" />
+    <ClInclude Include="Categories\Misc\misc.hpp" />
+    <ClInclude Include="Categories\Pop\pop.h" />
+    <ClInclude Include="Categories\Pop\pop.hpp" />
+    <ClInclude Include="Categories\Push\push.h" />
+    <ClInclude Include="Categories\Push\push.hpp" />
+    <ClInclude Include="Categories\Ret\ret.h" />
+    <ClInclude Include="Categories\Rotate\rotate.h" />
+    <ClInclude Include="Categories\Rotate\rotate.hpp" />
+    <ClInclude Include="Categories\Semaphore\semaphore.h" />
+    <ClInclude Include="Categories\Semaphore\semaphore.hpp" />
+    <ClInclude Include="Categories\Shift\shift.h" />
+    <ClInclude Include="Categories\Shift\shift.hpp" />
+    <ClInclude Include="Categories\StringOp\stringop.h" />
+    <ClInclude Include="Categories\StringOp\stringop.hpp" />
+    <ClInclude Include="Categories\UnconditionalBranch\unconditional_branch.h" />
+    <ClInclude Include="Core\Instrumentation\instrumentation.h" />
+    <ClInclude Include="Core\Syscalls\syscalls.h" />
+    <ClInclude Include="Core\TaintEngine\architecture.h" />
+    <ClInclude Include="Core\TaintEngine\ObjectSource.h" />
+    <ClInclude Include="Core\TaintEngine\relations.h" />
+    <ClInclude Include="Core\TaintEngine\TaintManager.h" />
+    <ClInclude Include="Core\TaintEngine\TaintObject.h" />
+    <ClInclude Include="Core\TaintUtilities\utils.h" />
+    <ClInclude Include="Core\TaintUtilities\utils.hpp" />
+    <ClInclude Include="Core\Translate\translate.h" />
     <ClInclude Include="pintool.h" />
-    <ClInclude Include="pop.hpp" />
-    <ClInclude Include="push.hpp" />
-    <ClInclude Include="ret.h" />
-    <ClInclude Include="rotate.h" />
-    <ClInclude Include="rotate.hpp" />
-    <ClInclude Include="semaphore.h" />
-    <ClInclude Include="semaphore.hpp" />
-    <ClInclude Include="shift.hpp" />
-    <ClInclude Include="stringop.hpp" />
-    <ClInclude Include="unconditional_branch.h" />
-    <ClInclude Include="dataxfer.hpp">
-      <FileType>Document</FileType>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</ExcludedFromBuild>
-    </ClInclude>
-    <ClInclude Include="utils.hpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="architecture.h" />
-    <ClInclude Include="call.h" />
-    <ClInclude Include="cmov.h" />
-    <ClInclude Include="conditional_branch.h" />
-    <ClInclude Include="dataxfer.h" />
-    <ClInclude Include="instrumentation.h" />
-    <ClInclude Include="logical.h" />
-    <ClInclude Include="logical.hpp" />
-    <ClInclude Include="misc.h" />
-    <ClInclude Include="ObjectSource.h" />
-    <ClInclude Include="pop.h" />
-    <ClInclude Include="push.h" />
-    <ClInclude Include="relations.h" />
-    <ClInclude Include="shift.h" />
-    <ClInclude Include="stringop.h" />
-    <ClInclude Include="syscalls.h" />
-    <ClInclude Include="TaintManager.h" />
-    <ClInclude Include="TaintObject.h" />
-    <ClInclude Include="buildFormula.h" />
-    <ClInclude Include="utils.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="binary.cpp" />
-    <ClCompile Include="bitbyte.cpp" />
-    <ClCompile Include="call.cpp" />
-    <ClCompile Include="cmov.cpp" />
-    <ClCompile Include="conditional_branch.cpp" />
-    <ClCompile Include="convert.cpp" />
-    <ClCompile Include="dataxfer.cpp" />
-    <ClCompile Include="decimal.cpp" />
-    <ClCompile Include="flagop.cpp" />
+    <ClCompile Include="Categories\Binary\binary.cpp" />
+    <ClCompile Include="Categories\Bitbyte\bitbyte.cpp" />
+    <ClCompile Include="Categories\Call\call.cpp" />
+    <ClCompile Include="Categories\Cmov\cmov.cpp" />
+    <ClCompile Include="Categories\ConditionalBranch\conditional_branch.cpp" />
+    <ClCompile Include="Categories\Convert\convert.cpp" />
+    <ClCompile Include="Categories\Dataxfer\dataxfer.cpp" />
+    <ClCompile Include="Categories\Decimal\decimal.cpp" />
+    <ClCompile Include="Categories\Flagop\flagop.cpp" />
+    <ClCompile Include="Categories\Logical\logical.cpp" />
+    <ClCompile Include="Categories\Misc\misc.cpp" />
+    <ClCompile Include="Categories\Pop\pop.cpp" />
+    <ClCompile Include="Categories\Push\push.cpp" />
+    <ClCompile Include="Categories\Ret\ret.cpp" />
+    <ClCompile Include="Categories\Rotate\rotate.cpp" />
+    <ClCompile Include="Categories\Semaphore\semaphore.cpp" />
+    <ClCompile Include="Categories\Shift\shift.cpp" />
+    <ClCompile Include="Categories\StringOp\stringop.cpp" />
+    <ClCompile Include="Categories\UnconditionalBranch\unconditional_branch.cpp" />
+    <ClCompile Include="Core\Instrumentation\instrumentation.cpp" />
+    <ClCompile Include="Core\Syscalls\syscalls.cpp" />
+    <ClCompile Include="Core\TaintEngine\ObjectSource.cpp" />
+    <ClCompile Include="Core\TaintEngine\TaintObject.cpp" />
+    <ClCompile Include="Core\TaintUtilities\utils.cpp" />
+    <ClCompile Include="Core\Translate\translate.cpp" />
     <ClCompile Include="initialize.cpp" />
-    <ClCompile Include="instrumentation.cpp" />
-    <ClCompile Include="logical.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="misc.cpp" />
-    <ClCompile Include="ObjectSource.cpp" />
-    <ClCompile Include="pop.cpp" />
-    <ClCompile Include="push.cpp" />
-    <ClCompile Include="ret.cpp" />
-    <ClCompile Include="rotate.cpp" />
-    <ClCompile Include="semaphore.cpp" />
-    <ClCompile Include="shift.cpp" />
-    <ClCompile Include="stringop.cpp" />
-    <ClCompile Include="syscalls.cpp" />
-    <ClCompile Include="TaintObject.cpp" />
-    <ClCompile Include="buildFormula.cpp" />
-    <ClCompile Include="unconditional_branch.cpp" />
-    <ClCompile Include="utils.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

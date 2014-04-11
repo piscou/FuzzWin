@@ -4,6 +4,7 @@
 DWORD FuzzwinAlgorithm::debugTarget(CInput *pNewInput) 
 {
     // Execution de la cible en mode debug pour récupérer la cause et l'emplacement de l'erreur
+    // source http://msdn.microsoft.com/en-us/library/windows/desktop/ms681675(v=vs.85).aspx
     STARTUPINFO         si; 
     PROCESS_INFORMATION pi;
     DEBUG_EVENT         e;
@@ -15,14 +16,18 @@ DWORD FuzzwinAlgorithm::debugTarget(CInput *pNewInput)
     
     std::string cmdLineDebug(this->getCmdLineDebug(pNewInput));	
     DWORD returnCode    = 0; 
-    bool  continueDebug = true;
-    
+    DWORD exceptionCode = 0;
+    bool  continueDebug  = true; // variable de sortie de boucle infinie
+
+    // handle de l'exécutable à fermer à la fin du debuggage, en plus du process et thread
+    HANDLE hFile;
+        
     BOOL bSuccess = CreateProcess(
         nullptr,            // passage des arguments par ligne de commande
         (LPSTR) cmdLineDebug.c_str(),
         nullptr, nullptr,   // attributs de processus et de thread par défaut
         FALSE,              // pas d'héritage des handles
-        DEBUG_ONLY_THIS_PROCESS | CREATE_NO_WINDOW, // mode DEBUG, pas de fenetres
+        DEBUG_PROCESS | CREATE_NO_WINDOW, // mode DEBUG, pas de fenetres
         nullptr, nullptr,   // Environnement et repertoire de travail par défaut
         &si, &pi);          // Infos en entrée et en sortie
     
@@ -58,27 +63,31 @@ DWORD FuzzwinAlgorithm::debugTarget(CInput *pNewInput)
     /**********************/
     /* DEBUT DU DEBUGGAGE */
     /**********************/
+
+     BOOL result, result2 ,result3 ;
+
     while (continueDebug)	
     {
-        // si erreur dans le debuggage : tout stopper et quitter la boucle
-        if (!WaitForDebugEvent(&e, INFINITE)) 
-        {
-            this->logVerboseTimeStamp();
-            this->logVerbose("    Erreur WaitDebugEvent");
-            this->logVerboseEndOfLine();
-            continueDebug = false;
-            break; 
-        }
+        WaitForDebugEvent(&e, INFINITE);
 
         // parmi les evenements, seuls les evenements "DEBUG" nous interessent
         switch (e.dwDebugEventCode) 
         { 
-        // = exception (sauf cas particulier du breakpoint)
-        // en particulier, le breakpoint sera déclenché à la première instruction
+        
+        // Exception rencontrée
         case EXCEPTION_DEBUG_EVENT:
-            if (e.u.Exception.ExceptionRecord.ExceptionCode != EXCEPTION_BREAKPOINT) 
+            
+            // récupération du code d'exception rencontré
+            exceptionCode = e.u.Exception.ExceptionRecord.ExceptionCode;
+            // cas particulier : breakpoint de début d'exécution du programme
+            if (EXCEPTION_BREAKPOINT == exceptionCode) 
+            {
+                // acquitter
+                ContinueDebugEvent(e.dwProcessId, e.dwThreadId, DBG_CONTINUE); 
+                break;
+            }
+            else // véritable exception rencontrée
             { 
-                DWORD exceptionCode = e.u.Exception.ExceptionRecord.ExceptionCode;
                 PVOID exceptionAddr = e.u.Exception.ExceptionRecord.ExceptionAddress;
                 char details[64];
 
@@ -100,47 +109,66 @@ DWORD FuzzwinAlgorithm::debugTarget(CInput *pNewInput)
                 this->logEndOfLine();
                 this->logEndOfLine();
 
-                returnCode = exceptionCode;
+                // enregistrement de l'erreur dans le fichier des fautes
+                // ouverture en mode "app(end)"
+                std::ofstream fault(_faultFile, std::ios::app);
+                fault << pNewInput->getFilePath();
+                fault << " Exception n° " << std::hex << exceptionCode << std::dec << std::endl;
+                fault.close();
 
-                // actions à mener lors de la découverte d'une faute
+                // enregistrer le code d'erreur dans l'objet
+                pNewInput->setExceptionCode(exceptionCode);
+
+                // actions spécifiques cmdline/gui à mener lors de la découverte d'une faute
                 this->faultFound();
 
-                continueDebug = false;
+                // acquitter
+                ContinueDebugEvent(e.dwProcessId, e.dwThreadId,  DBG_EXCEPTION_HANDLED); 
+
+                // fermeture des handles du programme débuggé
+                result = TerminateThread(pi.hThread, 0xDEAD);
+                result = TerminateProcess(pi.hProcess, 0);
+                result2 = CloseHandle(pi.hProcess); 
+                result3 = CloseHandle(pi.hThread);
+
+                // arret du debug et retour du code d'erreur             
+                returnCode = exceptionCode;
+                //continueDebug = false;
             }
             break;
-        // = fin du programme. Il s'agit soit la fin normale
-        // soit la fin provoqué par expiration du timero
-        case EXIT_PROCESS_DEBUG_EVENT:
+
+        case EXIT_PROCESS_DEBUG_EVENT: // = fin du programme (normale ou provoquée par expiration du timer)
             this->logVerbose(" (OK)");
             this->logVerboseEndOfLine();
 
+            // acquitter
+            ContinueDebugEvent(e.dwProcessId, e.dwThreadId, DBG_CONTINUE); 
+
+            // fermeture des handles du programme débuggé
+            result2 = CloseHandle(pi.hProcess); 
+            result3 = CloseHandle(pi.hThread);
+
+            // quitter la boucle 
             continueDebug = false;	
             break;  // quitter la boucle 
-        }
-        // Acquitter dans tous les cas, (exception ou fin de programme)
-        ContinueDebugEvent(e.dwProcessId, e.dwThreadId, DBG_CONTINUE);
+        
+        default: 
+            // acquitter
+            ContinueDebugEvent(e.dwProcessId, e.dwThreadId, DBG_CONTINUE); 
+            break;
+        }      
+    }
+
+    if (returnCode)
+    {
+        BOOL result = TerminateProcess(pi.hProcess, -1);
+        WaitForSingleObject(pi.hProcess, INFINITE);
     }
 
     // arret du timer (sans effet si c'est le timer qui a provoqué l'arret du debug)
     if (_hTimer) CancelWaitableTimer(_hTimer);
-    // fermeture des handles du programme débuggé
-    CloseHandle(pi.hProcess); 
-    CloseHandle(pi.hThread);
 
-    // en cas d'exception levée, enregistrer l'erreur
-    if (returnCode) 
-    {
-        // enregistrement de l'erreur dans le fichier des fautes
-        // ouverture en mode "app(end)"
-        std::ofstream fault(_faultFile, std::ios::app);
-        fault << pNewInput->getFilePath();
-        fault << " Exception n° " << std::hex << returnCode << std::dec << std::endl;
-        fault.close();
-
-        // enregistrer le code d'erreur dans l'objet
-        pNewInput->setExceptionCode(returnCode);
-    }
-
+    // retour du code d'erreur ou 0 si rien trouvé
     return (returnCode);
 }
 

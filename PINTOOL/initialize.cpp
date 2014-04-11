@@ -1,8 +1,7 @@
-#include "pintool.h"
-#include "syscalls.h"
-#include "TaintManager.h"
-#include "buildFormula.h"
-#include "instrumentation.h"
+#include <Syscalls\syscalls.h>
+#include <TaintEngine\TaintManager.h>
+#include <Translate\translate.h>
+#include <Instrumentation\instrumentation.h>
 
 /* ===================================================================== */
 // Procedures d'initialisation
@@ -65,138 +64,117 @@ static std::string readFromPipe()
     else return ("");
 } // readFromPipe
 
-static int initOptionTaint()
-{
-    // chaine de caractères définissant les intervalles d'octets à marquer
-    // ils sont fournis grace à un argument (knob ou pipe)
-    std::string bytesToTaint;
-
-    /*** RECUPERATION DES ARGUMENTS ***/
-#if DEBUG
-
-    // 1) récupération des options via la ligne de commande (KNOB)
-    g_inputFile      = KnobInputFile.Value();
-    g_maxTime        = KnobMaxExecutionTime.Value();
-    g_maxConstraints = KnobMaxConstraints.Value();
-    bytesToTaint     = KnobBytesToTaint.Value(); 
-    g_osType         = static_cast<OSTYPE>(KnobOsType.Value());
-
-    // 2) création des fichiers de déssasemblage, de suivi du marquage et de formule
-    std::string logfile    (g_inputFile + "_dis.txt");
-    std::string taintfile  (g_inputFile + "_taint.txt");
-    std::string formulaFile(g_inputFile + "_formula.smt2");
- 
-    g_debug.open(logfile);
-    g_taint.open(taintfile);
-    if (!g_debug.good() || !g_taint.good()) return (EXIT_FAILURE);
-
-    // l'écriture des resultats (formule SMT2) se fera dans un fichier
-    g_hPipe = WINDOWS::CreateFile(
-        formulaFile.c_str(), // noùm du fichier 
-        GENERIC_WRITE, // acces en ecriture
-        0,             // pas de partage 
-        nullptr,       // attributs de sécurité par défaut
-        CREATE_ALWAYS, // écrasement du précédent fichier, si existant
-        0,             // attributs par défaut
-        nullptr);	   // pas de modèle
-
-    if ((HANDLE)(WINDOWS::LONG_PTR) (-1) == g_hPipe)  return (EXIT_FAILURE);
-    
-    // 3) stockage de l'heure du top départ pour statistiques
-    g_timeBegin = clock();
-#else
-    // récupération des arguments envoyés dans le pipe
-    // 1) chemin vers l'entrée étudiée
-    g_inputFile = readFromPipe();
-    // 2) nombre maximal de contraintes
-    g_maxConstraints = LEVEL_BASE::Uint32FromString(readFromPipe());   
-    // 3) temps limite d'execution en secondes
-    g_maxTime = LEVEL_BASE::Uint32FromString(readFromPipe());
-    // 4) offset des entrees a etudier
-    bytesToTaint = readFromPipe();
-    // 5) type d'OS sur lequel fonctionne fuzzwin
-    g_osType = static_cast<OSTYPE>(LEVEL_BASE::Uint32FromString(readFromPipe()));
-#endif
-
-    /*** INITIALISATION VARIABLES GLOBALES ET INSTANCIATIONS ***/
-        
-    // instanciation des classes globales (marquage mémoire et formule SMT2)
-    pTmgrGlobal   = new TaintManager_Global;
-    g_pFormula    = new SolverFormula;
-    if (!pTmgrGlobal || !g_pFormula)  return (EXIT_FAILURE);
-    
-    // stockage des intervalles d'octets source à marquer
-    // si la chaine de caractères vaut "all" tout sera marqué
-    pTmgrGlobal->setBytesToTaint(bytesToTaint);
-
-    // initialisation de variable globale indiquant le départ de l'instrumentation
-    // est mise à vrai par la partie syscalls lorsque les premières données
-    // marquées sont créées (= lecture dans l'entrée)
-    g_beginInstrumentationOfInstructions = false;
-
-    // création des clefs pour les TLS, pas de fonction de destruction
-    g_tlsKeyTaint       = PIN_CreateThreadDataKey(nullptr);
-    g_tlsKeySyscallData = PIN_CreateThreadDataKey(nullptr);
-
-    // détermination des numéros de syscalls à monitorer (dépend de l'OS)
-    if (HOST_UNKNOWN == g_osType) return (EXIT_FAILURE);
-    else SYSCALLS::defineSyscallsNumbers(g_osType);
-
-    // initialisation réussie
-    return (EXIT_SUCCESS);
-} // initOptionTaint
-
 int pintoolInit()
 { 
-    // Initialisation des verrous pour le multithreading
-    PIN_InitLock(&g_lock);
-    
-    // valeur de retour (par défaut fixé à erreur d'initialisation)
-    int returnValue = EXIT_FAILURE;
+    int returnValue = INIT_ERROR;
 
-    // ouverture du pipe de communication avec binaire FuzzWin (uniquement en release)
-#if !DEBUG
-    if (EXIT_FAILURE == openPipe()) return (EXIT_FAILURE);
-#endif  
+    // option du pintool('taint' ou 'checkscore')    
+    g_option = KOption.Value();
     
-    // puis récupération de l'option du pintool('taint' ou 'checkscore')
-#if DEBUG
-    std::string pintoolOption(KnobOption.Value());
-#else
-    std::string pintoolOption(readFromPipe());
-#endif
-    
-    /*** OPTION TAINT ***/
-    if (pintoolOption == "taint")
+    /**** OPTION TAINT ***/
+    if ("taint" == g_option)
     {
-        // initialisation du pintool pour une utilisation en data tainting
-        if (EXIT_FAILURE == initOptionTaint()) return (EXIT_FAILURE);
         returnValue = OPTION_TAINT;
+
+        // instanciation des classes globales : marquage mémoire et formule SMT2
+        pTmgrGlobal   = new TaintManager_Global;
+        g_pFormula    = new SolverFormula;
+        if (!pTmgrGlobal || !g_pFormula)  return (INIT_ERROR);
+
+        /*** RECUPERATION DES ARGUMENTS DE LA LIGNE DE COMMANDE ***/
+        // 1) si pipe => ouverture, sinon récupération de l'option 'input'
+        g_nopipe = KNoPipe.Value();
+        if (!g_nopipe)
+        {
+            // erreur si pipe ne peut pas être ouvert
+            if (EXIT_FAILURE == openPipe()) return (INIT_ERROR);
+            // récupération de l'entrée étudiée via le pipe
+            g_inputFile = readFromPipe();
+            if (g_inputFile.empty()) return (INIT_ERROR);
+        }
+        else
+        {
+            // si pas de pipe, nom de l'entrée passée par ligne de commande
+            g_inputFile = KInputFile.Value();    
+            // l'écriture des resultats (formule SMT2) se fera dans un fichier
+            // donc récupérer le handle du fichier qui sera utilisé
+            std::string formulaFile(g_inputFile + "_formula.smt2");
+            g_hPipe = WINDOWS::CreateFile(
+                formulaFile.c_str(), // nom du fichier 
+                GENERIC_WRITE, // acces en ecriture
+                0,             // pas de partage 
+                nullptr,       // attributs de sécurité par défaut
+                CREATE_ALWAYS, // écrasement du précédent fichier, si existant
+                0,             // attributs par défaut
+                nullptr);	   // pas de modèle
+
+            if ((HANDLE)(WINDOWS::LONG_PTR) (-1) == g_hPipe)  return (INIT_ERROR);
+        }
+
+        // 2) log de déssasemblage
+        g_logasm = KLogAsm.Value();
+        if (g_logasm)
+        {
+            // création et ouverture du fichier de log dessasemblage
+            std::string logfile(g_inputFile + "_asm.log");
+            g_debug.open(logfile);
+            if (!g_debug.good()) return (INIT_ERROR);    
+            // stockage de l'heure du top départ pour statistiques
+            g_timeBegin = clock();
+        }
+
+        // 3) log de marquage
+        g_logtaint = KLogTaint.Value();
+        if (g_logtaint)
+        {
+            // création et ouverture du fichier de log dessasemblage
+            std::string taintfile(g_inputFile + "_taint.log");
+            g_taint.open(taintfile);
+            if (!g_taint.good()) return (INIT_ERROR);
+        }
+
+        // 4) intervalles d'octets source à marquer, si option présente
+        if (!KBytes.Value().empty())  pTmgrGlobal->setBytesToTaint(KBytes.Value());
+
+        // 5) nombre maximal de contraintes ((0 si aucune)
+        g_maxConstraints = KMaxConstr.Value();
+        
+        // 6) type d'OS hote (déterminé par le programme appelant)
+        g_osType = static_cast<OSTYPE>(KOsType.Value());
+        // détermination des numéros de syscalls à monitorer (dépend de l'OS)
+        if (HOST_UNKNOWN == g_osType) return (INIT_ERROR);
+        else SYSCALLS::defineSyscallsNumbers(g_osType);
+            
+        // initialisation de variable globale indiquant le départ de l'instrumentation
+        // est mise à vrai par la partie syscalls lorsque les premières données
+        // marquées sont créées (= lecture dans l'entrée)
+        g_beginInstrumentationOfInstructions = false;
+
+        // création des clefs pour les TLS, pas de fonction de destruction
+        g_tlsKeyTaint       = PIN_CreateThreadDataKey(nullptr);
+        g_tlsKeySyscallData = PIN_CreateThreadDataKey(nullptr);
     }
-    /*** OPTION CHECKSCORE ***/
-    else if (pintoolOption == "checkscore")
+    else if ("checkscore" == g_option) // option....checkscore :)   
     {
         returnValue = OPTION_CHECKSCORE;
-        
-        // en mode 'checkScore', un seul arguemnt = le temps maximal d'exécution
-#if DEBUG
-        g_maxTime = KnobMaxExecutionTime.Value();
-#else
-        g_maxTime = LEVEL_BASE::Uint32FromString(readFromPipe());
-#endif
-
-        // initialisationd e la la variable globale qui compte le nombre d'instructions
-        g_nbIns = 0;      
+        // initialisation de la la variable globale qui compte le nombre d'instructions
+        g_nbIns = 0;
     }
-    /*** OPTION INCONNUE ***/
-    else return (EXIT_FAILURE);
+    else return (INIT_ERROR); // option inconnue : erreur
 
-    // création d'un thread interne au pintool : 
-    // sert à la surveillance du temps maximal d'execution (si différent de 0)
+    /**** DERNIERES INITIALISATIONS COMMUNES AUX DEUX OPTIONS **/
+
+    // Initialisation des verrous pour le multithreading
+    PIN_InitLock(&g_lock);
+  
+    // temps maximal d'exécution (valable en 'taint' et en 'checkscore')
+    g_maxTime = KMaxTime.Value();
+    // si non nul, création d'un thread interne au pintool : 
+    // sert à la surveillance du temps maximal d'execution 
     if (g_maxTime)
     {
         THREADID tid = PIN_SpawnInternalThread(maxTimeThread, nullptr, 0, nullptr);
-        if (INVALID_THREADID == tid)   return (EXIT_FAILURE);  
+        if (INVALID_THREADID == tid)   return (INIT_ERROR);  
     }
 
     return (returnValue); // option choisie (taint ou checkScore), ou erreur d'init

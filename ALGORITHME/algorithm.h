@@ -70,7 +70,7 @@ protected:
     std::string  _resultsDir;     // dossier de résultats
     std::string  _targetPath;     // exécutable fuzzé
     std::string  _firstInputPath; // première entrée testée
-    std::string  _bytesToTaint;   // intervalles d'octets à surveiller 
+ 
     std::string  _z3Path;         // chemin vers le solveur Z3
 
     std::string  _cmdLinePin;   // ligne de commande du pintool, pré-rédigée
@@ -78,8 +78,6 @@ protected:
     std::string  _formula;      // formule retournée par le pintool
 
     UINT32 _nbFautes;          // nombre de fautes trouvées au cours de l'analyse
-    UINT32 _maxExecutionTime;  // temps maximal d'execution 
-    UINT32 _maxConstraints;    // nombre maximal de contraintes à récupérer
 
     bool   _keepFiles;         // les fichiers sont gardés dans le dossier de resultat
     bool   _computeScore;      // option pour calculer le score de chaque entrée
@@ -87,6 +85,7 @@ protected:
     bool   _timeStamp;         // ajout de l'heure aux lignes de log
     bool   _hashFiles;         // calcul du hash de chaque entrée pour éviter les collisions
     bool   _traceOnly;         // mode 'traceOnly' : une seule exécution avec l'entrée sélectionnée (pas de solveur)
+    UINT32 _maxExecutionTime;  // temps maximal d'exécution (pour tuer le processus de la cible lancé en débug)
 
     HANDLE  _hZ3_process;  // handle du process Z3
     HANDLE  _hZ3_thread;   // handle du thread Z3
@@ -150,10 +149,14 @@ public:
     ~FuzzwinAlgorithm();
 
     // initialisation commune à toutes les classes dérivées : 
-    // initialisation de la liste de travail et du fichier de fautes
-    // création du pipe pintool et du processus du solveur
+    // 1) création de la ligne de commande pré-remplie pour le pintool
+    // 2) initialisation de la liste de travail et du fichier de fautes
+    // 3) création du pipe pintool et du processus du solveur
     // renvoie EXIT_FAILURE en cas de souci
-    int finalizeInitialization();
+    int finalizeInitialization(
+        const std::string &pin_X86,     const std::string &pin_X64,
+        const std::string &pintool_X86, const std::string &pintool_X64,
+        const std::string &cmdLineOptions);
 
     // procédures de contrôle. 
     // Les méthodes "finish" et "notification de mise en pause" sont spécifique cmdline ou GUI

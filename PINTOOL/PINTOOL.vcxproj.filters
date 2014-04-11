@@ -1,141 +1,285 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="cmov.cpp" />
-    <ClCompile Include="conditional_branch.cpp" />
-    <ClCompile Include="convert.cpp" />
-    <ClCompile Include="flagop.cpp" />
     <ClCompile Include="initialize.cpp" />
-    <ClCompile Include="instrumentation.cpp" />
-    <ClCompile Include="logical.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="misc.cpp" />
-    <ClCompile Include="pop.cpp" />
-    <ClCompile Include="push.cpp" />
-    <ClCompile Include="ret.cpp" />
-    <ClCompile Include="rotate.cpp" />
-    <ClCompile Include="semaphore.cpp" />
-    <ClCompile Include="shift.cpp" />
-    <ClCompile Include="stringop.cpp" />
-    <ClCompile Include="syscalls.cpp" />
-    <ClCompile Include="unconditional_branch.cpp" />
-    <ClCompile Include="utils.cpp" />
-    <ClCompile Include="binary.cpp">
-      <Filter>Binary</Filter>
+    <ClCompile Include="Categories\Binary\binary.cpp">
+      <Filter>Categories\Binary</Filter>
     </ClCompile>
-    <ClCompile Include="bitbyte.cpp">
-      <Filter>BitByte</Filter>
+    <ClCompile Include="Categories\Bitbyte\bitbyte.cpp">
+      <Filter>Categories\BitByte</Filter>
     </ClCompile>
-    <ClCompile Include="dataxfer.cpp">
-      <Filter>Dataxfer</Filter>
+    <ClCompile Include="Categories\Call\call.cpp">
+      <Filter>Categories\Call</Filter>
     </ClCompile>
-    <ClCompile Include="decimal.cpp">
-      <Filter>Decimal</Filter>
+    <ClCompile Include="Categories\Cmov\cmov.cpp">
+      <Filter>Categories\Cmov</Filter>
     </ClCompile>
-    <ClCompile Include="ObjectSource.cpp">
-      <Filter>Taint classes</Filter>
+    <ClCompile Include="Categories\ConditionalBranch\conditional_branch.cpp">
+      <Filter>Categories\Conditional Branch</Filter>
     </ClCompile>
-    <ClCompile Include="TaintObject.cpp">
-      <Filter>Taint classes</Filter>
+    <ClCompile Include="Categories\Convert\convert.cpp">
+      <Filter>Categories\Convert</Filter>
     </ClCompile>
-    <ClCompile Include="buildFormula.cpp">
-      <Filter>BuildFormula</Filter>
+    <ClCompile Include="Categories\Dataxfer\dataxfer.cpp">
+      <Filter>Categories\Dataxfer</Filter>
     </ClCompile>
-    <ClCompile Include="call.cpp">
-      <Filter>Call</Filter>
+    <ClCompile Include="Categories\Decimal\decimal.cpp">
+      <Filter>Categories\Decimal</Filter>
+    </ClCompile>
+    <ClCompile Include="Categories\Flagop\flagop.cpp">
+      <Filter>Categories\Flagop</Filter>
+    </ClCompile>
+    <ClCompile Include="Categories\Logical\logical.cpp">
+      <Filter>Categories\Logical</Filter>
+    </ClCompile>
+    <ClCompile Include="Categories\Misc\misc.cpp">
+      <Filter>Categories\Misc</Filter>
+    </ClCompile>
+    <ClCompile Include="Categories\Pop\pop.cpp">
+      <Filter>Categories\Pop</Filter>
+    </ClCompile>
+    <ClCompile Include="Categories\Push\push.cpp">
+      <Filter>Categories\Push</Filter>
+    </ClCompile>
+    <ClCompile Include="Categories\Ret\ret.cpp">
+      <Filter>Categories\Ret</Filter>
+    </ClCompile>
+    <ClCompile Include="Categories\Rotate\rotate.cpp">
+      <Filter>Categories\Rotate</Filter>
+    </ClCompile>
+    <ClCompile Include="Categories\Semaphore\semaphore.cpp">
+      <Filter>Categories\Semaphore</Filter>
+    </ClCompile>
+    <ClCompile Include="Categories\Shift\shift.cpp">
+      <Filter>Categories\Shift</Filter>
+    </ClCompile>
+    <ClCompile Include="Categories\StringOp\stringop.cpp">
+      <Filter>Categories\Stringop</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\TaintUtilities\utils.cpp">
+      <Filter>Core\Taint Utilities</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Translate\translate.cpp">
+      <Filter>Core\Translate</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Instrumentation\instrumentation.cpp">
+      <Filter>Core\Instrumentation</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Syscalls\syscalls.cpp">
+      <Filter>Core\Syscalls</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\TaintEngine\ObjectSource.cpp">
+      <Filter>Core\Taint Engine</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\TaintEngine\TaintObject.cpp">
+      <Filter>Core\Taint Engine</Filter>
+    </ClCompile>
+    <ClCompile Include="Categories\UnconditionalBranch\unconditional_branch.cpp">
+      <Filter>Categories\Unconditional Branch</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="convert.h" />
-    <ClInclude Include="enumOsType.h" />
-    <ClInclude Include="flagop.h" />
-    <ClInclude Include="misc.hpp" />
     <ClInclude Include="pintool.h" />
-    <ClInclude Include="pop.hpp" />
-    <ClInclude Include="push.hpp" />
-    <ClInclude Include="ret.h" />
-    <ClInclude Include="rotate.h" />
-    <ClInclude Include="rotate.hpp" />
-    <ClInclude Include="semaphore.h" />
-    <ClInclude Include="semaphore.hpp" />
-    <ClInclude Include="shift.hpp" />
-    <ClInclude Include="stringop.hpp" />
-    <ClInclude Include="unconditional_branch.h" />
-    <ClInclude Include="utils.hpp" />
-    <ClInclude Include="cmov.h" />
-    <ClInclude Include="conditional_branch.h" />
-    <ClInclude Include="instrumentation.h" />
-    <ClInclude Include="logical.h" />
-    <ClInclude Include="logical.hpp" />
-    <ClInclude Include="misc.h" />
-    <ClInclude Include="pop.h" />
-    <ClInclude Include="push.h" />
-    <ClInclude Include="relations.h" />
-    <ClInclude Include="shift.h" />
-    <ClInclude Include="stringop.h" />
-    <ClInclude Include="syscalls.h" />
-    <ClInclude Include="utils.h" />
-    <ClInclude Include="binary.h">
-      <Filter>Binary</Filter>
+    <ClInclude Include="Categories\Binary\binary.h">
+      <Filter>Categories\Binary</Filter>
     </ClInclude>
-    <ClInclude Include="binary.hpp">
-      <Filter>Binary</Filter>
+    <ClInclude Include="Categories\Binary\binary.hpp">
+      <Filter>Categories\Binary</Filter>
     </ClInclude>
-    <ClInclude Include="bitbyte.h">
-      <Filter>BitByte</Filter>
+    <ClInclude Include="Categories\Bitbyte\bitbyte.h">
+      <Filter>Categories\BitByte</Filter>
     </ClInclude>
-    <ClInclude Include="bitbyte.hpp">
-      <Filter>BitByte</Filter>
+    <ClInclude Include="Categories\Bitbyte\bitbyte.hpp">
+      <Filter>Categories\BitByte</Filter>
     </ClInclude>
-    <ClInclude Include="dataxfer.h">
-      <Filter>Dataxfer</Filter>
+    <ClInclude Include="Categories\Call\call.h">
+      <Filter>Categories\Call</Filter>
     </ClInclude>
-    <ClInclude Include="dataxfer.hpp">
-      <Filter>Dataxfer</Filter>
+    <ClInclude Include="Categories\Cmov\cmov.h">
+      <Filter>Categories\Cmov</Filter>
     </ClInclude>
-    <ClInclude Include="decimal.h">
-      <Filter>Decimal</Filter>
+    <ClInclude Include="Categories\ConditionalBranch\conditional_branch.h">
+      <Filter>Categories\Conditional Branch</Filter>
     </ClInclude>
-    <ClInclude Include="ObjectSource.h">
-      <Filter>Taint classes</Filter>
+    <ClInclude Include="Categories\Convert\convert.h">
+      <Filter>Categories\Convert</Filter>
     </ClInclude>
-    <ClInclude Include="TaintManager.h">
-      <Filter>Taint classes</Filter>
+    <ClInclude Include="Categories\Dataxfer\dataxfer.h">
+      <Filter>Categories\Dataxfer</Filter>
     </ClInclude>
-    <ClInclude Include="TaintObject.h">
-      <Filter>Taint classes</Filter>
+    <ClInclude Include="Categories\Dataxfer\dataxfer.hpp">
+      <Filter>Categories\Dataxfer</Filter>
     </ClInclude>
-    <ClInclude Include="architecture.h">
-      <Filter>Taint classes</Filter>
+    <ClInclude Include="Categories\Decimal\decimal.h">
+      <Filter>Categories\Decimal</Filter>
     </ClInclude>
-    <ClInclude Include="buildFormula.h">
-      <Filter>BuildFormula</Filter>
+    <ClInclude Include="Categories\Flagop\flagop.h">
+      <Filter>Categories\Flagop</Filter>
     </ClInclude>
-    <ClInclude Include="call.h">
-      <Filter>Call</Filter>
+    <ClInclude Include="Categories\Logical\logical.h">
+      <Filter>Categories\Logical</Filter>
+    </ClInclude>
+    <ClInclude Include="Categories\Logical\logical.hpp">
+      <Filter>Categories\Logical</Filter>
+    </ClInclude>
+    <ClInclude Include="Categories\Misc\misc.h">
+      <Filter>Categories\Misc</Filter>
+    </ClInclude>
+    <ClInclude Include="Categories\Misc\misc.hpp">
+      <Filter>Categories\Misc</Filter>
+    </ClInclude>
+    <ClInclude Include="Categories\Pop\pop.h">
+      <Filter>Categories\Pop</Filter>
+    </ClInclude>
+    <ClInclude Include="Categories\Pop\pop.hpp">
+      <Filter>Categories\Pop</Filter>
+    </ClInclude>
+    <ClInclude Include="Categories\Push\push.h">
+      <Filter>Categories\Push</Filter>
+    </ClInclude>
+    <ClInclude Include="Categories\Push\push.hpp">
+      <Filter>Categories\Push</Filter>
+    </ClInclude>
+    <ClInclude Include="Categories\Ret\ret.h">
+      <Filter>Categories\Ret</Filter>
+    </ClInclude>
+    <ClInclude Include="Categories\Rotate\rotate.h">
+      <Filter>Categories\Rotate</Filter>
+    </ClInclude>
+    <ClInclude Include="Categories\Rotate\rotate.hpp">
+      <Filter>Categories\Rotate</Filter>
+    </ClInclude>
+    <ClInclude Include="Categories\Semaphore\semaphore.h">
+      <Filter>Categories\Semaphore</Filter>
+    </ClInclude>
+    <ClInclude Include="Categories\Semaphore\semaphore.hpp">
+      <Filter>Categories\Semaphore</Filter>
+    </ClInclude>
+    <ClInclude Include="Categories\Shift\shift.h">
+      <Filter>Categories\Shift</Filter>
+    </ClInclude>
+    <ClInclude Include="Categories\Shift\shift.hpp">
+      <Filter>Categories\Shift</Filter>
+    </ClInclude>
+    <ClInclude Include="Categories\StringOp\stringop.h">
+      <Filter>Categories\Stringop</Filter>
+    </ClInclude>
+    <ClInclude Include="Categories\StringOp\stringop.hpp">
+      <Filter>Categories\Stringop</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\TaintUtilities\utils.h">
+      <Filter>Core\Taint Utilities</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\TaintUtilities\utils.hpp">
+      <Filter>Core\Taint Utilities</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Translate\translate.h">
+      <Filter>Core\Translate</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Instrumentation\instrumentation.h">
+      <Filter>Core\Instrumentation</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Syscalls\syscalls.h">
+      <Filter>Core\Syscalls</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\TaintEngine\architecture.h">
+      <Filter>Core\Taint Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\TaintEngine\ObjectSource.h">
+      <Filter>Core\Taint Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\TaintEngine\relations.h">
+      <Filter>Core\Taint Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\TaintEngine\TaintManager.h">
+      <Filter>Core\Taint Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\TaintEngine\TaintObject.h">
+      <Filter>Core\Taint Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="Categories\UnconditionalBranch\unconditional_branch.h">
+      <Filter>Categories\Unconditional Branch</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <Filter Include="Binary">
-      <UniqueIdentifier>{198e73f5-c4cd-45c5-bbfa-82eeff377375}</UniqueIdentifier>
+    <Filter Include="Core">
+      <UniqueIdentifier>{d830cc43-5843-45c1-bd42-55314a93e232}</UniqueIdentifier>
     </Filter>
-    <Filter Include="BitByte">
-      <UniqueIdentifier>{4dc6e1d3-2c74-4c56-84ce-e3112bab5c55}</UniqueIdentifier>
+    <Filter Include="Categories">
+      <UniqueIdentifier>{17f49310-52da-48c7-914e-61ba6cad6b10}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Dataxfer">
-      <UniqueIdentifier>{a447a623-a2c3-458c-8ec3-68458d1e83fe}</UniqueIdentifier>
+    <Filter Include="Categories\Flagop">
+      <UniqueIdentifier>{8d0647e3-01e5-4c24-bee8-38b3d2cd5c8e}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Decimal">
+    <Filter Include="Categories\Misc">
+      <UniqueIdentifier>{8aa4dc12-a5d3-49c9-8bbe-3d93df9a6dc4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Categories\Logical">
+      <UniqueIdentifier>{97d45cb5-66ba-44b0-a05c-6c593ae3748a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Categories\Convert">
+      <UniqueIdentifier>{a033bb44-b5bf-461b-bca5-f0001662e57f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Categories\Conditional Branch">
+      <UniqueIdentifier>{61d70c9e-bd62-4dfc-82be-fdca649178e2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Categories\Cmov">
+      <UniqueIdentifier>{46a0a037-1c9c-4d2a-8ced-b5696cb5685b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Categories\Decimal">
       <UniqueIdentifier>{6d067931-3ba3-4e91-9755-e90f71c17a18}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Taint classes">
+    <Filter Include="Categories\Dataxfer">
+      <UniqueIdentifier>{a447a623-a2c3-458c-8ec3-68458d1e83fe}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Categories\BitByte">
+      <UniqueIdentifier>{4dc6e1d3-2c74-4c56-84ce-e3112bab5c55}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Categories\Binary">
+      <UniqueIdentifier>{198e73f5-c4cd-45c5-bbfa-82eeff377375}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Categories\Ret">
+      <UniqueIdentifier>{a957d2d9-9c5d-4e04-a066-8d45cbd9da30}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Categories\Unconditional Branch">
+      <UniqueIdentifier>{e857190d-c5a4-4cbd-90c1-c63dcc7ac17a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Categories\Stringop">
+      <UniqueIdentifier>{5dc38cb7-9ca6-418f-ad69-76f1c842268f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Categories\Shift">
+      <UniqueIdentifier>{2c03c1c7-cb91-415e-9ffe-31cd8298a622}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Categories\Semaphore">
+      <UniqueIdentifier>{62ff3c8c-d489-4cf7-84ce-4974093d2b09}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Categories\Pop">
+      <UniqueIdentifier>{d145a116-b8fe-47ce-bea1-5913b011d74d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Categories\Push">
+      <UniqueIdentifier>{409c94fe-dee3-44a9-809f-9d592f1f4e87}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Categories\Rotate">
+      <UniqueIdentifier>{e9f5bb64-99ea-4bf7-81ea-7bd6d97dc607}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Core\Taint Engine">
       <UniqueIdentifier>{5225693a-71d1-48eb-a602-14444e4d72c7}</UniqueIdentifier>
     </Filter>
-    <Filter Include="BuildFormula">
-      <UniqueIdentifier>{a2cb6821-50a1-4e72-a047-161c0b178285}</UniqueIdentifier>
+    <Filter Include="Core\Instrumentation">
+      <UniqueIdentifier>{c209b792-7aac-4aad-a5fe-665ec3c3b548}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Call">
+    <Filter Include="Core\Syscalls">
+      <UniqueIdentifier>{9e160dbf-3ec7-4263-961b-1f765b498c3f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Categories\Call">
       <UniqueIdentifier>{65a4a5b9-2c8e-4fe8-a326-78d5e457103f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Core\Taint Utilities">
+      <UniqueIdentifier>{e77f100d-4959-46d2-8419-ae0f5a10c950}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Core\Translate">
+      <UniqueIdentifier>{a2cb6821-50a1-4e72-a047-161c0b178285}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

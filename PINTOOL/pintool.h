@@ -18,8 +18,10 @@
 #include "pin.h"
 #pragma warning( pop )
 
-// besoin de std::cout pour erreurs d'initialisation principalement
-#include <iostream> 
+
+#include <iostream> // std::cout pour erreurs d'initialisation principalement
+#include <fstream>  // pour fichiers de log
+#include <ctime>    // pour calcul du temps dans fichier de log
 
 // Namespace obligatoire pour eviter les confilts WINAPI / PIN
 namespace WINDOWS 
@@ -27,9 +29,8 @@ namespace WINDOWS
 #include <windows.h>
 }
 
-// définitions des types de registres et des macros
-// selon l'architecture 32/64 bits
-#include "architecture.h"
+// définitions des types de registres et des macros selon l'architecture 32/64 bits
+#include <TaintEngine\architecture.h>
 
 /* les types DWORD et HANDLE ne sont pas définis par PIN */
 typedef unsigned long DWORD; 
@@ -43,23 +44,32 @@ typedef WINDOWS::HANDLE HANDLE;
 #define EXIT_MAX_CONSTRAINTS 2 // fin du pintool pour cause de contrainte max
 #define EXIT_TIMEOUT         3 // fin du pintool pour temps max dépassé
 
-#define OPTION_TAINT         1 // pintool "fuzzwin" : extraction contraintes marquées
+#define INIT_ERROR           0 // erreur d'initialisation
+#define OPTION_TAINT         1 // pintool "fuzzwin"  : extraction contraintes marquées
 #define OPTION_CHECKSCORE    2 // pintool checkscore : test et score de l'entrée
 
 /*********************************************************/
 /* Variables globales du programme (déclarations extern) */
 /*********************************************************/
 
-// handle du pipe de communication des resultats (STDOUT en DEBUG, pipe avec SAGE en RELEASE)
+// handle du pipe de communication des resultats (tube nommé ou STDOUT avec l'option -nopipe)
 extern HANDLE       g_hPipe;
 
-// fichier d'entrée du programme fuzzé
+// fichier d'entrée du programme fuzzé (passé via pipe ou ligne de commande)
 extern std::string  g_inputFile; 
-
-// nombre maximal de contraintes
-extern UINT32       g_maxConstraints;
+// option du pintool : taint ou ckeckscore
+extern std::string  g_option;
 // temps maximal d'execution
 extern UINT32       g_maxTime;
+// nombre maximal de contraintes
+extern UINT32       g_maxConstraints;
+
+// log de dessasemblage du binaire
+extern bool         g_logasm;
+// log de marquage
+extern bool         g_logtaint;
+// option pipe ou non pour l'échange du fichier initial  et de la formule finale
+extern bool         g_nopipe;
 
 // vrai dès que les premières données seront lues dans la source
 extern bool         g_beginInstrumentationOfInstructions;
@@ -75,86 +85,127 @@ extern PIN_LOCK     g_lock;
 // nombre d'instructions exécutées
 extern UINT64       g_nbIns;
 
+/** OPTIONS DE LA LIGNE DE COMMANDE **/
+
+extern KNOB<std::string> KInputFile;     
+extern KNOB<UINT32>      KMaxTime;
+extern KNOB<std::string> KBytes;
+extern KNOB<UINT32>      KMaxConstr;
+extern KNOB<std::string> KOption;
+extern KNOB<UINT32>      KOsType;
+extern KNOB<BOOL>        KLogAsm;
+extern KNOB<BOOL>        KLogTaint;
+extern KNOB<BOOL>        KNoPipe;
+
+extern std::ofstream g_debug;     // fichier de log du desassemblage
+extern std::ofstream g_taint;     // fichier de log du marquage
+extern clock_t       g_timeBegin; // chrono départ de l'instrumentation
+
 /*******************************************************************/
 /* procedure d'initialisation des variables globales et paramètres */
 /*******************************************************************/
-int pintoolInit();
+int pintoolInit(); // fichier initialize.cpp
 
-/****************************************************/
-/* variables et fonctions spécifiques au mode DEBUG */
-/****************************************************/
+/*****************/
+/* MACROS DE LOG */
+/*****************/
+
+// OPTION -logasm //
+//----------------//
+
+// log de dessassemblage standard, partie instrumentation
+inline void _LOGINS(INS ins) 
+{
+    if (g_logasm) 
+    { 
+        PIN_GetLock(&g_lock, PIN_ThreadId()); 
+        g_debug << "[T:" << PIN_ThreadId() << "] " << hexstr(INS_Address(ins)); 
+        g_debug << " " << INS_Disassemble(ins).c_str(); 
+        PIN_ReleaseLock(&g_lock); 
+    }
+}
+
+// log désassemblage, partie analyse
+inline void _LOGDEBUG(const std::string &s)
+{
+    if (g_logasm) 
+    {
+        PIN_GetLock(&g_lock, PIN_ThreadId()); 
+        g_debug << s << std::endl; 
+        PIN_ReleaseLock(&g_lock); 
+    }
+}
+
+// log désassemblage, partie Syscalls, uniquement 
+inline void  _LOGSYSCALLS(ADDRINT syscallNumber, const std::string &s)
+{
+    if (g_logasm) 
+    {
+        PIN_GetLock(&g_lock, PIN_ThreadId());      
+        g_debug << "[T:"  << decstr(PIN_ThreadId());
+        g_debug << "][P:" << hexstr(PIN_GetPid()); 
+        g_debug << "][S:" << hexstr(syscallNumber);
+        g_debug << s << std::endl; 
+        PIN_ReleaseLock(&g_lock); 
+    }
+}
+
+// OPTION -logtaint //
+//------------------//
+
+// le log du marquage insère en plus l'adresse de l'instruction traitée en mode DEBUG
+// en mode RELEASE, l'argument 'insAddress' n'est pas passé, ce qui fait gagner un peu
+// en performances
 
 #if DEBUG // mode DEBUG
 
-#include <fstream>
-#include <ctime>    // pour log
-
-extern clock_t g_timeBegin;
-
-extern KNOB<std::string> KnobInputFile;     
-extern KNOB<UINT32>      KnobMaxExecutionTime;
-extern KNOB<std::string> KnobBytesToTaint;
-extern KNOB<UINT32>      KnobMaxConstraints;
-extern KNOB<UINT32>      KnobOsType;
-extern KNOB<std::string> KnobOption;
-extern KNOB<UINT32>      KnobOsType;
-
-extern std::ofstream g_debug; // fichier de log du desassemblage
-extern std::ofstream g_taint; // fichier de log du marquage
-
-// log de marquage pour une instruction
-#define _LOGTAINT(t)     { \
-    PIN_GetLock(&g_lock, PIN_ThreadId()); \
-    g_taint << hexstr(insAddress) << " " << t << " MARQUE !! " << std::endl; \
-    PIN_ReleaseLock(&g_lock); }
-
-// log de dessassemblage standard (partie instrumentation)
-#define _LOGINS(ins)  { \
-    PIN_GetLock(&g_lock, PIN_ThreadId()); \
-    g_debug << "[T:" << PIN_ThreadId() << "] " << hexstr(INS_Address(ins)); \
-    g_debug << " " << INS_Disassemble(ins).c_str(); \
-    PIN_ReleaseLock(&g_lock); }
-
-// log désassemblage, partie analyse
-#define _LOGDEBUG(s)  { \
-    PIN_GetLock(&g_lock, PIN_ThreadId()); \
-    g_debug << s << std::endl; \
-    PIN_ReleaseLock(&g_lock); }
-
-// log désassemblage, partie Syscalls
-#define _LOGSYSCALLS(s)  { \
-    PIN_GetLock(&g_lock, PIN_ThreadId());      \
-    g_debug << "[T:"  << decstr(tid);          \
-    g_debug << "][P:" << hexstr(PIN_GetPid()); \
-    g_debug << "][S:" << hexstr(syscallNumber);\
-    g_debug << s << std::endl; \
-    PIN_ReleaseLock(&g_lock); }
-
-// log de dessasemblage suite à non prise en charge d'une instruction
-#define _LOGUNHANDLED(ins)  { \
-    PIN_GetLock(&g_lock, PIN_ThreadId()); \
-    g_debug << " *** non instrumenté ***"; \
-    PIN_ReleaseLock(&g_lock); }
-
 // argument pour l'enregistrement d'un callback : adresse de l'instruction
 #define CALLBACK_DEBUG  IARG_INST_PTR,  
-
 // argument correspondant à l'adresse de l'instruction
 #define ADDRESS_DEBUG   ,ADDRINT insAddress 
-
 // argument ajouté lors de l'appel à une fonction hors du cas callback
 #define INSADDRESS      ,insAddress
+// log de marquage pour une instruction, avec adresse de l'instruction en mode DEBUG
+#define _LOGTAINT(t)  \
+if (g_logtaint) \
+{ \
+    PIN_GetLock(&g_lock, PIN_ThreadId()); \
+    g_taint << "[T:"  << decstr(PIN_ThreadId()) << "] "; \
+    g_taint << hexstr(insAddress) << " " << t << " MARQUE !! " << std::endl; \
+    PIN_ReleaseLock(&g_lock); \
+}
+// log de démarquage pour une instruction, avec adresse de l'instruction en mode DEBUG
+#define _LOGUNTAINT(t)  \
+if (g_logtaint) \
+{ \
+    PIN_GetLock(&g_lock, PIN_ThreadId()); \
+    g_taint << "[T:"  << decstr(PIN_ThreadId()) << "] "; \
+    g_taint << hexstr(insAddress) << " " << t << " DEMARQUAGE !! " << std::endl; \
+    PIN_ReleaseLock(&g_lock); \
+}
 
-#else // Mode RELEASE : aucune fonction
-
+#else // mode RELEASE
 #define ADDRESS_DEBUG   
 #define CALLBACK_DEBUG 
 #define INSADDRESS
-#define _LOGTAINT(t)
-#define _LOGINS(ins)
-#define _LOGUNHANDLED(ins)
-#define _LOGDEBUG(s)
-#define _LOGSYSCALLS(s)
+// log de marquage pour une instruction
+#define _LOGTAINT(t) \
+if (g_logtaint) \
+{ \
+    PIN_GetLock(&g_lock, PIN_ThreadId()); \
+    g_taint << "[T:"  << decstr(PIN_ThreadId()) << "] "; \
+    g_taint << t << " MARQUE !! " << std::endl; \
+    PIN_ReleaseLock(&g_lock);\
+}
+// log de démarquage pour une instruction
+#define _LOGUNTAINT(t) \
+if (g_logtaint) \
+{ \
+    PIN_GetLock(&g_lock, PIN_ThreadId()); \
+    g_taint << "[T:"  << decstr(PIN_ThreadId()) << "] "; \
+    g_taint << " " << t << " DEMARQUAGE !! " << std::endl; \
+    PIN_ReleaseLock(&g_lock);\
+}
 #endif
 
 /****************************************/

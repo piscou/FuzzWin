@@ -15,7 +15,7 @@ int FuzzwinAlgorithm::sendArgumentToPintool(const std::string &command) const
     if (!fSuccess || cbWritten != commandLength)	
     {   
         this->logTimeStamp();
-        this->log("erreur envoi arguments au Pintool");
+        this->log("erreur envoi argument au Pintool");
         this->logEndOfLine();
         return (EXIT_FAILURE);
     }
@@ -24,7 +24,7 @@ int FuzzwinAlgorithm::sendArgumentToPintool(const std::string &command) const
 
 void FuzzwinAlgorithm::callPintool() 
 {
-    // ligne de commande pour appel de PIN avec l'entree etudiee
+    // ligne de commande pour appel de PIN avec l'entree en cours
     std::string cmdLine(this->getCmdLinePintool()); 
     // mise à zéro de la formule
     _formula.erase();
@@ -46,9 +46,11 @@ void FuzzwinAlgorithm::callPintool()
         NULL,          // use parent's current directory 
         &si, &pi)) 
     {          
+        
         /***********************/
         /** CONNEXION AU PIPE **/
         /***********************/
+        
         BOOL fSuccess = ConnectNamedPipe(_hPintoolPipe, NULL);
         if (!fSuccess && GetLastError() != ERROR_PIPE_CONNECTED) 
         {	
@@ -58,23 +60,11 @@ void FuzzwinAlgorithm::callPintool()
             return; // formule vide
         }
         
-        /************************************/
-        /** ENVOI DES ARGUMENTS AU PINTOOL **/
-        /************************************/
-
-        int resultOfSend;
-        // 0) Option ici = 'taint'
-        resultOfSend = sendArgumentToPintool("taint");
-        // 1) chemin vers l'entrée étudiée
-        resultOfSend = sendArgumentToPintool(_pCurrentInput->getFilePath());
-        // 2) nombre maximal de contraintes
-        resultOfSend = sendArgumentToPintool(std::to_string(_maxConstraints));
-        // 3) temps limite d'execution en secomdes
-        resultOfSend = sendArgumentToPintool(std::to_string(_maxExecutionTime));
-        // 4) offset des entrees à etudier
-        resultOfSend = sendArgumentToPintool(_bytesToTaint);
-        // 5) type d'OS hote
-        resultOfSend = sendArgumentToPintool(std::to_string(_osType));
+        // envoi dans le pipe du chemin vers l'entrée étudiée
+        if (EXIT_FAILURE == sendArgumentToPintool(_pCurrentInput->getFilePath()))
+        {
+            return; // formule vide
+        }
 
         /********************************************************/
         /** ATTENTE DE L'ARRIVEE DES DONNEES DEPUIS LE PINTOOL **/
@@ -117,8 +107,10 @@ void FuzzwinAlgorithm::callPintool()
         if (_keepFiles || _traceOnly) 
         {
             std::ofstream ofs(_pCurrentInput->getLogFile());
-            ofs << infoHeader << '\n';          // entete (version pin Z3 etc)
-            ofs << "; Fichier instrumenté : ";  // fichier d'entree etudié
+            
+            // entete (version pin Z3 etc) et nom de l'entrée
+            ofs << infoHeader << '\n';          
+            ofs << "; Fichier instrumenté : ";  
             ofs << _pCurrentInput->getFileName();  
             
             // ajout de l'arbre généalogique (si objet non-root et mode verbeux)
@@ -134,11 +126,17 @@ void FuzzwinAlgorithm::callPintool()
                 ofs << ')';
             }
             ofs << "\n\n";
-            ofs << solverConfig;    // configuration du solveur
+            
+            // configuration du solveur
+            ofs << solverConfig;    
             ofs << "\n\n";
-            ofs << _formula;        // formule brute smt2
+
+            // formule brute smt2
+            ofs << _formula;        
             ofs << "\n\n";
-            ofs << "(check-sat)\n(get-model)\n";    // commandes de lancement et de récupération des résultats
+ 
+            // commandes de lancement et de récupération des résultats
+            ofs << "(check-sat)\n(get-model)\n";   
             ofs.close();
         }
     }	

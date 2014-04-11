@@ -58,25 +58,23 @@ int FUZZWIN_GUI::testConfig()
 
     // test de la présence des DLL du pintool
     QString exePath = QApplication::applicationDirPath();
-    _pintool_X86    = QDir::toNativeSeparators(exePath + "/fuzzwinX86.dll");
+    _pintool_X86    = QDir::toNativeSeparators(exePath + "/../pintool/fuzzwinX86.dll");
     if (!QFile::exists(_pintool_X86))
     {
         QMessageBox::critical(nullptr, "Erreur", "pintool FuzzWin 32bits absent");
         return (EXIT_FAILURE);
     }
 
-#if _WIN64
     // pintool 64bits si besoin (mode 64 bits)
     if (_osType >= BEGIN_HOST_64BITS) 
     {
-        _pintool_X64 = QDir::toNativeSeparators(exePath + "/fuzzwinX64.dll");
+        _pintool_X64 = QDir::toNativeSeparators(exePath + "/../pintool/fuzzwinX64.dll");
         if (!QFile::exists(_pintool_X64))
         {
             QMessageBox::critical(nullptr, "Erreur", "pintool FuzzWin 64bits absent");
             return (EXIT_FAILURE);
         }
     }
-#endif
 
     // présence "normale" de PIN = via variable d'environnement "PIN_ROOT"
     QString pinPath = _env.value("PIN_ROOT");
@@ -137,6 +135,8 @@ void FUZZWIN_GUI::initGroupOptions()
     _timeStampEnabled      = new QCheckBox("Horodatage des logs",           _groupOptions);
     _hashFilesEnabled      = new QCheckBox("Hash des entrées générées",     _groupOptions);
     
+    _logAsmEnabled         = new QCheckBox("Log de déssasemblage", _groupOptions); 
+    _logTaintEnabled       = new QCheckBox("Log de marquage",      _groupOptions);
     _maxConstraints        = new QSpinBox(_groupOptions);
     _maxTime               = new QTimeEdit(_groupOptions);
     _listOfBytesToTaint    = new QLineEdit(_groupOptions);
@@ -154,11 +154,13 @@ void FUZZWIN_GUI::initGroupOptions()
     _gLayout1->addWidget(_maxTime,               4, 0, 1, 1);
     _gLayout1->addWidget(_bytesToTaintEnabled,   5, 0, 1, 1);
     _gLayout1->addWidget(_listOfBytesToTaint,    6, 0, 1, 1);
-    _gLayout1->addWidget(_verboseEnabled,        7, 0, 1, 1);    
-    _gLayout1->addWidget(_keepfilesEnabled,      8, 0, 1, 1);
-    _gLayout1->addWidget(_traceOnlyEnabled,      9, 0, 1, 1);
-    _gLayout1->addWidget(_timeStampEnabled,      10, 0, 1, 1);
-    _gLayout1->addWidget(_hashFilesEnabled,      11, 0, 1, 1);
+    _gLayout1->addWidget(_logAsmEnabled,         7, 0, 1, 1);
+    _gLayout1->addWidget(_logTaintEnabled,       8, 0, 1, 1);
+    _gLayout1->addWidget(_verboseEnabled,        9, 0, 1, 1);    
+    _gLayout1->addWidget(_keepfilesEnabled,      10, 0, 1, 1);
+    _gLayout1->addWidget(_traceOnlyEnabled,      11, 0, 1, 1);
+    _gLayout1->addWidget(_timeStampEnabled,      12, 0, 1, 1);
+    _gLayout1->addWidget(_hashFilesEnabled,      13, 0, 1, 1);
 }
     
 void FUZZWIN_GUI::initGroupResultats()
@@ -495,6 +497,11 @@ void FUZZWIN_GUI::startSession()
     /** ARGUMENTS POUR L'ALGORITHME **/
     /*********************************/
 
+    // revérifier que le dossier de résultats est bien vide
+    // surtout utile lorsqu'on démarre une nouvelle session juste apres la précédente
+    QString resultsDir = _resultsDir->text();
+    this->checkDir(resultsDir);
+
     // nouvelle structure pour les arguments
     ArgumentsForAlgorithm args;
     ZeroMemory(&args, sizeof(args));
@@ -504,48 +511,37 @@ void FUZZWIN_GUI::startSession()
     args._targetPath     = std::string(qPrintable(QDir::toNativeSeparators(_targetPath->text())));
     args._z3Path         = std::string(qPrintable(QDir::toNativeSeparators(_z3Path))); 
 
-    // si OS 32 bits, pas la peine de spécifier les modules 64bits
-    if (_osType < BEGIN_HOST_64BITS) 
-    {
-        /* $(pin_X86) -t $(pintool_X86) -- $(targetFile) %INPUT% (ajouté a chaque fichier testé) */
-        args._cmdLinePin =  '"'   + std::string(qPrintable(_pinPath_X86))   \
-                     + "\" -t \"" + std::string(qPrintable(_pintool_X86))   \
-                     + "\" -- \"" + args._targetPath \
-                     + "\" ";
-    }
-    else
-    {
-        /* $(pin_X86) -p64 $(pin_X64) -t64 $(pintool_X64) -t $(pintool_X86) 
-        -- $(targetFile) %INPUT% (ajouté a chaque fichier testé) */
-        args._cmdLinePin = '"' + std::string(qPrintable(_pinPath_X86))     \
-                + "\" -p64 \"" + std::string(qPrintable(_pinPath_X64))     \
-                + "\" -t64 \"" + std::string(qPrintable(_pintool_X64))     \
-                + "\" -t \""   + std::string(qPrintable(_pintool_X86))     \
-                + "\" -- \""   + args._targetPath \
-                + "\" ";
-    }
-
-    // récupération et transmission des options     
+    // récupération des options pour l'algorithme  
     args._computeScore   = _scoreEnabled->isChecked();
     args._verbose        = _verboseEnabled->isChecked();
     args._keepFiles      = _keepfilesEnabled->isChecked();
-    args._maxConstraints = _maxConstraintsEnabled->isChecked() ? _maxConstraints->value() : 0;
     args._timeStamp      = _timeStampEnabled->isChecked();
     args._hashFiles      = _hashFilesEnabled->isChecked();
     args._traceOnly      = _traceOnlyEnabled->isChecked();
 
-    // récupération du temps d'exécution (nécessaire au constructeur de l'algorithme)
+    // récupération des options pour le pintool
+    // options de ligne de commande pour le pintool en mode "marquage"
+    std::string cmdLineOptions("-option taint"); 
+    cmdLineOptions += " -os " + std::to_string(_osType);
+    
+    if (_maxConstraintsEnabled->isChecked())
+    {
+        cmdLineOptions += " -maxconstraints " + std::to_string(_maxConstraints->value());
+    }
     if (_maxTimeEnabled->isChecked())
     {
-        args._maxExecutionTime = (60 * _maxTime->time().minute()) 
-                                     + _maxTime->time().second();
+        args._maxExecutionTime = (60 * _maxTime->time().minute()) + _maxTime->time().second();
+        cmdLineOptions += " -maxtime " + std::to_string(args._maxExecutionTime);
     }
     if (_bytesToTaintEnabled->isChecked())
     {
-         args._bytesToTaint = std::string(qPrintable(_listOfBytesToTaint->text()));
+         cmdLineOptions += " -range " + std::string(qPrintable(_listOfBytesToTaint->text()));
     }
-    else args._bytesToTaint = "all";
 
+    if (_logAsmEnabled->isChecked())   cmdLineOptions += " -logasm" ;
+    if (_logTaintEnabled->isChecked()) cmdLineOptions += " -logtaint" ;
+
+    
     /*****************************************************************/
     /** CREATION DE L'ALGORITHME ET AFFECTATION A UN NOUVEAU THREAD **/
     /*****************************************************************/
@@ -553,8 +549,16 @@ void FUZZWIN_GUI::startSession()
 
     // création de l'objet "algorithme" et finalisation de l'algo
     _pFuzzwinAlgo = new FuzzwinAlgorithm_GUI(_osType, &args);
-    // création des outils internes et externes
-    if (EXIT_FAILURE == _pFuzzwinAlgo->finalizeInitialization())
+    
+    // création des outils internes et externes et dernieres initialisations
+    int result = _pFuzzwinAlgo->finalizeInitialization(
+        std::string(qPrintable(_pinPath_X86)),
+        std::string(qPrintable(_pinPath_X64)),
+        std::string(qPrintable(_pintool_X86)),
+        std::string(qPrintable(_pintool_X64)),
+        cmdLineOptions);
+
+    if (EXIT_FAILURE == result)
     { 
         delete (_pFuzzwinThread);
         delete (_pFuzzwinAlgo);

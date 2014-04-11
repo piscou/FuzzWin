@@ -29,11 +29,10 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 END_LEGAL */
 
-#include "instrumentation.h"
-#include "pintool.h"
-#include "syscalls.h"
-#include "TaintManager.h"
-#include "buildFormula.h"
+#include <TaintEngine\TaintManager.h>
+#include <Instrumentation\instrumentation.h>
+#include <Syscalls\syscalls.h>
+#include <Translate\translate.h>
 
 /* ================================================================== */
 // Doxygen MainPage
@@ -69,39 +68,47 @@ HANDLE              g_hPipe;
 // variable déterminant l'instrumentation ou non des instructions
 bool                g_beginInstrumentationOfInstructions; 
 
-/** VARIABLES FOURNIES VIA PIPE OU LIGNE DE COMMANDE (DEBUG) **/
+/** VARIABLES FOURNIES VIA PIPE ou LIGNE DE COMMANDE  **/
 // chemin vers le fichier d'entrée pour le programme fuzzé
 std::string         g_inputFile;
+// option du pintool : taint ou ckeckscore
+std::string         g_option;
 // nombre maximal de contraintes à récupérer (illimité si nul) 
 UINT32              g_maxConstraints;
 // temps maximal d'exécution du pintool (en secondes)
 UINT32              g_maxTime;
-
+// log de dessasemblage du binaire
+bool                g_logasm;
+// log de marquage
+bool                g_logtaint;
+// option pipe ou non pour l'échange du fichier initial  et de la formule finale
+bool                g_nopipe;
 // type d'OS hote. Sert à déterminer les numéros de syscalls
 OSTYPE              g_osType;
+// adresse de la fonction NtQueryObject (NtDll.dll)
+t_NtQueryObject     g_AddressOfNtQueryObject = nullptr;
 
 /** OPTION CHECKSCORE **/
 // nombre d'instructions exécutées
 UINT64              g_nbIns;
 
-#if DEBUG
-ofstream    g_debug;      // fichier de log de dessassemblage
-ofstream    g_taint;      // fichier de log du marquage
-clock_t     g_timeBegin;  // temps d'exécution du pintool pour statistiques
-#endif
+ofstream            g_debug;      // fichier de log de dessassemblage
+ofstream            g_taint;      // fichier de log du marquage
+clock_t             g_timeBegin;  // temps d'exécution du pintool pour statistiques
 
 /* ===================================================================== */
 // Command line switches
 /* ===================================================================== */
 
-#if DEBUG
-KNOB<std::string> KnobInputFile(KNOB_MODE_WRITEONCE,        "pintool", "i", "",    "fichier d'entree");
-KNOB<UINT32>      KnobMaxExecutionTime(KNOB_MODE_WRITEONCE, "pintool", "m", "0",   "temps maximal d'execution");
-KNOB<std::string> KnobBytesToTaint(KNOB_MODE_WRITEONCE,     "pintool", "b", "all", "intervelles d'octets à surveiller");
-KNOB<UINT32>      KnobMaxConstraints(KNOB_MODE_WRITEONCE,   "pintool", "c", "0",   "nombre maximal de contraintes");
-KNOB<std::string> KnobOption(KNOB_MODE_WRITEONCE, "pintool", "o", "",  "option 'taint' ou 'checkscore'");
-KNOB<UINT32>      KnobOsType(KNOB_MODE_WRITEONCE, "pintool", "k", "11", "OS hote (de 1 à 10)");
-#endif
+KNOB<std::string> KInputFile(KNOB_MODE_WRITEONCE, "pintool", "input", "", "fichier d'entree");
+KNOB<UINT32>      KMaxTime(KNOB_MODE_WRITEONCE,   "pintool", "maxtime", "0", "temps maximal d'execution");
+KNOB<std::string> KBytes(KNOB_MODE_WRITEONCE,     "pintool", "range", "", "intervalles d'octets à surveiller");
+KNOB<UINT32>      KMaxConstr(KNOB_MODE_WRITEONCE, "pintool", "maxconstraints", "0", "nombre maximal de contraintes");
+KNOB<std::string> KOption(KNOB_MODE_WRITEONCE,    "pintool", "option", "", "option 'taint' ou 'checkscore'");
+KNOB<UINT32>      KOsType(KNOB_MODE_WRITEONCE,    "pintool", "os", "11", "OS hote (de 1 à 10); 11 = erreur");
+KNOB<BOOL>        KLogAsm(KNOB_MODE_WRITEONCE,    "pintool", "logasm", "0", "log de dessasemblage");
+KNOB<BOOL>        KLogTaint(KNOB_MODE_WRITEONCE,  "pintool", "logtaint", "0", "log de marquage");
+KNOB<BOOL>        KNoPipe(KNOB_MODE_WRITEONCE,    "pintool", "nopipe", "0", "ne pas utiliser de tube nommé (option 'input' obligatoire)");
 
 /* ===================================================================== */
 // Main procedure
@@ -116,6 +123,10 @@ INT32 Usage()
 
 int main(int argc, char *argv[]) 
 {
+    // Initialisation de la gestion des symboles 'exports
+    // obligatoire pour l'instrumentation des images
+    //PIN_InitSymbolsAlt(EXPORT_SYMBOLS);
+    
     // Initialisation de PIN. Renvoie TRUE si erreur trouvée
     if (PIN_Init(argc, argv)) return (Usage());
 
@@ -139,6 +150,12 @@ int main(int argc, char *argv[])
         // suppression des threads de l'application
         PIN_AddThreadStartFunction(INSTRUMENTATION::threadStart, 0);
         PIN_AddThreadFiniFunction (INSTRUMENTATION::threadFini, 0);
+
+        // fonction d'instrumentattion des images
+        // permet d'obtenir dynamiquement l'adresse de fonctions
+        // contenues dans Ntdll. Utilisé par la partie 'syscalls'
+        IMG_AddInstrumentFunction(INSTRUMENTATION::Image, 0);
+
     }
     else if (OPTION_CHECKSCORE == initStatus)
     {

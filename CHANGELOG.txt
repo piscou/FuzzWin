@@ -1,0 +1,30 @@
+Version 1.3.2 - 11 avril 2014
+
+----------
+ALGORITHME
+----------
++ construction de la ligne de commande du pintool intégré dans l'algorithme
++ TODO : fermer correctement les processus qui ont subi une exception
+
+-------
+PINTOOL
+-------
++ ajout des options -logasm (log de dessasemblage), -logtaint (log de marquage), -nopipe (pas d'emploi de tube nommé)
++ le passage de tous les arguments se fait désormais par ligne de commande sauf le nom de fichier (fourni à travers le tube nommé)
++ exception pour l'option '-nopipe' ; le nom de l'entrée est fournie par l'option -input (NB : chemin sans accents !!)
++ l'option 'bytes' est renommée en 'range'. La valeur par défaut est nulle (au lieu de 'all')
++ la compilation en mode "debug" ajoute désormais uniquement l'adresse de l'instruction lors de l'instrumentation
++ réorganisation du dossier BUILD : les DLL du pintool sont dans un dossier \pintool
++ réorganisation des fichiers source dans deux dossiers 'categories' et 'core'
+
+-------
+CMDLINE
+-------
++ prise en compte du changement de mode de passage des arguments
++ prise en compte des nouvelles options de log
+
+---
+GUI
+---
++ prise en compte du changement de mode de passage des arguments
++ prise en compte des nouvelles options de log
