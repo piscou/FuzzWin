@@ -99,6 +99,11 @@ enum Relation
     X_RCL,
 
     /** BITBYTE **/
+    // SETCC : donne 0 ou 1 selon que le predicat est faux ou vrai
+    // src0 : predicat concerné (valeur, 32bits)
+    // src1 : valeur ou marquage du flag (1 bit)
+    // src2 et src3 : autres flags, si besoin
+    X_SETCC,
     // COMPLEMENT_BIT : inverse le bit concerné dans la source (eq. BTC)
     // src0 : src, src1 : numéro du bit (obj marqué de longueur = à la source)
     // src1 est sur 16/32/64bits, 8 bits impossible. position bit marqué sinon ce serait un EXTRACT
