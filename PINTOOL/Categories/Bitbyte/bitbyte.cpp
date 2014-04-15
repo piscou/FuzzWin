@@ -487,7 +487,6 @@ void BITBYTE::sSETNP_M(THREADID tid, ADDRINT writeAddress ADDRESS_DEBUG)
     }   
 }// sSETNP_M
 
-
 void BITBYTE::sSETZ_M(THREADID tid, ADDRINT writeAddress ADDRESS_DEBUG)
 {
     TaintManager_Thread* pTmgrTls = getTmgrInTls(tid);
@@ -730,6 +729,373 @@ void BITBYTE::sSETNLE_M(THREADID tid, ADDRINT writeAddress, ADDRINT flagsValue A
 // --------------------
 // DESTINATION REGISTRE
 // --------------------
+
+
+void BITBYTE::sSETB_R(THREADID tid, REG regDest ADDRESS_DEBUG)
+{
+    TaintManager_Thread* pTmgrTls = getTmgrInTls(tid);
+
+    // si flag non marqué, démarquage destination
+    if (!pTmgrTls->isCarryFlagTainted())   pTmgrTls->unTaintRegister<8>(regDest);
+    // sinon, création de l'objet et marquage destination
+    else
+    {    
+        pTmgrTls->updateTaintRegister<8>(regDest, std::make_shared<TaintByte>(
+            X_SETCC,
+            ObjectSource(32, PREDICATE_BELOW),
+            ObjectSource(pTmgrTls->getTaintCarryFlag())));
+    }   
+}// sSETB_R
+
+void BITBYTE::sSETNB_R(THREADID tid, REG regDest ADDRESS_DEBUG)
+{
+    TaintManager_Thread* pTmgrTls = getTmgrInTls(tid);
+
+    // si flag non marqué, démarquage destination
+    if (!pTmgrTls->isCarryFlagTainted())   pTmgrTls->unTaintRegister<8>(regDest);
+    // sinon, création de l'objet et marquage destination
+    else
+    {    
+        pTmgrTls->updateTaintRegister<8>(regDest, std::make_shared<TaintByte>(
+            X_SETCC,
+            ObjectSource(32, PREDICATE_NOT_BELOW),
+            ObjectSource(pTmgrTls->getTaintCarryFlag())));
+    }   
+}// sSETNB_R
+
+void BITBYTE::sSETS_R(THREADID tid, REG regDest ADDRESS_DEBUG)
+{
+    TaintManager_Thread* pTmgrTls = getTmgrInTls(tid);
+
+    // si flag non marqué, démarquage destination
+    if (!pTmgrTls->isSignFlagTainted())   pTmgrTls->unTaintRegister<8>(regDest);
+    // sinon, création de l'objet et marquage destination
+    else
+    {    
+        pTmgrTls->updateTaintRegister<8>(regDest, std::make_shared<TaintByte>(
+            X_SETCC,
+            ObjectSource(32, PREDICATE_SIGN),
+            ObjectSource(pTmgrTls->getTaintSignFlag())));
+    }   
+}// sSETS_R
+
+void BITBYTE::sSETNS_R(THREADID tid, REG regDest ADDRESS_DEBUG)
+{
+    TaintManager_Thread* pTmgrTls = getTmgrInTls(tid);
+
+    // si flag non marqué, démarquage destination
+    if (!pTmgrTls->isSignFlagTainted())   pTmgrTls->unTaintRegister<8>(regDest);
+    // sinon, création de l'objet et marquage destination
+    else
+    {    
+        pTmgrTls->updateTaintRegister<8>(regDest, std::make_shared<TaintByte>(
+            X_SETCC,
+            ObjectSource(32, PREDICATE_NOT_SIGN),
+            ObjectSource(pTmgrTls->getTaintSignFlag())));
+    }   
+}// sSETS_R
+
+void BITBYTE::sSETO_R(THREADID tid, REG regDest ADDRESS_DEBUG)
+{
+    TaintManager_Thread* pTmgrTls = getTmgrInTls(tid);
+
+    // si flag non marqué, démarquage destination
+    if (!pTmgrTls->isOverflowFlagTainted())   pTmgrTls->unTaintRegister<8>(regDest);
+    // sinon, création de l'objet et marquage destination
+    else
+    {    
+        pTmgrTls->updateTaintRegister<8>(regDest, std::make_shared<TaintByte>(
+            X_SETCC,
+            ObjectSource(32, PREDICATE_OVERFLOW),
+            ObjectSource(pTmgrTls->getTaintOverflowFlag())));
+    }   
+}// sSETO_R
+
+void BITBYTE::sSETNO_R(THREADID tid, REG regDest ADDRESS_DEBUG)
+{
+    TaintManager_Thread* pTmgrTls = getTmgrInTls(tid);
+
+    // si flag non marqué, démarquage destination
+    if (!pTmgrTls->isOverflowFlagTainted())   pTmgrTls->unTaintRegister<8>(regDest);
+    // sinon, création de l'objet et marquage destination
+    else
+    {    
+        pTmgrTls->updateTaintRegister<8>(regDest, std::make_shared<TaintByte>(
+            X_SETCC,
+            ObjectSource(32, PREDICATE_NOT_OVERFLOW),
+            ObjectSource(pTmgrTls->getTaintOverflowFlag())));
+    }   
+}// sSETNO_R
+
+void BITBYTE::sSETP_R(THREADID tid, REG regDest ADDRESS_DEBUG)
+{
+    TaintManager_Thread* pTmgrTls = getTmgrInTls(tid);
+
+    // si flag non marqué, démarquage destination
+    if (!pTmgrTls->isParityFlagTainted())   pTmgrTls->unTaintRegister<8>(regDest);
+    // sinon, création de l'objet et marquage destination
+    else
+    {    
+        pTmgrTls->updateTaintRegister<8>(regDest, std::make_shared<TaintByte>(
+            X_SETCC,
+            ObjectSource(32, PREDICATE_PARITY),
+            ObjectSource(pTmgrTls->getTaintParityFlag())));
+    }   
+}// sSETP_R
+
+void BITBYTE::sSETNP_R(THREADID tid, REG regDest ADDRESS_DEBUG)
+{
+    TaintManager_Thread* pTmgrTls = getTmgrInTls(tid);
+
+    // si flag non marqué, démarquage destination
+    if (!pTmgrTls->isParityFlagTainted())   pTmgrTls->unTaintRegister<8>(regDest);
+    // sinon, création de l'objet et marquage destination
+    else
+    {    
+        pTmgrTls->updateTaintRegister<8>(regDest, std::make_shared<TaintByte>(
+            X_SETCC,
+            ObjectSource(32, PREDICATE_NOT_PARITY),
+            ObjectSource(pTmgrTls->getTaintParityFlag())));
+    }   
+}// sSETNP_R
+
+void BITBYTE::sSETZ_R(THREADID tid, REG regDest ADDRESS_DEBUG)
+{
+    TaintManager_Thread* pTmgrTls = getTmgrInTls(tid);
+
+    // si flag non marqué, démarquage destination
+    if (!pTmgrTls->isZeroFlagTainted())   pTmgrTls->unTaintRegister<8>(regDest);
+    // sinon, création de l'objet et marquage destination
+    else
+    {    
+        pTmgrTls->updateTaintRegister<8>(regDest, std::make_shared<TaintByte>(
+            X_SETCC,
+            ObjectSource(32, PREDICATE_ZERO),
+            ObjectSource(pTmgrTls->getTaintZeroFlag())));
+    }   
+}// sSETZ_R
+
+void BITBYTE::sSETNZ_R(THREADID tid, REG regDest ADDRESS_DEBUG)
+{
+    TaintManager_Thread* pTmgrTls = getTmgrInTls(tid);
+
+    // si flag non marqué, démarquage destination
+    if (!pTmgrTls->isParityFlagTainted())   pTmgrTls->unTaintRegister<8>(regDest);
+    // sinon, création de l'objet et marquage destination
+    else
+    {    
+        pTmgrTls->updateTaintRegister<8>(regDest, std::make_shared<TaintByte>(
+            X_SETCC,
+            ObjectSource(32, PREDICATE_NOT_ZERO),
+            ObjectSource(pTmgrTls->getTaintParityFlag())));
+    }   
+}// sSETNZ_R
+
+void BITBYTE::sSETBE_R(THREADID tid, REG regDest, ADDRINT flagsValue ADDRESS_DEBUG)
+{
+    TaintManager_Thread* pTmgrTls = getTmgrInTls(tid);
+
+    // récupération du marquage des flags avant l'exécution
+    TaintBitPtr cfPtr = (pTmgrTls->isCarryFlagTainted()) 
+        ? pTmgrTls->getTaintCarryFlag() 
+        : nullptr;
+    TaintBitPtr zfPtr = (pTmgrTls->isZeroFlagTainted()) 
+        ? pTmgrTls->getTaintZeroFlag() 
+        : nullptr;
+
+    // si flags non marqués, démarquage destination
+    if (!cfPtr && !zfPtr)   pTmgrTls->unTaintRegister<8>(regDest);
+    // sinon, création de l'objet et marquage destination
+    else
+    {    
+        ObjectSource objCarryFlag = ((bool) cfPtr) 
+            ? ObjectSource(cfPtr)
+            : ObjectSource(1, EXTRACTBIT(flagsValue, CARRY_FLAG));
+        ObjectSource objZeroFlag = ((bool) zfPtr) 
+            ? ObjectSource(zfPtr)
+            : ObjectSource(1, EXTRACTBIT(flagsValue, ZERO_FLAG));
+
+        pTmgrTls->updateTaintRegister<8>(regDest, std::make_shared<TaintByte>(
+            X_SETCC,
+            ObjectSource(32, PREDICATE_BELOW_OR_EQUAL),
+            objCarryFlag,
+            objZeroFlag));
+    }   
+}// sSETBE_R
+
+void BITBYTE::sSETNBE_R(THREADID tid, REG regDest, ADDRINT flagsValue ADDRESS_DEBUG)
+{
+    TaintManager_Thread* pTmgrTls = getTmgrInTls(tid);
+
+    // récupération du marquage des flags avant l'exécution
+    TaintBitPtr cfPtr = (pTmgrTls->isCarryFlagTainted()) 
+        ? pTmgrTls->getTaintCarryFlag() 
+        : nullptr;
+    TaintBitPtr zfPtr = (pTmgrTls->isZeroFlagTainted()) 
+        ? pTmgrTls->getTaintZeroFlag() 
+        : nullptr;
+
+    // si flags non marqués, démarquage destination
+    if (!cfPtr && !zfPtr)   pTmgrTls->unTaintRegister<8>(regDest);
+    // sinon, création de l'objet et marquage destination
+    else
+    {    
+        ObjectSource objCarryFlag = ((bool) cfPtr) 
+            ? ObjectSource(cfPtr)
+            : ObjectSource(1, EXTRACTBIT(flagsValue, CARRY_FLAG));
+        ObjectSource objZeroFlag = ((bool) zfPtr) 
+            ? ObjectSource(zfPtr)
+            : ObjectSource(1, EXTRACTBIT(flagsValue, ZERO_FLAG));
+
+        pTmgrTls->updateTaintRegister<8>(regDest, std::make_shared<TaintByte>(
+            X_SETCC,
+            ObjectSource(32, PREDICATE_NOT_BELOW_OR_EQUAL),
+            objCarryFlag,
+            objZeroFlag));
+    }   
+}// sSETNBE_R
+
+void BITBYTE::sSETL_R(THREADID tid, REG regDest, ADDRINT flagsValue ADDRESS_DEBUG)
+{
+    TaintManager_Thread* pTmgrTls = getTmgrInTls(tid);
+
+    // récupération du marquage des flags avant l'exécution
+    TaintBitPtr sfPtr = (pTmgrTls->isSignFlagTainted()) 
+        ? pTmgrTls->getTaintSignFlag() 
+        : nullptr;
+    TaintBitPtr ofPtr = (pTmgrTls->isOverflowFlagTainted()) 
+        ? pTmgrTls->getTaintOverflowFlag() 
+        : nullptr;
+
+    // si flags non marqués, démarquage destination
+    if (!sfPtr && !ofPtr)   pTmgrTls->unTaintRegister<8>(regDest);
+    // sinon, création de l'objet et marquage destination
+    else
+    {    
+        ObjectSource objSignFlag = ((bool) sfPtr) 
+            ? ObjectSource(sfPtr)
+            : ObjectSource(1, EXTRACTBIT(flagsValue, SIGN_FLAG));
+        ObjectSource objOverflowFlag = ((bool) ofPtr) 
+            ? ObjectSource(ofPtr)
+            : ObjectSource(1, EXTRACTBIT(flagsValue, OVERFLOW_FLAG));
+
+        pTmgrTls->updateTaintRegister<8>(regDest, std::make_shared<TaintByte>(
+            X_SETCC,
+            ObjectSource(32, PREDICATE_LESS),
+            objSignFlag,
+            objOverflowFlag));
+    }   
+}// sSETL_R
+
+void BITBYTE::sSETNL_R(THREADID tid, REG regDest, ADDRINT flagsValue ADDRESS_DEBUG)
+{
+    TaintManager_Thread* pTmgrTls = getTmgrInTls(tid);
+
+    // récupération du marquage des flags avant l'exécution
+    TaintBitPtr sfPtr = (pTmgrTls->isSignFlagTainted()) 
+        ? pTmgrTls->getTaintSignFlag() 
+        : nullptr;
+    TaintBitPtr ofPtr = (pTmgrTls->isOverflowFlagTainted()) 
+        ? pTmgrTls->getTaintOverflowFlag() 
+        : nullptr;
+
+    // si flags non marqués, démarquage destination
+    if (!sfPtr && !ofPtr)   pTmgrTls->unTaintRegister<8>(regDest);
+    // sinon, création de l'objet et marquage destination
+    else
+    {    
+        ObjectSource objSignFlag = ((bool) sfPtr) 
+            ? ObjectSource(sfPtr)
+            : ObjectSource(1, EXTRACTBIT(flagsValue, SIGN_FLAG));
+        ObjectSource objOverflowFlag = ((bool) ofPtr) 
+            ? ObjectSource(ofPtr)
+            : ObjectSource(1, EXTRACTBIT(flagsValue, OVERFLOW_FLAG));
+
+        pTmgrTls->updateTaintRegister<8>(regDest, std::make_shared<TaintByte>(
+            X_SETCC,
+            ObjectSource(32, PREDICATE_NOT_LESS),
+            objSignFlag,
+            objOverflowFlag));
+    }   
+}// sSETNL_R
+
+void BITBYTE::sSETLE_R(THREADID tid, REG regDest, ADDRINT flagsValue ADDRESS_DEBUG)
+{
+    TaintManager_Thread* pTmgrTls = getTmgrInTls(tid);
+
+    // récupération du marquage des flags avant l'exécution
+    TaintBitPtr sfPtr = (pTmgrTls->isSignFlagTainted()) 
+        ? pTmgrTls->getTaintSignFlag() 
+        : nullptr;
+    TaintBitPtr ofPtr = (pTmgrTls->isOverflowFlagTainted()) 
+        ? pTmgrTls->getTaintOverflowFlag() 
+        : nullptr;
+    TaintBitPtr zfPtr = (pTmgrTls->isZeroFlagTainted()) 
+        ? pTmgrTls->getTaintZeroFlag() 
+        : nullptr;
+    
+    // si flags non marqués, démarquage destination
+    if (!sfPtr && !ofPtr && !zfPtr)   pTmgrTls->unTaintRegister<8>(regDest);
+    // sinon, création de l'objet et marquage destination
+    else
+    {    
+        ObjectSource objSignFlag = ((bool) sfPtr) 
+            ? ObjectSource(sfPtr)
+            : ObjectSource(1, EXTRACTBIT(flagsValue, SIGN_FLAG));
+        ObjectSource objOverflowFlag = ((bool) ofPtr) 
+            ? ObjectSource(ofPtr)
+            : ObjectSource(1, EXTRACTBIT(flagsValue, OVERFLOW_FLAG));
+        ObjectSource objZeroFlag = ((bool) zfPtr) 
+            ? ObjectSource(zfPtr)
+            : ObjectSource(1, EXTRACTBIT(flagsValue, ZERO_FLAG));
+
+        pTmgrTls->updateTaintRegister<8>(regDest, std::make_shared<TaintByte>(
+            X_SETCC,
+            ObjectSource(32, PREDICATE_LESS),
+            objSignFlag,
+            objOverflowFlag,
+            objZeroFlag));
+    }   
+}// sSETLE_R
+
+void BITBYTE::sSETNLE_R(THREADID tid, REG regDest, ADDRINT flagsValue ADDRESS_DEBUG)
+{
+    TaintManager_Thread* pTmgrTls = getTmgrInTls(tid);
+
+    // récupération du marquage des flags avant l'exécution
+    TaintBitPtr sfPtr = (pTmgrTls->isSignFlagTainted()) 
+        ? pTmgrTls->getTaintSignFlag() 
+        : nullptr;
+    TaintBitPtr ofPtr = (pTmgrTls->isOverflowFlagTainted()) 
+        ? pTmgrTls->getTaintOverflowFlag() 
+        : nullptr;
+    TaintBitPtr zfPtr = (pTmgrTls->isZeroFlagTainted()) 
+        ? pTmgrTls->getTaintZeroFlag() 
+        : nullptr;
+    
+    // si flags non marqués, démarquage destination
+    if (!sfPtr && !ofPtr && !zfPtr)   pTmgrTls->unTaintRegister<8>(regDest);
+    // sinon, création de l'objet et marquage destination
+    else
+    {    
+        ObjectSource objSignFlag = ((bool) sfPtr) 
+            ? ObjectSource(sfPtr)
+            : ObjectSource(1, EXTRACTBIT(flagsValue, SIGN_FLAG));
+        ObjectSource objOverflowFlag = ((bool) ofPtr) 
+            ? ObjectSource(ofPtr)
+            : ObjectSource(1, EXTRACTBIT(flagsValue, OVERFLOW_FLAG));
+        ObjectSource objZeroFlag = ((bool) zfPtr) 
+            ? ObjectSource(zfPtr)
+            : ObjectSource(1, EXTRACTBIT(flagsValue, ZERO_FLAG));
+
+        pTmgrTls->updateTaintRegister<8>(regDest, std::make_shared<TaintByte>(
+            X_SETCC,
+            ObjectSource(32, PREDICATE_NOT_LESS),
+            objSignFlag,
+            objOverflowFlag,
+            objZeroFlag));
+    }   
+}// sSETNLE_R
 
 
 

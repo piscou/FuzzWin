@@ -254,7 +254,7 @@ const static std::string enum_strings[RELATION_LAST] =
     "X_ROR", "X_ROL", "X_RCR", "X_RCL",
 
     // BIT_BYTE
-    "X_COMPLEMENT_BIT", "X_SET_BIT", "X_CLEAR_BIT", "X_BSF", "X_BSR",
+    "X_SETCC", "X_COMPLEMENT_BIT", "X_SET_BIT", "X_CLEAR_BIT", "X_BSF", "X_BSR",
 
     /**** Relations de modelisation des effets de bords (flags) x86 ****/
     

@@ -7,6 +7,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "FUZZWIN_CMDLINE", "LIGNE DE
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "FUZZWIN_GUI", "GUI\FUZZWIN_GUI.vcxproj", "{B12702AD-ABFB-343A-A199-8E24837244A3}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SUIVI DES VERSIONS", "SUIVI DES VERSIONS", "{32BDFF28-B379-48C1-877C-5E23CB8A81F4}"
+	ProjectSection(SolutionItems) = preProject
+		CHANGELOG.txt = CHANGELOG.txt
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Mixed Platforms = Debug|Mixed Platforms

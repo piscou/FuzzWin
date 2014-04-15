@@ -138,6 +138,7 @@ void FUZZWIN_GUI::initGroupOptions()
     _logAsmEnabled         = new QCheckBox("Log de déssasemblage", _groupOptions); 
     _logTaintEnabled       = new QCheckBox("Log de marquage",      _groupOptions);
     _maxConstraints        = new QSpinBox(_groupOptions);
+    _maxConstraints->setRange(1, 1000000); // constraintes de 1 à 1 million
     _maxTime               = new QTimeEdit(_groupOptions);
     _listOfBytesToTaint    = new QLineEdit(_groupOptions);
 
@@ -247,7 +248,7 @@ void FUZZWIN_GUI::initGroupResultats()
 #endif
 
     _labelFaultsFound = new QLabel("Nombre de fautes trouvées", _groupResultats);
-    _faultsFound      = new QSpinBox(_groupResultats);
+    _faultsFound      = new QSpinBox(_groupResultats); // maximum 99
     _faultsFound->setReadOnly(true);
     _faultsFound->setAlignment(Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter);
     _faultsFound->setButtonSymbols(QAbstractSpinBox::NoButtons);    

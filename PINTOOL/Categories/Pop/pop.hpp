@@ -134,6 +134,6 @@ void POP::sPOPF(THREADID tid, ADDRINT stackAddress ADDRESS_DEBUG)
         pTmgrTls->updateTaintOverflowFlag(std::make_shared<TaintBit>(
             EXTRACT, 
             ObjectSource(pTmgrGlobal->getMemoryTaint<8>(stackAddress + 1)),
-            ObjectSource(8, OVERFLOW_FLAG)));
+            ObjectSource(8, OVERFLOW_FLAG - 8)));
     }
 } // sPOPF

@@ -130,39 +130,86 @@ void PUSH::sPUSHF(THREADID tid, ADDRINT regFlagsValue, ADDRINT stackAddressBefor
 {
     // lengthInBits == 16 <-> PUSHF, lengthInBits == 32 <-> PUSHFD, lengthInBits == 64 <-> PUSHFQ
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);    
-     
+
     // ajustement du marquage du REGISTRE ESP/RSP, dans le cas où il est marqué
     PUSH::sUpdateEspTaint<lengthInBits>(pTmgrTls, stackAddressBeforePush);
 
-    // mise sur la pile du registre des flags
-    // dans le cadre du marquage, on va construire un TaintWord formé par la concaténation
-    // des 16 bits faibles des flags, avec le marquage des drapeaux suivis ou leur valeur
-    // les autres bits des Flags (> 16) ne nous intéressent pas => démarquage
-    
-    vector<TaintBitPtr> vFlagsPtr(16);
-    // récupération du marquage des flags suivis
-    vFlagsPtr[CARRY_FLAG]     = pTmgrTls->getTaintCarryFlag();
-    vFlagsPtr[PARITY_FLAG]    = pTmgrTls->getTaintParityFlag();
-    vFlagsPtr[AUXILIARY_FLAG] = pTmgrTls->getTaintAuxiliaryFlag();
-    vFlagsPtr[ZERO_FLAG]      = pTmgrTls->getTaintZeroFlag();
-    vFlagsPtr[SIGN_FLAG]      = pTmgrTls->getTaintSignFlag();
-    vFlagsPtr[OVERFLOW_FLAG]  = pTmgrTls->getTaintOverflowFlag();
+    // adresse de push des octets
+    ADDRINT workingAddress = stackAddressBeforePush - (lengthInBits >> 3); 
 
-    TaintWord twConcat(CONCAT);
-    for (auto it = vFlagsPtr.begin() ; it != vFlagsPtr.end() ; ++it, regFlagsValue >>= 1)
+    // test et marquage du 1er octet
+    bool isCfTainted = pTmgrTls->isCarryFlagTainted();
+    bool isPfTainted = pTmgrTls->isParityFlagTainted();
+    bool isAfTainted = pTmgrTls->isAuxiliaryFlagTainted();
+    bool isZfTainted = pTmgrTls->isZeroFlagTainted();
+    bool isSfTainted = pTmgrTls->isSignFlagTainted();
+
+    if (! (isCfTainted || isPfTainted || isAfTainted || isZfTainted || isSfTainted))
     {
-        // si flags non marqué ou non suivi : insérer la valeur du flag
-        if (nullptr == *it) twConcat.addConstantAsASource<1>(regFlagsValue & 1);
-        // sinon insérer l'objet marqué
-        else twConcat.addSource(*it);
+        pTmgrGlobal->unTaintMemory<8>(workingAddress);  // démarquer le premier octet
+    }
+    else    // 1er octet = SF:ZF:??:AF:??:PF:??:CF
+    {
+        TaintByte firstTaintedByte(CONCAT);
+        
+        // 0 : CF
+        firstTaintedByte.addSource((isCfTainted) 
+            ? ObjectSource(pTmgrTls->getTaintCarryFlag())
+            : ObjectSource(1, EXTRACTBIT(regFlagsValue, CARRY_FLAG)));
+        // 1 : N/A
+        firstTaintedByte.addConstantAsASource<1>(EXTRACTBIT(regFlagsValue, 1));
+        // 2 : PF
+        firstTaintedByte.addSource((isPfTainted) 
+            ? ObjectSource(pTmgrTls->getTaintParityFlag())
+            : ObjectSource(1, EXTRACTBIT(regFlagsValue, PARITY_FLAG)));
+        // 3 : N/A
+        firstTaintedByte.addConstantAsASource<1>(EXTRACTBIT(regFlagsValue, 3));
+        // 4 : AF
+        firstTaintedByte.addSource((isAfTainted) 
+            ? ObjectSource(pTmgrTls->getTaintAuxiliaryFlag())
+            : ObjectSource(1, EXTRACTBIT(regFlagsValue, AUXILIARY_FLAG)));
+        // 5 : NA
+        firstTaintedByte.addConstantAsASource<1>(EXTRACTBIT(regFlagsValue, 5));
+        // 6 : ZF
+        firstTaintedByte.addSource((isZfTainted) 
+            ? ObjectSource(pTmgrTls->getTaintZeroFlag())
+            : ObjectSource(1, EXTRACTBIT(regFlagsValue, ZERO_FLAG)));
+        // 7 : SF
+        firstTaintedByte.addSource((isSfTainted) 
+            ? ObjectSource(pTmgrTls->getTaintSignFlag())
+            : ObjectSource(1, EXTRACTBIT(regFlagsValue, SIGN_FLAG)));
+
+        pTmgrGlobal->updateMemoryTaint<8>(workingAddress, 
+            std::make_shared<TaintByte>(firstTaintedByte));
     }
 
-    // marquage de l'adresse [addr - 'taille' ; addr - 'taille + 2'[ avec ce TaintWord
-    ADDRINT startAddress = stackAddressBeforePush - (lengthInBits >> 3); // adresse de push des octets
-    pTmgrGlobal->updateMemoryTaint<16>(startAddress, std::make_shared<TaintWord>(twConcat));
+    // test et marquage du 2eme octet
+    ++workingAddress;
+    if ( ! pTmgrTls->isOverflowFlagTainted())
+    {
+        pTmgrGlobal->unTaintMemory<8>(workingAddress);  // démarquer le second octet
+    }
+    else  // 2eme octet = ??:??:??:??:OF:??:??:??
+    {
+        TaintByte secondTaintedByte(CONCAT);
+        // 8, 9, 10 : N/A
+        secondTaintedByte.addConstantAsASource<1>(EXTRACTBIT(regFlagsValue, 8));
+        secondTaintedByte.addConstantAsASource<1>(EXTRACTBIT(regFlagsValue, 9));
+        secondTaintedByte.addConstantAsASource<1>(EXTRACTBIT(regFlagsValue, 10));
+        // 11 : OF forcément marqué
+        secondTaintedByte.addSource(pTmgrTls->getTaintOverflowFlag());
+        // 12, 13, 14, 15 : N/A
+        secondTaintedByte.addConstantAsASource<1>(EXTRACTBIT(regFlagsValue, 12));
+        secondTaintedByte.addConstantAsASource<1>(EXTRACTBIT(regFlagsValue, 13));
+        secondTaintedByte.addConstantAsASource<1>(EXTRACTBIT(regFlagsValue, 14));
+        secondTaintedByte.addConstantAsASource<1>(EXTRACTBIT(regFlagsValue, 15));
+
+        pTmgrGlobal->updateMemoryTaint<8>(workingAddress, 
+            std::make_shared<TaintByte>(secondTaintedByte));
+    }
 
     // démarquage des octets représentant les octets forts des flags
-    startAddress += 2;  // adresse après le push des 2 octets des flags
-    while (startAddress < stackAddressBeforePush)   pTmgrGlobal->unTaintMemory<8>(startAddress++);
-
+    // PUSHF : AUCUN,  PUSHFD : 2 octets,  PUSHFQ : 6 octets
+    ++workingAddress;  // adresse du 3eme octet
+    while (workingAddress < stackAddressBeforePush)   pTmgrGlobal->unTaintMemory<8>(workingAddress++);
 } // sPUSHF
