@@ -12,49 +12,49 @@ void cSHRD(INS &ins);
 
 // SIMULATE 
 template<UINT32 lengthInBits> 
-void sSHL_IM(THREADID tid, UINT32 maskedDepl, ADDRINT writeAddr ADDRESS_DEBUG);        
+void sSHL_IM(THREADID tid, UINT32 maskedDepl, ADDRINT writeAddr, ADDRINT insAddress);        
 template<UINT32 lengthInBits> 
-void sSHL_IR(THREADID tid, UINT32 maskedDepl, REG reg, ADDRINT regValue ADDRESS_DEBUG);
+void sSHL_IR(THREADID tid, UINT32 maskedDepl, REG reg, ADDRINT regValue, ADDRINT insAddress);
 template<UINT32 lengthInBits> 
-void sSHL_RM(THREADID tid, ADDRINT regCLValue, ADDRINT writeAddress ADDRESS_DEBUG);
+void sSHL_RM(THREADID tid, ADDRINT regCLValue, ADDRINT writeAddress, ADDRINT insAddress);
 template<UINT32 lengthInBits> 
-void sSHL_RR(THREADID tid, ADDRINT regCLValue, REG reg, ADDRINT regValue ADDRESS_DEBUG);
+void sSHL_RR(THREADID tid, ADDRINT regCLValue, REG reg, ADDRINT regValue, ADDRINT insAddress);
         
 template<UINT32 lengthInBits> 
-void sSHR_IM(THREADID tid, UINT32 maskedDepl, ADDRINT writeAddr ADDRESS_DEBUG);        
+void sSHR_IM(THREADID tid, UINT32 maskedDepl, ADDRINT writeAddr, ADDRINT insAddress);        
 template<UINT32 lengthInBits> 
-void sSHR_IR(THREADID tid, UINT32 maskedDepl, REG reg, ADDRINT regValue ADDRESS_DEBUG);
+void sSHR_IR(THREADID tid, UINT32 maskedDepl, REG reg, ADDRINT regValue, ADDRINT insAddress);
 template<UINT32 lengthInBits> 
-void sSHR_RM(THREADID tid, ADDRINT regCLValue, ADDRINT writeAddress ADDRESS_DEBUG);
+void sSHR_RM(THREADID tid, ADDRINT regCLValue, ADDRINT writeAddress, ADDRINT insAddress);
 template<UINT32 lengthInBits> 
-void sSHR_RR(THREADID tid, ADDRINT regCLValue, REG reg, ADDRINT regValue ADDRESS_DEBUG);
+void sSHR_RR(THREADID tid, ADDRINT regCLValue, REG reg, ADDRINT regValue, ADDRINT insAddress);
 
 template<UINT32 lengthInBits> 
-void sSAR_IM(THREADID tid, UINT32 maskedDepl, ADDRINT writeAddr ADDRESS_DEBUG);        
+void sSAR_IM(THREADID tid, UINT32 maskedDepl, ADDRINT writeAddr, ADDRINT insAddress);        
 template<UINT32 lengthInBits> 
-void sSAR_IR(THREADID tid, UINT32 maskedDepl, REG reg, ADDRINT regValue ADDRESS_DEBUG);
+void sSAR_IR(THREADID tid, UINT32 maskedDepl, REG reg, ADDRINT regValue, ADDRINT insAddress);
 template<UINT32 lengthInBits> 
-void sSAR_RM(THREADID tid, ADDRINT regCLValue, ADDRINT writeAddress ADDRESS_DEBUG);
+void sSAR_RM(THREADID tid, ADDRINT regCLValue, ADDRINT writeAddress, ADDRINT insAddress);
 template<UINT32 lengthInBits> 
-void sSAR_RR(THREADID tid, ADDRINT regCLValue, REG reg, ADDRINT regValue ADDRESS_DEBUG);
+void sSAR_RR(THREADID tid, ADDRINT regCLValue, REG reg, ADDRINT regValue, ADDRINT insAddress);
         
 template<UINT32 lengthInBits> 
-void sSHLD_IM(THREADID tid, UINT32 maskedDepl, REG regSrc, ADDRINT regSrcValue, ADDRINT writeAddr ADDRESS_DEBUG);        
+void sSHLD_IM(THREADID tid, UINT32 maskedDepl, REG regSrc, ADDRINT regSrcValue, ADDRINT writeAddr, ADDRINT insAddress);        
 template<UINT32 lengthInBits> 
-void sSHLD_IR(THREADID tid, UINT32 maskedDepl, REG regSrc, ADDRINT regSrcValue, REG regSrcDest, ADDRINT regSrcDestValue ADDRESS_DEBUG);
+void sSHLD_IR(THREADID tid, UINT32 maskedDepl, REG regSrc, ADDRINT regSrcValue, REG regSrcDest, ADDRINT regSrcDestValue, ADDRINT insAddress);
 template<UINT32 lengthInBits> 
-void sSHLD_RM(THREADID tid, ADDRINT regCLValue, REG regSrc, ADDRINT regSrcValue, ADDRINT writeAddress ADDRESS_DEBUG);
+void sSHLD_RM(THREADID tid, ADDRINT regCLValue, REG regSrc, ADDRINT regSrcValue, ADDRINT writeAddress, ADDRINT insAddress);
 template<UINT32 lengthInBits> 
-void sSHLD_RR(THREADID tid, ADDRINT regCLValue, REG regSrc, ADDRINT regSrcValue, REG regSrcDest, ADDRINT regSrcDestValue ADDRESS_DEBUG);
+void sSHLD_RR(THREADID tid, ADDRINT regCLValue, REG regSrc, ADDRINT regSrcValue, REG regSrcDest, ADDRINT regSrcDestValue, ADDRINT insAddress);
  
 template<UINT32 lengthInBits> 
-void sSHRD_IM(THREADID tid, UINT32 maskedDepl, REG regSrc, ADDRINT regSrcValue, ADDRINT writeAddr ADDRESS_DEBUG);        
+void sSHRD_IM(THREADID tid, UINT32 maskedDepl, REG regSrc, ADDRINT regSrcValue, ADDRINT writeAddr, ADDRINT insAddress);        
 template<UINT32 lengthInBits> 
-void sSHRD_IR(THREADID tid, UINT32 maskedDepl, REG regSrc, ADDRINT regSrcValue, REG regSrcDest, ADDRINT regSrcDestValue ADDRESS_DEBUG);
+void sSHRD_IR(THREADID tid, UINT32 maskedDepl, REG regSrc, ADDRINT regSrcValue, REG regSrcDest, ADDRINT regSrcDestValue, ADDRINT insAddress);
 template<UINT32 lengthInBits> 
-void sSHRD_RM(THREADID tid, ADDRINT regCLValue, REG regSrc, ADDRINT regSrcValue, ADDRINT writeAddress ADDRESS_DEBUG);
+void sSHRD_RM(THREADID tid, ADDRINT regCLValue, REG regSrc, ADDRINT regSrcValue, ADDRINT writeAddress, ADDRINT insAddress);
 template<UINT32 lengthInBits> 
-void sSHRD_RR(THREADID tid, ADDRINT regCLValue, REG regSrc, ADDRINT regSrcValue, REG regSrcDest, ADDRINT regSrcDestValue ADDRESS_DEBUG);
+void sSHRD_RR(THREADID tid, ADDRINT regCLValue, REG regSrc, ADDRINT regSrcValue, REG regSrcDest, ADDRINT regSrcDestValue, ADDRINT insAddress);
 
 //  FLAGS 
 // marquage flags spécifique pour SHL, déplacement non marqué

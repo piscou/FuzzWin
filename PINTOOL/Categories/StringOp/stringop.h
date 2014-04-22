@@ -14,13 +14,13 @@ void cSTOS(INS &ins, UINT32 size);
 ADDRINT PIN_FAST_ANALYSIS_CALL returnArg (BOOL arg);
 
 template<UINT32 lengthInBits> 
-void sMOVS(ADDRINT count, ADDRINT flagsValue, ADDRINT readAddress, ADDRINT writeAddress ADDRESS_DEBUG);
+void sMOVS(ADDRINT count, ADDRINT flagsValue, ADDRINT readAddress, ADDRINT writeAddress, ADDRINT insAddress);
 
 template<UINT32 lengthInBits> 
-void sLODS(THREADID tid, ADDRINT count, ADDRINT flagsValue, ADDRINT readAddress ADDRESS_DEBUG);
+void sLODS(THREADID tid, ADDRINT count, ADDRINT flagsValue, ADDRINT readAddress, ADDRINT insAddress);
 
 template<UINT32 lengthInBits> 
-void sSTOS(THREADID tid, ADDRINT count, ADDRINT flagsValue, ADDRINT writeAddress ADDRESS_DEBUG);
+void sSTOS(THREADID tid, ADDRINT count, ADDRINT flagsValue, ADDRINT writeAddress, ADDRINT insAddress);
 
 template<UINT32 lengthInBits> 
 void sSCAS(THREADID tid, ADDRINT address);

@@ -135,8 +135,6 @@ void FUZZWIN_GUI::initGroupOptions()
     _timeStampEnabled      = new QCheckBox("Horodatage des logs",           _groupOptions);
     _hashFilesEnabled      = new QCheckBox("Hash des entrées générées",     _groupOptions);
     
-    _logAsmEnabled         = new QCheckBox("Log de déssasemblage", _groupOptions); 
-    _logTaintEnabled       = new QCheckBox("Log de marquage",      _groupOptions);
     _maxConstraints        = new QSpinBox(_groupOptions);
     _maxConstraints->setRange(1, 1000000); // constraintes de 1 à 1 million
     _maxTime               = new QTimeEdit(_groupOptions);
@@ -155,13 +153,11 @@ void FUZZWIN_GUI::initGroupOptions()
     _gLayout1->addWidget(_maxTime,               4, 0, 1, 1);
     _gLayout1->addWidget(_bytesToTaintEnabled,   5, 0, 1, 1);
     _gLayout1->addWidget(_listOfBytesToTaint,    6, 0, 1, 1);
-    _gLayout1->addWidget(_logAsmEnabled,         7, 0, 1, 1);
-    _gLayout1->addWidget(_logTaintEnabled,       8, 0, 1, 1);
-    _gLayout1->addWidget(_verboseEnabled,        9, 0, 1, 1);    
-    _gLayout1->addWidget(_keepfilesEnabled,      10, 0, 1, 1);
-    _gLayout1->addWidget(_traceOnlyEnabled,      11, 0, 1, 1);
-    _gLayout1->addWidget(_timeStampEnabled,      12, 0, 1, 1);
-    _gLayout1->addWidget(_hashFilesEnabled,      13, 0, 1, 1);
+    _gLayout1->addWidget(_verboseEnabled,        7, 0, 1, 1);    
+    _gLayout1->addWidget(_keepfilesEnabled,      8, 0, 1, 1);
+    _gLayout1->addWidget(_traceOnlyEnabled,      9, 0, 1, 1);
+    _gLayout1->addWidget(_timeStampEnabled,      10, 0, 1, 1);
+    _gLayout1->addWidget(_hashFilesEnabled,      11, 0, 1, 1);
 }
     
 void FUZZWIN_GUI::initGroupResultats()
@@ -539,9 +535,7 @@ void FUZZWIN_GUI::startSession()
          cmdLineOptions += " -range " + std::string(qPrintable(_listOfBytesToTaint->text()));
     }
 
-    if (_logAsmEnabled->isChecked())   cmdLineOptions += " -logasm" ;
-    if (_logTaintEnabled->isChecked()) cmdLineOptions += " -logtaint" ;
-
+    if (_verboseEnabled->isChecked())   cmdLineOptions += " -verbose" ;
     
     /*****************************************************************/
     /** CREATION DE L'ALGORITHME ET AFFECTATION A UN NOUVEAU THREAD **/
@@ -636,9 +630,11 @@ void FUZZWIN_GUI::saveLog_clicked()
 
     if (filename.isNull()) return;  // bouton 'annuler' 
 
+    // choix du nom de fichier
     QFile logFile(filename);
     if (!logFile.open(QIODevice::WriteOnly | QIODevice::Text))   return; // erreur d'ouverture
 
+    // récupération du contenu de la fenêtre de log, et sauvegarde.
     QTextStream out(&logFile);
     out << _logWindow->toPlainText();
     logFile.close();

@@ -23,7 +23,7 @@ template<UINT32 lengthInBits> void PUSH::sUpdateEspTaint(TaintManager_Thread *pT
 }
 
 template<UINT32 lengthInBits> 
-void PUSH::sPUSH_M(THREADID tid, ADDRINT readAddress, ADDRINT stackAddressBeforePush ADDRESS_DEBUG) 
+void PUSH::sPUSH_M(THREADID tid, ADDRINT readAddress, ADDRINT stackAddressBeforePush, ADDRINT insAddress) 
 {   
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
 
@@ -40,7 +40,7 @@ void PUSH::sPUSH_M(THREADID tid, ADDRINT readAddress, ADDRINT stackAddressBefore
         {
             if (pTmgrGlobal->isMemoryTainted<8>(readAddress)) // octet source marqué ?
             {    
-                _LOGTAINT("PUSHM" << lengthInBits);
+                _LOGTAINT(tid, insAddress, "PUSHM" + decstr(lengthInBits));
                 // marquage de l'octet de la pile avec l'octet de la mémoire
                 pTmgrGlobal->updateMemoryTaint<8>(espAddress, std::make_shared<TaintByte>(
                     X_ASSIGN,
@@ -52,7 +52,7 @@ void PUSH::sPUSH_M(THREADID tid, ADDRINT readAddress, ADDRINT stackAddressBefore
     }
 } //sPUSH_M
 
-template<UINT32 lengthInBits> void PUSH::sPUSH_R(THREADID tid, REG reg, ADDRINT stackAddressBeforePush ADDRESS_DEBUG) 
+template<UINT32 lengthInBits> void PUSH::sPUSH_R(THREADID tid, REG reg, ADDRINT stackAddressBeforePush, ADDRINT insAddress) 
 {
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);    
     
@@ -70,7 +70,7 @@ template<UINT32 lengthInBits> void PUSH::sPUSH_R(THREADID tid, REG reg, ADDRINT 
         {
             if (pTmgrTls->isRegisterPartTainted(regIndex, regPart)) // octet marqué ?
             {    
-                _LOGTAINT("PUSHR" << lengthInBits << " octet " << regPart);
+                _LOGTAINT(tid, insAddress, "PUSHR" + decstr(lengthInBits) + " octet " + decstr(regPart));
                 pTmgrGlobal->updateMemoryTaint<8>(espAddress, std::make_shared<TaintByte>(
                     X_ASSIGN,
                     ObjectSource(pTmgrTls->getRegisterPartTaint(regIndex, regPart))));    
@@ -80,7 +80,7 @@ template<UINT32 lengthInBits> void PUSH::sPUSH_R(THREADID tid, REG reg, ADDRINT 
     }
 } // sPUSH_R
 
-template<UINT32 lengthInBits> void PUSH::sPUSH_R_STACK(THREADID tid, REG reg, ADDRINT stackAddressBeforePush ADDRESS_DEBUG) 
+template<UINT32 lengthInBits> void PUSH::sPUSH_R_STACK(THREADID tid, REG reg, ADDRINT stackAddressBeforePush, ADDRINT insAddress) 
 {
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);    
    
@@ -114,7 +114,7 @@ template<UINT32 lengthInBits> void PUSH::sPUSH_R_STACK(THREADID tid, REG reg, AD
     }
 } // sPUSH_R_STACK
 
-template<UINT32 lengthInBits> void PUSH::sPUSH_I(THREADID tid, ADDRINT stackAddressBeforePush ADDRESS_DEBUG)
+template<UINT32 lengthInBits> void PUSH::sPUSH_I(THREADID tid, ADDRINT stackAddressBeforePush, ADDRINT insAddress)
 { 
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);    
    
@@ -126,7 +126,7 @@ template<UINT32 lengthInBits> void PUSH::sPUSH_I(THREADID tid, ADDRINT stackAddr
 } // sPUSH_I
 
 template<UINT32 lengthInBits>
-void PUSH::sPUSHF(THREADID tid, ADDRINT regFlagsValue, ADDRINT stackAddressBeforePush ADDRESS_DEBUG)
+void PUSH::sPUSHF(THREADID tid, ADDRINT regFlagsValue, ADDRINT stackAddressBeforePush, ADDRINT insAddress)
 {
     // lengthInBits == 16 <-> PUSHF, lengthInBits == 32 <-> PUSHFD, lengthInBits == 64 <-> PUSHFQ
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);    

@@ -9,7 +9,7 @@ void FLAGOP::cCLC_STC(INS &ins)
     INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR) sCLC_STC,
         IARG_FAST_ANALYSIS_CALL,
         IARG_THREAD_ID,
-        CALLBACK_DEBUG IARG_END);
+        IARG_INST_PTR, IARG_END);
 } // cCLC
 
 void FLAGOP::cCMC(INS &ins)
@@ -19,7 +19,7 @@ void FLAGOP::cCMC(INS &ins)
     INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR) sCMC,
         IARG_FAST_ANALYSIS_CALL,
         IARG_THREAD_ID,
-        CALLBACK_DEBUG IARG_END);
+        IARG_INST_PTR, IARG_END);
 } // cCMC
 
 void FLAGOP::cLAHF(INS &ins)
@@ -29,7 +29,7 @@ void FLAGOP::cLAHF(INS &ins)
     INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR) sLAHF,
         IARG_THREAD_ID,
         IARG_REG_VALUE, REG_GFLAGS, // valeur des flags (avant ou apres exécution car ils restent inchangés)
-        CALLBACK_DEBUG IARG_END);
+        IARG_INST_PTR, IARG_END);
 } // cLAHF
 
 
@@ -39,7 +39,7 @@ void FLAGOP::cSAHF(INS &ins)
     // pas besoin de la valeur de AH : soit il est marqué, soit les flags seront démarqués
     INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR) sSAHF,
         IARG_THREAD_ID,
-        CALLBACK_DEBUG IARG_END);
+        IARG_INST_PTR, IARG_END);
 } // cSAHF
 
 void FLAGOP::cSALC(INS &ins)
@@ -60,7 +60,7 @@ void FLAGOP::cSALC(INS &ins)
 
 // SIMULATE
 
-void PIN_FAST_ANALYSIS_CALL FLAGOP::sCLC_STC(THREADID tid ADDRESS_DEBUG)
+void PIN_FAST_ANALYSIS_CALL FLAGOP::sCLC_STC(THREADID tid, ADDRINT insAddress)
 {
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     
@@ -68,7 +68,7 @@ void PIN_FAST_ANALYSIS_CALL FLAGOP::sCLC_STC(THREADID tid ADDRESS_DEBUG)
     pTmgrTls->unTaintCarryFlag();
 } // sCLC
 
-void PIN_FAST_ANALYSIS_CALL FLAGOP::sCMC(THREADID tid ADDRESS_DEBUG)
+void PIN_FAST_ANALYSIS_CALL FLAGOP::sCMC(THREADID tid, ADDRINT insAddress)
 {
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     
@@ -80,7 +80,7 @@ void PIN_FAST_ANALYSIS_CALL FLAGOP::sCMC(THREADID tid ADDRESS_DEBUG)
     }
 } // sCMC
 
-void FLAGOP::sLAHF(THREADID tid, ADDRINT regFlagsValue ADDRESS_DEBUG)
+void FLAGOP::sLAHF(THREADID tid, ADDRINT regFlagsValue, ADDRINT insAddress)
 {
     // AH ← EFLAGS(SF:ZF:0:AF:0:PF:1:CF)
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
@@ -133,7 +133,7 @@ void FLAGOP::sLAHF(THREADID tid, ADDRINT regFlagsValue ADDRESS_DEBUG)
     }
 } // sLAHF
 
-void FLAGOP::sSAHF(THREADID tid ADDRESS_DEBUG)
+void FLAGOP::sSAHF(THREADID tid, ADDRINT insAddress)
 {
     // EFLAGS(SF:ZF:0:AF:0:PF:1:CF) -> AH 
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
@@ -178,7 +178,7 @@ void FLAGOP::sSALC(THREADID tid, ADDRINT regALValue, ADDRINT insAddress)
     // insertion de la contrainte, si CF était marqué
     if (pTmgrTls->isCarryFlagTainted()) 
     {
-        _LOGTAINT("SALC");
+        _LOGTAINT(tid, insAddress, "SALC");
         
         // test de la valeur d'AH pour en déduire la valeur de CF avant
         bool valueCF = (regALValue == 0) ? false : true;

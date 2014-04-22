@@ -13,11 +13,11 @@ namespace FLAGOP
     void cSALC(INS &ins);
 
     // SIMULATE
-    void PIN_FAST_ANALYSIS_CALL sCLC_STC(THREADID tid ADDRESS_DEBUG);
-    void PIN_FAST_ANALYSIS_CALL sCMC(THREADID tid ADDRESS_DEBUG);
+    void PIN_FAST_ANALYSIS_CALL sCLC_STC(THREADID tid, ADDRINT insAddress);
+    void PIN_FAST_ANALYSIS_CALL sCMC(THREADID tid, ADDRINT insAddress);
 
-    void sLAHF(THREADID tid, ADDRINT regFlagsValue ADDRESS_DEBUG);
-    void sSAHF(THREADID tid ADDRESS_DEBUG);
+    void sLAHF(THREADID tid, ADDRINT regFlagsValue, ADDRINT insAddress);
+    void sSAHF(THREADID tid, ADDRINT insAddress);
 
     void sSALC(THREADID tid, ADDRINT regALValue, ADDRINT insAddress);
 } // namespace FLAGOP

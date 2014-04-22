@@ -16,92 +16,92 @@ void fTaintLOGICAL(TaintManager_Thread *pTmgr, const TaintPtr &resultPtr);
 
 // SIMULATE 
 template<UINT32 lengthInBits> 
-void sAND_IM(THREADID tid, ADDRINT value, ADDRINT writeAddress ADDRESS_DEBUG);
+void sAND_IM(THREADID tid, ADDRINT value, ADDRINT writeAddress, ADDRINT insAddress);
 template<UINT32 lengthInBits> 
-void sAND_IR(THREADID tid, ADDRINT value, REG reg, ADDRINT regValue ADDRESS_DEBUG);
+void sAND_IR(THREADID tid, ADDRINT value, REG reg, ADDRINT regValue, ADDRINT insAddress);
 template<UINT32 lengthInBits> 
-void sAND_RM(THREADID tid, REG regSrc, ADDRINT srcValue, ADDRINT writeAddress ADDRESS_DEBUG);
+void sAND_RM(THREADID tid, REG regSrc, ADDRINT srcValue, ADDRINT writeAddress, ADDRINT insAddress);
 template<UINT32 lengthInBits> 
-void sAND_MR(THREADID tid, ADDRINT readAddress, REG regSrcDest, ADDRINT destValue ADDRESS_DEBUG);
+void sAND_MR(THREADID tid, ADDRINT readAddress, REG regSrcDest, ADDRINT destValue, ADDRINT insAddress);
 template<UINT32 lengthInBits> 
-void sAND_RR(THREADID tid, REG regSrc, ADDRINT srcValue, REG regSrcDest, ADDRINT destValue ADDRESS_DEBUG);
+void sAND_RR(THREADID tid, REG regSrc, ADDRINT srcValue, REG regSrcDest, ADDRINT destValue, ADDRINT insAddress);
 
 template<> 
-void sAND_IM<8>(THREADID tid, ADDRINT value, ADDRINT writeAddress ADDRESS_DEBUG);
+void sAND_IM<8>(THREADID tid, ADDRINT value, ADDRINT writeAddress, ADDRINT insAddress);
 template<> 
-void sAND_IR<8>(THREADID tid, ADDRINT value, REG reg, ADDRINT unUsed ADDRESS_DEBUG);
+void sAND_IR<8>(THREADID tid, ADDRINT value, REG reg, ADDRINT unUsed, ADDRINT insAddress);
 template<> 
-void sAND_RM<8>(THREADID tid, REG regSrc, ADDRINT srcValue, ADDRINT writeAddress ADDRESS_DEBUG);
+void sAND_RM<8>(THREADID tid, REG regSrc, ADDRINT srcValue, ADDRINT writeAddress, ADDRINT insAddress);
 template<> 
-void sAND_MR<8>(THREADID tid, ADDRINT readAddress, REG regSrcDest, ADDRINT destValue ADDRESS_DEBUG);
+void sAND_MR<8>(THREADID tid, ADDRINT readAddress, REG regSrcDest, ADDRINT destValue, ADDRINT insAddress);
 template<> 
-void sAND_RR<8>(THREADID tid, REG regSrc, ADDRINT srcValue, REG regSrcDest, ADDRINT destValue ADDRESS_DEBUG);
+void sAND_RR<8>(THREADID tid, REG regSrc, ADDRINT srcValue, REG regSrcDest, ADDRINT destValue, ADDRINT insAddress);
 
 template<UINT32 lengthInBits> 
-void sOR_IM(THREADID tid, ADDRINT value, ADDRINT writeAddress ADDRESS_DEBUG);
+void sOR_IM(THREADID tid, ADDRINT value, ADDRINT writeAddress, ADDRINT insAddress);
 template<UINT32 lengthInBits> 
-void sOR_IR(THREADID tid, ADDRINT value, REG reg, ADDRINT regValue ADDRESS_DEBUG);
+void sOR_IR(THREADID tid, ADDRINT value, REG reg, ADDRINT regValue, ADDRINT insAddress);
 template<UINT32 lengthInBits> 
-void sOR_RM(THREADID tid, REG regSrc, ADDRINT srcValue, ADDRINT writeAddress ADDRESS_DEBUG);
+void sOR_RM(THREADID tid, REG regSrc, ADDRINT srcValue, ADDRINT writeAddress, ADDRINT insAddress);
 template<UINT32 lengthInBits> 
-void sOR_MR(THREADID tid, ADDRINT readAddress, REG regSrcDest, ADDRINT destValue ADDRESS_DEBUG);
+void sOR_MR(THREADID tid, ADDRINT readAddress, REG regSrcDest, ADDRINT destValue, ADDRINT insAddress);
 template<UINT32 lengthInBits> 
-void sOR_RR(THREADID tid, REG regSrc, ADDRINT srcValue, REG regSrcDest, ADDRINT destValue ADDRESS_DEBUG);
+void sOR_RR(THREADID tid, REG regSrc, ADDRINT srcValue, REG regSrcDest, ADDRINT destValue, ADDRINT insAddress);
 
 template<> 
-void sOR_IM<8>(THREADID tid, ADDRINT value, ADDRINT writeAddress ADDRESS_DEBUG);
+void sOR_IM<8>(THREADID tid, ADDRINT value, ADDRINT writeAddress, ADDRINT insAddress);
 template<> 
-void sOR_IR<8>(THREADID tid, ADDRINT value, REG reg, ADDRINT unUsed ADDRESS_DEBUG);
+void sOR_IR<8>(THREADID tid, ADDRINT value, REG reg, ADDRINT unUsed, ADDRINT insAddress);
 template<> 
-void sOR_RM<8>(THREADID tid, REG regSrc, ADDRINT srcValue, ADDRINT writeAddress ADDRESS_DEBUG);
+void sOR_RM<8>(THREADID tid, REG regSrc, ADDRINT srcValue, ADDRINT writeAddress, ADDRINT insAddress);
 template<> 
-void sOR_MR<8>(THREADID tid, ADDRINT readAddress, REG regSrcDest, ADDRINT destValue ADDRESS_DEBUG);
+void sOR_MR<8>(THREADID tid, ADDRINT readAddress, REG regSrcDest, ADDRINT destValue, ADDRINT insAddress);
 template<> 
-void sOR_RR<8>(THREADID tid, REG regSrc, ADDRINT srcValue, REG regSrcDest, ADDRINT destValue ADDRESS_DEBUG);
+void sOR_RR<8>(THREADID tid, REG regSrc, ADDRINT srcValue, REG regSrcDest, ADDRINT destValue, ADDRINT insAddress);
 
 template<UINT32 lengthInBits> 
-void sXOR_IM(THREADID tid, ADDRINT value, ADDRINT writeAddress ADDRESS_DEBUG);
+void sXOR_IM(THREADID tid, ADDRINT value, ADDRINT writeAddress, ADDRINT insAddress);
 template<UINT32 lengthInBits> 
-void sXOR_IR(THREADID tid, ADDRINT value, REG reg, ADDRINT regValue ADDRESS_DEBUG);
+void sXOR_IR(THREADID tid, ADDRINT value, REG reg, ADDRINT regValue, ADDRINT insAddress);
 template<UINT32 lengthInBits> 
-void sXOR_RM(THREADID tid, REG regSrc, ADDRINT srcValue, ADDRINT writeAddress ADDRESS_DEBUG);
+void sXOR_RM(THREADID tid, REG regSrc, ADDRINT srcValue, ADDRINT writeAddress, ADDRINT insAddress);
 template<UINT32 lengthInBits> 
-void sXOR_MR(THREADID tid, ADDRINT readAddress, REG regSrcDest, ADDRINT destValue ADDRESS_DEBUG);
+void sXOR_MR(THREADID tid, ADDRINT readAddress, REG regSrcDest, ADDRINT destValue, ADDRINT insAddress);
 template<UINT32 lengthInBits> 
-void sXOR_RR(THREADID tid, REG regSrc, ADDRINT srcValue, REG regSrcDest, ADDRINT destValue ADDRESS_DEBUG);
+void sXOR_RR(THREADID tid, REG regSrc, ADDRINT srcValue, REG regSrcDest, ADDRINT destValue, ADDRINT insAddress);
 template<UINT32 lengthInBits> 
-void sXOR_RR_EQUAL(THREADID tid, REG reg ADDRESS_DEBUG);
+void sXOR_RR_EQUAL(THREADID tid, REG reg, ADDRINT insAddress);
 
 template<> 
-void sXOR_IM<8>(THREADID tid, ADDRINT value, ADDRINT writeAddress ADDRESS_DEBUG);
+void sXOR_IM<8>(THREADID tid, ADDRINT value, ADDRINT writeAddress, ADDRINT insAddress);
 template<> 
-void sXOR_IR<8>(THREADID tid, ADDRINT value, REG reg, ADDRINT unUsed ADDRESS_DEBUG);
+void sXOR_IR<8>(THREADID tid, ADDRINT value, REG reg, ADDRINT unUsed, ADDRINT insAddress);
 template<> 
-void sXOR_RM<8>(THREADID tid, REG regSrc, ADDRINT srcValue, ADDRINT writeAddress ADDRESS_DEBUG);
+void sXOR_RM<8>(THREADID tid, REG regSrc, ADDRINT srcValue, ADDRINT writeAddress, ADDRINT insAddress);
 template<> 
-void sXOR_MR<8>(THREADID tid, ADDRINT readAddress, REG regSrcDest, ADDRINT destValue ADDRESS_DEBUG);
+void sXOR_MR<8>(THREADID tid, ADDRINT readAddress, REG regSrcDest, ADDRINT destValue, ADDRINT insAddress);
 template<> 
-void sXOR_RR<8>(THREADID tid, REG regSrc, ADDRINT srcValue, REG regSrcDest, ADDRINT destValue ADDRESS_DEBUG);
+void sXOR_RR<8>(THREADID tid, REG regSrc, ADDRINT srcValue, REG regSrcDest, ADDRINT destValue, ADDRINT insAddress);
 
 template<UINT32 lengthInBits> 
-void sTEST_IM(THREADID tid, ADDRINT value, ADDRINT writeAddress ADDRESS_DEBUG);
+void sTEST_IM(THREADID tid, ADDRINT value, ADDRINT writeAddress, ADDRINT insAddress);
 template<UINT32 lengthInBits> 
-void sTEST_IR(THREADID tid, ADDRINT value, REG reg, ADDRINT regValue ADDRESS_DEBUG);
+void sTEST_IR(THREADID tid, ADDRINT value, REG reg, ADDRINT regValue, ADDRINT insAddress);
 template<UINT32 lengthInBits> 
-void sTEST_RM(THREADID tid, REG regSrc, ADDRINT srcValue, ADDRINT writeAddress ADDRESS_DEBUG);
+void sTEST_RM(THREADID tid, REG regSrc, ADDRINT srcValue, ADDRINT writeAddress, ADDRINT insAddress);
 template<UINT32 lengthInBits> 
-void sTEST_MR(THREADID tid, ADDRINT readAddress, REG regSrcDest, ADDRINT destValue ADDRESS_DEBUG);
+void sTEST_MR(THREADID tid, ADDRINT readAddress, REG regSrcDest, ADDRINT destValue, ADDRINT insAddress);
 template<UINT32 lengthInBits> 
-void sTEST_RR(THREADID tid, REG regSrc, ADDRINT srcValue, REG regSrcDest, ADDRINT destValue ADDRESS_DEBUG);
+void sTEST_RR(THREADID tid, REG regSrc, ADDRINT srcValue, REG regSrcDest, ADDRINT destValue, ADDRINT insAddress);
 template<UINT32 lengthInBits> 
-void sTEST_RR_EQUAL(THREADID tid, REG regSrc, ADDRINT srcValue ADDRESS_DEBUG);
+void sTEST_RR_EQUAL(THREADID tid, REG regSrc, ADDRINT srcValue, ADDRINT insAddress);
 
 template<UINT32 lengthInBits> 
-void sNOT_M(ADDRINT writeAddress ADDRESS_DEBUG);
+void sNOT_M(ADDRINT writeAddress, ADDRINT insAddress);
 template<UINT32 lengthInBits> 
-void sNOT_R(THREADID tid, REG reg ADDRESS_DEBUG);
+void sNOT_R(THREADID tid, REG reg, ADDRINT insAddress);
 template<> 
-void sNOT_R<8>(THREADID tid, REG reg ADDRESS_DEBUG);
+void sNOT_R<8>(THREADID tid, REG reg, ADDRINT insAddress);
 } // namespace LOGICAL
 
 #include "LOGICAL.hpp"

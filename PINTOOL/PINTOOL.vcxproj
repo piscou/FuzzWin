@@ -464,6 +464,8 @@ del "$(TargetDir)$(TargetName).exp"</Command>
     <ClInclude Include="Core\TaintUtilities\utils.h" />
     <ClInclude Include="Core\TaintUtilities\utils.hpp" />
     <ClInclude Include="Core\Translate\translate.h" />
+    <ClInclude Include="Core\Translate\translateToIR.h" />
+    <ClInclude Include="Core\Translate\translateSMTLIB.h" />
     <ClInclude Include="pintool.h" />
   </ItemGroup>
   <ItemGroup>
@@ -491,7 +493,8 @@ del "$(TargetDir)$(TargetName).exp"</Command>
     <ClCompile Include="Core\TaintEngine\ObjectSource.cpp" />
     <ClCompile Include="Core\TaintEngine\TaintObject.cpp" />
     <ClCompile Include="Core\TaintUtilities\utils.cpp" />
-    <ClCompile Include="Core\Translate\translate.cpp" />
+    <ClCompile Include="Core\Translate\translateToIR.cpp" />
+    <ClCompile Include="Core\Translate\translateSMTLIB.cpp" />
     <ClCompile Include="initialize.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>

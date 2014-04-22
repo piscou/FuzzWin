@@ -54,6 +54,10 @@ protected:
 
     // sources de cet objet
     std::vector<ObjectSource> _sources;  
+
+    // Mode verbeux uniquement : détails supplémentaires sur l'objet
+    // En particulier : adresse et nom de l'instruction ayant généré cet objet.
+    std::string _additionalData;
     
     // constructeurs privés : classe non instanciable
     // obligation de passer par les classes filles
@@ -64,10 +68,7 @@ protected:
                                     const ObjectSource &os3);
     Taint(Relation rel, UINT32 lengthInBits, const ObjectSource &os1, const ObjectSource &os2,
                                     const ObjectSource &os3, const ObjectSource &os4);
-
 public:   
-    ~Taint();  
-
     // renvoie la longueur en bits de l'objet
     const   UINT32 getLength() const;
     
@@ -87,9 +88,9 @@ public:
     const   std::string& getName() const;
 
     // retourne les sources de l'objet
-    std::vector<ObjectSource>& getSources();
+    const std::vector<ObjectSource>& getSources() const;
     // retourne la source 'i' de l'objet
-    ObjectSource& getSources(UINT32 i);
+    const ObjectSource& getSource(UINT32 i) const;
 
     // ajoute l'objet marque 'taintPtr' en tant que source à l'objet
     void addSource(const TaintPtr &taintPtr);
@@ -99,8 +100,14 @@ public:
     // ajoute la valeur constante 'value' sur 'lengthInBits' bits en tant que source à l'objet
     template<UINT32 lengthInBits> inline void addConstantAsASource(ADDRINT value) 
     { 
-        this->_sources.push_back(ObjectSource(lengthInBits, value)); 
+        _sources.push_back(ObjectSource(lengthInBits, value)); 
     }
+
+    // définit les détails supplémentaires pour cet objet (mode verbose)
+    void setVerboseDetails(const std::string &data);
+
+    // retourne les détails supplémentaires de cet objet (mode verbose)
+    const std::string& getVerboseDetails() const;
 };
 
 template<UINT32 lengthInBits> class TaintObject : public Taint 
@@ -113,7 +120,6 @@ public:
                               const ObjectSource &os3);
     TaintObject(Relation rel, const ObjectSource &os1, const ObjectSource &os2, 
                               const ObjectSource &os3, const ObjectSource &os4);
-    ~TaintObject();
 };
 
 

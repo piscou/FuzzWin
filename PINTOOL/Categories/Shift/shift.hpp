@@ -3,7 +3,7 @@
 /*********/
 
 template<UINT32 lengthInBits> 
-void SHIFT::sSHL_IM(THREADID tid, UINT32 maskedDepl, ADDRINT writeAddr ADDRESS_DEBUG) 
+void SHIFT::sSHL_IM(THREADID tid, UINT32 maskedDepl, ADDRINT writeAddr, ADDRINT insAddress) 
 {  
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     
@@ -29,7 +29,7 @@ void SHIFT::sSHL_IM(THREADID tid, UINT32 maskedDepl, ADDRINT writeAddr ADDRESS_D
     // dans les autres cas : marquage par SHL
     else 
     {
-        _LOGTAINT("SHLIM " << lengthInBits << " ");
+        _LOGTAINT(tid, insAddress, "SHLIM " + decstr(lengthInBits));
         ObjectSource objSrcMem(pTmgrGlobal->getMemoryTaint<lengthInBits>(writeAddr));
 
         // construction du résultat
@@ -83,7 +83,7 @@ void SHIFT::sSHL_IM(THREADID tid, UINT32 maskedDepl, ADDRINT writeAddr ADDRESS_D
 } // sSHL_IM
 
 template<UINT32 lengthInBits> 
-void SHIFT::sSHL_IR(THREADID tid, UINT32 maskedDepl, REG reg, ADDRINT regValue ADDRESS_DEBUG) 
+void SHIFT::sSHL_IR(THREADID tid, UINT32 maskedDepl, REG reg, ADDRINT regValue, ADDRINT insAddress) 
 {  
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     
@@ -110,7 +110,7 @@ void SHIFT::sSHL_IR(THREADID tid, UINT32 maskedDepl, REG reg, ADDRINT regValue A
     // dans les autres cas : marquage par SHL
     else 
     {
-        _LOGTAINT("SHLIR " << lengthInBits << " ");
+        _LOGTAINT(tid, insAddress, "SHLIR " + decstr(lengthInBits));
         ObjectSource objSrcReg(pTmgrTls->getRegisterTaint<lengthInBits>(reg, regValue));
         REGINDEX regIndex = getRegIndex(reg);
 
@@ -167,7 +167,7 @@ void SHIFT::sSHL_IR(THREADID tid, UINT32 maskedDepl, REG reg, ADDRINT regValue A
 } // sSHL_IR
 
 template<UINT32 lengthInBits> 
-void SHIFT::sSHL_RM(THREADID tid, ADDRINT regCLValue, ADDRINT writeAddress ADDRESS_DEBUG) 
+void SHIFT::sSHL_RM(THREADID tid, ADDRINT regCLValue, ADDRINT writeAddress, ADDRINT insAddress) 
 {
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     
@@ -180,12 +180,12 @@ void SHIFT::sSHL_RM(THREADID tid, ADDRINT regCLValue, ADDRINT writeAddress ADDRE
     {
         // masquage du déplacement avant appel de SHL_IM
         UINT32 maskDepl = (lengthInBits == 64) ? (regCLValue & 0x3f) : (regCLValue & 0x1f);
-        sSHL_IM<lengthInBits>(tid, maskDepl, writeAddress INSADDRESS); 
+        sSHL_IM<lengthInBits>(tid, maskDepl, writeAddress ,insAddress); 
     }
     // forcément déplacement marqué
     else
     {
-        _LOGTAINT("SHL_RM, déplacement marque, source " << ((isDestTainted) ? "marquee" : "non marquee"));
+        _LOGTAINT(tid, insAddress, "SHL_RM" + decstr(lengthInBits));
         
         // récupération du déplacement marqué
         ObjectSource objTbCount(pTmgrTls->getRegisterTaint(REG_CL));
@@ -208,7 +208,7 @@ void SHIFT::sSHL_RM(THREADID tid, ADDRINT regCLValue, ADDRINT writeAddress ADDRE
 } // sSHL_RM
 
 template<UINT32 lengthInBits> 
-void SHIFT::sSHL_RR(THREADID tid, ADDRINT regCLValue, REG reg, ADDRINT regValue ADDRESS_DEBUG) 
+void SHIFT::sSHL_RR(THREADID tid, ADDRINT regCLValue, REG reg, ADDRINT regValue, ADDRINT insAddress) 
 {
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     
@@ -221,12 +221,12 @@ void SHIFT::sSHL_RR(THREADID tid, ADDRINT regCLValue, REG reg, ADDRINT regValue 
     {
         // masquage du déplacement avant appel de SHL_IR
         UINT32 maskDepl = (lengthInBits == 64) ? (regCLValue & 0x3f) : (regCLValue & 0x1f);
-        sSHL_IR<lengthInBits>(tid, maskDepl, reg, regValue INSADDRESS); 
+        sSHL_IR<lengthInBits>(tid, maskDepl, reg, regValue ,insAddress); 
     }
     // forcément déplacement marqué
     else 
     {
-        _LOGTAINT("SHL_RR, déplacement marque, source " << ((isDestTainted) ? "marquee" : "non marquee"));
+        _LOGTAINT(tid, insAddress, "SHL_RR" + decstr(lengthInBits));
         
         // récupération du déplacement marqué
         ObjectSource objTbCount(pTmgrTls->getRegisterTaint(REG_CL));
@@ -253,7 +253,7 @@ void SHIFT::sSHL_RR(THREADID tid, ADDRINT regCLValue, REG reg, ADDRINT regValue 
 /*********/
 
 template<UINT32 lengthInBits> 
-void SHIFT::sSHR_IM(THREADID tid, UINT32 maskedDepl, ADDRINT writeAddr ADDRESS_DEBUG) 
+void SHIFT::sSHR_IM(THREADID tid, UINT32 maskedDepl, ADDRINT writeAddr, ADDRINT insAddress) 
 {  
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     
@@ -279,7 +279,7 @@ void SHIFT::sSHR_IM(THREADID tid, UINT32 maskedDepl, ADDRINT writeAddr ADDRESS_D
     }
     else // dans les autres cas : marquage par SHR
     {
-        _LOGTAINT("SHRIM " << lengthInBits << " ");
+        _LOGTAINT(tid, insAddress, "SHRIM " + decstr(lengthInBits));
         ObjectSource objSrcMem(pTmgrGlobal->getMemoryTaint<lengthInBits>(writeAddr));
 
         // construction du résultat
@@ -335,7 +335,7 @@ void SHIFT::sSHR_IM(THREADID tid, UINT32 maskedDepl, ADDRINT writeAddr ADDRESS_D
 } // sSHR_IM
 
 template<UINT32 lengthInBits> 
-void SHIFT::sSHR_IR(THREADID tid, UINT32 maskedDepl, REG reg, ADDRINT regValue ADDRESS_DEBUG) 
+void SHIFT::sSHR_IR(THREADID tid, UINT32 maskedDepl, REG reg, ADDRINT regValue, ADDRINT insAddress) 
 {  
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     
@@ -362,7 +362,7 @@ void SHIFT::sSHR_IR(THREADID tid, UINT32 maskedDepl, REG reg, ADDRINT regValue A
     }
     else // dans les autres cas : marquage par SHR
     {
-        _LOGTAINT("SHRIR " << lengthInBits << " ");
+        _LOGTAINT(tid, insAddress, "SHRIR " + decstr(lengthInBits));
         ObjectSource objSrcReg(pTmgrTls->getRegisterTaint<lengthInBits>(reg, regValue));
         REGINDEX regIndex = getRegIndex(reg);
 
@@ -419,7 +419,7 @@ void SHIFT::sSHR_IR(THREADID tid, UINT32 maskedDepl, REG reg, ADDRINT regValue A
 } // sSHR_IR
 
 template<UINT32 lengthInBits> 
-void SHIFT::sSHR_RM(THREADID tid, ADDRINT regCLValue, ADDRINT writeAddress ADDRESS_DEBUG) 
+void SHIFT::sSHR_RM(THREADID tid, ADDRINT regCLValue, ADDRINT writeAddress, ADDRINT insAddress) 
 {
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     
@@ -432,12 +432,12 @@ void SHIFT::sSHR_RM(THREADID tid, ADDRINT regCLValue, ADDRINT writeAddress ADDRE
     {
         // masquage du déplacement avant appel de SHR_IM
         UINT32 maskDepl = (lengthInBits == 64) ? (regCLValue & 0x3f) : (regCLValue & 0x1f);
-        sSHR_IM<lengthInBits>(tid, maskDepl, writeAddress INSADDRESS); 
+        sSHR_IM<lengthInBits>(tid, maskDepl, writeAddress ,insAddress); 
     }
     // forcément déplacement marqué
     else
     {
-        _LOGTAINT("SHR_RM, déplacement marque, source " << ((isDestTainted) ? "marquee" : "non marquee"));
+        _LOGTAINT(tid, insAddress, "SHR_RM" + decstr(lengthInBits));
         
         // récupération du déplacement marqué
         ObjectSource objTbCount(pTmgrTls->getRegisterTaint(REG_CL));
@@ -460,7 +460,7 @@ void SHIFT::sSHR_RM(THREADID tid, ADDRINT regCLValue, ADDRINT writeAddress ADDRE
 } // sSHR_RM
 
 template<UINT32 lengthInBits> 
-void SHIFT::sSHR_RR(THREADID tid, ADDRINT regCLValue, REG reg, ADDRINT regValue ADDRESS_DEBUG) 
+void SHIFT::sSHR_RR(THREADID tid, ADDRINT regCLValue, REG reg, ADDRINT regValue, ADDRINT insAddress) 
 {
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     
@@ -473,12 +473,12 @@ void SHIFT::sSHR_RR(THREADID tid, ADDRINT regCLValue, REG reg, ADDRINT regValue 
     {
         // masquage du déplacement avant appel de SHR_IR
         UINT32 maskDepl = (lengthInBits == 64) ? (regCLValue & 0x3f) : (regCLValue & 0x1f);
-        sSHR_IR<lengthInBits>(tid, maskDepl, reg, regValue INSADDRESS); 
+        sSHR_IR<lengthInBits>(tid, maskDepl, reg, regValue ,insAddress); 
     }
     // forcément déplacement marqué
     else
     {
-        _LOGTAINT("SHR_RR, déplacement marque, source " << ((isDestTainted) ? "marquee" : "non marquee"));
+        _LOGTAINT(tid, insAddress, "SHR_RR" + decstr(lengthInBits));
         
         // récupération du déplacement marqué
         ObjectSource objTbCount(pTmgrTls->getRegisterTaint(REG_CL));
@@ -505,7 +505,7 @@ void SHIFT::sSHR_RR(THREADID tid, ADDRINT regCLValue, REG reg, ADDRINT regValue 
 /*********/
 
 template<UINT32 lengthInBits> 
-void SHIFT::sSAR_IM(THREADID tid, UINT32 maskedDepl, ADDRINT writeAddr ADDRESS_DEBUG) 
+void SHIFT::sSAR_IM(THREADID tid, UINT32 maskedDepl, ADDRINT writeAddr, ADDRINT insAddress) 
 {  
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     
@@ -531,7 +531,7 @@ void SHIFT::sSAR_IM(THREADID tid, UINT32 maskedDepl, ADDRINT writeAddr ADDRESS_D
     }
     else // dans les autres cas : marquage par SAR
     {
-        _LOGTAINT("SARIM " << lengthInBits << " ");
+        _LOGTAINT(tid, insAddress, "SARIM " + decstr(lengthInBits));
         ObjectSource objSrcMem(pTmgrGlobal->getMemoryTaint<lengthInBits>(writeAddr));
 
         // construction du résultat
@@ -549,7 +549,7 @@ void SHIFT::sSAR_IM(THREADID tid, UINT32 maskedDepl, ADDRINT writeAddr ADDRESS_D
 } // sSAR_IM
 
 template<UINT32 lengthInBits> 
-void SHIFT::sSAR_IR(THREADID tid, UINT32 maskedDepl, REG reg, ADDRINT regValue ADDRESS_DEBUG) 
+void SHIFT::sSAR_IR(THREADID tid, UINT32 maskedDepl, REG reg, ADDRINT regValue, ADDRINT insAddress) 
 {  
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     
@@ -576,7 +576,7 @@ void SHIFT::sSAR_IR(THREADID tid, UINT32 maskedDepl, REG reg, ADDRINT regValue A
     }
     else // dans les autres cas : marquage par SAR
     {
-        _LOGTAINT("SARIR " << lengthInBits << " ");
+        _LOGTAINT(tid, insAddress, "SARIR " + decstr(lengthInBits));
         ObjectSource objSrcReg(pTmgrTls->getRegisterTaint<lengthInBits>(reg, regValue));
         REGINDEX regIndex = getRegIndex(reg);
 
@@ -595,7 +595,7 @@ void SHIFT::sSAR_IR(THREADID tid, UINT32 maskedDepl, REG reg, ADDRINT regValue A
 } // sSAR_IR
 
 template<UINT32 lengthInBits> 
-void SHIFT::sSAR_RM(THREADID tid, ADDRINT regCLValue, ADDRINT writeAddress ADDRESS_DEBUG) 
+void SHIFT::sSAR_RM(THREADID tid, ADDRINT regCLValue, ADDRINT writeAddress, ADDRINT insAddress) 
 {
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     
@@ -608,12 +608,12 @@ void SHIFT::sSAR_RM(THREADID tid, ADDRINT regCLValue, ADDRINT writeAddress ADDRE
     {
         // masquage du déplacement avant appel de SAR_IM
         UINT32 maskDepl = (lengthInBits == 64) ? (regCLValue & 0x3f) : (regCLValue & 0x1f);
-        sSAR_IM<lengthInBits>(tid, maskDepl, writeAddress INSADDRESS); 
+        sSAR_IM<lengthInBits>(tid, maskDepl, writeAddress ,insAddress); 
     }
     // forcément déplacement marqué
     else
     {
-        _LOGTAINT("SAR_RM, déplacement marque, source " << ((isDestTainted) ? "marquee" : "non marquee"));
+        _LOGTAINT(tid, insAddress, "SAR_RM" + decstr(lengthInBits));
         
         // récupération du déplacement marqué
         ObjectSource objTbCount(pTmgrTls->getRegisterTaint(REG_CL));
@@ -636,7 +636,7 @@ void SHIFT::sSAR_RM(THREADID tid, ADDRINT regCLValue, ADDRINT writeAddress ADDRE
 } // sSAR_RM
 
 template<UINT32 lengthInBits> 
-void SHIFT::sSAR_RR(THREADID tid, ADDRINT regCLValue, REG reg, ADDRINT regValue ADDRESS_DEBUG) 
+void SHIFT::sSAR_RR(THREADID tid, ADDRINT regCLValue, REG reg, ADDRINT regValue, ADDRINT insAddress) 
 {
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     
@@ -649,12 +649,12 @@ void SHIFT::sSAR_RR(THREADID tid, ADDRINT regCLValue, REG reg, ADDRINT regValue 
     {
         // masquage du déplacement avant appel de SAR_IR
         UINT32 maskDepl = (lengthInBits == 64) ? (regCLValue & 0x3f) : (regCLValue & 0x1f);
-        sSAR_IR<lengthInBits>(tid, maskDepl, reg, regValue INSADDRESS); 
+        sSAR_IR<lengthInBits>(tid, maskDepl, reg, regValue ,insAddress); 
     }
     // forcément déplacement marqué
     else
     {
-        _LOGTAINT("SAR_RR, déplacement marque, source " << ((isDestTainted) ? "marquee" : "non marquee"));
+        _LOGTAINT(tid, insAddress, "SAR_RR" + decstr(lengthInBits));
         
         // récupération du déplacement marqué
         ObjectSource objTbCount(pTmgrTls->getRegisterTaint(REG_CL));
@@ -684,7 +684,7 @@ void SHIFT::sSAR_RR(THREADID tid, ADDRINT regCLValue, REG reg, ADDRINT regValue 
 // afin d'affiner le démarquage éventuel de la destination. Valable surtout pour le marquage bit par bit
 
 template<UINT32 lengthInBits> void SHIFT::sSHLD_IM
-    (THREADID tid, UINT32 maskedDepl, REG regSrc, ADDRINT regSrcValue, ADDRINT writeAddr ADDRESS_DEBUG)
+    (THREADID tid, UINT32 maskedDepl, REG regSrc, ADDRINT regSrcValue, ADDRINT writeAddr, ADDRINT insAddress)
 { 
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     
@@ -712,7 +712,7 @@ template<UINT32 lengthInBits> void SHIFT::sSHLD_IM
     // dans les autres cas : marquage par SHL
     else 
     {
-        _LOGTAINT("SHLDIM " << lengthInBits << " ");
+        _LOGTAINT(tid, insAddress, "SHLDIM " + decstr(lengthInBits));
 
         ObjectSource objMemSrcDest = (isSrcDestTainted) 
             ? ObjectSource(pTmgrGlobal->getMemoryTaint<lengthInBits>(writeAddr))
@@ -745,7 +745,7 @@ template<UINT32 lengthInBits> void SHIFT::sSHLD_IM
 } // sSHLD_IM
 
 template<UINT32 lengthInBits> void SHIFT::sSHLD_IR
-    (THREADID tid, UINT32 maskedDepl, REG regSrc, ADDRINT regSrcValue, REG regSrcDest, ADDRINT regSrcDestValue ADDRESS_DEBUG)
+    (THREADID tid, UINT32 maskedDepl, REG regSrc, ADDRINT regSrcValue, REG regSrcDest, ADDRINT regSrcDestValue, ADDRINT insAddress)
 { 
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     
@@ -774,7 +774,7 @@ template<UINT32 lengthInBits> void SHIFT::sSHLD_IR
     // dans les autres cas : marquage par SHL
     else
     {
-        _LOGTAINT("SHLD_IR " << lengthInBits << " ");
+        _LOGTAINT(tid, insAddress, "SHLD_IR " + decstr(lengthInBits));
                
         ObjectSource objRegSrcDest = (isSrcDestTainted) 
             ? ObjectSource(pTmgrTls->getRegisterTaint<lengthInBits>(regSrcDest, regSrcDestValue))
@@ -807,7 +807,7 @@ template<UINT32 lengthInBits> void SHIFT::sSHLD_IR
 } // sSHLD_IR
 
 template<UINT32 lengthInBits> void SHIFT::sSHLD_RM
-    (THREADID tid, ADDRINT regCLValue, REG regSrc, ADDRINT regSrcValue, ADDRINT writeAddress ADDRESS_DEBUG)
+    (THREADID tid, ADDRINT regCLValue, REG regSrc, ADDRINT regSrcValue, ADDRINT writeAddress, ADDRINT insAddress)
 { 
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     
@@ -821,11 +821,11 @@ template<UINT32 lengthInBits> void SHIFT::sSHLD_RM
     {
         // masquage du déplacement avant appel de SHLD_IM
         UINT32 maskDepl = (lengthInBits == 64) ? (regCLValue & 0x3f) : (regCLValue & 0x1f);
-        sSHLD_IM<lengthInBits>(tid, maskDepl, regSrc, regSrcValue, writeAddress INSADDRESS); 
+        sSHLD_IM<lengthInBits>(tid, maskDepl, regSrc, regSrcValue, writeAddress ,insAddress); 
     }
     else // déplacement marqué. Mémoire et Bit Pattern marqués ou non  
     {
-        _LOGTAINT("SHLD_RM " << lengthInBits << " ");
+        _LOGTAINT(tid, insAddress, "SHLD_RM " + decstr(lengthInBits));
         
         ObjectSource objMemSrcDest = (isSrcDestTainted) 
             ? ObjectSource(pTmgrGlobal->getMemoryTaint<lengthInBits>(writeAddress))
@@ -860,7 +860,7 @@ template<UINT32 lengthInBits> void SHIFT::sSHLD_RM
 } // sSHLD_RM
 
 template<UINT32 lengthInBits> void SHIFT::sSHLD_RR
-    (THREADID tid, ADDRINT regCLValue, REG regSrc, ADDRINT regSrcValue, REG regSrcDest, ADDRINT regSrcDestValue ADDRESS_DEBUG)
+    (THREADID tid, ADDRINT regCLValue, REG regSrc, ADDRINT regSrcValue, REG regSrcDest, ADDRINT regSrcDestValue, ADDRINT insAddress)
 { 
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     
@@ -874,11 +874,11 @@ template<UINT32 lengthInBits> void SHIFT::sSHLD_RR
     {
         // masquage du déplacement avant appel de SHLD_IR
         UINT32 maskDepl = (lengthInBits == 64) ? (regCLValue & 0x3f) : (regCLValue & 0x1f);
-        sSHLD_IR<lengthInBits>(tid, maskDepl, regSrc, regSrcValue, regSrcDest, regSrcDestValue INSADDRESS); 
+        sSHLD_IR<lengthInBits>(tid, maskDepl, regSrc, regSrcValue, regSrcDest, regSrcDestValue ,insAddress); 
     }
     else // déplacement marqué ; Registre et Bit Pattern marqués ou non  
     {
-        _LOGTAINT("SHLD_RR " << lengthInBits << " ");
+        _LOGTAINT(tid, insAddress, "SHLD_RR " + decstr(lengthInBits));
         
         // récupération du déplacement marqué
         ObjectSource objTbCount(pTmgrTls->getRegisterTaint(REG_CL));
@@ -918,7 +918,7 @@ template<UINT32 lengthInBits> void SHIFT::sSHLD_RR
 /**********/
 
 template<UINT32 lengthInBits> void SHIFT::sSHRD_IM
-    (THREADID tid, UINT32 maskedDepl, REG regSrc, ADDRINT regSrcValue, ADDRINT writeAddr ADDRESS_DEBUG)
+    (THREADID tid, UINT32 maskedDepl, REG regSrc, ADDRINT regSrcValue, ADDRINT writeAddr, ADDRINT insAddress)
 { 
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     
@@ -946,7 +946,7 @@ template<UINT32 lengthInBits> void SHIFT::sSHRD_IM
     }
     else // dans les autres cas : marquage par SHR
     {
-        _LOGTAINT("SHRD_IM " << lengthInBits << " ");
+        _LOGTAINT(tid, insAddress, "SHRD_IM " + decstr(lengthInBits));
             
         ObjectSource objMemSrcDest = (isSrcDestTainted) 
             ? ObjectSource(pTmgrGlobal->getMemoryTaint<lengthInBits>(writeAddr))
@@ -982,7 +982,7 @@ template<UINT32 lengthInBits> void SHIFT::sSHRD_IM
 } // sSHRD_IM
 
 template<UINT32 lengthInBits> void SHIFT::sSHRD_IR
-    (THREADID tid, UINT32 maskedDepl, REG regSrc, ADDRINT regSrcValue, REG regSrcDest, ADDRINT regSrcDestValue ADDRESS_DEBUG)
+    (THREADID tid, UINT32 maskedDepl, REG regSrc, ADDRINT regSrcValue, REG regSrcDest, ADDRINT regSrcDestValue, ADDRINT insAddress)
 { 
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     
@@ -1011,7 +1011,7 @@ template<UINT32 lengthInBits> void SHIFT::sSHRD_IR
     }
     else // dans les autres cas : marquage par SHR
     {
-        _LOGTAINT("SHRD_IR " << lengthInBits << " ");
+        _LOGTAINT(tid, insAddress, "SHRD_IR " + decstr(lengthInBits));
             
         ObjectSource objRegSrcDest = (isSrcDestTainted) 
             ? ObjectSource(pTmgrTls->getRegisterTaint<lengthInBits>(regSrcDest, regSrcDestValue))
@@ -1047,7 +1047,7 @@ template<UINT32 lengthInBits> void SHIFT::sSHRD_IR
 } // sSHRD_IR
 
 template<UINT32 lengthInBits> void SHIFT::sSHRD_RM
-    (THREADID tid, ADDRINT regCLValue, REG regSrc, ADDRINT regSrcValue, ADDRINT writeAddress ADDRESS_DEBUG)
+    (THREADID tid, ADDRINT regCLValue, REG regSrc, ADDRINT regSrcValue, ADDRINT writeAddress, ADDRINT insAddress)
 { 
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     
@@ -1061,11 +1061,11 @@ template<UINT32 lengthInBits> void SHIFT::sSHRD_RM
     {
         // masquage du déplacement avant appel de SHRD_IM
         UINT32 maskDepl = (lengthInBits == 64) ? (regCLValue & 0x3f) : (regCLValue & 0x1f);
-        sSHRD_IM<lengthInBits>(tid, maskDepl, regSrc, regSrcValue, writeAddress INSADDRESS); 
+        sSHRD_IM<lengthInBits>(tid, maskDepl, regSrc, regSrcValue, writeAddress ,insAddress); 
     }
     else // déplacement marqué. Mémoire et Bit Pattern marqués ou non  
     {
-        _LOGTAINT("SHRD_RM " << lengthInBits << " ");
+        _LOGTAINT(tid, insAddress, "SHRD_RM " + decstr(lengthInBits));
         
         ObjectSource objMemSrcDest = (isSrcDestTainted) 
             ? ObjectSource(pTmgrGlobal->getMemoryTaint<lengthInBits>(writeAddress))
@@ -1103,7 +1103,7 @@ template<UINT32 lengthInBits> void SHIFT::sSHRD_RM
 } // sSHRD_RM
 
 template<UINT32 lengthInBits> void SHIFT::sSHRD_RR
-    (THREADID tid, ADDRINT regCLValue, REG regSrc, ADDRINT regSrcValue, REG regSrcDest, ADDRINT regSrcDestValue ADDRESS_DEBUG)
+    (THREADID tid, ADDRINT regCLValue, REG regSrc, ADDRINT regSrcValue, REG regSrcDest, ADDRINT regSrcDestValue, ADDRINT insAddress)
 { 
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     
@@ -1117,11 +1117,11 @@ template<UINT32 lengthInBits> void SHIFT::sSHRD_RR
     {
         // masquage du déplacement avant appel de SHRD_IR
         UINT32 maskDepl = (lengthInBits == 64) ? (regCLValue & 0x3f) : (regCLValue & 0x1f);
-        sSHRD_IR<lengthInBits>(tid, maskDepl, regSrc, regSrcValue, regSrcDest, regSrcDestValue INSADDRESS); 
+        sSHRD_IR<lengthInBits>(tid, maskDepl, regSrc, regSrcValue, regSrcDest, regSrcDestValue ,insAddress); 
     }
     else // déplacement marqué ; Registre et Bit Pattern marqués ou non  
     {
-        _LOGTAINT("SHRD_RR " << lengthInBits << " ");
+        _LOGTAINT(tid, insAddress, "SHRD_RR " + decstr(lengthInBits));
 
         ObjectSource objRegSrcDest = (isSrcDestTainted) 
             ? ObjectSource(pTmgrTls->getRegisterTaint<lengthInBits>(regSrcDest, regSrcDestValue))

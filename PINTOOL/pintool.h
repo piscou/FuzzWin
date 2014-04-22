@@ -1,6 +1,6 @@
 /*!
 
- * \file fuzzwin.h
+ * \file pintool.h
  * \brief header général pour le pintool 
  * \author Sébastien LECOMTE
  * \version 05.a
@@ -64,10 +64,12 @@ extern UINT32       g_maxTime;
 // nombre maximal de contraintes
 extern UINT32       g_maxConstraints;
 
-// log de dessasemblage du binaire
-extern bool         g_logasm;
-// log de marquage
-extern bool         g_logtaint;
+// mode verbeux : logs de désassemblage et de marquage
+extern bool          g_verbose;
+extern std::ofstream g_debug;     // fichier de log du desassemblage
+extern std::ofstream g_taint;     // fichier de log du marquage
+extern clock_t       g_timeBegin; // chrono départ de l'instrumentation
+
 // option pipe ou non pour l'échange du fichier initial  et de la formule finale
 extern bool         g_nopipe;
 
@@ -93,171 +95,139 @@ extern KNOB<std::string> KBytes;
 extern KNOB<UINT32>      KMaxConstr;
 extern KNOB<std::string> KOption;
 extern KNOB<UINT32>      KOsType;
-extern KNOB<BOOL>        KLogAsm;
-extern KNOB<BOOL>        KLogTaint;
+extern KNOB<BOOL>        KVerbose;
 extern KNOB<BOOL>        KNoPipe;
-
-extern std::ofstream g_debug;     // fichier de log du desassemblage
-extern std::ofstream g_taint;     // fichier de log du marquage
-extern clock_t       g_timeBegin; // chrono départ de l'instrumentation
 
 /*******************************************************************/
 /* procedure d'initialisation des variables globales et paramètres */
 /*******************************************************************/
 int pintoolInit(); // fichier initialize.cpp
 
-/*****************/
-/* MACROS DE LOG */
-/*****************/
-
-// OPTION -logasm //
-//----------------//
+/********************************/
+/* MACROS DE LOG (mode verbose) */
+/********************************/
 
 // log de dessassemblage standard, partie instrumentation
-inline void _LOGINS(INS ins) 
+inline void _LOGINSPROC(INS ins) 
 {
-    if (g_logasm) 
-    { 
-        PIN_GetLock(&g_lock, PIN_ThreadId()); 
-        g_debug << "[T:" << PIN_ThreadId() << "] " << hexstr(INS_Address(ins)); 
-        g_debug << " " << INS_Disassemble(ins).c_str(); 
-        PIN_ReleaseLock(&g_lock); 
-    }
+    PIN_GetLock(&g_lock, PIN_ThreadId()); 
+    g_debug << "[T:" << PIN_ThreadId() << "] " << hexstr(INS_Address(ins)); 
+    g_debug << " " << INS_Disassemble(ins).c_str(); 
+    PIN_ReleaseLock(&g_lock); 
 }
+
+#define _LOGINS(i)    if (g_verbose) _LOGINSPROC(i);
 
 // log désassemblage, partie analyse
-inline void _LOGDEBUG(const std::string &s)
+inline void _LOGDEBUGPROC(const std::string &s)
 {
-    if (g_logasm) 
-    {
-        PIN_GetLock(&g_lock, PIN_ThreadId()); 
-        g_debug << s << std::endl; 
-        PIN_ReleaseLock(&g_lock); 
-    }
+    PIN_GetLock(&g_lock, PIN_ThreadId()); 
+    g_debug << s << std::endl; 
+    PIN_ReleaseLock(&g_lock); 
 }
 
-// log désassemblage, partie Syscalls, uniquement 
-inline void  _LOGSYSCALLS(ADDRINT syscallNumber, const std::string &s)
+#define _LOGDEBUG(s)  if (g_verbose) _LOGDEBUGPROC(s);
+
+// log désassemblage, partie Syscalls uniquement 
+inline void  _LOGSYSCALLSPROC(ADDRINT syscallNumber, const std::string &s)
 {
-    if (g_logasm) 
-    {
-        PIN_GetLock(&g_lock, PIN_ThreadId());      
-        g_debug << "[T:"  << decstr(PIN_ThreadId());
-        g_debug << "][P:" << hexstr(PIN_GetPid()); 
-        g_debug << "][S:" << hexstr(syscallNumber);
-        g_debug << s << std::endl; 
-        PIN_ReleaseLock(&g_lock); 
-    }
+    PIN_GetLock(&g_lock, PIN_ThreadId());      
+    g_debug << "[T:"  << decstr(PIN_ThreadId());
+    g_debug << "][P:" << hexstr(PIN_GetPid()); 
+    g_debug << "][S:" << hexstr(syscallNumber);
+    g_debug << s << std::endl; 
+    PIN_ReleaseLock(&g_lock); 
 }
 
-// OPTION -logtaint //
-//------------------//
+#define _LOGSYSCALLS(sys, text) if (g_verbose) _LOGSYSCALLSPROC(sys, text);
 
-// le log du marquage insère en plus l'adresse de l'instruction traitée en mode DEBUG
-// en mode RELEASE, l'argument 'insAddress' n'est pas passé, ce qui fait gagner un peu
-// en performances
-
-#if DEBUG // mode DEBUG
-
-// argument pour l'enregistrement d'un callback : adresse de l'instruction
-#define CALLBACK_DEBUG  IARG_INST_PTR,  
-// argument correspondant à l'adresse de l'instruction
-#define ADDRESS_DEBUG   ,ADDRINT insAddress 
-// argument ajouté lors de l'appel à une fonction hors du cas callback
-#define INSADDRESS      ,insAddress
-// log de marquage pour une instruction, avec adresse de l'instruction en mode DEBUG
-#define _LOGTAINT(t)  \
-if (g_logtaint) \
-{ \
-    PIN_GetLock(&g_lock, PIN_ThreadId()); \
-    g_taint << "[T:"  << decstr(PIN_ThreadId()) << "] "; \
-    g_taint << hexstr(insAddress) << " " << t << " MARQUE !! " << std::endl; \
-    PIN_ReleaseLock(&g_lock); \
-}
-// log de démarquage pour une instruction, avec adresse de l'instruction en mode DEBUG
-#define _LOGUNTAINT(t)  \
-if (g_logtaint) \
-{ \
-    PIN_GetLock(&g_lock, PIN_ThreadId()); \
-    g_taint << "[T:"  << decstr(PIN_ThreadId()) << "] "; \
-    g_taint << hexstr(insAddress) << " " << t << " DEMARQUAGE !! " << std::endl; \
-    PIN_ReleaseLock(&g_lock); \
+inline void _LOGTAINTPROC(THREADID tid, ADDRINT insAddress, const std::string &s)
+{
+    PIN_GetLock(&g_lock, tid); 
+    g_taint << "[T:"  << decstr(tid) << "] "; 
+    g_taint << hexstr(insAddress) << " " << s << " MARQUE !! " << std::endl; 
+    PIN_ReleaseLock(&g_lock); 
 }
 
-#else // mode RELEASE
-#define ADDRESS_DEBUG   
-#define CALLBACK_DEBUG 
-#define INSADDRESS
-// log de marquage pour une instruction
-#define _LOGTAINT(t) \
-if (g_logtaint) \
-{ \
-    PIN_GetLock(&g_lock, PIN_ThreadId()); \
-    g_taint << "[T:"  << decstr(PIN_ThreadId()) << "] "; \
-    g_taint << t << " MARQUE !! " << std::endl; \
-    PIN_ReleaseLock(&g_lock);\
-}
-// log de démarquage pour une instruction
-#define _LOGUNTAINT(t) \
-if (g_logtaint) \
-{ \
-    PIN_GetLock(&g_lock, PIN_ThreadId()); \
-    g_taint << "[T:"  << decstr(PIN_ThreadId()) << "] "; \
-    g_taint << " " << t << " DEMARQUAGE !! " << std::endl; \
-    PIN_ReleaseLock(&g_lock);\
-}
-#endif
+// log de marquage pour une instruction, avec adresse de l'instruction
+#define _LOGTAINT(t, a, s)  if (g_verbose)  _LOGTAINTPROC(t, a, s);
 
-/****************************************/
-/* macros globales et metaprogrammation */
-/****************************************/
+/*****************************************/
+/* classes globales de metaprogrammation */
+/*****************************************/
 
 // Renvoie le registre d'accumulation utilisé par certaines instructions
-template<UINT32 lengthInBits> class registerACC 
+template<UINT32 lengthInBits> class RegisterACC 
 { public:  static inline REG getReg() { return REG_INVALID_ ; }};
-template<> class registerACC<8> 
+template<> class RegisterACC<8> 
 { public:  static inline REG getReg() { return REG_AL; }};
-template<> class registerACC<16> 
+template<> class RegisterACC<16> 
 { public:  static inline REG getReg() { return REG_AX; }};
-template<> class registerACC<32>
+template<> class RegisterACC<32>
 { public:  static inline REG getReg() { return REG_EAX; }};
 #if TARGET_IA32E
-template<> class registerACC<64> 
+template<> class RegisterACC<64> 
 { public:  static inline REG getReg() { return REG_RAX; }};
 #endif
 
 // Renvoie le registre I/O (AH/DX/EDX/RDX) utilisé par certaines instructions
-template<UINT32 lengthInBits> class registerIO 
+template<UINT32 lengthInBits> class RegisterIO 
 { public:  static inline REG getReg() { return REG_INVALID_ ; }};
-template<> class registerIO<8> 
+template<> class RegisterIO<8> 
 { public:  static inline REG getReg() { return REG_AH; }}; // 8 bits = AH et non DH (cf. instr MUL)
-template<> class registerIO<16> 
+template<> class RegisterIO<16> 
 { public:  static inline REG getReg() { return REG_DX; }};
-template<> class registerIO<32>
+template<> class RegisterIO<32>
 { public:  static inline REG getReg() { return REG_EDX; }};
 #if TARGET_IA32E
-template<> class registerIO<64> 
+template<> class RegisterIO<64> 
 { public:  static inline REG getReg() { return REG_RDX; }};
+#endif
+
+// Renvoie le registre compteur (CX/ECX/RCX) utilisé pour JRCXZ
+template<UINT32 lengthInBits> class RegisterCount 
+{ 
+public:  
+    static inline REG getReg()             { return REG_INVALID_ ; }
+    static inline PREDICATE getPredicate() { return PREDICATE_ALWAYS_TRUE ; }
+};
+
+template<> class RegisterCount<16> 
+{ 
+public:  
+    static inline REG getReg()             { return REG_CX ; }
+    static inline PREDICATE getPredicate() { return PREDICATE_CX_NON_ZERO ; }
+};
+
+template<> class RegisterCount<32>
+{ 
+public:  
+    static inline REG getReg()             { return REG_ECX ; }
+    static inline PREDICATE getPredicate() { return PREDICATE_ECX_NON_ZERO ; }
+};
+
+#if TARGET_IA32E
+template<> class RegisterCount<64> 
+{ 
+public:  
+    static inline REG getReg()             { return REG_RCX ; }
+    static inline PREDICATE getPredicate() { return PREDICATE_RCX_NON_ZERO ; }
+};
 #endif
 
 // détermination de la valeur "ff" en fonction de la taille fournie (en bits)
 // utilisé par les fonctions d'analyse traitant les instructions LOGICAL::OR et STRINGOP::SCAS
-// 8b =  0xff ; 16b = 0xffff ; 32b = 0xffffffff; 64b = (__int64)(-1)
-template<UINT32 lengthInBits> class minusOne 
-{ public:  static inline const ADDRINT get() { return (0xffffffff >> (32 - lengthInBits)); }};
+// constantes définies dans <limits.h>
+template<UINT32 lengthInBits> class ValueFF
+{ public:  static inline const ADDRINT get() { return NULL; }};
+template<> class ValueFF<8>
+{ public:  static inline const ADDRINT get() { return (_UI8_MAX); }};
+template<> class ValueFF<16>
+{ public:  static inline const ADDRINT get() { return (_UI16_MAX); }};
+template<> class ValueFF<32>
+{ public:  static inline const ADDRINT get() { return (_UI32_MAX); }};
 #if TARGET_IA32E
-template<> class minusOne<64> 
-{ public:  static inline const ADDRINT get() { return (0xffffffffffffffff); }};
+template<> class ValueFF<64>
+{ public:  static inline const ADDRINT get() { return (_UI64_MAX); }};
 #endif
 
-// déréférencement de la mémoire pour récupérer la valeur. 
-// utilisé dans les fonctions d'analyse pour créer 
-// des 'ObjectSource' lorsque la mémoire n'est pas marquée
-template<UINT32 lengthInBits> ADDRINT getMemoryValue(ADDRINT address)
-{
-    ADDRINT returnValue = 0;
-    // déréférencement de 'lengthInBits>>3' octets à partir de 'address'
-    // Equivalent de Memcpy pour PIN
-    PIN_SafeCopy(&returnValue, reinterpret_cast<ADDRINT*>(address), lengthInBits >> 3);
-    return (returnValue);
-}

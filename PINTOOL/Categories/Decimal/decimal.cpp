@@ -11,7 +11,7 @@ void DECIMAL::cAAA(INS &ins)
         IARG_THREAD_ID,
         IARG_REG_VALUE, REG_AL,
         IARG_REG_VALUE, REG_GFLAGS,
-        CALLBACK_DEBUG IARG_END);
+        IARG_INST_PTR, IARG_END);
 } // cAAA
 
 void DECIMAL::cAAD(INS &ins)
@@ -24,7 +24,7 @@ void DECIMAL::cAAD(INS &ins)
         IARG_THREAD_ID,
         IARG_REG_VALUE, REG_AX,
         IARG_UINT32,    baseValue,
-        CALLBACK_DEBUG IARG_END);
+        IARG_INST_PTR, IARG_END);
 } // cAAD
 
 void DECIMAL::cAAM(INS &ins)
@@ -36,7 +36,7 @@ void DECIMAL::cAAM(INS &ins)
     INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR) sAAM,
         IARG_THREAD_ID,
         IARG_UINT32,    baseValue,
-        CALLBACK_DEBUG IARG_END);
+        IARG_INST_PTR, IARG_END);
 } // cAAM
 
 void DECIMAL::cAAS(INS &ins)
@@ -47,7 +47,7 @@ void DECIMAL::cAAS(INS &ins)
         IARG_THREAD_ID,
         IARG_REG_VALUE, REG_AX,
         IARG_REG_VALUE, REG_GFLAGS,
-        CALLBACK_DEBUG IARG_END);
+        IARG_INST_PTR, IARG_END);
 } // cAAS
 
 void DECIMAL::cDAA(INS &ins)
@@ -58,7 +58,7 @@ void DECIMAL::cDAA(INS &ins)
         IARG_THREAD_ID,
         IARG_REG_VALUE, REG_AL,
         IARG_REG_VALUE, REG_GFLAGS,
-        CALLBACK_DEBUG IARG_END);
+        IARG_INST_PTR, IARG_END);
 } // cDAA
 
 void DECIMAL::cDAS(INS &ins)
@@ -69,12 +69,12 @@ void DECIMAL::cDAS(INS &ins)
         IARG_THREAD_ID,
         IARG_REG_VALUE, REG_AL,
         IARG_REG_VALUE, REG_GFLAGS,
-        CALLBACK_DEBUG IARG_END);
+        IARG_INST_PTR, IARG_END);
 } // cDAS
 
 // SIMULATE
 
-void DECIMAL::sAAA(THREADID tid, ADDRINT regALValue, ADDRINT flagsValue ADDRESS_DEBUG)
+void DECIMAL::sAAA(THREADID tid, ADDRINT regALValue, ADDRINT flagsValue, ADDRINT insAddress)
 {
    /* SOURCE: BOCHS 2.6 (cpu\bcd.cc)
     *    IF (((AL and 0FH) > 9) or (AF==1)
@@ -101,31 +101,31 @@ void DECIMAL::sAAA(THREADID tid, ADDRINT regALValue, ADDRINT flagsValue ADDRESS_
 
 } // sAAA
 
-void DECIMAL::sAAD(THREADID tid, ADDRINT regAXValue, ADDRINT immValue ADDRESS_DEBUG)
+void DECIMAL::sAAD(THREADID tid, ADDRINT regAXValue, ADDRINT immValue, ADDRINT insAddress)
 {
     TaintManager_Thread* pTmgrTls = getTmgrInTls(tid);
 
 } // sAAD
 
-void DECIMAL::sAAM(THREADID tid, ADDRINT immValue ADDRESS_DEBUG)
+void DECIMAL::sAAM(THREADID tid, ADDRINT immValue, ADDRINT insAddress)
 {
     TaintManager_Thread* pTmgrTls = getTmgrInTls(tid);
 
 } // sAAM
 
-void DECIMAL::sAAS(THREADID tid, ADDRINT regAXValue, ADDRINT flagsValue ADDRESS_DEBUG)
+void DECIMAL::sAAS(THREADID tid, ADDRINT regAXValue, ADDRINT flagsValue, ADDRINT insAddress)
 {
     TaintManager_Thread* pTmgrTls = getTmgrInTls(tid);
 
 } // sAAS
 
-void DECIMAL::sDAA(THREADID tid, ADDRINT regALValue, ADDRINT flagsValue ADDRESS_DEBUG)
+void DECIMAL::sDAA(THREADID tid, ADDRINT regALValue, ADDRINT flagsValue, ADDRINT insAddress)
 {
     TaintManager_Thread* pTmgrTls = getTmgrInTls(tid);
 
 } // sDAA
 
-void DECIMAL::sDAS(THREADID tid, ADDRINT regALValue, ADDRINT flagsValue ADDRESS_DEBUG)
+void DECIMAL::sDAS(THREADID tid, ADDRINT regALValue, ADDRINT flagsValue, ADDRINT insAddress)
 {
     TaintManager_Thread* pTmgrTls = getTmgrInTls(tid);
 

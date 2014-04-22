@@ -18,9 +18,6 @@ DWORD FuzzwinAlgorithm::debugTarget(CInput *pNewInput)
     DWORD returnCode    = 0; 
     DWORD exceptionCode = 0;
     bool  continueDebug  = true; // variable de sortie de boucle infinie
-
-    // handle de l'exécutable à fermer à la fin du debuggage, en plus du process et thread
-    HANDLE hFile;
         
     BOOL bSuccess = CreateProcess(
         nullptr,            // passage des arguments par ligne de commande

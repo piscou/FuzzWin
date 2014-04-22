@@ -43,7 +43,7 @@ void STRINGOP::cMOVS(INS &ins, UINT32 size)
             IARG_REG_VALUE,	REG_GFLAGS,	// pour direction flag: DF
             IARG_MEMORYREAD_EA,			// Adresse de lecture initiale
             IARG_MEMORYWRITE_EA,		// adresse d'ecriture initiale
-            CALLBACK_DEBUG IARG_END);
+            IARG_INST_PTR, IARG_END);
     }
     else 	// pas de préfixe REP : une seule répétition
     {	
@@ -53,7 +53,7 @@ void STRINGOP::cMOVS(INS &ins, UINT32 size)
             IARG_ADDRINT,	0,	// valeur des flags : peu importe
             IARG_MEMORYREAD_EA,	// Adresse de lecture initiale
             IARG_MEMORYWRITE_EA,// adresse d'ecriture initiale
-            CALLBACK_DEBUG IARG_END);
+            IARG_INST_PTR, IARG_END);
     }
 } // cMOVS
 
@@ -85,7 +85,7 @@ void STRINGOP::cLODS(INS &ins, UINT32 size)
             IARG_REG_VALUE, INS_RepCountRegister(ins),	// nombre de repets
             IARG_REG_VALUE,	REG_GFLAGS,	// valeur des flags (DF)
             IARG_MEMORYREAD_EA,			// Adresse de lecture initiale
-            CALLBACK_DEBUG IARG_END);
+            IARG_INST_PTR, IARG_END);
     }
     else // pas de préfixe : une seule répét, <=> mov AL/AX/EAX/EAX, [ESI]
     {	
@@ -104,7 +104,7 @@ void STRINGOP::cLODS(INS &ins, UINT32 size)
             IARG_THREAD_ID,
             IARG_MEMORYREAD_EA,		// adresse réelle de lecture
             IARG_UINT32, regDest,   // registre destination
-            CALLBACK_DEBUG IARG_END);
+            IARG_INST_PTR, IARG_END);
     }
 } // cLODS
 
@@ -136,7 +136,7 @@ void STRINGOP::cSTOS(INS &ins, UINT32 size)
             IARG_REG_VALUE, INS_RepCountRegister(ins),	// nombre de repets
             IARG_REG_VALUE,	REG_GFLAGS,	// valeur des flags (DF)
             IARG_MEMORYWRITE_EA,		// Adresse d'écriture initiale
-            CALLBACK_DEBUG IARG_END);
+            IARG_INST_PTR, IARG_END);
     }
     else // pas de préfixe REP : équivalent à mov [ESI], AL/AX/EAX/EAX
     {	
@@ -155,7 +155,7 @@ void STRINGOP::cSTOS(INS &ins, UINT32 size)
             IARG_THREAD_ID,
             IARG_UINT32, regSrc,	// registre source
             IARG_MEMORYWRITE_EA,	// adresse réelle d'ecriture
-            CALLBACK_DEBUG IARG_END);
+            IARG_INST_PTR, IARG_END);
     }
 } // cSTOS
 
@@ -253,7 +253,7 @@ void STRINGOP::cSCAS(INS &ins, UINT32 size)
             IARG_UINT32, regSrc,	// registre source
             IARG_REG_VALUE, regSrc,	// sa valeur 
             IARG_MEMORYREAD_EA,		// adresse réelle de lecture
-            CALLBACK_DEBUG IARG_END);
+            IARG_INST_PTR, IARG_END);
     }
 } // cSCAS
 

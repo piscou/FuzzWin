@@ -17,7 +17,7 @@
                       REG indexReg, ADDRINT indexRegValue, \
                       UINT32 scale,                        \
                       INT32 displ                          \
-                      ADDRESS_DEBUG
+                     , ADDRINT insAddress
 
 #define IARGLIST_BIS  IARG_UINT32,    baseReg,  /* registre de base utilisé */ \
                       IARG_REG_VALUE, baseReg,  /* valeur lors du callback  */ \
@@ -28,7 +28,7 @@
                       REG baseReg,  ADDRINT baseRegValue,  \
                       REG indexReg, ADDRINT indexRegValue, \
                       UINT32 scale                         \
-                      ADDRESS_DEBUG
+                     , ADDRINT insAddress
 
 #define IARGLIST_BID  IARG_UINT32,    baseReg, /* registre de base utilisé*/ \
                       IARG_REG_VALUE, baseReg, /* valeur lors du callback */ \
@@ -39,7 +39,7 @@
                       REG baseReg,  ADDRINT baseRegValue,  \
                       REG indexReg, ADDRINT indexRegValue, \
                       INT32 displ                          \
-                      ADDRESS_DEBUG
+                     , ADDRINT insAddress
 
 #define IARGLIST_BI   IARG_UINT32,    baseReg, /* registre de base utilisé*/ \
                       IARG_REG_VALUE, baseReg, /* valeur lors du callback */ \
@@ -48,7 +48,7 @@
 #define FUNCARGS_BI   THREADID tid,                        \
                       REG baseReg,  ADDRINT baseRegValue,  \
                       REG indexReg, ADDRINT indexRegValue  \
-                      ADDRESS_DEBUG
+                     , ADDRINT insAddress
 
 #define IARGLIST_BD   IARG_UINT32,    baseReg, /* registre de base utilisé */\
                       IARG_REG_VALUE, baseReg, /* valeur lors du callback */ \
@@ -56,13 +56,13 @@
 #define FUNCARGS_BD   THREADID tid,                        \
                       REG baseReg,  ADDRINT baseRegValue,  \
                       INT32 displ                          \
-                      ADDRESS_DEBUG
+                     , ADDRINT insAddress
 
 #define IARGLIST_B    IARG_UINT32,    baseReg, /* registre de base utilisé */\
                       IARG_REG_VALUE, baseReg  /* valeur lors du callback */ 
 #define FUNCARGS_B    THREADID tid,                        \
                       REG baseReg,  ADDRINT baseRegValue   \
-                      ADDRESS_DEBUG
+                     , ADDRINT insAddress
 
 #define IARGLIST_ISD  IARG_UINT32,    indexReg,/* registre d'index utilisé*/ \
                       IARG_REG_VALUE, indexReg, /* valeur lors du callback*/ \
@@ -72,7 +72,7 @@
                       REG indexReg, ADDRINT indexRegValue, \
                       UINT32 scale,                        \
                       INT32 displ                          \
-                      ADDRESS_DEBUG
+                     , ADDRINT insAddress
 
 #define IARGLIST_IS   IARG_UINT32,    indexReg,/* registre d'index utilisé*/ \
                       IARG_REG_VALUE, indexReg, /* valeur lors du callback*/ \
@@ -80,12 +80,12 @@
 #define FUNCARGS_IS   THREADID tid,                        \
                       REG indexReg, ADDRINT indexRegValue, \
                       UINT32 scale                         \
-                      ADDRESS_DEBUG
+                     , ADDRINT insAddress
 
 // Macro de construction d'une liste d'arguments
 #define _MAKE_ARGS_EA(x)   callback = (AFUNPTR) UTILS::computeEA_##x##; \
                            IARGLIST_AddArguments(args, IARG_THREAD_ID,  \
-                           IARGLIST_##x##, CALLBACK_DEBUG IARG_END); 
+                           IARGLIST_##x##, IARG_INST_PTR, IARG_END); 
 
 
 namespace UTILS 

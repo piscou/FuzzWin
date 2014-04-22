@@ -37,7 +37,7 @@ void UNCONDITIONAL_BR::cJMP(INS &ins)
                         IARG_UINT32, baseReg,       // registre de base
                         IARG_REG_VALUE, baseReg,    // valeur du registre de base
                         IARG_UINT32, displ,         // valeur du déplacement (pouvant être nul)     
-                        CALLBACK_DEBUG IARG_END);
+                        IARG_INST_PTR, IARG_END);
                 }
             }
             else if (baseReg == REG_INVALID()) // donc index, mais pas de base => ISD
@@ -50,7 +50,7 @@ void UNCONDITIONAL_BR::cJMP(INS &ins)
                     IARG_REG_VALUE, indexReg,   // valeur du registre d'index
                     IARG_UINT32, scale,         // valeur du scale
                     IARG_UINT32, displ,         // valeur du déplacement     
-                    CALLBACK_DEBUG IARG_END);
+                    IARG_INST_PTR, IARG_END);
             }
             else // base et index présents => BISD
                 {
@@ -64,7 +64,7 @@ void UNCONDITIONAL_BR::cJMP(INS &ins)
                         IARG_REG_VALUE, indexReg,   // valeur du registre d'index
                         IARG_UINT32, scale,         // valeur du scale
                         IARG_UINT32, displ,         // valeur du déplacement
-                        CALLBACK_DEBUG IARG_END);
+                        IARG_INST_PTR, IARG_END);
                 }             
         }
         else // forcemément, destination registre
@@ -74,7 +74,7 @@ void UNCONDITIONAL_BR::cJMP(INS &ins)
                 IARG_THREAD_ID,
                 IARG_UINT32, regJmp,    // registre "trampoline"
                 IARG_REG_VALUE, regJmp, //  valeur du registre = adresse de saut
-                CALLBACK_DEBUG IARG_END);
+                IARG_INST_PTR, IARG_END);
         }
     }
 } // cJMP(32bits)
@@ -113,7 +113,7 @@ void UNCONDITIONAL_BR::cJMP(INS &ins)
                         IARG_UINT32, baseReg,       // registre de base
                         IARG_REG_VALUE, baseReg,    // valeur du registre de base
                         IARG_UINT32, displ,         // valeur du déplacement (pouvant être nul)     
-                        CALLBACK_DEBUG IARG_END);
+                        IARG_INST_PTR, IARG_END);
                 }
             }
             else if (baseReg == REG_INVALID()) // donc index, mais pas de base => ISD
@@ -125,7 +125,7 @@ void UNCONDITIONAL_BR::cJMP(INS &ins)
                     IARG_REG_VALUE, indexReg,   // valeur du registre d'index
                     IARG_UINT32, scale,         // valeur du scale
                     IARG_UINT32, displ,         // valeur du déplacement     
-                    CALLBACK_DEBUG IARG_END);
+                    IARG_INST_PTR, IARG_END);
             }
             else // base et index présents => BISD
             {
@@ -138,7 +138,7 @@ void UNCONDITIONAL_BR::cJMP(INS &ins)
                     IARG_REG_VALUE, indexReg,   // valeur du registre d'index
                     IARG_UINT32, scale,         // valeur du scale
                     IARG_UINT32, displ,         // valeur du déplacement
-                    CALLBACK_DEBUG IARG_END);
+                    IARG_INST_PTR, IARG_END);
             }             
         }
         else // forcemément, destination registre
@@ -148,7 +148,7 @@ void UNCONDITIONAL_BR::cJMP(INS &ins)
                 IARG_THREAD_ID,
                 IARG_UINT32, regJmp,    // registre "trampoline"
                 IARG_REG_VALUE, regJmp, //  valeur du registre = adresse de saut
-                CALLBACK_DEBUG IARG_END);
+                IARG_INST_PTR, IARG_END);
         }
     }
 } // cJMP(64bits)
@@ -157,30 +157,30 @@ void UNCONDITIONAL_BR::cJMP(INS &ins)
 #if TARGET_IA32
 // x86 : Effective Address vaut 16 ou 32 bits
 
-void UNCONDITIONAL_BR::sJMP_BD_16(THREADID tid, ADDRINT ea, REG baseReg, ADDRINT baseRegValue, INT32 displ ADDRESS_DEBUG)
+void UNCONDITIONAL_BR::sJMP_BD_16(THREADID tid, ADDRINT ea, REG baseReg, ADDRINT baseRegValue, INT32 displ, ADDRINT insAddress)
 {  }
 
 void UNCONDITIONAL_BR::sJMP_ISD_16(THREADID tid, ADDRINT ea, REG indexReg, ADDRINT indexRegValue, 
-                 UINT32 scale, INT32 displ ADDRESS_DEBUG)
+                 UINT32 scale, INT32 displ, ADDRINT insAddress)
 {   }
 
 void UNCONDITIONAL_BR::sJMP_BISD_16(THREADID tid, ADDRINT ea, REG baseReg, ADDRINT baseRegValue, 
-                  REG indexReg, ADDRINT indexRegValue, UINT32 scale, INT32 displ ADDRESS_DEBUG)
+                  REG indexReg, ADDRINT indexRegValue, UINT32 scale, INT32 displ, ADDRINT insAddress)
 { }
 
 
-void UNCONDITIONAL_BR::sJMP_BD_32(THREADID tid, ADDRINT ea, REG baseReg, ADDRINT baseRegValue, INT32 displ ADDRESS_DEBUG)
+void UNCONDITIONAL_BR::sJMP_BD_32(THREADID tid, ADDRINT ea, REG baseReg, ADDRINT baseRegValue, INT32 displ, ADDRINT insAddress)
 {  }
 
 void UNCONDITIONAL_BR::sJMP_ISD_32(THREADID tid, ADDRINT ea, REG indexReg, ADDRINT indexRegValue, 
-                 UINT32 scale, INT32 displ ADDRESS_DEBUG)
+                 UINT32 scale, INT32 displ, ADDRINT insAddress)
 { }
 
 void UNCONDITIONAL_BR::sJMP_BISD_32(THREADID tid, ADDRINT ea, REG baseReg, ADDRINT baseRegValue, 
-                  REG indexReg, ADDRINT indexRegValue, UINT32 scale, INT32 displ ADDRESS_DEBUG)
+                  REG indexReg, ADDRINT indexRegValue, UINT32 scale, INT32 displ, ADDRINT insAddress)
 {  }
 
-void UNCONDITIONAL_BR::sJMP_R(THREADID tid, REG reg, ADDRINT regValue ADDRESS_DEBUG) 
+void UNCONDITIONAL_BR::sJMP_R(THREADID tid, REG reg, ADDRINT regValue, ADDRINT insAddress) 
 {
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     
@@ -197,18 +197,18 @@ void UNCONDITIONAL_BR::sJMP_R(THREADID tid, REG reg, ADDRINT regValue ADDRESS_DE
 #else
 // x64 : Effective Address vaut 64 bits uniquement
 
-void UNCONDITIONAL_BR::sJMP_BD_64(THREADID tid, ADDRINT ea, REG baseReg, ADDRINT baseRegValue, INT32 displ ADDRESS_DEBUG)
+void UNCONDITIONAL_BR::sJMP_BD_64(THREADID tid, ADDRINT ea, REG baseReg, ADDRINT baseRegValue, INT32 displ, ADDRINT insAddress)
 { }
 
 void UNCONDITIONAL_BR::sJMP_ISD_64(THREADID tid, ADDRINT ea, REG indexReg, ADDRINT indexRegValue, 
-                 UINT32 scale, INT32 displ ADDRESS_DEBUG)
+                 UINT32 scale, INT32 displ, ADDRINT insAddress)
 {  }
 
 void UNCONDITIONAL_BR::sJMP_BISD_64(THREADID tid, ADDRINT ea, REG baseReg, ADDRINT baseRegValue, 
-                  REG indexReg, ADDRINT indexRegValue, UINT32 scale, INT32 displ ADDRESS_DEBUG)
+                  REG indexReg, ADDRINT indexRegValue, UINT32 scale, INT32 displ, ADDRINT insAddress)
 { }
 
-void UNCONDITIONAL_BR::sJMP_R(THREADID tid, REG reg, ADDRINT regValue ADDRESS_DEBUG) 
+void UNCONDITIONAL_BR::sJMP_R(THREADID tid, REG reg, ADDRINT regValue, ADDRINT insAddress) 
 {
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     

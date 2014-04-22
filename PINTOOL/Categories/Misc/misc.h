@@ -14,9 +14,9 @@ void cCPUID(INS &ins);
 
 // SIMULATE 
 template< UINT32 lenDest, UINT32 lenEA> 
-void sLEA(THREADID tid, REG regDest ADDRESS_DEBUG);
+void sLEA(THREADID tid, REG regDest, ADDRINT insAddress);
 
-void PIN_FAST_ANALYSIS_CALL sCPUID(THREADID tid ADDRESS_DEBUG);
+void PIN_FAST_ANALYSIS_CALL sCPUID(THREADID tid, ADDRINT insAddress);
 
 } // namespace MISC
 

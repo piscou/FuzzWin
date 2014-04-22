@@ -1,6 +1,6 @@
 // SIMULATE
 template<UINT32 lengthInBits> void STRINGOP::sMOVS
-    (ADDRINT count, ADDRINT flagsValue, ADDRINT readAddress, ADDRINT writeAddress ADDRESS_DEBUG) 
+    (ADDRINT count, ADDRINT flagsValue, ADDRINT readAddress, ADDRINT writeAddress, ADDRINT insAddress) 
 {
     // copie de "count" octets/mot/double mots de [ESI] vers [EDI] (idem MOV mem->mem)
     ADDRINT nbIterations = count * (lengthInBits >> 3); // nombre d'octets copiés
@@ -12,7 +12,7 @@ template<UINT32 lengthInBits> void STRINGOP::sMOVS
     {
         if (pTmgrGlobal->isMemoryTainted<8>(readAddress))	
         {
-            _LOGTAINT("MOVS " << lengthInBits<< "bits");
+            _LOGTAINT(PIN_ThreadId(), insAddress, "MOVS" + decstr(lengthInBits));
             pTmgrGlobal->updateMemoryTaint<8>(writeAddress, std::make_shared<TaintByte>(
                 X_ASSIGN,
                 ObjectSource(pTmgrGlobal->getMemoryTaint<8>(readAddress))));
@@ -31,7 +31,7 @@ template<UINT32 lengthInBits> void STRINGOP::sMOVS
 } //sMOVS
 
 template<UINT32 lengthInBits> void STRINGOP::sLODS
-    (THREADID tid, ADDRINT count, ADDRINT flagsValue, ADDRINT readAddress ADDRESS_DEBUG) 
+    (THREADID tid, ADDRINT count, ADDRINT flagsValue, ADDRINT readAddress, ADDRINT insAddress) 
 {
     // déplacement de "count" octets/mot/dble mots de [ESI] vers AL/AX/EAX/RAX
     // en réalité, seule la dernière itération nous interesse
@@ -44,12 +44,12 @@ template<UINT32 lengthInBits> void STRINGOP::sLODS
         : (readAddress + ((count-1) * (lengthInBits >> 3))); 
     
     // appel de la procédure MOVMR adéquate selon le registre
-    _LOGTAINT("LODS (si marqué : message movRM suivra)");
-    DATAXFER::sMOV_MR<lengthInBits>(tid, lastAddress, registerACC<lengthInBits>::getReg() INSADDRESS);
+    _LOGTAINT(tid, insAddress, "LODS (si marqué : message movRM suivra)");
+    DATAXFER::sMOV_MR<lengthInBits>(tid, lastAddress, RegisterACC<lengthInBits>::getReg() ,insAddress);
 } // sLODS
 
 template<UINT32 lengthInBits> void STRINGOP::sSTOS
-    (THREADID tid, ADDRINT count, ADDRINT flagsValue, ADDRINT writeAddress ADDRESS_DEBUG) 
+    (THREADID tid, ADDRINT count, ADDRINT flagsValue, ADDRINT writeAddress, ADDRINT insAddress) 
 {
     // déplacement de "count" octets/mot/dble mots de AL/AX/EAX/RAX -> [EDI] 
     
@@ -103,10 +103,10 @@ template<UINT32 lengthInBits> void STRINGOP::sStoreTaintSCAS(
     
     // si registre marqué, stockage de l'objet, sinon mise à nullptr 
     // et stockage de la valeur
-    if (pTmgrTls->isRegisterTainted<lengthInBits>(registerACC<lengthInBits>::getReg())) 
+    if (pTmgrTls->isRegisterTainted<lengthInBits>(RegisterACC<lengthInBits>::getReg())) 
     {
         strInfo.isRegTainted = true;
-        strInfo.tPtr = pTmgrTls->getRegisterTaint<lengthInBits>(registerACC<lengthInBits>::getReg(), regValue);
+        strInfo.tPtr = pTmgrTls->getRegisterTaint<lengthInBits>(RegisterACC<lengthInBits>::getReg(), regValue);
     }
     else 
     {
@@ -134,7 +134,7 @@ template<UINT32 lengthInBits> void STRINGOP::sSCAS(THREADID tid, ADDRINT address
     else 
     {
         ADDRINT insAddress = strInfo.instrPtr; // adresse de l'ins (en cache)
-        _LOGTAINT("SCAS");
+        _LOGTAINT(tid, insAddress, "SCAS");
         
         // calcul des sources pour le futur objet
         ObjectSource srcDest = (isSrcDestTainted) 
@@ -162,7 +162,7 @@ template<UINT32 lengthInBits> void STRINGOP::sCMPS
     if ( !(isSrcDestTainted || isSrcTainted)) pTmgrTls->unTaintAllFlags();
     else 
     {
-        _LOGTAINT("CMPS");
+        _LOGTAINT(tid, insAddress, "CMPS");
         
         ObjectSource src = (isSrcTainted) 
             ? ObjectSource(pTmgrGlobal->getMemoryTaint<lengthInBits>(esiAddr))

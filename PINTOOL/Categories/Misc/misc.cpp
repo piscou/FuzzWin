@@ -41,7 +41,7 @@ void MISC::cLEA(INS &ins)
     INS_InsertCall(ins, IPOINT_BEFORE, callback,
                 IARG_THREAD_ID,
                 IARG_UINT32,    regDest, // registre de destination 
-                CALLBACK_DEBUG IARG_END);
+                IARG_INST_PTR, IARG_END);
 }   // sLEA
 
 ///////////
@@ -71,14 +71,14 @@ void MISC::cLEAVE(INS &ins)
         IARG_THREAD_ID,
         IARG_UINT32, regEbp,   // registre source = (E)BP
         IARG_UINT32, regEsp,   // registre de destination = (E)SP 
-        CALLBACK_DEBUG IARG_END);
+        IARG_INST_PTR, IARG_END);
 
     INS_InsertCall(ins, IPOINT_BEFORE, cPOP,
         IARG_CALL_ORDER, CALL_ORDER_LAST,
         IARG_THREAD_ID,
         IARG_REG_VALUE, regEbp, // ATTENTION : valeur d'ESP à ce moment là  = EBP (suite au MOV plus haut) 
         IARG_UINT32,    regEbp, // registre de destination
-        CALLBACK_DEBUG IARG_END);
+        IARG_INST_PTR, IARG_END);
 }
 #else
 void MISC::cLEAVE(INS &ins) 
@@ -89,14 +89,14 @@ void MISC::cLEAVE(INS &ins)
         IARG_THREAD_ID,
         IARG_UINT32, REG_RBP,   // registre source = RBP
         IARG_UINT32, REG_RSP,   // registre de destination = RSP 
-        CALLBACK_DEBUG IARG_END);
+        IARG_INST_PTR, IARG_END);
 
     INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR) DATAXFER::sMOV_MR<64>,
         IARG_CALL_ORDER, CALL_ORDER_LAST,
         IARG_THREAD_ID,
         IARG_REG_VALUE, REG_RBP, // ATTENTION : valeur d'ESP à ce moment là  = EBP (suite au MOV plus haut)
         IARG_UINT32,    REG_RBP, // registre de destination
-        CALLBACK_DEBUG IARG_END);
+        IARG_INST_PTR, IARG_END);
 }
 #endif
 
@@ -116,7 +116,7 @@ void MISC::cXLAT(INS &ins)
         IARG_THREAD_ID,
         IARG_MEMORYREAD_EA,  // emplacement mémoire de lecture
         IARG_UINT32, REG_AL, // registre destination = AL
-        CALLBACK_DEBUG IARG_END);
+        IARG_INST_PTR, IARG_END);
 }
 
 ///////////
@@ -130,12 +130,12 @@ void MISC::cCPUID(INS &ins)
     INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR) sCPUID,
         IARG_FAST_ANALYSIS_CALL,
         IARG_THREAD_ID,
-        CALLBACK_DEBUG IARG_END);
+        IARG_INST_PTR, IARG_END);
 }
 
 // SIMULATE
 
-void PIN_FAST_ANALYSIS_CALL MISC::sCPUID(THREADID tid ADDRESS_DEBUG)
+void PIN_FAST_ANALYSIS_CALL MISC::sCPUID(THREADID tid, ADDRINT insAddress)
 {
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
 
@@ -152,5 +152,4 @@ void PIN_FAST_ANALYSIS_CALL MISC::sCPUID(THREADID tid ADDRESS_DEBUG)
     pTmgrTls->unTaintRegister<64>(REG_RCX);
     pTmgrTls->unTaintRegister<64>(REG_RDX);
 #endif
-
 }

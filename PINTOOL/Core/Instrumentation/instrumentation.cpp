@@ -36,7 +36,7 @@ void INSTRUMENTATION::Instruction(INS ins, void* )
 {
     if (!g_beginInstrumentationOfInstructions) return;
 
-    // mode DEBUG : désassemblage 
+    // mode VERBOSE : désassemblage 
     _LOGINS(ins); 
 
     switch (INS_Opcode(ins)) // BIG BIG SWITCH :)
@@ -116,6 +116,7 @@ void INSTRUMENTATION::Instruction(INS ins, void* )
     case XED_ICLASS_JNL:    CONDITIONAL_BR::cJNL(ins);  break;
     case XED_ICLASS_JLE:    CONDITIONAL_BR::cJLE(ins);  break;
     case XED_ICLASS_JNLE:   CONDITIONAL_BR::cJNLE(ins); break;
+    case XED_ICLASS_JRCXZ:  CONDITIONAL_BR::cJRCXZ(ins); break;
    
     // CONVERT
     case XED_ICLASS_CBW:  CONVERT::cCBW(ins);  break;
@@ -269,7 +270,7 @@ void INSTRUMENTATION::Instruction(INS ins, void* )
     /*** AUTRES INSTRUCTIONS : DEMARQUAGE DES DESTINATIONS SUIVIES ***/
     default: 
         UTILS::cUNHANDLED(ins);     
-        if (g_logasm)
+        if (g_verbose)
         {
             PIN_GetLock(&g_lock, PIN_ThreadId()); 
             g_debug << " *** non instrumenté ***"; 
@@ -288,10 +289,9 @@ void INSTRUMENTATION::FiniTaint(INT32 code, void* )
     // envoi des dernieres données récoltées
     g_pFormula->final();
 
-    // fermeture fichier log de dessasemblage
-    if (g_logasm)
+    // fermeture fichier de logs 
+    if (g_verbose)
     {
-        // fermeture des fichiers de log
         clock_t totalTime = clock() - g_timeBegin;
 
         g_debug << "Temps ecoule (ticks) : " << decstr(totalTime);
@@ -299,11 +299,7 @@ void INSTRUMENTATION::FiniTaint(INT32 code, void* )
         g_debug << "CODE DE FIN : " << code << std::endl;
         g_debug << "#eof\n";    
         g_debug.close(); 
-    }
 
-    // fermeture fichier log de dessasemblage
-    if (g_logtaint)
-    {
         // récupération du nombre d'objets encore marqués en mémoire
         auto taintedMem = pTmgrGlobal->getSnapshotOfTaintedLocations();
         g_taint << "nombre d'octets encore marqués : " << taintedMem.size() << std::endl;
@@ -404,7 +400,7 @@ void INSTRUMENTATION::FiniCheckScore(INT32 code, void* )
     // sinon ce sera le nombre d'instructions exécutées
     message = decstr(g_nbIns);
 
-    // envoi du resultat en entier dans le pipe  (= stdout en mode debug)
+    // envoi du resultat en entier dans le pipe  (= stdout en mode nopipe)
     WINDOWS::WriteFile(g_hPipe, 
         message.c_str(), 
         static_cast<WINDOWS::DWORD>(message.size()), // cast pour eviter C4267 en x64 

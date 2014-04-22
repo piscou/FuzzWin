@@ -60,9 +60,6 @@
     <ClCompile Include="Core\TaintUtilities\utils.cpp">
       <Filter>Core\Taint Utilities</Filter>
     </ClCompile>
-    <ClCompile Include="Core\Translate\translate.cpp">
-      <Filter>Core\Translate</Filter>
-    </ClCompile>
     <ClCompile Include="Core\Instrumentation\instrumentation.cpp">
       <Filter>Core\Instrumentation</Filter>
     </ClCompile>
@@ -77,6 +74,12 @@
     </ClCompile>
     <ClCompile Include="Categories\UnconditionalBranch\unconditional_branch.cpp">
       <Filter>Categories\Unconditional Branch</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Translate\translateSMTLIB.cpp">
+      <Filter>Core\Translate</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Translate\translateToIR.cpp">
+      <Filter>Core\Translate</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -174,9 +177,6 @@
     <ClInclude Include="Core\TaintUtilities\utils.hpp">
       <Filter>Core\Taint Utilities</Filter>
     </ClInclude>
-    <ClInclude Include="Core\Translate\translate.h">
-      <Filter>Core\Translate</Filter>
-    </ClInclude>
     <ClInclude Include="Core\Instrumentation\instrumentation.h">
       <Filter>Core\Instrumentation</Filter>
     </ClInclude>
@@ -200,6 +200,15 @@
     </ClInclude>
     <ClInclude Include="Categories\UnconditionalBranch\unconditional_branch.h">
       <Filter>Categories\Unconditional Branch</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Translate\translateToIR.h">
+      <Filter>Core\Translate</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Translate\translateSMTLIB.h">
+      <Filter>Core\Translate</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Translate\translate.h">
+      <Filter>Core\Translate</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

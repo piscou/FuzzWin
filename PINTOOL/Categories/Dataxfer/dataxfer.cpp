@@ -37,7 +37,7 @@ void DATAXFER::cMOV(INS &ins)
                 IARG_THREAD_ID,
                 IARG_UINT32, INS_OperandReg(ins, 1),   
                 IARG_MEMORYWRITE_EA,
-                CALLBACK_DEBUG IARG_END);
+                IARG_INST_PTR, IARG_END);
         }
     }
     else     // DESTINATION = REGISTRE
@@ -66,7 +66,7 @@ void DATAXFER::cMOV(INS &ins)
                 IARG_THREAD_ID,
                 IARG_MEMORYREAD_EA,		
                 IARG_UINT32, regDest,   
-                CALLBACK_DEBUG IARG_END);
+                IARG_INST_PTR, IARG_END);
         }
         else if (INS_OperandIsImmediate(ins, 1)) // Valeur : démarquage
         {	
@@ -103,48 +103,48 @@ void DATAXFER::cMOV(INS &ins)
                 IARG_THREAD_ID,
                 IARG_UINT32, regSrc,		
                 IARG_UINT32, regDest, 
-                CALLBACK_DEBUG IARG_END);
+                IARG_INST_PTR, IARG_END);
         }  
     }
 } // cMOV
 
 // SIMULATE (templates spécialisés)
-template<> void DATAXFER::sMOV_RR<8>(THREADID tid, REG regSrc, REG regDest ADDRESS_DEBUG) 
+template<> void DATAXFER::sMOV_RR<8>(THREADID tid, REG regSrc, REG regDest, ADDRINT insAddress) 
 {
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     
     if ( !pTmgrTls->isRegisterTainted<8>(regSrc))   pTmgrTls->unTaintRegister<8>(regDest);
     else 
     {
-        _LOGTAINT("movRR8");
+        _LOGTAINT(tid, insAddress, "movRR8");
         pTmgrTls->updateTaintRegister<8>(regDest, std::make_shared<TaintByte>(
             X_ASSIGN, 
             ObjectSource(pTmgrTls->getRegisterTaint(regSrc))));
     }
 } // sMOV_RR<8>
 
-template<> void DATAXFER::sMOV_RM<8>(THREADID tid, REG regSrc, ADDRINT writeAddress ADDRESS_DEBUG) 
+template<> void DATAXFER::sMOV_RM<8>(THREADID tid, REG regSrc, ADDRINT writeAddress, ADDRINT insAddress) 
 {
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     
     if (!pTmgrTls->isRegisterTainted<8>(regSrc)) pTmgrGlobal->unTaintMemory<8>(writeAddress);
     else 
     {
-        _LOGTAINT("movRM8");
+        _LOGTAINT(tid, insAddress, "movRM8");
         pTmgrGlobal->updateMemoryTaint<8>(writeAddress, std::make_shared<TaintByte>(
             X_ASSIGN, 
             ObjectSource(pTmgrTls->getRegisterTaint(regSrc))));
     }
 } // sMOV_RM<8>
 
-template<> void DATAXFER::sMOV_MR<8>(THREADID tid, ADDRINT readAddress, REG regDest ADDRESS_DEBUG) 
+template<> void DATAXFER::sMOV_MR<8>(THREADID tid, ADDRINT readAddress, REG regDest, ADDRINT insAddress) 
 {
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     
     if (!pTmgrGlobal->isMemoryTainted<8>(readAddress)) pTmgrTls->unTaintRegister<8>(regDest);
     else 
     {
-        _LOGTAINT("movMR(8)");
+        _LOGTAINT(tid, insAddress, "movMR8");
         pTmgrTls->updateTaintRegister<8>(regDest, std::make_shared<TaintByte>(
             X_ASSIGN, 
             ObjectSource(pTmgrGlobal->getMemoryTaint<8>(readAddress))));
@@ -177,7 +177,7 @@ void DATAXFER::cXCHG(INS &ins)
             IARG_THREAD_ID,
             IARG_UINT32, INS_RegW(ins, 0),	// registre source
             IARG_MEMORYWRITE_EA,    // adresse réelle d'écriture 
-            CALLBACK_DEBUG IARG_END);
+            IARG_INST_PTR, IARG_END);
     }
     else // échange registre / registre
     {                      
@@ -199,12 +199,12 @@ void DATAXFER::cXCHG(INS &ins)
             IARG_THREAD_ID,
             IARG_UINT32, regSrc,	
             IARG_UINT32, regDest,	   
-            CALLBACK_DEBUG IARG_END);
+            IARG_INST_PTR, IARG_END);
     }
 } // cXCHG
 
 // SIMULATE (templates spécialisés)
-template<> void DATAXFER::sXCHG_M<8>(THREADID tid, REG reg, ADDRINT address ADDRESS_DEBUG) 
+template<> void DATAXFER::sXCHG_M<8>(THREADID tid, REG reg, ADDRINT address, ADDRINT insAddress) 
 {
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     
@@ -226,7 +226,7 @@ template<> void DATAXFER::sXCHG_M<8>(THREADID tid, REG reg, ADDRINT address ADDR
     else pTmgrTls->unTaintRegister<8>(reg);
 } // sXCHG_M<8>
 
-template<> void DATAXFER::sXCHG_R<8>(THREADID tid, REG regSrc, REG regDest ADDRESS_DEBUG) 
+template<> void DATAXFER::sXCHG_R<8>(THREADID tid, REG regSrc, REG regDest, ADDRINT insAddress) 
 {
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     
@@ -260,14 +260,14 @@ void DATAXFER::cBSWAP(INS &ins)
     INS_InsertCall (ins, IPOINT_BEFORE, (AFUNPTR) sBSWAP<32>,		 
         IARG_THREAD_ID,
         IARG_UINT32, reg, 
-        CALLBACK_DEBUG IARG_END);
+        IARG_INST_PTR, IARG_END);
     #else
     void (*callback)() = nullptr;
     callback = (getRegSize(reg) == 4) ? (AFUNPTR) sBSWAP<32> : (AFUNPTR) sBSWAP<64>;
     INS_InsertCall (ins, IPOINT_BEFORE, callback,		 
         IARG_THREAD_ID,
         IARG_UINT32, reg, 
-        CALLBACK_DEBUG IARG_END);
+        IARG_INST_PTR, IARG_END);
     #endif
 } // cBSWAP
 
@@ -312,7 +312,7 @@ void DATAXFER::cMOVSX(INS &ins)
             IARG_THREAD_ID,
             IARG_MEMORYREAD_EA,  
             IARG_UINT32, regDest,
-            CALLBACK_DEBUG IARG_END);
+            IARG_INST_PTR, IARG_END);
     }
     else // Source = registre
     {	
@@ -350,7 +350,7 @@ void DATAXFER::cMOVSX(INS &ins)
             IARG_UINT32,	 regSrc,
             IARG_REG_VALUE,  regSrc,
             IARG_UINT32,	regDest,
-            CALLBACK_DEBUG IARG_END);       
+            IARG_INST_PTR, IARG_END);       
     }
 } // cMOVSX
 
@@ -370,7 +370,7 @@ void DATAXFER::cMOVSXD(INS &ins)
             IARG_THREAD_ID,
             IARG_MEMORYREAD_EA,  
             IARG_UINT32, regDest,
-            CALLBACK_DEBUG IARG_END);
+            IARG_INST_PTR, IARG_END);
     }
     else // Source = registre
     {	
@@ -384,7 +384,7 @@ void DATAXFER::cMOVSXD(INS &ins)
             IARG_UINT32,	 regSrc,
             IARG_REG_VALUE,  regSrc,
             IARG_UINT32,	regDest,
-            CALLBACK_DEBUG IARG_END);
+            IARG_INST_PTR, IARG_END);
     }
 } // cMOVSXD
 #endif
@@ -428,7 +428,7 @@ void DATAXFER::cMOVZX(INS &ins)
             IARG_THREAD_ID,
             IARG_MEMORYREAD_EA,  
             IARG_UINT32, regDest,
-            CALLBACK_DEBUG IARG_END);
+            IARG_INST_PTR, IARG_END);
     }
     else // Source = registre
     {	
@@ -473,6 +473,6 @@ void DATAXFER::cMOVZX(INS &ins)
             IARG_THREAD_ID,
             IARG_UINT32, regSrc, 
             IARG_UINT32, regDest,
-            CALLBACK_DEBUG IARG_END);
+            IARG_INST_PTR, IARG_END);
     }
  } // cMOVZX

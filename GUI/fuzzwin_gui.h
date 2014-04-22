@@ -99,8 +99,6 @@ private:
         QCheckBox   *_traceOnlyEnabled;
         QCheckBox   *_timeStampEnabled;
         QCheckBox   *_hashFilesEnabled;
-        QCheckBox   *_logAsmEnabled;
-        QCheckBox   *_logTaintEnabled;
     // boutons de commande
     QPushButton *_startButton;
     STATUS_START_BUTTON _startButtonStatus;

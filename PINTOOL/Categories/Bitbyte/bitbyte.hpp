@@ -14,7 +14,7 @@
 
 /*** BT : juste marquage de CF avec le bit concerné ***/
 
-template<UINT32 lengthInBits> void BITBYTE::sBT_IM(THREADID tid, ADDRINT testedAddress, ADDRINT value ADDRESS_DEBUG)
+template<UINT32 lengthInBits> void BITBYTE::sBT_IM(THREADID tid, ADDRINT testedAddress, ADDRINT value, ADDRINT insAddress)
 { 
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     
@@ -26,7 +26,7 @@ template<UINT32 lengthInBits> void BITBYTE::sBT_IM(THREADID tid, ADDRINT testedA
     if ( !pTmgrGlobal->isMemoryTainted<8>(testedByte)) pTmgrTls->unTaintCarryFlag();
     else 
     {
-        _LOGTAINT("BT_IM" << lengthInBits << " adresse (source et réelle) "<< hex << testedAddress << " " << testedByte << " depl " << dec << maskedValue);
+        _LOGTAINT(tid, insAddress, "BT_IM" + decstr(lengthInBits));
 
         // extraction du bit et stockage dans CarryFlag; on prend l'index du bit dans l'octet testé.
         // Ex : bit 17 <=> bit 1 de l'octet 2 ; on calcule donc maskedValue % 8 (ou AND 0x7)
@@ -38,7 +38,7 @@ template<UINT32 lengthInBits> void BITBYTE::sBT_IM(THREADID tid, ADDRINT testedA
     }
 } // sBT_IM
 
-template<UINT32 lengthInBits> void BITBYTE::sBT_IR(THREADID tid, REG testedReg, ADDRINT value ADDRESS_DEBUG)
+template<UINT32 lengthInBits> void BITBYTE::sBT_IR(THREADID tid, REG testedReg, ADDRINT value, ADDRINT insAddress)
 {
     REGINDEX regIndex = getRegIndex(testedReg);
     
@@ -53,7 +53,7 @@ template<UINT32 lengthInBits> void BITBYTE::sBT_IR(THREADID tid, REG testedReg, 
     if ( !pTmgrTls->isRegisterPartTainted(regIndex, testedByte)) pTmgrTls->unTaintCarryFlag();
     else 
     {
-        _LOGTAINT("BT_IR" << lengthInBits << " registre "<< REG_StringShort(testedReg) << " octet " << testedByte << " depl " << maskedValue);
+        _LOGTAINT(tid, insAddress, "BT_IR" + decstr(lengthInBits));
 
         // extraction du bit et stockage dans CarryFlag; on prend l'index du bit dans l'octet testé.
         // Ex : bit 17 <=> bit 1 de l'octet 2 ; on calcule donc maskedValue % 8 (ou AND 0x7)
@@ -66,7 +66,7 @@ template<UINT32 lengthInBits> void BITBYTE::sBT_IR(THREADID tid, REG testedReg, 
 } // sBT_IR
 
 template<UINT32 lengthInBits> void BITBYTE::sBT_RM
-    (THREADID tid, ADDRINT testedAddress, REG bitIndexReg, ADDRINT bitIndexRegValue ADDRESS_DEBUG)
+    (THREADID tid, ADDRINT testedAddress, REG bitIndexReg, ADDRINT bitIndexRegValue, ADDRINT insAddress)
 { 
     // calcul du deplacement en octets (2/4/8)* (offset DIV 16/32/64), soit une division par 8. 
     // !!! CAST EN INT POUR FAIRE UNE DIVISION SIGNEE
@@ -88,8 +88,7 @@ template<UINT32 lengthInBits> void BITBYTE::sBT_RM
         {
             // calcul du modulo du déplacement 16/32/64 = position du bit dans le byte :)
             UINT32 testedBit = bitIndexRegValue & (lengthInBits - 1);
-            _LOGTAINT("BT_RM" << lengthInBits << " depl non marqué ;  adresse (source et réelle) " \
-                << hex << testedAddress << " " << testedByte << " depl " << dec << testedBit);
+            _LOGTAINT(tid, insAddress, "BT_RM" + decstr(lengthInBits));
         
             // extraction du bit et stockage dans CarryFlag
             pTmgrTls->updateTaintCarryFlag(std::make_shared<TaintBit>(
@@ -99,7 +98,7 @@ template<UINT32 lengthInBits> void BITBYTE::sBT_RM
         }
         else // position du bit marqué (partie faible du registre marqué)
         {
-            _LOGTAINT("BT_RM" << lengthInBits << " depl marqué !! ;  adresse (source et réelle) " << hex << testedAddress);
+            _LOGTAINT(tid, insAddress, "BT_RM" + decstr(lengthInBits));
 
             // extraction du bit et stockage dans CarryFlag. Le modulo de la valeur du registre
             // sera effectué dans la formule SMTLIB
@@ -112,7 +111,7 @@ template<UINT32 lengthInBits> void BITBYTE::sBT_RM
 }  // sBT_RM
 
 template<UINT32 lengthInBits> void BITBYTE::sBT_RR
-    (THREADID tid, REG testedReg, ADDRINT testedRegValue, REG bitIndexReg, ADDRINT bitIndexRegValue ADDRESS_DEBUG)
+    (THREADID tid, REG testedReg, ADDRINT testedRegValue, REG bitIndexReg, ADDRINT bitIndexRegValue, ADDRINT insAddress)
 { 
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
         
@@ -122,13 +121,13 @@ template<UINT32 lengthInBits> void BITBYTE::sBT_RR
     if (!(isbitIndexTainted || isTestedRegTainted)) return; // source et position non marqués
     else if (!isbitIndexTainted) // position non marquée => cas BT_IR
     {
-        sBT_IR<lengthInBits>(tid, testedReg, bitIndexRegValue INSADDRESS);
+        sBT_IR<lengthInBits>(tid, testedReg, bitIndexRegValue ,insAddress);
     }
     else // cas position marquée 
     {
         if (isTestedRegTainted) // registre testé est marqué
         {
-            _LOGTAINT("BT_RR" << lengthInBits << " registre "<< REG_StringShort(testedReg) << " MARQUE et depl NON marqué");
+            _LOGTAINT(tid, insAddress, "BT_RR" + decstr(lengthInBits));
 
             // extraction du bit et stockage dans CarryFlag
             pTmgrTls->updateTaintCarryFlag(std::make_shared<TaintBit>(
@@ -138,7 +137,7 @@ template<UINT32 lengthInBits> void BITBYTE::sBT_RR
         }
         else // registre testé est NON marqué
         {
-            _LOGTAINT("BT_RR" << lengthInBits << " registre "<< REG_StringShort(testedReg) << " non marqué et depl marqué");
+            _LOGTAINT(tid, insAddress, "BT_RR" + decstr(lengthInBits));
 
             // extraction du bit et stockage dans CarryFlag
             pTmgrTls->updateTaintCarryFlag(std::make_shared<TaintBit>(
@@ -153,7 +152,7 @@ template<UINT32 lengthInBits> void BITBYTE::sBT_RR
 /** BTC : test et Complément du bit **/
 /*************************************/
 
-template<UINT32 lengthInBits> void BITBYTE::sBTC_IM(THREADID tid, ADDRINT testedAddress, ADDRINT value ADDRESS_DEBUG)
+template<UINT32 lengthInBits> void BITBYTE::sBTC_IM(THREADID tid, ADDRINT testedAddress, ADDRINT value, ADDRINT insAddress)
 { 
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     
@@ -165,7 +164,7 @@ template<UINT32 lengthInBits> void BITBYTE::sBTC_IM(THREADID tid, ADDRINT tested
     if ( !pTmgrGlobal->isMemoryTainted<8>(testedByte)) pTmgrTls->unTaintCarryFlag();
     else 
     {
-        _LOGTAINT("BTC_IM" << lengthInBits << " adresse (source et réelle) "<< hex << testedAddress << " " << testedByte << " depl " << dec << maskedValue);
+        _LOGTAINT(tid, insAddress, "BTC_IM" + decstr(lengthInBits));
         
         ObjectSource objSrcMem(pTmgrGlobal->getMemoryTaint<8>(testedByte));
         
@@ -185,7 +184,7 @@ template<UINT32 lengthInBits> void BITBYTE::sBTC_IM(THREADID tid, ADDRINT tested
     }
 } // sBTC_IM
 
-template<UINT32 lengthInBits> void BITBYTE::sBTC_IR(THREADID tid, REG testedReg, ADDRINT value ADDRESS_DEBUG)
+template<UINT32 lengthInBits> void BITBYTE::sBTC_IR(THREADID tid, REG testedReg, ADDRINT value, ADDRINT insAddress)
 {
     REGINDEX regIndex = getRegIndex(testedReg);
     
@@ -200,7 +199,7 @@ template<UINT32 lengthInBits> void BITBYTE::sBTC_IR(THREADID tid, REG testedReg,
     if ( !pTmgrTls->isRegisterPartTainted(regIndex, testedByte)) pTmgrTls->unTaintCarryFlag();
     else 
     {
-        _LOGTAINT("BTC_IR" << lengthInBits << " registre "<< REG_StringShort(testedReg) << " octet " << testedByte << " depl " << maskedValue);
+        _LOGTAINT(tid, insAddress, "BTC_IR" + decstr(lengthInBits));
 
          ObjectSource objSrcReg(pTmgrTls->getRegisterPartTaint(regIndex, testedByte));
 
@@ -222,7 +221,7 @@ template<UINT32 lengthInBits> void BITBYTE::sBTC_IR(THREADID tid, REG testedReg,
 } // sBTC_IR
 
 template<UINT32 lengthInBits> void BITBYTE::sBTC_RM
-    (THREADID tid, ADDRINT testedAddress, REG bitIndexReg, ADDRINT bitIndexRegValue ADDRESS_DEBUG)
+    (THREADID tid, ADDRINT testedAddress, REG bitIndexReg, ADDRINT bitIndexRegValue, ADDRINT insAddress)
 { 
     // calcul du deplacement en octets (2/4/8)* (offset DIV 16/32/64), soit une division par 8. 
     // !!! CAST EN INT POUR FAIRE UNE DIVISION SIGNEE
@@ -245,8 +244,7 @@ template<UINT32 lengthInBits> void BITBYTE::sBTC_RM
             // calcul du modulo du déplacement 16/32/64 = position du bit dans le byte :)
             UINT32 maskedValue = bitIndexRegValue & (lengthInBits - 1);
 
-            _LOGTAINT("BTC_RM" << lengthInBits << " depl non marqué ;  adresse (source et réelle) " \
-                << hex << testedAddress << " " << testedByte << " depl " << dec << maskedValue);
+            _LOGTAINT(tid, insAddress, "BTC_RM" + decstr(lengthInBits));
  
             // extraction du bit et stockage dans CarryFlag; on prend l'index du bit dans l'octet testé.
             // Ex : bit 17 <=> bit 1 de l'octet 2 ; on calcule donc maskedValue % 8 (ou AND 0x7)
@@ -267,7 +265,7 @@ template<UINT32 lengthInBits> void BITBYTE::sBTC_RM
         }
         else // position du bit marqué (partie faible du registre marqué)
         {
-            _LOGTAINT("BTC_RM" << lengthInBits << " depl marqué !! ;  adresse (source et réelle) " << hex << testedAddress);
+            _LOGTAINT(tid, insAddress, "BTC_RM" + decstr(lengthInBits));
 
             ObjectSource objTestedMem(pTmgrGlobal->getMemoryTaint<lengthInBits>(testedByte));
             ObjectSource objTestedBit(pTmgrTls->getRegisterTaint<lengthInBits>(bitIndexReg, bitIndexRegValue));
@@ -290,7 +288,7 @@ template<UINT32 lengthInBits> void BITBYTE::sBTC_RM
 }  // sBTC_RM
 
 template<UINT32 lengthInBits> void BITBYTE::sBTC_RR
-    (THREADID tid, REG testedReg, ADDRINT testedRegValue, REG bitIndexReg, ADDRINT bitIndexRegValue ADDRESS_DEBUG)
+    (THREADID tid, REG testedReg, ADDRINT testedRegValue, REG bitIndexReg, ADDRINT bitIndexRegValue, ADDRINT insAddress)
 { 
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
         
@@ -300,7 +298,7 @@ template<UINT32 lengthInBits> void BITBYTE::sBTC_RR
     if (!(isbitIndexTainted || isTestedRegTainted)) return; // source et position non marqués
     else if (!isbitIndexTainted) // position non marquée => cas BTC_IR
     {
-        sBTC_IR<lengthInBits>(tid, testedReg, bitIndexRegValue INSADDRESS);
+        sBTC_IR<lengthInBits>(tid, testedReg, bitIndexRegValue ,insAddress);
     }
     else // cas position marquée (registre testé marqué ou non)
     {
@@ -310,8 +308,7 @@ template<UINT32 lengthInBits> void BITBYTE::sBTC_RR
 
         ObjectSource objTestedBit(pTmgrTls->getRegisterTaint<lengthInBits>(bitIndexReg, bitIndexRegValue));
 
-        _LOGTAINT("BTC_RR" << lengthInBits << " registre "<< REG_StringShort(testedReg) \
-            << ((isTestedRegTainted) ? " MARQUE" : " ") << " depl marqué");
+        _LOGTAINT(tid, insAddress, "BTC_RR" + decstr(lengthInBits));
 
         // extraction du bit et stockage dans CarryFlag
         pTmgrTls->updateTaintCarryFlag(std::make_shared<TaintBit>(
@@ -332,7 +329,7 @@ template<UINT32 lengthInBits> void BITBYTE::sBTC_RR
 /** BTR : test et mise à 0 du bit **/
 /***********************************/
 
-template<UINT32 lengthInBits> void BITBYTE::sBTR_IM(THREADID tid, ADDRINT testedAddress, ADDRINT value ADDRESS_DEBUG)
+template<UINT32 lengthInBits> void BITBYTE::sBTR_IM(THREADID tid, ADDRINT testedAddress, ADDRINT value, ADDRINT insAddress)
 { 
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     
@@ -344,7 +341,7 @@ template<UINT32 lengthInBits> void BITBYTE::sBTR_IM(THREADID tid, ADDRINT tested
     if ( !pTmgrGlobal->isMemoryTainted<8>(testedByte)) pTmgrTls->unTaintCarryFlag();
     else 
     {
-        _LOGTAINT("BTR_IM" << lengthInBits << " adresse (source et réelle) "<< hex << testedAddress << " " << testedByte << " depl " << dec << maskedValue);
+        _LOGTAINT(tid, insAddress, "BTR_IM" + decstr(lengthInBits));
         
         ObjectSource objSrcMem(pTmgrGlobal->getMemoryTaint<8>(testedByte));
         
@@ -364,7 +361,7 @@ template<UINT32 lengthInBits> void BITBYTE::sBTR_IM(THREADID tid, ADDRINT tested
     }
 } // sBTR_IM
 
-template<UINT32 lengthInBits> void BITBYTE::sBTR_IR(THREADID tid, REG testedReg, ADDRINT value ADDRESS_DEBUG)
+template<UINT32 lengthInBits> void BITBYTE::sBTR_IR(THREADID tid, REG testedReg, ADDRINT value, ADDRINT insAddress)
 {
     REGINDEX regIndex = getRegIndex(testedReg);
     
@@ -379,7 +376,7 @@ template<UINT32 lengthInBits> void BITBYTE::sBTR_IR(THREADID tid, REG testedReg,
     if ( !pTmgrTls->isRegisterPartTainted(regIndex, testedByte)) pTmgrTls->unTaintCarryFlag();
     else 
     {
-        _LOGTAINT("BTR_IR" << lengthInBits << " registre "<< REG_StringShort(testedReg) << " octet " << testedByte << " depl " << maskedValue);
+        _LOGTAINT(tid, insAddress, "BTR_IR" + decstr(lengthInBits));
 
          ObjectSource objSrcReg(pTmgrTls->getRegisterPartTaint(regIndex, testedByte));
 
@@ -401,7 +398,7 @@ template<UINT32 lengthInBits> void BITBYTE::sBTR_IR(THREADID tid, REG testedReg,
 } // sBTR_IR
 
 template<UINT32 lengthInBits> void BITBYTE::sBTR_RM
-    (THREADID tid, ADDRINT testedAddress, REG bitIndexReg, ADDRINT bitIndexRegValue ADDRESS_DEBUG)
+    (THREADID tid, ADDRINT testedAddress, REG bitIndexReg, ADDRINT bitIndexRegValue, ADDRINT insAddress)
 { 
     // calcul du deplacement en octets (2/4/8)* (offset DIV 16/32/64), soit une division par 8. 
     // !!! CAST EN INT POUR FAIRE UNE DIVISION SIGNEE
@@ -424,8 +421,7 @@ template<UINT32 lengthInBits> void BITBYTE::sBTR_RM
             // calcul du modulo du déplacement 16/32/64 = position du bit dans le byte :)
             UINT32 maskedValue = bitIndexRegValue & (lengthInBits - 1);
 
-            _LOGTAINT("BTR_RM" << lengthInBits << " depl non marqué ;  adresse (source et réelle) " \
-                << hex << testedAddress << " " << testedByte << " depl " << dec << maskedValue);
+            _LOGTAINT(tid, insAddress, "BTR_RM" + decstr(lengthInBits));
  
             // extraction du bit et stockage dans CarryFlag; on prend l'index du bit dans l'octet testé.
             // Ex : bit 17 <=> bit 1 de l'octet 2 ; on calcule donc maskedValue % 8 (ou AND 0x7)
@@ -446,7 +442,7 @@ template<UINT32 lengthInBits> void BITBYTE::sBTR_RM
         }
         else // position du bit marqué (partie faible du registre marqué)
         {
-            _LOGTAINT("BTR_RM" << lengthInBits << " depl marqué !! ;  adresse (source et réelle) " << hex << testedAddress);
+            _LOGTAINT(tid, insAddress, "BTR_RM" + decstr(lengthInBits));
 
             ObjectSource objTestedMem(pTmgrGlobal->getMemoryTaint<lengthInBits>(testedByte));
             ObjectSource objTestedBit(pTmgrTls->getRegisterTaint<lengthInBits>(bitIndexReg, bitIndexRegValue));
@@ -469,7 +465,7 @@ template<UINT32 lengthInBits> void BITBYTE::sBTR_RM
 }  // sBTR_RM
 
 template<UINT32 lengthInBits> void BITBYTE::sBTR_RR
-    (THREADID tid, REG testedReg, ADDRINT testedRegValue, REG bitIndexReg, ADDRINT bitIndexRegValue ADDRESS_DEBUG)
+    (THREADID tid, REG testedReg, ADDRINT testedRegValue, REG bitIndexReg, ADDRINT bitIndexRegValue, ADDRINT insAddress)
 { 
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
         
@@ -479,7 +475,7 @@ template<UINT32 lengthInBits> void BITBYTE::sBTR_RR
     if (!(isbitIndexTainted || isTestedRegTainted)) return; // source et position non marqués
     else if (!isbitIndexTainted) // position non marquée => cas BTR_IR
     {
-        sBTR_IR<lengthInBits>(tid, testedReg, bitIndexRegValue INSADDRESS);
+        sBTR_IR<lengthInBits>(tid, testedReg, bitIndexRegValue ,insAddress);
     }
     else // cas position marquée (registre testé marqué ou non)
     {
@@ -489,8 +485,7 @@ template<UINT32 lengthInBits> void BITBYTE::sBTR_RR
 
         ObjectSource objTestedBit(pTmgrTls->getRegisterTaint<lengthInBits>(bitIndexReg, bitIndexRegValue));
 
-        _LOGTAINT("BTR_RR" << lengthInBits << " registre "<< REG_StringShort(testedReg) \
-            << ((isTestedRegTainted) ? " MARQUE" : " ") << " depl marqué");
+        _LOGTAINT(tid, insAddress, "BTR_RR" + decstr(lengthInBits));
 
         // extraction du bit et stockage dans CarryFlag
         pTmgrTls->updateTaintCarryFlag(std::make_shared<TaintBit>(
@@ -512,7 +507,7 @@ template<UINT32 lengthInBits> void BITBYTE::sBTR_RR
 /***********************************/
 
 template<UINT32 lengthInBits> 
-void BITBYTE::sBTS_IM(THREADID tid, ADDRINT testedAddress, ADDRINT value ADDRESS_DEBUG)
+void BITBYTE::sBTS_IM(THREADID tid, ADDRINT testedAddress, ADDRINT value, ADDRINT insAddress)
 { 
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     
@@ -524,7 +519,7 @@ void BITBYTE::sBTS_IM(THREADID tid, ADDRINT testedAddress, ADDRINT value ADDRESS
     if ( !pTmgrGlobal->isMemoryTainted<8>(testedByte)) pTmgrTls->unTaintCarryFlag();
     else 
     {
-        _LOGTAINT("BTS_IM" << lengthInBits << " adresse (source et réelle) "<< hex << testedAddress << " " << testedByte << " depl " << dec << maskedValue);
+        _LOGTAINT(tid, insAddress, "BTS_IM" + decstr(lengthInBits));
         
         ObjectSource objSrcMem(pTmgrGlobal->getMemoryTaint<8>(testedByte));
         
@@ -545,7 +540,7 @@ void BITBYTE::sBTS_IM(THREADID tid, ADDRINT testedAddress, ADDRINT value ADDRESS
 } // sBTS_IM
 
 template<UINT32 lengthInBits> 
-void BITBYTE::sBTS_IR(THREADID tid, REG testedReg, ADDRINT value ADDRESS_DEBUG)
+void BITBYTE::sBTS_IR(THREADID tid, REG testedReg, ADDRINT value, ADDRINT insAddress)
 {
     REGINDEX regIndex = getRegIndex(testedReg);
     
@@ -560,7 +555,7 @@ void BITBYTE::sBTS_IR(THREADID tid, REG testedReg, ADDRINT value ADDRESS_DEBUG)
     if ( !pTmgrTls->isRegisterPartTainted(regIndex, testedByte)) pTmgrTls->unTaintCarryFlag();
     else 
     {
-        _LOGTAINT("BTS_IR" << lengthInBits << " registre "<< REG_StringShort(testedReg) << " octet " << testedByte << " depl " << maskedValue);
+        _LOGTAINT(tid, insAddress, "BTS_IR" + decstr(lengthInBits));
          
         ObjectSource objSrcReg(pTmgrTls->getRegisterPartTaint(regIndex, testedByte));
 
@@ -582,7 +577,7 @@ void BITBYTE::sBTS_IR(THREADID tid, REG testedReg, ADDRINT value ADDRESS_DEBUG)
 } // sBTS_IR
 
 template<UINT32 lengthInBits> 
-void BITBYTE::sBTS_RM(THREADID tid, ADDRINT testedAddress, REG bitIndexReg, ADDRINT bitIndexRegValue ADDRESS_DEBUG)
+void BITBYTE::sBTS_RM(THREADID tid, ADDRINT testedAddress, REG bitIndexReg, ADDRINT bitIndexRegValue, ADDRINT insAddress)
 { 
     // calcul du deplacement en octets (2/4/8)* (offset DIV 16/32/64), soit une division par 8. 
     // !!! CAST EN INT POUR FAIRE UNE DIVISION SIGNEE
@@ -605,8 +600,7 @@ void BITBYTE::sBTS_RM(THREADID tid, ADDRINT testedAddress, REG bitIndexReg, ADDR
             // calcul du modulo du déplacement 16/32/64
             UINT32 maskedValue = bitIndexRegValue & (lengthInBits - 1);
 
-            _LOGTAINT("BTS_RM" << lengthInBits << " depl non marqué ;  adresse (source et réelle) " \
-                << hex << testedAddress << " " << testedByte << " depl " << dec << maskedValue);
+            _LOGTAINT(tid, insAddress, "BTS_RM" + decstr(lengthInBits));
  
             // extraction du bit et stockage dans CarryFlag; on prend l'index du bit dans l'octet testé.
             // Ex : bit 17 <=> bit 1 de l'octet 2 ; on calcule donc maskedValue % 8 (ou AND 0x7)
@@ -627,7 +621,7 @@ void BITBYTE::sBTS_RM(THREADID tid, ADDRINT testedAddress, REG bitIndexReg, ADDR
         }
         else // position du bit marqué (partie faible du registre marqué)
         {
-            _LOGTAINT("BTS_RM" << lengthInBits << " depl marqué !! ;  adresse (source et réelle) " << hex << testedAddress);
+            _LOGTAINT(tid, insAddress, "BTS_RM" + decstr(lengthInBits));
 
             ObjectSource objTestedMem(pTmgrGlobal->getMemoryTaint<lengthInBits>(testedByte));
             ObjectSource objTestedBit(pTmgrTls->getRegisterTaint<lengthInBits>(bitIndexReg, bitIndexRegValue));
@@ -650,7 +644,7 @@ void BITBYTE::sBTS_RM(THREADID tid, ADDRINT testedAddress, REG bitIndexReg, ADDR
 }  // sBTS_RM
 
 template<UINT32 lengthInBits> 
-void BITBYTE::sBTS_RR(THREADID tid, REG testedReg, ADDRINT testedRegValue, REG bitIndexReg, ADDRINT bitIndexRegValue ADDRESS_DEBUG)
+void BITBYTE::sBTS_RR(THREADID tid, REG testedReg, ADDRINT testedRegValue, REG bitIndexReg, ADDRINT bitIndexRegValue, ADDRINT insAddress)
 { 
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
         
@@ -660,7 +654,7 @@ void BITBYTE::sBTS_RR(THREADID tid, REG testedReg, ADDRINT testedRegValue, REG b
     if (!(isbitIndexTainted || isTestedRegTainted)) return; // source et position non marqués
     else if (!isbitIndexTainted) // position non marquée => cas BTS_IR
     {
-        sBTS_IR<lengthInBits>(tid, testedReg, bitIndexRegValue INSADDRESS);
+        sBTS_IR<lengthInBits>(tid, testedReg, bitIndexRegValue ,insAddress);
     }
     else // cas position marquée (registre testé marqué ou non)
     {
@@ -670,8 +664,7 @@ void BITBYTE::sBTS_RR(THREADID tid, REG testedReg, ADDRINT testedRegValue, REG b
 
         ObjectSource objTestedBit(pTmgrTls->getRegisterTaint<lengthInBits>(bitIndexReg, bitIndexRegValue));
 
-        _LOGTAINT("BTS_RR" << lengthInBits << " registre "<< REG_StringShort(testedReg) \
-            << ((isTestedRegTainted) ? " MARQUE" : " ") << " depl marqué");
+        _LOGTAINT(tid, insAddress, "BTS_RR" + decstr(lengthInBits));
 
         // extraction du bit et stockage dans CarryFlag
         pTmgrTls->updateTaintCarryFlag(std::make_shared<TaintBit>(
@@ -692,7 +685,7 @@ void BITBYTE::sBTS_RR(THREADID tid, REG testedReg, ADDRINT testedRegValue, REG b
 /** BSR : Bit Scan Reverse (position du MSB) **/
 /**********************************************/
 template<UINT32 lengthInBits> 
-void BITBYTE::sBSR_M(THREADID tid, ADDRINT testedAddress, REG resultReg ADDRESS_DEBUG)
+void BITBYTE::sBSR_M(THREADID tid, ADDRINT testedAddress, REG resultReg, ADDRINT insAddress)
 { 
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
 
@@ -702,7 +695,7 @@ void BITBYTE::sBSR_M(THREADID tid, ADDRINT testedAddress, REG resultReg ADDRESS_
     }
     else
     {
-        _LOGTAINT("BSR_M" << lengthInBits);
+        _LOGTAINT(tid, insAddress, "BSR_M" + decstr(lengthInBits));
 
         ObjectSource objSrc(pTmgrGlobal->getMemoryTaint<lengthInBits>(testedAddress));
 
@@ -716,7 +709,7 @@ void BITBYTE::sBSR_M(THREADID tid, ADDRINT testedAddress, REG resultReg ADDRESS_
 
 template<UINT32 lengthInBits> 
 void BITBYTE::sBSR_R(THREADID tid, REG testedReg, ADDRINT testedRegValue, 
-                     REG resultReg ADDRESS_DEBUG)
+                     REG resultReg, ADDRINT insAddress)
 {
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
 
@@ -726,7 +719,7 @@ void BITBYTE::sBSR_R(THREADID tid, REG testedReg, ADDRINT testedRegValue,
     }
     else
     {
-        _LOGTAINT("BSR_R" << lengthInBits);
+        _LOGTAINT(tid, insAddress, "BSR_R" + decstr(lengthInBits));
         ObjectSource objSrc(pTmgrTls->getRegisterTaint<lengthInBits>(testedReg, testedRegValue));
 
         // ZF vaut 1 si la source est nulle, 0 dans les autres cas => F_IS_NULL
@@ -741,7 +734,7 @@ void BITBYTE::sBSR_R(THREADID tid, REG testedReg, ADDRINT testedRegValue,
 /** BSF : Bit Scan Forward (position du LSB) **/
 /**********************************************/
 template<UINT32 lengthInBits> 
-void BITBYTE::sBSF_M(THREADID tid, ADDRINT testedAddress, REG resultReg ADDRESS_DEBUG)
+void BITBYTE::sBSF_M(THREADID tid, ADDRINT testedAddress, REG resultReg, ADDRINT insAddress)
 { 
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
 
@@ -751,7 +744,7 @@ void BITBYTE::sBSF_M(THREADID tid, ADDRINT testedAddress, REG resultReg ADDRESS_
     }
     else
     {
-        _LOGTAINT("BSF_M" << lengthInBits);
+        _LOGTAINT(tid, insAddress, "BSF_M" + decstr(lengthInBits));
         ObjectSource objSrc(pTmgrGlobal->getMemoryTaint<lengthInBits>(testedAddress));
 
         // ZF vaut 1 si la source est nulle, 0 dans les autres cas => F_IS_NULL
@@ -764,7 +757,7 @@ void BITBYTE::sBSF_M(THREADID tid, ADDRINT testedAddress, REG resultReg ADDRESS_
 
 template<UINT32 lengthInBits> 
 void BITBYTE::sBSF_R(THREADID tid, REG testedReg, ADDRINT testedRegValue, 
-                     REG resultReg ADDRESS_DEBUG)
+                     REG resultReg, ADDRINT insAddress)
 {
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
 
@@ -774,7 +767,7 @@ void BITBYTE::sBSF_R(THREADID tid, REG testedReg, ADDRINT testedRegValue,
     }
     else
     {
-        _LOGTAINT("BSF_R" << lengthInBits);
+        _LOGTAINT(tid, insAddress, "BSF_R" + decstr(lengthInBits));
         ObjectSource objSrc(pTmgrTls->getRegisterTaint<lengthInBits>(testedReg, testedRegValue));
 
         // ZF vaut 1 si la source est nulle, 0 dans les autres cas => F_IS_NULL

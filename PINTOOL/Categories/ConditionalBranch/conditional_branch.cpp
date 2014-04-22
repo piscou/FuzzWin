@@ -237,6 +237,34 @@ void CONDITIONAL_BR::cJNLE(INS &ins)
         IARG_INST_PTR, IARG_END);
 } // cJNLE
 
+void CONDITIONAL_BR::cJRCXZ(INS &ins) 
+{
+    // JRCXZ : test si CX/ECX/RCX est nul
+    REG testedReg = INS_RegR(ins, 0);
+    void (*callback)() = nullptr;
+
+    switch (getRegSize(testedReg))
+    {
+    // case 8: impossible
+    case 16: callback = (AFUNPTR) sJRCXZ<16>; break;
+    case 32: callback = (AFUNPTR) sJRCXZ<32>; break;
+    case 64: callback = (AFUNPTR) sJRCXZ<64>; break;
+    default: return;
+    }
+
+    INS_InsertCall (ins, IPOINT_AFTER, callback,
+        IARG_THREAD_ID, 
+        IARG_BOOL, false,          // condition fausse (branche non prise)
+        IARG_REG_VALUE, testedReg, // valeur de CX/ECX/RCX
+        IARG_INST_PTR, IARG_END);
+
+    INS_InsertCall (ins, IPOINT_TAKEN_BRANCH, callback,
+        IARG_THREAD_ID, 
+        IARG_BOOL,      true,      // condition vraie (branche prise)
+        IARG_REG_VALUE, testedReg, // valeur de CX/ECX/RCX
+        IARG_INST_PTR, IARG_END);
+} // cJRCXZ
+
 // SIMULATE
 
 void CONDITIONAL_BR::sBELOW(THREADID tid, bool isTaken, ADDRINT insAddress) 
@@ -245,7 +273,7 @@ void CONDITIONAL_BR::sBELOW(THREADID tid, bool isTaken, ADDRINT insAddress)
     // JB/JNAE/JC   CF = 1   Below/not above or equal/carry   
     if (pTmgrTls->isCarryFlagTainted()) 
     {
-        _LOGTAINT("JB");
+        _LOGTAINT(tid, insAddress, "JB");
         g_pFormula->addConstraintJcc(pTmgrTls, PREDICATE_BELOW, isTaken, insAddress);
     }
 } // sBELOW
@@ -256,7 +284,7 @@ void CONDITIONAL_BR::sSIGN(THREADID tid, bool isTaken, ADDRINT insAddress)
     // JS    SF = 1   Sign (negative)
     if (pTmgrTls->isSignFlagTainted()) 
     {
-        _LOGTAINT("JS");
+        _LOGTAINT(tid, insAddress, "JS");
         g_pFormula->addConstraintJcc(pTmgrTls, PREDICATE_SIGN, isTaken, insAddress);
     }
 } // sSIGN
@@ -267,7 +295,7 @@ void CONDITIONAL_BR::sOVERFLOW(THREADID tid, bool isTaken, ADDRINT insAddress)
     // JO  OF = 1  Overflow
     if (pTmgrTls->isOverflowFlagTainted()) 
     {
-        _LOGTAINT("JO");
+        _LOGTAINT(tid, insAddress, "JO");
         g_pFormula->addConstraintJcc(pTmgrTls, PREDICATE_OVERFLOW, isTaken, insAddress);
     }
 } // sOVERFLOW
@@ -278,7 +306,7 @@ void CONDITIONAL_BR::sPARITY(THREADID tid, bool isTaken, ADDRINT insAddress)
     // JP/JPE  PF = 1    Parity/parity even
     if (pTmgrTls->isParityFlagTainted()) 
     {
-        _LOGTAINT("JP");
+        _LOGTAINT(tid, insAddress, "JP");
         g_pFormula->addConstraintJcc(pTmgrTls, PREDICATE_PARITY, isTaken, insAddress);
     }
 } // sPARITY
@@ -289,7 +317,7 @@ void CONDITIONAL_BR::sZERO(THREADID tid, bool isTaken, ADDRINT insAddress)
     // JE/JZ    ZF = 1    Equal/zero 
     if (pTmgrTls->isZeroFlagTainted()) 
     {
-        _LOGTAINT("JZ");
+        _LOGTAINT(tid, insAddress, "JZ");
         g_pFormula->addConstraintJcc(pTmgrTls, PREDICATE_ZERO, isTaken, insAddress);
     }
 }
@@ -300,7 +328,7 @@ void CONDITIONAL_BR::sBELOW_OR_EQUAL(THREADID tid, bool isTaken, ADDRINT regEfla
     // (CF or ZF) = 1  Below or equal/not above
     if (pTmgrTls->isZeroFlagTainted() || pTmgrTls->isCarryFlagTainted()) 
     {
-        _LOGTAINT("JBE");
+        _LOGTAINT(tid, insAddress, "JBE");
         g_pFormula->addConstraintJcc(pTmgrTls, PREDICATE_BELOW_OR_EQUAL, isTaken, insAddress, regEflagsValue);
     }
 } // sBELOW_OR_EQUAL
@@ -311,7 +339,7 @@ void CONDITIONAL_BR::sLESS(THREADID tid, bool isTaken, ADDRINT regEflagsValue, A
     // JL/JNGE   (SF xor OF) = 1 Less/not greater or equal   
     if (pTmgrTls->isSignFlagTainted() || pTmgrTls->isOverflowFlagTainted()) 
     {TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
-        _LOGTAINT("JL");
+        _LOGTAINT(tid, insAddress, "JL");
         g_pFormula->addConstraintJcc(pTmgrTls, PREDICATE_LESS, isTaken, insAddress, regEflagsValue);
     }
 } // sLESS
@@ -322,7 +350,7 @@ void CONDITIONAL_BR::sLESS_OR_EQUAL(THREADID tid, bool isTaken, ADDRINT regEflag
     // JLE/JNG  ((SF xor OF) or ZF) = 1 Less or equal/not greater
     if (pTmgrTls->isZeroFlagTainted() || pTmgrTls->isSignFlagTainted() || pTmgrTls->isOverflowFlagTainted()) 
     {
-        _LOGTAINT("JLE");
+        _LOGTAINT(tid, insAddress, "JLE");
         g_pFormula->addConstraintJcc(pTmgrTls, PREDICATE_LESS_OR_EQUAL, isTaken, insAddress, regEflagsValue);
     }
 } // sLESS_OR_EQUAL
@@ -336,7 +364,7 @@ void CONDITIONAL_BR::sNOT_BELOW(THREADID tid, bool isTaken, ADDRINT insAddress)
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);  
     if (pTmgrTls->isCarryFlagTainted()) 
     {
-        _LOGTAINT("JNB");
+        _LOGTAINT(tid, insAddress, "JNB");
         g_pFormula->addConstraintJcc(pTmgrTls, PREDICATE_NOT_BELOW, isTaken, insAddress);
     }
 } // sNOT_BELOW
@@ -346,7 +374,7 @@ void CONDITIONAL_BR::sNOT_SIGN(THREADID tid, bool isTaken, ADDRINT insAddress)
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     if (pTmgrTls->isSignFlagTainted()) 
     {
-        _LOGTAINT("JNS");
+        _LOGTAINT(tid, insAddress, "JNS");
         g_pFormula->addConstraintJcc(pTmgrTls, PREDICATE_NOT_SIGN, isTaken, insAddress);
     }
 } // sNOT_SIGN
@@ -356,7 +384,7 @@ void CONDITIONAL_BR::sNOT_OVERFLOW(THREADID tid, bool isTaken, ADDRINT insAddres
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     if (pTmgrTls->isOverflowFlagTainted()) 
     {
-        _LOGTAINT("JNO");
+        _LOGTAINT(tid, insAddress, "JNO");
         g_pFormula->addConstraintJcc(pTmgrTls, PREDICATE_NOT_OVERFLOW, isTaken, insAddress);
     }
 } // sNOT_OVERFLOW
@@ -366,7 +394,7 @@ void CONDITIONAL_BR::sNOT_PARITY(THREADID tid, bool isTaken, ADDRINT insAddress)
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     if (pTmgrTls->isParityFlagTainted()) 
     {
-        _LOGTAINT("JNP");
+        _LOGTAINT(tid, insAddress, "JNP");
         g_pFormula->addConstraintJcc(pTmgrTls, PREDICATE_NOT_PARITY, isTaken, insAddress);
     }
 } // sNOT_PARITY
@@ -376,7 +404,7 @@ void CONDITIONAL_BR::sNOT_ZERO(THREADID tid, bool isTaken, ADDRINT insAddress)
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     if (pTmgrTls->isZeroFlagTainted()) 
     {
-        _LOGTAINT("JNZ");
+        _LOGTAINT(tid, insAddress, "JNZ");
         g_pFormula->addConstraintJcc(pTmgrTls, PREDICATE_NOT_ZERO, isTaken, insAddress);
     }
 }
@@ -386,7 +414,7 @@ void CONDITIONAL_BR::sNOT_BELOW_OR_EQUAL(THREADID tid, bool isTaken, ADDRINT reg
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     if (pTmgrTls->isZeroFlagTainted() || pTmgrTls->isCarryFlagTainted()) 
     {
-        _LOGTAINT("JNBE");
+        _LOGTAINT(tid, insAddress, "JNBE");
         g_pFormula->addConstraintJcc(pTmgrTls, PREDICATE_NOT_BELOW_OR_EQUAL, isTaken, insAddress, regEflagsValue);
     }
 } // sNOT_BELOW_OR_EQUAL
@@ -397,7 +425,7 @@ void CONDITIONAL_BR::sNOT_LESS(THREADID tid, bool isTaken, ADDRINT regEflagsValu
     if (pTmgrTls->isSignFlagTainted() || pTmgrTls->isOverflowFlagTainted()) 
     {
         TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
-        _LOGTAINT("JNL");
+        _LOGTAINT(tid, insAddress, "JNL");
         g_pFormula->addConstraintJcc(pTmgrTls, PREDICATE_NOT_LESS, isTaken, insAddress, regEflagsValue);
     }
 } // sNOT_LESS
@@ -407,7 +435,25 @@ void CONDITIONAL_BR::sNOT_LESS_OR_EQUAL(THREADID tid, bool isTaken, ADDRINT regE
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     if (pTmgrTls->isZeroFlagTainted() || pTmgrTls->isSignFlagTainted() || pTmgrTls->isOverflowFlagTainted()) 
     {
-        _LOGTAINT("JNLE");
+        _LOGTAINT(tid, insAddress, "JNLE");
         g_pFormula->addConstraintJcc(pTmgrTls, PREDICATE_NOT_LESS_OR_EQUAL, isTaken, insAddress, regEflagsValue);
     }
 } // sNOT_LESS_OR_EQUAL
+
+/**************************/
+/*** VERSION CX/ECX/RCX ***/
+/**************************/
+
+template<UINT32 lengthInBits>
+void CONDITIONAL_BR::sJRCXZ(THREADID tid, bool isTaken, ADDRINT registerValue, ADDRINT insAddress)
+{
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
+    REG reg        = RegisterCount<lengthInBits>::getReg();
+    PREDICATE pred = RegisterCount<lengthInBits>::getPredicate();
+
+    if (pTmgrTls->isRegisterTainted<lengthInBits>(reg)) 
+    {
+        _LOGTAINT(tid, insAddress, "JRCXZ");
+        g_pFormula->addConstraintJcc(pTmgrTls, pred, isTaken, insAddress, registerValue);
+    }
+}

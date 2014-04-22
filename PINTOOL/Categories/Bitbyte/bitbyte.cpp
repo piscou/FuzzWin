@@ -29,14 +29,14 @@ void BITBYTE::cSETB(INS &ins)
         INS_InsertCall (ins, IPOINT_BEFORE, (AFUNPTR) sSETB_M,         
             IARG_THREAD_ID,
             IARG_MEMORYWRITE_EA,    // adresse de destination (8 bits)
-            CALLBACK_DEBUG IARG_END);
+            IARG_INST_PTR, IARG_END);
     }
     else // forcement registre
     {  
         INS_InsertCall (ins, IPOINT_AFTER, (AFUNPTR) sSETB_R,         
             IARG_THREAD_ID,
             IARG_UINT32, INS_RegW(ins, 0),
-            CALLBACK_DEBUG IARG_END);
+            IARG_INST_PTR, IARG_END);
     }
 }// cSETB
 
@@ -49,14 +49,14 @@ void BITBYTE::cSETNB(INS &ins)
         INS_InsertCall (ins, IPOINT_BEFORE, (AFUNPTR) sSETNB_M,         
             IARG_THREAD_ID,
             IARG_MEMORYWRITE_EA,    // adresse de destination (8 bits)
-            CALLBACK_DEBUG IARG_END);
+            IARG_INST_PTR, IARG_END);
     }
     else // forcement registre
     {
         INS_InsertCall (ins, IPOINT_AFTER, (AFUNPTR) sSETNB_R,         
             IARG_THREAD_ID,
             IARG_UINT32, INS_RegW(ins, 0),
-            CALLBACK_DEBUG IARG_END);
+            IARG_INST_PTR, IARG_END);
     }
 }// cSETNB
 
@@ -69,14 +69,14 @@ void BITBYTE::cSETS(INS &ins)
         INS_InsertCall (ins, IPOINT_BEFORE, (AFUNPTR) sSETS_M,         
             IARG_THREAD_ID,
             IARG_MEMORYWRITE_EA,    // adresse de destination (8 bits)
-            CALLBACK_DEBUG IARG_END);
+            IARG_INST_PTR, IARG_END);
     }
     else // forcement registre
     { 
         INS_InsertCall (ins, IPOINT_AFTER, (AFUNPTR) sSETS_R,         
             IARG_THREAD_ID,
             IARG_UINT32, INS_RegW(ins, 0),
-            CALLBACK_DEBUG IARG_END);
+            IARG_INST_PTR, IARG_END);
     }
 }// cSETS
 
@@ -89,14 +89,14 @@ void BITBYTE::cSETNS(INS &ins)
         INS_InsertCall (ins, IPOINT_BEFORE, (AFUNPTR) sSETNS_M,         
             IARG_THREAD_ID,
             IARG_MEMORYWRITE_EA,    // adresse de destination (8 bits)
-            CALLBACK_DEBUG IARG_END);
+            IARG_INST_PTR, IARG_END);
     }
     else // forcement registre
     {  
         INS_InsertCall (ins, IPOINT_AFTER, (AFUNPTR) sSETNS_R,         
             IARG_THREAD_ID,
             IARG_UINT32, INS_RegW(ins, 0),
-            CALLBACK_DEBUG IARG_END);
+            IARG_INST_PTR, IARG_END);
     }
 }// cSETNS
 
@@ -109,14 +109,14 @@ void BITBYTE::cSETO(INS &ins)
         INS_InsertCall (ins, IPOINT_BEFORE, (AFUNPTR) sSETO_M,         
             IARG_THREAD_ID,
             IARG_MEMORYWRITE_EA,    // adresse de destination (8 bits)
-            CALLBACK_DEBUG IARG_END);
+            IARG_INST_PTR, IARG_END);
     }
     else // forcement registre
     { 
         INS_InsertCall (ins, IPOINT_AFTER, (AFUNPTR) sSETO_R,         
             IARG_THREAD_ID,
             IARG_UINT32, INS_RegW(ins, 0),
-            CALLBACK_DEBUG IARG_END);
+            IARG_INST_PTR, IARG_END);
     }
 }// cSETO
 
@@ -129,14 +129,14 @@ void BITBYTE::cSETNO(INS &ins)
         INS_InsertCall (ins, IPOINT_BEFORE, (AFUNPTR) sSETNO_M,         
             IARG_THREAD_ID,
             IARG_MEMORYWRITE_EA,    // adresse de destination (8 bits)
-            CALLBACK_DEBUG IARG_END);
+            IARG_INST_PTR, IARG_END);
     }
     else // forcement registre
     {  
         INS_InsertCall (ins, IPOINT_AFTER, (AFUNPTR) sSETNO_R,         
             IARG_THREAD_ID,
             IARG_UINT32, INS_RegW(ins, 0),
-            CALLBACK_DEBUG IARG_END);
+            IARG_INST_PTR, IARG_END);
     } 
 }// cSETNO
 
@@ -149,14 +149,14 @@ void BITBYTE::cSETP(INS &ins)
         INS_InsertCall (ins, IPOINT_BEFORE, (AFUNPTR) sSETP_M,         
             IARG_THREAD_ID,
             IARG_MEMORYWRITE_EA,    // adresse de destination (8 bits)
-            CALLBACK_DEBUG IARG_END);
+            IARG_INST_PTR, IARG_END);
     }
     else // forcement registre
     {  
         INS_InsertCall (ins, IPOINT_AFTER, (AFUNPTR) sSETP_R,         
             IARG_THREAD_ID,
             IARG_UINT32, INS_RegW(ins, 0),
-            CALLBACK_DEBUG IARG_END);
+            IARG_INST_PTR, IARG_END);
     } 
 }// cSETP
        
@@ -169,14 +169,14 @@ void BITBYTE::cSETNP(INS &ins)
         INS_InsertCall (ins, IPOINT_BEFORE, (AFUNPTR) sSETNP_M,         
             IARG_THREAD_ID,
             IARG_MEMORYWRITE_EA,    // adresse de destination (8 bits)
-            CALLBACK_DEBUG IARG_END);
+            IARG_INST_PTR, IARG_END);
     }
     else // forcement registre
     {  
         INS_InsertCall (ins, IPOINT_AFTER, (AFUNPTR) sSETNP_R,         
             IARG_THREAD_ID,
             IARG_UINT32, INS_RegW(ins, 0),
-            CALLBACK_DEBUG IARG_END);
+            IARG_INST_PTR, IARG_END);
     }
 }// cSETNP
 
@@ -189,14 +189,14 @@ void BITBYTE::cSETZ(INS &ins)
         INS_InsertCall (ins, IPOINT_BEFORE, (AFUNPTR) sSETZ_M,         
             IARG_THREAD_ID,
             IARG_MEMORYWRITE_EA,    // adresse de destination (8 bits)
-            CALLBACK_DEBUG IARG_END);
+            IARG_INST_PTR, IARG_END);
     }
     else // forcement registre
     { 
         INS_InsertCall (ins, IPOINT_AFTER, (AFUNPTR) sSETZ_R,         
             IARG_THREAD_ID,
             IARG_UINT32, INS_RegW(ins, 0),
-            CALLBACK_DEBUG IARG_END);
+            IARG_INST_PTR, IARG_END);
     }
 }// cSETZ
 
@@ -209,14 +209,14 @@ void BITBYTE::cSETNZ(INS &ins)
         INS_InsertCall (ins, IPOINT_BEFORE, (AFUNPTR) sSETNZ_M,         
             IARG_THREAD_ID,
             IARG_MEMORYWRITE_EA,    // adresse de destination (8 bits)
-            CALLBACK_DEBUG IARG_END);
+            IARG_INST_PTR, IARG_END);
     }
     else // forcement registre
     {
         INS_InsertCall (ins, IPOINT_AFTER, (AFUNPTR) sSETNZ_R,         
             IARG_THREAD_ID,
             IARG_UINT32, INS_RegW(ins, 0),
-            CALLBACK_DEBUG IARG_END);
+            IARG_INST_PTR, IARG_END);
     }
 }// cSETNZ
 
@@ -230,7 +230,7 @@ void BITBYTE::cSETBE(INS &ins)
             IARG_THREAD_ID,
             IARG_MEMORYWRITE_EA,    // adresse de destination (8 bits)
             IARG_REG_VALUE, REG_GFLAGS, // valeur exacte des flags
-            CALLBACK_DEBUG IARG_END);
+            IARG_INST_PTR, IARG_END);
     }
     else // forcement registre
     {
@@ -238,7 +238,7 @@ void BITBYTE::cSETBE(INS &ins)
             IARG_THREAD_ID,
             IARG_UINT32, INS_RegW(ins, 0),
             IARG_REG_VALUE, REG_GFLAGS, // valeur exacte des flags
-            CALLBACK_DEBUG IARG_END);
+            IARG_INST_PTR, IARG_END);
     }
 }// cSETBE
 
@@ -252,7 +252,7 @@ void BITBYTE::cSETNBE(INS &ins)
             IARG_THREAD_ID,
             IARG_MEMORYWRITE_EA,    // adresse de destination (8 bits)
             IARG_REG_VALUE, REG_GFLAGS, // valeur exacte des flags
-            CALLBACK_DEBUG IARG_END);
+            IARG_INST_PTR, IARG_END);
     }
     else // forcement registre
     {
@@ -260,7 +260,7 @@ void BITBYTE::cSETNBE(INS &ins)
             IARG_THREAD_ID,
             IARG_UINT32, INS_RegW(ins, 0),
             IARG_REG_VALUE, REG_GFLAGS, // valeur exacte des flags
-            CALLBACK_DEBUG IARG_END);
+            IARG_INST_PTR, IARG_END);
     }
 }// cSETNBE
 
@@ -274,7 +274,7 @@ void BITBYTE::cSETL(INS &ins)
             IARG_THREAD_ID,
             IARG_MEMORYWRITE_EA,    // adresse de destination (8 bits)
             IARG_REG_VALUE, REG_GFLAGS, // valeur exacte des flags
-            CALLBACK_DEBUG IARG_END);
+            IARG_INST_PTR, IARG_END);
     }
     else // forcement registre
     {
@@ -282,7 +282,7 @@ void BITBYTE::cSETL(INS &ins)
             IARG_THREAD_ID,
             IARG_UINT32, INS_RegW(ins, 0),
             IARG_REG_VALUE, REG_GFLAGS, // valeur exacte des flags
-            CALLBACK_DEBUG IARG_END);
+            IARG_INST_PTR, IARG_END);
     }
 }// cSETL
 
@@ -296,7 +296,7 @@ void BITBYTE::cSETNL(INS &ins)
             IARG_THREAD_ID,
             IARG_MEMORYWRITE_EA,    // adresse de destination (8 bits)
             IARG_REG_VALUE, REG_GFLAGS, // valeur exacte des flags
-            CALLBACK_DEBUG IARG_END);
+            IARG_INST_PTR, IARG_END);
     }
     else // forcement registre
     {
@@ -304,7 +304,7 @@ void BITBYTE::cSETNL(INS &ins)
             IARG_THREAD_ID,
             IARG_UINT32, INS_RegW(ins, 0),
             IARG_REG_VALUE, REG_GFLAGS, // valeur exacte des flags
-            CALLBACK_DEBUG IARG_END);
+            IARG_INST_PTR, IARG_END);
     }
 }// cSETNL
 
@@ -318,7 +318,7 @@ void BITBYTE::cSETLE(INS &ins)
             IARG_THREAD_ID,
             IARG_MEMORYWRITE_EA,    // adresse de destination (8 bits)
             IARG_REG_VALUE, REG_GFLAGS, // valeur exacte des flags
-            CALLBACK_DEBUG IARG_END);
+            IARG_INST_PTR, IARG_END);
     }
     else // forcement registre
     {
@@ -326,7 +326,7 @@ void BITBYTE::cSETLE(INS &ins)
             IARG_THREAD_ID,
             IARG_UINT32, INS_RegW(ins, 0),
             IARG_REG_VALUE, REG_GFLAGS, // valeur exacte des flags
-            CALLBACK_DEBUG IARG_END);
+            IARG_INST_PTR, IARG_END);
     } 
 }// cSETLE
 
@@ -339,7 +339,7 @@ void BITBYTE::cSETNLE(INS &ins)
             IARG_THREAD_ID,
             IARG_MEMORYWRITE_EA,    // adresse de destination (8 bits)
             IARG_REG_VALUE, REG_GFLAGS, // valeur exacte des flags
-            CALLBACK_DEBUG IARG_END);
+            IARG_INST_PTR, IARG_END);
     }
     else // forcement registre
     {
@@ -347,7 +347,7 @@ void BITBYTE::cSETNLE(INS &ins)
             IARG_THREAD_ID,
             IARG_UINT32, INS_RegW(ins, 0),
             IARG_REG_VALUE, REG_GFLAGS, // valeur exacte des flags
-            CALLBACK_DEBUG IARG_END);
+            IARG_INST_PTR, IARG_END);
     } 
 }// cSETNLE
 
@@ -359,7 +359,7 @@ void BITBYTE::cSETNLE(INS &ins)
 // destination mémoire 
 // ---------------------
 
-void BITBYTE::sSETB_M(THREADID tid, ADDRINT writeAddress ADDRESS_DEBUG)
+void BITBYTE::sSETB_M(THREADID tid, ADDRINT writeAddress, ADDRINT insAddress)
 {
     TaintManager_Thread* pTmgrTls = getTmgrInTls(tid);
 
@@ -375,7 +375,7 @@ void BITBYTE::sSETB_M(THREADID tid, ADDRINT writeAddress ADDRESS_DEBUG)
     }   
 }// sSETB_M
 
-void BITBYTE::sSETNB_M(THREADID tid, ADDRINT writeAddress ADDRESS_DEBUG)
+void BITBYTE::sSETNB_M(THREADID tid, ADDRINT writeAddress, ADDRINT insAddress)
 {
     TaintManager_Thread* pTmgrTls = getTmgrInTls(tid);
 
@@ -391,7 +391,7 @@ void BITBYTE::sSETNB_M(THREADID tid, ADDRINT writeAddress ADDRESS_DEBUG)
     }   
 }// sSETNB_M
 
-void BITBYTE::sSETS_M(THREADID tid, ADDRINT writeAddress ADDRESS_DEBUG)
+void BITBYTE::sSETS_M(THREADID tid, ADDRINT writeAddress, ADDRINT insAddress)
 {
     TaintManager_Thread* pTmgrTls = getTmgrInTls(tid);
 
@@ -407,7 +407,7 @@ void BITBYTE::sSETS_M(THREADID tid, ADDRINT writeAddress ADDRESS_DEBUG)
     }   
 }// sSETS_M
 
-void BITBYTE::sSETNS_M(THREADID tid, ADDRINT writeAddress ADDRESS_DEBUG)
+void BITBYTE::sSETNS_M(THREADID tid, ADDRINT writeAddress, ADDRINT insAddress)
 {
     TaintManager_Thread* pTmgrTls = getTmgrInTls(tid);
 
@@ -423,7 +423,7 @@ void BITBYTE::sSETNS_M(THREADID tid, ADDRINT writeAddress ADDRESS_DEBUG)
     }   
 }// sSETS_M
 
-void BITBYTE::sSETO_M(THREADID tid, ADDRINT writeAddress ADDRESS_DEBUG)
+void BITBYTE::sSETO_M(THREADID tid, ADDRINT writeAddress, ADDRINT insAddress)
 {
     TaintManager_Thread* pTmgrTls = getTmgrInTls(tid);
 
@@ -439,7 +439,7 @@ void BITBYTE::sSETO_M(THREADID tid, ADDRINT writeAddress ADDRESS_DEBUG)
     }   
 }// sSETO_M
 
-void BITBYTE::sSETNO_M(THREADID tid, ADDRINT writeAddress ADDRESS_DEBUG)
+void BITBYTE::sSETNO_M(THREADID tid, ADDRINT writeAddress, ADDRINT insAddress)
 {
     TaintManager_Thread* pTmgrTls = getTmgrInTls(tid);
 
@@ -455,7 +455,7 @@ void BITBYTE::sSETNO_M(THREADID tid, ADDRINT writeAddress ADDRESS_DEBUG)
     }   
 }// sSETNO_M
 
-void BITBYTE::sSETP_M(THREADID tid, ADDRINT writeAddress ADDRESS_DEBUG)
+void BITBYTE::sSETP_M(THREADID tid, ADDRINT writeAddress, ADDRINT insAddress)
 {
     TaintManager_Thread* pTmgrTls = getTmgrInTls(tid);
 
@@ -471,7 +471,7 @@ void BITBYTE::sSETP_M(THREADID tid, ADDRINT writeAddress ADDRESS_DEBUG)
     }   
 }// sSETP_M
 
-void BITBYTE::sSETNP_M(THREADID tid, ADDRINT writeAddress ADDRESS_DEBUG)
+void BITBYTE::sSETNP_M(THREADID tid, ADDRINT writeAddress, ADDRINT insAddress)
 {
     TaintManager_Thread* pTmgrTls = getTmgrInTls(tid);
 
@@ -487,7 +487,7 @@ void BITBYTE::sSETNP_M(THREADID tid, ADDRINT writeAddress ADDRESS_DEBUG)
     }   
 }// sSETNP_M
 
-void BITBYTE::sSETZ_M(THREADID tid, ADDRINT writeAddress ADDRESS_DEBUG)
+void BITBYTE::sSETZ_M(THREADID tid, ADDRINT writeAddress, ADDRINT insAddress)
 {
     TaintManager_Thread* pTmgrTls = getTmgrInTls(tid);
 
@@ -503,7 +503,7 @@ void BITBYTE::sSETZ_M(THREADID tid, ADDRINT writeAddress ADDRESS_DEBUG)
     }   
 }// sSETZ_M
 
-void BITBYTE::sSETNZ_M(THREADID tid, ADDRINT writeAddress ADDRESS_DEBUG)
+void BITBYTE::sSETNZ_M(THREADID tid, ADDRINT writeAddress, ADDRINT insAddress)
 {
     TaintManager_Thread* pTmgrTls = getTmgrInTls(tid);
 
@@ -519,7 +519,7 @@ void BITBYTE::sSETNZ_M(THREADID tid, ADDRINT writeAddress ADDRESS_DEBUG)
     }   
 }// sSETNZ_M
 
-void BITBYTE::sSETBE_M(THREADID tid, ADDRINT writeAddress, ADDRINT flagsValue ADDRESS_DEBUG)
+void BITBYTE::sSETBE_M(THREADID tid, ADDRINT writeAddress, ADDRINT flagsValue, ADDRINT insAddress)
 {
     TaintManager_Thread* pTmgrTls = getTmgrInTls(tid);
 
@@ -551,7 +551,7 @@ void BITBYTE::sSETBE_M(THREADID tid, ADDRINT writeAddress, ADDRINT flagsValue AD
     }   
 }// sSETBE_M
 
-void BITBYTE::sSETNBE_M(THREADID tid, ADDRINT writeAddress, ADDRINT flagsValue ADDRESS_DEBUG)
+void BITBYTE::sSETNBE_M(THREADID tid, ADDRINT writeAddress, ADDRINT flagsValue, ADDRINT insAddress)
 {
     TaintManager_Thread* pTmgrTls = getTmgrInTls(tid);
 
@@ -583,7 +583,7 @@ void BITBYTE::sSETNBE_M(THREADID tid, ADDRINT writeAddress, ADDRINT flagsValue A
     }   
 }// sSETNBE_M
 
-void BITBYTE::sSETL_M(THREADID tid, ADDRINT writeAddress, ADDRINT flagsValue ADDRESS_DEBUG)
+void BITBYTE::sSETL_M(THREADID tid, ADDRINT writeAddress, ADDRINT flagsValue, ADDRINT insAddress)
 {
     TaintManager_Thread* pTmgrTls = getTmgrInTls(tid);
 
@@ -615,7 +615,7 @@ void BITBYTE::sSETL_M(THREADID tid, ADDRINT writeAddress, ADDRINT flagsValue ADD
     }   
 }// sSETL_M
 
-void BITBYTE::sSETNL_M(THREADID tid, ADDRINT writeAddress, ADDRINT flagsValue ADDRESS_DEBUG)
+void BITBYTE::sSETNL_M(THREADID tid, ADDRINT writeAddress, ADDRINT flagsValue, ADDRINT insAddress)
 {
     TaintManager_Thread* pTmgrTls = getTmgrInTls(tid);
 
@@ -647,7 +647,7 @@ void BITBYTE::sSETNL_M(THREADID tid, ADDRINT writeAddress, ADDRINT flagsValue AD
     }   
 }// sSETNL_M
 
-void BITBYTE::sSETLE_M(THREADID tid, ADDRINT writeAddress, ADDRINT flagsValue ADDRESS_DEBUG)
+void BITBYTE::sSETLE_M(THREADID tid, ADDRINT writeAddress, ADDRINT flagsValue, ADDRINT insAddress)
 {
     TaintManager_Thread* pTmgrTls = getTmgrInTls(tid);
 
@@ -686,7 +686,7 @@ void BITBYTE::sSETLE_M(THREADID tid, ADDRINT writeAddress, ADDRINT flagsValue AD
     }   
 }// sSETLE_M
 
-void BITBYTE::sSETNLE_M(THREADID tid, ADDRINT writeAddress, ADDRINT flagsValue ADDRESS_DEBUG)
+void BITBYTE::sSETNLE_M(THREADID tid, ADDRINT writeAddress, ADDRINT flagsValue, ADDRINT insAddress)
 {
     TaintManager_Thread* pTmgrTls = getTmgrInTls(tid);
 
@@ -731,7 +731,7 @@ void BITBYTE::sSETNLE_M(THREADID tid, ADDRINT writeAddress, ADDRINT flagsValue A
 // --------------------
 
 
-void BITBYTE::sSETB_R(THREADID tid, REG regDest ADDRESS_DEBUG)
+void BITBYTE::sSETB_R(THREADID tid, REG regDest, ADDRINT insAddress)
 {
     TaintManager_Thread* pTmgrTls = getTmgrInTls(tid);
 
@@ -747,7 +747,7 @@ void BITBYTE::sSETB_R(THREADID tid, REG regDest ADDRESS_DEBUG)
     }   
 }// sSETB_R
 
-void BITBYTE::sSETNB_R(THREADID tid, REG regDest ADDRESS_DEBUG)
+void BITBYTE::sSETNB_R(THREADID tid, REG regDest, ADDRINT insAddress)
 {
     TaintManager_Thread* pTmgrTls = getTmgrInTls(tid);
 
@@ -763,7 +763,7 @@ void BITBYTE::sSETNB_R(THREADID tid, REG regDest ADDRESS_DEBUG)
     }   
 }// sSETNB_R
 
-void BITBYTE::sSETS_R(THREADID tid, REG regDest ADDRESS_DEBUG)
+void BITBYTE::sSETS_R(THREADID tid, REG regDest, ADDRINT insAddress)
 {
     TaintManager_Thread* pTmgrTls = getTmgrInTls(tid);
 
@@ -779,7 +779,7 @@ void BITBYTE::sSETS_R(THREADID tid, REG regDest ADDRESS_DEBUG)
     }   
 }// sSETS_R
 
-void BITBYTE::sSETNS_R(THREADID tid, REG regDest ADDRESS_DEBUG)
+void BITBYTE::sSETNS_R(THREADID tid, REG regDest, ADDRINT insAddress)
 {
     TaintManager_Thread* pTmgrTls = getTmgrInTls(tid);
 
@@ -795,7 +795,7 @@ void BITBYTE::sSETNS_R(THREADID tid, REG regDest ADDRESS_DEBUG)
     }   
 }// sSETS_R
 
-void BITBYTE::sSETO_R(THREADID tid, REG regDest ADDRESS_DEBUG)
+void BITBYTE::sSETO_R(THREADID tid, REG regDest, ADDRINT insAddress)
 {
     TaintManager_Thread* pTmgrTls = getTmgrInTls(tid);
 
@@ -811,7 +811,7 @@ void BITBYTE::sSETO_R(THREADID tid, REG regDest ADDRESS_DEBUG)
     }   
 }// sSETO_R
 
-void BITBYTE::sSETNO_R(THREADID tid, REG regDest ADDRESS_DEBUG)
+void BITBYTE::sSETNO_R(THREADID tid, REG regDest, ADDRINT insAddress)
 {
     TaintManager_Thread* pTmgrTls = getTmgrInTls(tid);
 
@@ -827,7 +827,7 @@ void BITBYTE::sSETNO_R(THREADID tid, REG regDest ADDRESS_DEBUG)
     }   
 }// sSETNO_R
 
-void BITBYTE::sSETP_R(THREADID tid, REG regDest ADDRESS_DEBUG)
+void BITBYTE::sSETP_R(THREADID tid, REG regDest, ADDRINT insAddress)
 {
     TaintManager_Thread* pTmgrTls = getTmgrInTls(tid);
 
@@ -843,7 +843,7 @@ void BITBYTE::sSETP_R(THREADID tid, REG regDest ADDRESS_DEBUG)
     }   
 }// sSETP_R
 
-void BITBYTE::sSETNP_R(THREADID tid, REG regDest ADDRESS_DEBUG)
+void BITBYTE::sSETNP_R(THREADID tid, REG regDest, ADDRINT insAddress)
 {
     TaintManager_Thread* pTmgrTls = getTmgrInTls(tid);
 
@@ -859,7 +859,7 @@ void BITBYTE::sSETNP_R(THREADID tid, REG regDest ADDRESS_DEBUG)
     }   
 }// sSETNP_R
 
-void BITBYTE::sSETZ_R(THREADID tid, REG regDest ADDRESS_DEBUG)
+void BITBYTE::sSETZ_R(THREADID tid, REG regDest, ADDRINT insAddress)
 {
     TaintManager_Thread* pTmgrTls = getTmgrInTls(tid);
 
@@ -875,7 +875,7 @@ void BITBYTE::sSETZ_R(THREADID tid, REG regDest ADDRESS_DEBUG)
     }   
 }// sSETZ_R
 
-void BITBYTE::sSETNZ_R(THREADID tid, REG regDest ADDRESS_DEBUG)
+void BITBYTE::sSETNZ_R(THREADID tid, REG regDest, ADDRINT insAddress)
 {
     TaintManager_Thread* pTmgrTls = getTmgrInTls(tid);
 
@@ -891,7 +891,7 @@ void BITBYTE::sSETNZ_R(THREADID tid, REG regDest ADDRESS_DEBUG)
     }   
 }// sSETNZ_R
 
-void BITBYTE::sSETBE_R(THREADID tid, REG regDest, ADDRINT flagsValue ADDRESS_DEBUG)
+void BITBYTE::sSETBE_R(THREADID tid, REG regDest, ADDRINT flagsValue, ADDRINT insAddress)
 {
     TaintManager_Thread* pTmgrTls = getTmgrInTls(tid);
 
@@ -923,7 +923,7 @@ void BITBYTE::sSETBE_R(THREADID tid, REG regDest, ADDRINT flagsValue ADDRESS_DEB
     }   
 }// sSETBE_R
 
-void BITBYTE::sSETNBE_R(THREADID tid, REG regDest, ADDRINT flagsValue ADDRESS_DEBUG)
+void BITBYTE::sSETNBE_R(THREADID tid, REG regDest, ADDRINT flagsValue, ADDRINT insAddress)
 {
     TaintManager_Thread* pTmgrTls = getTmgrInTls(tid);
 
@@ -955,7 +955,7 @@ void BITBYTE::sSETNBE_R(THREADID tid, REG regDest, ADDRINT flagsValue ADDRESS_DE
     }   
 }// sSETNBE_R
 
-void BITBYTE::sSETL_R(THREADID tid, REG regDest, ADDRINT flagsValue ADDRESS_DEBUG)
+void BITBYTE::sSETL_R(THREADID tid, REG regDest, ADDRINT flagsValue, ADDRINT insAddress)
 {
     TaintManager_Thread* pTmgrTls = getTmgrInTls(tid);
 
@@ -987,7 +987,7 @@ void BITBYTE::sSETL_R(THREADID tid, REG regDest, ADDRINT flagsValue ADDRESS_DEBU
     }   
 }// sSETL_R
 
-void BITBYTE::sSETNL_R(THREADID tid, REG regDest, ADDRINT flagsValue ADDRESS_DEBUG)
+void BITBYTE::sSETNL_R(THREADID tid, REG regDest, ADDRINT flagsValue, ADDRINT insAddress)
 {
     TaintManager_Thread* pTmgrTls = getTmgrInTls(tid);
 
@@ -1019,7 +1019,7 @@ void BITBYTE::sSETNL_R(THREADID tid, REG regDest, ADDRINT flagsValue ADDRESS_DEB
     }   
 }// sSETNL_R
 
-void BITBYTE::sSETLE_R(THREADID tid, REG regDest, ADDRINT flagsValue ADDRESS_DEBUG)
+void BITBYTE::sSETLE_R(THREADID tid, REG regDest, ADDRINT flagsValue, ADDRINT insAddress)
 {
     TaintManager_Thread* pTmgrTls = getTmgrInTls(tid);
 
@@ -1039,6 +1039,8 @@ void BITBYTE::sSETLE_R(THREADID tid, REG regDest, ADDRINT flagsValue ADDRESS_DEB
     // sinon, création de l'objet et marquage destination
     else
     {    
+        _LOGTAINT(tid, insAddress, "SETLE_R");
+
         ObjectSource objSignFlag = ((bool) sfPtr) 
             ? ObjectSource(sfPtr)
             : ObjectSource(1, EXTRACTBIT(flagsValue, SIGN_FLAG));
@@ -1058,7 +1060,7 @@ void BITBYTE::sSETLE_R(THREADID tid, REG regDest, ADDRINT flagsValue ADDRESS_DEB
     }   
 }// sSETLE_R
 
-void BITBYTE::sSETNLE_R(THREADID tid, REG regDest, ADDRINT flagsValue ADDRESS_DEBUG)
+void BITBYTE::sSETNLE_R(THREADID tid, REG regDest, ADDRINT flagsValue, ADDRINT insAddress)
 {
     TaintManager_Thread* pTmgrTls = getTmgrInTls(tid);
 
@@ -1128,7 +1130,7 @@ void BITBYTE::cBT(INS &ins)
                 IARG_THREAD_ID,
                 IARG_MEMORYREAD_EA,  
                 IARG_ADDRINT, (ADDRINT) INS_OperandImmediate(ins, 1), // Si non casté, plante en 32bit!!
-                CALLBACK_DEBUG IARG_END);
+                IARG_INST_PTR, IARG_END);
         } 
         else // test d'un registre : BT_IR
         { 
@@ -1147,7 +1149,7 @@ void BITBYTE::cBT(INS &ins)
                 IARG_THREAD_ID,
                 IARG_UINT32, testedReg,   
                 IARG_ADDRINT, (ADDRINT) INS_OperandImmediate(ins, 1), // Si non casté, plante en 32bit!!
-                CALLBACK_DEBUG IARG_END);
+                IARG_INST_PTR, IARG_END);
         }
     }
     else     // index défini par registre
@@ -1170,7 +1172,7 @@ void BITBYTE::cBT(INS &ins)
                 IARG_MEMORYREAD_EA,  
                 IARG_UINT32, bitIndexReg,
                 IARG_REG_VALUE, bitIndexReg,
-                CALLBACK_DEBUG IARG_END);
+                IARG_INST_PTR, IARG_END);
         } 
         else // test d'un registre : BT_RR
         { 
@@ -1191,7 +1193,7 @@ void BITBYTE::cBT(INS &ins)
                 IARG_REG_VALUE, testedReg,
                 IARG_UINT32, bitIndexReg,
                 IARG_REG_VALUE, bitIndexReg,
-                CALLBACK_DEBUG IARG_END);
+                IARG_INST_PTR, IARG_END);
         }
     }
 } // cBT
@@ -1219,7 +1221,7 @@ void BITBYTE::cBTC(INS &ins)
                 IARG_THREAD_ID,
                 IARG_MEMORYREAD_EA,  
                 IARG_ADDRINT, (ADDRINT) INS_OperandImmediate(ins, 1), // Si non casté, plante en 32bit!!
-                CALLBACK_DEBUG IARG_END);
+                IARG_INST_PTR, IARG_END);
         } 
         else // test d'un registre : BTC_IR
         { 
@@ -1238,7 +1240,7 @@ void BITBYTE::cBTC(INS &ins)
                 IARG_THREAD_ID,
                 IARG_UINT32, testedReg,   
                 IARG_ADDRINT, (ADDRINT) INS_OperandImmediate(ins, 1), // Si non casté, plante en 32bit!!
-                CALLBACK_DEBUG IARG_END);
+                IARG_INST_PTR, IARG_END);
         }
     }
     else     // index défini par registre
@@ -1261,7 +1263,7 @@ void BITBYTE::cBTC(INS &ins)
                 IARG_MEMORYREAD_EA,  
                 IARG_UINT32, bitIndexReg,
                 IARG_REG_VALUE, bitIndexReg,
-                CALLBACK_DEBUG IARG_END);
+                IARG_INST_PTR, IARG_END);
         } 
         else // test d'un registre : BTC_RR
         { 
@@ -1282,7 +1284,7 @@ void BITBYTE::cBTC(INS &ins)
                 IARG_REG_VALUE, testedReg,
                 IARG_UINT32, bitIndexReg,
                 IARG_REG_VALUE, bitIndexReg,
-                CALLBACK_DEBUG IARG_END);
+                IARG_INST_PTR, IARG_END);
         }
     }
 } // cBTC
@@ -1309,7 +1311,7 @@ void BITBYTE::cBTR(INS &ins)
                 IARG_THREAD_ID,
                 IARG_MEMORYREAD_EA,  
                 IARG_ADDRINT, (ADDRINT) INS_OperandImmediate(ins, 1), // Si non casté, plante en 32bit!!
-                CALLBACK_DEBUG IARG_END);
+                IARG_INST_PTR, IARG_END);
         } 
         else // test d'un registre : BTR_IR
         { 
@@ -1327,7 +1329,7 @@ void BITBYTE::cBTR(INS &ins)
                 IARG_THREAD_ID,
                 IARG_UINT32, testedReg,   
                 IARG_ADDRINT, (ADDRINT) INS_OperandImmediate(ins, 1), // Si non casté, plante en 32bit!!
-                CALLBACK_DEBUG IARG_END);
+                IARG_INST_PTR, IARG_END);
         }
     }
     else     // index défini par registre
@@ -1350,7 +1352,7 @@ void BITBYTE::cBTR(INS &ins)
                 IARG_MEMORYREAD_EA,  
                 IARG_UINT32, bitIndexReg,
                 IARG_REG_VALUE, bitIndexReg,
-                CALLBACK_DEBUG IARG_END);
+                IARG_INST_PTR, IARG_END);
         } 
         else // test d'un registre : BTR_RR
         { 
@@ -1371,7 +1373,7 @@ void BITBYTE::cBTR(INS &ins)
                 IARG_REG_VALUE, testedReg,
                 IARG_UINT32, bitIndexReg,
                 IARG_REG_VALUE, bitIndexReg,
-                CALLBACK_DEBUG IARG_END);
+                IARG_INST_PTR, IARG_END);
         }
     }
 } // cBTR
@@ -1398,7 +1400,7 @@ void BITBYTE::cBTS(INS &ins)
                 IARG_THREAD_ID,
                 IARG_MEMORYREAD_EA,  
                 IARG_ADDRINT, (ADDRINT) INS_OperandImmediate(ins, 1), // Si non casté, plante en 32bit!!
-                CALLBACK_DEBUG IARG_END);
+                IARG_INST_PTR, IARG_END);
         } 
         else // test d'un registre : BTS_IR
         { 
@@ -1416,7 +1418,7 @@ void BITBYTE::cBTS(INS &ins)
                 IARG_THREAD_ID,
                 IARG_UINT32, testedReg,   
                 IARG_ADDRINT, (ADDRINT) INS_OperandImmediate(ins, 1), // Si non casté, plante en 32bit!!
-                CALLBACK_DEBUG IARG_END);
+                IARG_INST_PTR, IARG_END);
         }
     }
     else     // index défini par registre
@@ -1439,7 +1441,7 @@ void BITBYTE::cBTS(INS &ins)
                 IARG_MEMORYREAD_EA,  
                 IARG_UINT32, bitIndexReg,
                 IARG_REG_VALUE, bitIndexReg,
-                CALLBACK_DEBUG IARG_END);
+                IARG_INST_PTR, IARG_END);
         } 
         else // test d'un registre : BTS_RR
         { 
@@ -1460,7 +1462,7 @@ void BITBYTE::cBTS(INS &ins)
                 IARG_REG_VALUE, testedReg,
                 IARG_UINT32, bitIndexReg,
                 IARG_REG_VALUE, bitIndexReg,
-                CALLBACK_DEBUG IARG_END);
+                IARG_INST_PTR, IARG_END);
         }
     }
 } // cBTS
@@ -1487,7 +1489,7 @@ void BITBYTE::cBSR(INS &ins)
             IARG_THREAD_ID,
             IARG_MEMORYREAD_EA,  
             IARG_UINT32, resultReg,
-            CALLBACK_DEBUG IARG_END);
+            IARG_INST_PTR, IARG_END);
     } 
     else // test d'un registre : BSR_R
     { 
@@ -1506,7 +1508,7 @@ void BITBYTE::cBSR(INS &ins)
             IARG_UINT32, testedReg,
             IARG_REG_VALUE, testedReg,
             IARG_UINT32, resultReg,
-            CALLBACK_DEBUG IARG_END);
+            IARG_INST_PTR, IARG_END);
     }
 } // cBSR
 
@@ -1532,7 +1534,7 @@ void BITBYTE::cBSF(INS &ins)
             IARG_THREAD_ID,
             IARG_MEMORYREAD_EA,  
             IARG_UINT32, resultReg,
-            CALLBACK_DEBUG IARG_END);
+            IARG_INST_PTR, IARG_END);
     } 
     else // test d'un registre : BSF_R
     { 
@@ -1551,6 +1553,6 @@ void BITBYTE::cBSF(INS &ins)
             IARG_UINT32, testedReg,   
             IARG_REG_VALUE, testedReg,
             IARG_UINT32, resultReg,
-            CALLBACK_DEBUG IARG_END);
+            IARG_INST_PTR, IARG_END);
     }
 } // cBSF

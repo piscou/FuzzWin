@@ -8,8 +8,8 @@ namespace INSTRUMENTATION
     void FiniTaint(INT32 code, void *);
     void FiniCheckScore(INT32 code, void *);
 
-    void threadStart(THREADID tid, CONTEXT *ctxt, INT32 flags, void *);
-    void threadFini (THREADID tid, const CONTEXT *ctxt, INT32 flags, void *);
+    void threadStart(THREADID tid, CONTEXT *, INT32 , void *);
+    void threadFini (THREADID tid, const CONTEXT *, INT32 , void *);
 
     void changeCtx(THREADID tid, CONTEXT_CHANGE_REASON reason,
                         const CONTEXT *, CONTEXT *, INT32 sig, VOID *);

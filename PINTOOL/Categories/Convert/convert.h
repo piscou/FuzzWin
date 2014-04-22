@@ -16,13 +16,13 @@ void cCDQ(INS &ins);
 void cCQO(INS &ins);
 
 // fonctions d'analyses associées
-void sCBW (THREADID tid ADDRESS_DEBUG);
-void sCWDE(THREADID tid, ADDRINT regAXValue ADDRESS_DEBUG);
-void sCWD (THREADID tid, ADDRINT regAXValue ADDRESS_DEBUG);
-void sCDQ (THREADID tid ,ADDRINT regEAXValue ADDRESS_DEBUG);
+void sCBW (THREADID tid, ADDRINT insAddress);
+void sCWDE(THREADID tid, ADDRINT regAXValue, ADDRINT insAddress);
+void sCWD (THREADID tid, ADDRINT regAXValue, ADDRINT insAddress);
+void sCDQ (THREADID tid ,ADDRINT regEAXValue, ADDRINT insAddress);
 
 #if TARGET_IA32E
-void sCDQE(THREADID tid, ADDRINT regEAXValue ADDRESS_DEBUG);
-void sCQO (THREADID tid, ADDRINT regRAXValue ADDRESS_DEBUG);
+void sCDQE(THREADID tid, ADDRINT regEAXValue, ADDRINT insAddress);
+void sCQO (THREADID tid, ADDRINT regRAXValue, ADDRINT insAddress);
 #endif
 }

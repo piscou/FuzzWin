@@ -12,11 +12,11 @@ void cDAA(INS &ins);
 void cDAS(INS &ins);
 
 // SIMULATE
-void sAAA(THREADID tid, ADDRINT regALValue, ADDRINT flagsValue ADDRESS_DEBUG);
-void sAAD(THREADID tid, ADDRINT regAXValue, ADDRINT immValue ADDRESS_DEBUG);
-void sAAM(THREADID tid, ADDRINT immValue ADDRESS_DEBUG);
-void sAAS(THREADID tid, ADDRINT regAXValue, ADDRINT flagsValue ADDRESS_DEBUG);
+void sAAA(THREADID tid, ADDRINT regALValue, ADDRINT flagsValue, ADDRINT insAddress);
+void sAAD(THREADID tid, ADDRINT regAXValue, ADDRINT immValue, ADDRINT insAddress);
+void sAAM(THREADID tid, ADDRINT immValue, ADDRINT insAddress);
+void sAAS(THREADID tid, ADDRINT regAXValue, ADDRINT flagsValue, ADDRINT insAddress);
 
-void sDAA(THREADID tid, ADDRINT regALValue, ADDRINT flagsValue ADDRESS_DEBUG);
-void sDAS(THREADID tid, ADDRINT regALValue, ADDRINT flagsValue ADDRESS_DEBUG);
+void sDAA(THREADID tid, ADDRINT regALValue, ADDRINT flagsValue, ADDRINT insAddress);
+void sDAS(THREADID tid, ADDRINT regALValue, ADDRINT flagsValue, ADDRINT insAddress);
 }

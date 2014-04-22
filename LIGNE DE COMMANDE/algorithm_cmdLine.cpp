@@ -104,8 +104,6 @@ std::string FuzzwinAlgorithm_cmdLine::initialize(int argc, char** argv)
 {
     /** OPTIONS DU PINTOOL ***/
     UINT32 maxConstraints;    // nombre maximal de contraintes à récupérer
-    bool   logTaint;          // log du marquage de données
-    bool   logAsm;            // log de dessasemblage du programme
     std::string  bytesToTaint;   // intervalles d'octets à surveiller
 
     std::string exePath = this->getExePath();   // dossier racine de l'exécutable
@@ -226,6 +224,9 @@ std::string FuzzwinAlgorithm_cmdLine::initialize(int argc, char** argv)
 
     /*** OPTIONS POUR LE PINTOOL ***/
 
+    // ajout du mode verbeux, si présent
+    cmdLineOptions += " -verbose";
+
     // option --range : liste type impression des octets a tester
     // si option non présente : tout marquer
     ops >> GetOpt::Option<std::string>("range", bytesToTaint, "");
@@ -263,28 +264,6 @@ std::string FuzzwinAlgorithm_cmdLine::initialize(int argc, char** argv)
         
     }
     else this->logVerbose("N/A");
-    this->logVerboseEndOfLine();
-
-    // option --logasm : log de dessasemblage des instructions exécutées
-    ops >> GetOpt::OptionPresent("logasm", logAsm);
-    this->logVerbose("Log de dessasemblage       : ");
-    if (logAsm)
-    {
-        this->logVerbose("oui");
-        cmdLineOptions += " -logasm ";
-    }
-    else this->logVerbose("non");
-    this->logVerboseEndOfLine();
-   
-    // option --logtaint : log de marquage des instructions exécutées
-    ops >> GetOpt::OptionPresent("logtaint", logTaint);
-    this->logVerbose("Log de marquage           : ");
-    if (logTaint)
-    {
-        this->logVerbose("oui");
-        cmdLineOptions += " -logtaint ";
-    }
-    else this->logVerbose("non");
     this->logVerboseEndOfLine();
 
     /**********************************************************************/

@@ -44,7 +44,7 @@ void LOGICAL::cAND(INS &ins)
                 IARG_THREAD_ID,
                 IARG_ADDRINT, (ADDRINT) INS_OperandImmediate(ins, 1),
                 IARG_MEMORYWRITE_EA,
-                CALLBACK_DEBUG IARG_END);
+                IARG_INST_PTR, IARG_END);
         } 
         else  // AND_RM
         {
@@ -64,7 +64,7 @@ void LOGICAL::cAND(INS &ins)
                 IARG_UINT32, regSrc, 
                 IARG_REG_VALUE, regSrc,
                 IARG_MEMORYWRITE_EA,
-                CALLBACK_DEBUG IARG_END);
+                IARG_INST_PTR, IARG_END);
         }
     }
     else // DESTINATION = REGISTRE
@@ -90,7 +90,7 @@ void LOGICAL::cAND(INS &ins)
                 IARG_MEMORYREAD_EA, 
                 IARG_UINT32, regDest, 
                 IARG_REG_VALUE, regDest,
-                CALLBACK_DEBUG IARG_END);
+                IARG_INST_PTR, IARG_END);
         }
         else if (INS_OperandIsImmediate(ins, 1)) // AND_IR
         {    
@@ -109,7 +109,7 @@ void LOGICAL::cAND(INS &ins)
                 IARG_ADDRINT, (ADDRINT) INS_OperandImmediate(ins, 1),
                 IARG_UINT32, regDest, 
                 IARG_REG_VALUE, regDest,
-                CALLBACK_DEBUG IARG_END);
+                IARG_INST_PTR, IARG_END);
         }
         else // AND_RR
         {    
@@ -131,13 +131,13 @@ void LOGICAL::cAND(INS &ins)
                 IARG_REG_VALUE, regSrc,
                 IARG_UINT32,    regDest, 
                 IARG_REG_VALUE, regDest,
-                CALLBACK_DEBUG IARG_END);
+                IARG_INST_PTR, IARG_END);
         }  
     }
 } // cAND
 
 // SIMULATE (spécialisation des templates)
-template<> void LOGICAL::sAND_IM<8>(THREADID tid, ADDRINT value, ADDRINT writeAddress ADDRESS_DEBUG) 
+template<> void LOGICAL::sAND_IM<8>(THREADID tid, ADDRINT value, ADDRINT writeAddress, ADDRINT insAddress) 
 {
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     
@@ -149,7 +149,7 @@ template<> void LOGICAL::sAND_IM<8>(THREADID tid, ADDRINT value, ADDRINT writeAd
     }
     else 
     {
-        _LOGTAINT("andIM(8)");
+        _LOGTAINT(tid, insAddress, "andIM(8)");
         // AND x, 0xff = x, donc juste marquage flags avec destination
         if (value == 0xff)  fTaintLOGICAL(pTmgrTls, pTmgrGlobal->getMemoryTaint<8>(writeAddress));
         else // sinon marquage "normal" : flags + destination
@@ -166,7 +166,7 @@ template<> void LOGICAL::sAND_IM<8>(THREADID tid, ADDRINT value, ADDRINT writeAd
     }
 } // sAND_IM<8>
 
-template<> void LOGICAL::sAND_IR<8>(THREADID tid, ADDRINT value, REG reg, ADDRINT unUsed ADDRESS_DEBUG) 
+template<> void LOGICAL::sAND_IR<8>(THREADID tid, ADDRINT value, REG reg, ADDRINT unUsed, ADDRINT insAddress) 
 {
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     
@@ -178,7 +178,7 @@ template<> void LOGICAL::sAND_IR<8>(THREADID tid, ADDRINT value, REG reg, ADDRIN
     }
     else 
     {
-        _LOGTAINT("andIR(8)");      
+        _LOGTAINT(tid, insAddress, "andIR(8)");      
         // AND x, 0xff = x, donc juste marquage flags avec destination
         if (value == 0xff) fTaintLOGICAL(pTmgrTls, pTmgrTls->getRegisterTaint(reg));
         else 
@@ -196,7 +196,7 @@ template<> void LOGICAL::sAND_IR<8>(THREADID tid, ADDRINT value, REG reg, ADDRIN
 } // AND_IR_8
 
 template<> void LOGICAL::sAND_RM<8>
-    (THREADID tid, REG regSrc, ADDRINT srcValue, ADDRINT writeAddress ADDRESS_DEBUG)
+    (THREADID tid, REG regSrc, ADDRINT srcValue, ADDRINT writeAddress, ADDRINT insAddress)
 {   
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
 
@@ -207,7 +207,7 @@ template<> void LOGICAL::sAND_RM<8>
     if (!(isDestTainted || isSrcTainted)) pTmgrTls->unTaintAllFlags();
     else 
     {
-        _LOGTAINT("andRM(8)");
+        _LOGTAINT(tid, insAddress, "andRM(8)");
         // récupération de la valeur de la mémoire
         ADDRINT destValue = getMemoryValue<8>(writeAddress);
 
@@ -279,7 +279,7 @@ template<> void LOGICAL::sAND_RM<8>
 } // sAND_RM<8>
 
 template<> void LOGICAL::sAND_MR<8>
-    (THREADID tid, ADDRINT readAddress, REG regSrcDest, ADDRINT destValue ADDRESS_DEBUG) 
+    (THREADID tid, ADDRINT readAddress, REG regSrcDest, ADDRINT destValue, ADDRINT insAddress) 
 {
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
 
@@ -290,7 +290,7 @@ template<> void LOGICAL::sAND_MR<8>
     if (!(isDestTainted || isSrcTainted)) pTmgrTls->unTaintAllFlags();
     else 
     {
-        _LOGTAINT("andMR(8)");
+        _LOGTAINT(tid, insAddress, "andMR(8)");
         // récupération de la valeur de la mémoire
         ADDRINT srcValue = getMemoryValue<8>(readAddress);
 
@@ -362,7 +362,7 @@ template<> void LOGICAL::sAND_MR<8>
 } // sAND_MR<8>
 
 template<> void LOGICAL::sAND_RR<8>
-    (THREADID tid, REG regSrc, ADDRINT srcValue, REG regSrcDest, ADDRINT destValue ADDRESS_DEBUG)
+    (THREADID tid, REG regSrc, ADDRINT srcValue, REG regSrcDest, ADDRINT destValue, ADDRINT insAddress)
 {
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
 
@@ -373,7 +373,7 @@ template<> void LOGICAL::sAND_RR<8>
     if (!(isDestTainted || isSrcTainted)) pTmgrTls->unTaintAllFlags();
     else 
     {
-        _LOGTAINT("andRR(8)");
+        _LOGTAINT(tid, insAddress, "andRR(8)");
         // CAS 2 : destination non marquée (et donc source marquée)
         if (!isDestTainted) 
         {
@@ -469,7 +469,7 @@ void LOGICAL::cOR(INS &ins)
                 IARG_THREAD_ID,
                 IARG_ADDRINT, (ADDRINT) INS_OperandImmediate(ins, 1),
                 IARG_MEMORYWRITE_EA,
-                CALLBACK_DEBUG IARG_END);
+                IARG_INST_PTR, IARG_END);
         } 
         else  // OR_RM
         {
@@ -489,7 +489,7 @@ void LOGICAL::cOR(INS &ins)
                 IARG_UINT32, regSrc, 
                 IARG_REG_VALUE, regSrc,
                 IARG_MEMORYWRITE_EA,
-                CALLBACK_DEBUG IARG_END);
+                IARG_INST_PTR, IARG_END);
         }
     }
     else // DESTINATION = REGISTRE
@@ -515,7 +515,7 @@ void LOGICAL::cOR(INS &ins)
                 IARG_MEMORYREAD_EA, 
                 IARG_UINT32, regDest, 
                 IARG_REG_VALUE, regDest,
-                CALLBACK_DEBUG IARG_END);
+                IARG_INST_PTR, IARG_END);
         }
         else if (INS_OperandIsImmediate(ins, 1)) // OR_IR
         {    
@@ -534,7 +534,7 @@ void LOGICAL::cOR(INS &ins)
                 IARG_ADDRINT, (ADDRINT) INS_OperandImmediate(ins, 1),
                 IARG_UINT32, regDest, 
                 IARG_REG_VALUE, regDest,
-                CALLBACK_DEBUG IARG_END);
+                IARG_INST_PTR, IARG_END);
         }
         else // OR_RR
         {    
@@ -556,13 +556,13 @@ void LOGICAL::cOR(INS &ins)
                 IARG_REG_VALUE, regSrc,
                 IARG_UINT32,    regDest, 
                 IARG_REG_VALUE, regDest,
-                CALLBACK_DEBUG IARG_END);
+                IARG_INST_PTR, IARG_END);
         }  
     }
 } // cOR
 
 // SIMULATE (spécialisation des templates)
-template<> void LOGICAL::sOR_IM<8>(THREADID tid, ADDRINT value, ADDRINT writeAddress ADDRESS_DEBUG) 
+template<> void LOGICAL::sOR_IM<8>(THREADID tid, ADDRINT value, ADDRINT writeAddress, ADDRINT insAddress) 
 { 
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
 
@@ -575,7 +575,7 @@ template<> void LOGICAL::sOR_IM<8>(THREADID tid, ADDRINT value, ADDRINT writeAdd
     }
     else
     {
-        _LOGTAINT("orIM(8)");
+        _LOGTAINT(tid, insAddress, "orIM(8)");
         // OR x, 0 = x, donc juste marquage flags avec destination  
         if (!value) fTaintLOGICAL(pTmgrTls, pTmgrGlobal->getMemoryTaint<8>(writeAddress));
         else // sinon marquage "normal"
@@ -592,7 +592,7 @@ template<> void LOGICAL::sOR_IM<8>(THREADID tid, ADDRINT value, ADDRINT writeAdd
     }
 } // sOR_IM<8>
 
-template<> void LOGICAL::sOR_IR<8>(THREADID tid, ADDRINT value, REG reg, ADDRINT unUsed ADDRESS_DEBUG) 
+template<> void LOGICAL::sOR_IR<8>(THREADID tid, ADDRINT value, REG reg, ADDRINT unUsed, ADDRINT insAddress) 
 {
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     
@@ -604,7 +604,7 @@ template<> void LOGICAL::sOR_IR<8>(THREADID tid, ADDRINT value, REG reg, ADDRINT
     }
     else
     {
-        _LOGTAINT("orIR(8)");
+        _LOGTAINT(tid, insAddress, "orIR(8)");
 
         // OR x, 0 = x, donc juste marquage flags avec destination
         if (!value) fTaintLOGICAL(pTmgrTls, pTmgrTls->getRegisterTaint(reg));
@@ -623,7 +623,7 @@ template<> void LOGICAL::sOR_IR<8>(THREADID tid, ADDRINT value, REG reg, ADDRINT
 } // sOR_IR<8>
 
 template<> void LOGICAL::sOR_RM<8>
-    (THREADID tid, REG regSrc, ADDRINT srcValue, ADDRINT writeAddress ADDRESS_DEBUG) 
+    (THREADID tid, REG regSrc, ADDRINT srcValue, ADDRINT writeAddress, ADDRINT insAddress) 
 {
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
 
@@ -634,7 +634,7 @@ template<> void LOGICAL::sOR_RM<8>
     if (!(isDestTainted || isSrcTainted)) pTmgrTls->unTaintAllFlags();
     else 
     {
-        _LOGTAINT("orRM(8)");
+        _LOGTAINT(tid, insAddress, "orRM(8)");
 
         // récupération de la valeur de la mémoire
         ADDRINT destValue = getMemoryValue<8>(writeAddress);
@@ -707,7 +707,7 @@ template<> void LOGICAL::sOR_RM<8>
 } // sOR_RM<8>
 
 template<> void LOGICAL::sOR_MR<8>
-    (THREADID tid, ADDRINT readAddress, REG regSrcDest, ADDRINT destValue ADDRESS_DEBUG) 
+    (THREADID tid, ADDRINT readAddress, REG regSrcDest, ADDRINT destValue, ADDRINT insAddress) 
 {   
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
 
@@ -718,7 +718,7 @@ template<> void LOGICAL::sOR_MR<8>
     if (!(isDestTainted || isSrcTainted)) pTmgrTls->unTaintAllFlags();
     else 
     {
-        _LOGTAINT("orMR(8)");
+        _LOGTAINT(tid, insAddress, "orMR(8)");
         // récupération de la valeur de la mémoire
         ADDRINT srcValue = getMemoryValue<8>(readAddress);
 
@@ -790,7 +790,7 @@ template<> void LOGICAL::sOR_MR<8>
 } // sOR_MR<8>
 
 template<> void LOGICAL::sOR_RR<8>
-    (THREADID tid, REG regSrc, ADDRINT srcValue, REG regSrcDest, ADDRINT destValue ADDRESS_DEBUG)
+    (THREADID tid, REG regSrc, ADDRINT srcValue, REG regSrcDest, ADDRINT destValue, ADDRINT insAddress)
 {
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
 
@@ -801,7 +801,7 @@ template<> void LOGICAL::sOR_RR<8>
     if (!(isDestTainted || isSrcTainted)) pTmgrTls->unTaintAllFlags();
     else
     {
-        _LOGTAINT("orRR(8)");
+        _LOGTAINT(tid, insAddress, "orRR(8)");
         // CAS 2 : destination non marquée (et donc source marquée)
         if (!isDestTainted) 
         {
@@ -897,7 +897,7 @@ void LOGICAL::cXOR(INS &ins)
                 IARG_THREAD_ID,
                 IARG_ADDRINT, (ADDRINT) INS_OperandImmediate(ins, 1),
                 IARG_MEMORYWRITE_EA,
-                CALLBACK_DEBUG IARG_END);
+                IARG_INST_PTR, IARG_END);
         } 
         else  // XOR_RM
         {
@@ -917,7 +917,7 @@ void LOGICAL::cXOR(INS &ins)
                 IARG_UINT32, regSrc, 
                 IARG_REG_VALUE, regSrc,
                 IARG_MEMORYWRITE_EA,
-                CALLBACK_DEBUG IARG_END);
+                IARG_INST_PTR, IARG_END);
         }
     }
     else // DESTINATION = REGISTRE
@@ -943,7 +943,7 @@ void LOGICAL::cXOR(INS &ins)
                 IARG_MEMORYREAD_EA, 
                 IARG_UINT32, regDest, 
                 IARG_REG_VALUE, regDest,
-                CALLBACK_DEBUG IARG_END);
+                IARG_INST_PTR, IARG_END);
         }
         else if (INS_OperandIsImmediate(ins, 1)) // XOR_IR
         {    
@@ -962,7 +962,7 @@ void LOGICAL::cXOR(INS &ins)
                 IARG_ADDRINT, (ADDRINT) INS_OperandImmediate(ins, 1),
                 IARG_UINT32, regDest, 
                 IARG_REG_VALUE, regDest,
-                CALLBACK_DEBUG IARG_END);
+                IARG_INST_PTR, IARG_END);
         }
         else // XOR_RR
         {    
@@ -983,7 +983,7 @@ void LOGICAL::cXOR(INS &ins)
                 INS_InsertCall (ins, IPOINT_BEFORE, callback,
                     IARG_THREAD_ID,
                     IARG_UINT32, regSrc,
-                    CALLBACK_DEBUG IARG_END);
+                    IARG_INST_PTR, IARG_END);
             }
             else
             {
@@ -1004,21 +1004,21 @@ void LOGICAL::cXOR(INS &ins)
                     IARG_REG_VALUE, regSrc,
                     IARG_UINT32,    regDest, 
                     IARG_REG_VALUE, regDest,
-                    CALLBACK_DEBUG IARG_END);
+                    IARG_INST_PTR, IARG_END);
             }  
         }
     }
 } // cXOR
     
 // SIMULATE (spécialisation des templates)
-template<> void LOGICAL::sXOR_IM<8>(THREADID tid, ADDRINT value, ADDRINT writeAddress ADDRESS_DEBUG) 
+template<> void LOGICAL::sXOR_IM<8>(THREADID tid, ADDRINT value, ADDRINT writeAddress, ADDRINT insAddress) 
 {
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
 
     if ( !pTmgrGlobal->isMemoryTainted<8>(writeAddress)) pTmgrTls->unTaintAllFlags();
     else 
     {
-        _LOGTAINT("xorIM(8)");
+        _LOGTAINT(tid, insAddress, "xorIM(8)");
         // XOR x, 0 = x, donc juste marquage flags avec destination
         if (!value) fTaintLOGICAL(pTmgrTls, pTmgrGlobal->getMemoryTaint<8>(writeAddress));
         // CAS 2 : value = 0xff => XOR x, 0xff = NOT x
@@ -1047,14 +1047,14 @@ template<> void LOGICAL::sXOR_IM<8>(THREADID tid, ADDRINT value, ADDRINT writeAd
     }
 } // sXOR_IM<8>
 
-template<> void LOGICAL::sXOR_IR<8>(THREADID tid, ADDRINT value, REG reg, ADDRINT unUsed ADDRESS_DEBUG) 
+template<> void LOGICAL::sXOR_IR<8>(THREADID tid, ADDRINT value, REG reg, ADDRINT unUsed, ADDRINT insAddress) 
 {
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     
     if ( !pTmgrTls->isRegisterTainted<8>(reg))  pTmgrTls->unTaintAllFlags();
     else 
     {
-        _LOGTAINT("xorIR(8)");
+        _LOGTAINT(tid, insAddress, "xorIR(8)");
 
         // XOR x, 0 = x, donc juste marquage flags avec destination
         if (!value) fTaintLOGICAL(pTmgrTls, pTmgrTls->getRegisterTaint(reg));
@@ -1084,7 +1084,7 @@ template<> void LOGICAL::sXOR_IR<8>(THREADID tid, ADDRINT value, REG reg, ADDRIN
 } // sXOR_IR<8>
 
 template<> void LOGICAL::sXOR_RM<8>
-    (THREADID tid, REG regSrc, ADDRINT srcValue, ADDRINT writeAddress ADDRESS_DEBUG) 
+    (THREADID tid, REG regSrc, ADDRINT srcValue, ADDRINT writeAddress, ADDRINT insAddress) 
 {      
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     
@@ -1095,7 +1095,7 @@ template<> void LOGICAL::sXOR_RM<8>
     if (!(isDestTainted || isSrcTainted)) pTmgrTls->unTaintAllFlags();
     else 
     {
-        _LOGTAINT("xorRM(8)");
+        _LOGTAINT(tid, insAddress, "xorRM(8)");
 
         // récupération de la valeur de la mémoire
         ADDRINT destValue = getMemoryValue<8>(writeAddress);
@@ -1179,7 +1179,7 @@ template<> void LOGICAL::sXOR_RM<8>
 } // end sXOR_RM<8>
 
 template<> void LOGICAL::sXOR_MR<8>
-    (THREADID tid, ADDRINT readAddress, REG regSrcDest, ADDRINT destValue ADDRESS_DEBUG) 
+    (THREADID tid, ADDRINT readAddress, REG regSrcDest, ADDRINT destValue, ADDRINT insAddress) 
 {   
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
 
@@ -1190,7 +1190,7 @@ template<> void LOGICAL::sXOR_MR<8>
     if (!(isDestTainted || isSrcTainted)) pTmgrTls->unTaintAllFlags();
     else 
     {
-        _LOGTAINT("xorMR(8)");
+        _LOGTAINT(tid, insAddress, "xorMR(8)");
         // récupération de la valeur de la mémoire
         ADDRINT srcValue = getMemoryValue<8>(readAddress);
 
@@ -1271,7 +1271,7 @@ template<> void LOGICAL::sXOR_MR<8>
 } // sXOR_MR<8>
 
 template<> void LOGICAL::sXOR_RR<8>
-    (THREADID tid, REG regSrc, ADDRINT srcValue, REG regSrcDest, ADDRINT destValue ADDRESS_DEBUG) 
+    (THREADID tid, REG regSrc, ADDRINT srcValue, REG regSrcDest, ADDRINT destValue, ADDRINT insAddress) 
 {   
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
 
@@ -1282,7 +1282,7 @@ template<> void LOGICAL::sXOR_RR<8>
     if (!(isDestTainted || isSrcTainted)) pTmgrTls->unTaintAllFlags();  
     else 
     {
-        _LOGTAINT("xorRR(8)");
+        _LOGTAINT(tid, insAddress, "xorRR(8)");
         // CAS 2 : destination non marquée (et donc source marquée)
         if (!isDestTainted) 
         {
@@ -1391,7 +1391,7 @@ void LOGICAL::cTEST(INS &ins)
                 IARG_ADDRINT, (ADDRINT) INS_OperandImmediate(ins, 1),
                 IARG_UINT32, regDest,	// registre destination
                 IARG_REG_VALUE, regDest,// valeur lors du callback
-                CALLBACK_DEBUG IARG_END);
+                IARG_INST_PTR, IARG_END);
         }
         else if (INS_IsMemoryRead(ins)) // TEST_MR
         {			
@@ -1410,7 +1410,7 @@ void LOGICAL::cTEST(INS &ins)
                 IARG_MEMORYREAD_EA,		// adresse réelle de lecture
                 IARG_UINT32, regDest,	// registre destination
                 IARG_REG_VALUE, regDest,// valeur lors du callback
-                CALLBACK_DEBUG IARG_END);
+                IARG_INST_PTR, IARG_END);
         }
         else // TEST_RR
         {    
@@ -1431,7 +1431,7 @@ void LOGICAL::cTEST(INS &ins)
                     IARG_THREAD_ID,
                     IARG_UINT32, regSrc,		// registre source et dest
                     IARG_REG_VALUE, regSrc,		// valeur lors du callback
-                    CALLBACK_DEBUG IARG_END);
+                    IARG_INST_PTR, IARG_END);
             }
             else 
             {
@@ -1452,7 +1452,7 @@ void LOGICAL::cTEST(INS &ins)
                     IARG_REG_VALUE, regSrc,		// valeur lors du callback
                     IARG_UINT32, regDest,		// registre de destination
                     IARG_REG_VALUE, regDest,	// valeur lors du callback
-                    CALLBACK_DEBUG IARG_END);
+                    IARG_INST_PTR, IARG_END);
             }
         }  
     }
@@ -1475,7 +1475,7 @@ void LOGICAL::cTEST(INS &ins)
                 IARG_THREAD_ID,
                 IARG_ADDRINT, (ADDRINT) INS_OperandImmediate(ins, 1),
                 IARG_MEMORYREAD_EA,
-                CALLBACK_DEBUG IARG_END);
+                IARG_INST_PTR, IARG_END);
         } 
         else // TEST_RM
         { 
@@ -1495,7 +1495,7 @@ void LOGICAL::cTEST(INS &ins)
                 IARG_UINT32, regSrc, 
                 IARG_REG_VALUE, regSrc, 
                 IARG_MEMORYREAD_EA, 
-                CALLBACK_DEBUG IARG_END);
+                IARG_INST_PTR, IARG_END);
         }
     }
 } // cTEST
@@ -1523,7 +1523,7 @@ void LOGICAL::cNOT(INS &ins)
         }
         INS_InsertCall (ins, IPOINT_BEFORE, callback,
             IARG_MEMORYWRITE_EA, // l'un des rares cas ou il n'y a pas besoin de THREADID
-            CALLBACK_DEBUG IARG_END);
+            IARG_INST_PTR, IARG_END);
     } 
     else  // DESTINATION = REGISTRE
     {                                 
@@ -1541,18 +1541,18 @@ void LOGICAL::cNOT(INS &ins)
         INS_InsertCall (ins, IPOINT_BEFORE, callback,
             IARG_THREAD_ID,
             IARG_UINT32, reg, 
-            CALLBACK_DEBUG IARG_END);
+            IARG_INST_PTR, IARG_END);
     }
 } // cNOT
 
 // SIMULATE (spécialisation des templates)
-template<> void LOGICAL::sNOT_R<8>(THREADID tid, REG reg ADDRESS_DEBUG) 
+template<> void LOGICAL::sNOT_R<8>(THREADID tid, REG reg, ADDRINT insAddress) 
 {
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
 
     if (pTmgrTls->isRegisterTainted<8>(reg)) 
     {
-        _LOGTAINT("notR(8)");
+        _LOGTAINT(tid, insAddress, "notR(8)");
         pTmgrTls->updateTaintRegister<8>(reg, std::make_shared<TaintByte>(
             X_NOT,
             ObjectSource(pTmgrTls->getRegisterTaint(reg))));

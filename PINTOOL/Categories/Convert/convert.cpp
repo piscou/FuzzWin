@@ -5,7 +5,7 @@ void CONVERT::cCBW(INS &ins)
     // pas besoin de transmettre valeur de AL
     INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR) sCBW, 
         IARG_THREAD_ID,
-        CALLBACK_DEBUG IARG_END); 
+        IARG_INST_PTR, IARG_END); 
 } // cCBW
 
 void CONVERT::cCWDE(INS &ins)
@@ -13,7 +13,7 @@ void CONVERT::cCWDE(INS &ins)
     INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR) sCWDE, 
         IARG_THREAD_ID,
         IARG_REG_VALUE, REG_AX, 
-        CALLBACK_DEBUG IARG_END); 
+        IARG_INST_PTR, IARG_END); 
 } // cCWDE
 
 void CONVERT::cCWD(INS &ins)
@@ -21,7 +21,7 @@ void CONVERT::cCWD(INS &ins)
     INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR) sCWD, 
         IARG_THREAD_ID,
         IARG_REG_VALUE, REG_AX, 
-        CALLBACK_DEBUG IARG_END); 
+        IARG_INST_PTR, IARG_END); 
 } // cCWD
 
 void CONVERT::cCDQ(INS &ins)
@@ -29,7 +29,7 @@ void CONVERT::cCDQ(INS &ins)
     INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR) sCDQ, 
         IARG_THREAD_ID,
         IARG_REG_VALUE, REG_EAX, 
-        CALLBACK_DEBUG IARG_END); 
+        IARG_INST_PTR, IARG_END); 
 } // cCDQ
 
 #if TARGET_IA32E
@@ -38,7 +38,7 @@ void CONVERT::cCDQE(INS &ins)
     INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR) sCDQE, 
         IARG_THREAD_ID,
         IARG_REG_VALUE, REG_EAX, 
-        CALLBACK_DEBUG IARG_END); 
+        IARG_INST_PTR, IARG_END); 
 } // cCDQE
 
 void CONVERT::cCQO(INS &ins)
@@ -46,7 +46,7 @@ void CONVERT::cCQO(INS &ins)
     INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR) sCQO, 
         IARG_THREAD_ID,
         IARG_REG_VALUE, REG_RAX, 
-        CALLBACK_DEBUG IARG_END); 
+        IARG_INST_PTR, IARG_END); 
 } // cCQO
 #endif
 
@@ -54,13 +54,14 @@ void CONVERT::cCQO(INS &ins)
 
 // CBW : AX <- signExtend(AL)
 
-void CONVERT::sCBW(THREADID tid ADDRESS_DEBUG)
+void CONVERT::sCBW(THREADID tid, ADDRINT insAddress)
 {
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     REGINDEX regIndex = getRegIndex(REG_AL);
 
     if (pTmgrTls->isRegisterPartTainted(regIndex, 0))
     {
+        _LOGTAINT(tid, insAddress, "CBW");
         // affectation à AX (enregistrement du TaintWord)
         pTmgrTls->updateTaintRegister<16>(REG_AX, std::make_shared<TaintWord>(
             X_SIGNEXTEND,
@@ -70,11 +71,12 @@ void CONVERT::sCBW(THREADID tid ADDRESS_DEBUG)
 } // cCBW
 
 // CWDE : EAX <- signExtend(AX)
-void CONVERT::sCWDE(THREADID tid, ADDRINT regAXValue ADDRESS_DEBUG)
+void CONVERT::sCWDE(THREADID tid, ADDRINT regAXValue, ADDRINT insAddress)
 {
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     if (pTmgrTls->isRegisterTainted<16>(REG_AX))
     {
+        _LOGTAINT(tid, insAddress, "CWDE");
         // affectation à EAX (enregistrement du TaintDword)
         pTmgrTls->updateTaintRegister<32>(REG_EAX, std::make_shared<TaintDword>(
             X_SIGNEXTEND,
@@ -84,11 +86,12 @@ void CONVERT::sCWDE(THREADID tid, ADDRINT regAXValue ADDRESS_DEBUG)
 } // cCWDE
 
 // CWD : DX:AX <- signExtend(AX)
-void CONVERT::sCWD(THREADID tid, ADDRINT regAXValue ADDRESS_DEBUG)
+void CONVERT::sCWD(THREADID tid, ADDRINT regAXValue, ADDRINT insAddress)
 {
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     if (pTmgrTls->isRegisterTainted<16>(REG_AX))
     {
+        _LOGTAINT(tid, insAddress, "CWD");
         // construction du résultat
         TaintDwordPtr tdwPtr = std::make_shared<TaintDword>(
             X_SIGNEXTEND,
@@ -107,11 +110,12 @@ void CONVERT::sCWD(THREADID tid, ADDRINT regAXValue ADDRESS_DEBUG)
 } // cCWD
 
 // CDQ : EDX:EAX <- signExtend(EAX)
-void CONVERT::sCDQ(THREADID tid, ADDRINT regEAXValue ADDRESS_DEBUG)
+void CONVERT::sCDQ(THREADID tid, ADDRINT regEAXValue, ADDRINT insAddress)
 {
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     if (pTmgrTls->isRegisterTainted<32>(REG_EAX))
     {
+        _LOGTAINT(tid, insAddress, "CDQ");
         // construction du résultat
         TaintQwordPtr tqwPtr = std::make_shared<TaintQword>(
             X_SIGNEXTEND,
@@ -131,11 +135,12 @@ void CONVERT::sCDQ(THREADID tid, ADDRINT regEAXValue ADDRESS_DEBUG)
 
 #if TARGET_IA32E
 // CDQE : RAX <- signExtend(EAX)
-void CONVERT::sCDQE(THREADID tid, ADDRINT regEAXValue ADDRESS_DEBUG)
+void CONVERT::sCDQE(THREADID tid, ADDRINT regEAXValue, ADDRINT insAddress)
 {
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     if (pTmgrTls->isRegisterTainted<32>(REG_EAX))
     {
+        _LOGTAINT(tid, insAddress, "CDQE");
         // affectation à RAX (enregistrement du TaintQword)
         pTmgrTls->updateTaintRegister<64>(REG_RAX, std::make_shared<TaintQword>(
             X_SIGNEXTEND,
@@ -145,11 +150,12 @@ void CONVERT::sCDQE(THREADID tid, ADDRINT regEAXValue ADDRESS_DEBUG)
 } // cCDQE
 
 // CQO : RDX:RAX <- signExtend(RAX)
-void CONVERT::sCQO(THREADID tid, ADDRINT regRAXValue ADDRESS_DEBUG)
+void CONVERT::sCQO(THREADID tid, ADDRINT regRAXValue, ADDRINT insAddress)
 {
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     if (pTmgrTls->isRegisterTainted<64>(REG_RAX))
     {
+        _LOGTAINT(tid, insAddress, "CQO");
         // construction du résultat
         TaintDoubleQwordPtr tdqwPtr = std::make_shared<TaintDoubleQword>(
             X_SIGNEXTEND,

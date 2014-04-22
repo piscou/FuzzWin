@@ -42,7 +42,7 @@ void SEMAPHORE::cCMPXCHG(INS &ins)
             IARG_MEMORYREAD_EA, 
             IARG_UINT32,    cmpReg,
             IARG_REG_VALUE, cmpReg,
-            CALLBACK_DEBUG IARG_END);      
+            IARG_INST_PTR, IARG_END);      
     }
     else // CMPXCHG_RR (source 0 = registre)
     {
@@ -64,7 +64,7 @@ void SEMAPHORE::cCMPXCHG(INS &ins)
             IARG_REG_VALUE, regDest,// valeur indispendable pour comparaison à RAX
             IARG_UINT32,    cmpReg,
             IARG_REG_VALUE, cmpReg,
-            CALLBACK_DEBUG IARG_END);     
+            IARG_INST_PTR, IARG_END);     
     }
 } // cCMPXCHG
     
@@ -80,7 +80,7 @@ void SEMAPHORE::cCMPXCHG8B(INS &ins)
         IARG_MEMORYREAD_EA, 
         IARG_REG_VALUE, REG_EAX,
         IARG_REG_VALUE, REG_EDX,
-        CALLBACK_DEBUG IARG_END); 
+        IARG_INST_PTR, IARG_END); 
 
 } // cCMPXCHG8B
 
@@ -97,7 +97,7 @@ void SEMAPHORE::cCMPXCHG16B(INS &ins)
         IARG_MEMORYREAD_EA, 
         IARG_REG_VALUE, REG_RAX,
         IARG_REG_VALUE, REG_RDX,
-        CALLBACK_DEBUG IARG_END);  
+        IARG_INST_PTR, IARG_END);  
     
 } // cCMPXCHG16B
 #endif
@@ -128,7 +128,7 @@ void SEMAPHORE::cXADD(INS &ins)
             IARG_UINT32,    regSrc,
             IARG_REG_VALUE, regSrc,
             IARG_MEMORYWRITE_EA, 
-            CALLBACK_DEBUG IARG_END); 
+            IARG_INST_PTR, IARG_END); 
     }
     else  // XADD_R (opérande 0 = registre)
     {
@@ -148,12 +148,12 @@ void SEMAPHORE::cXADD(INS &ins)
             IARG_REG_VALUE, regSrc,
             IARG_UINT32,    regDest,
             IARG_REG_VALUE, regDest,
-            CALLBACK_DEBUG IARG_END); 
+            IARG_INST_PTR, IARG_END); 
     }
 } // cXADD
 
 // SIMULATE
-void SEMAPHORE::sCMPXCHG8B(THREADID tid, ADDRINT address, ADDRINT regEAXValue, ADDRINT regEDXValue ADDRESS_DEBUG)
+void SEMAPHORE::sCMPXCHG8B(THREADID tid, ADDRINT address, ADDRINT regEAXValue, ADDRINT regEDXValue, ADDRINT insAddress)
 {
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     
@@ -172,7 +172,7 @@ void SEMAPHORE::sCMPXCHG8B(THREADID tid, ADDRINT address, ADDRINT regEAXValue, A
     if ( !(isMemTainted || isEAXTainted || isEDXTainted))  pTmgrTls->unTaintZeroFlag();
     else 
     {
-        _LOGTAINT("CMPXCHG8B - FLAG MARQUE"); 
+        _LOGTAINT(tid, insAddress, "CMPXCHG8B - FLAG MARQUE"); 
         // pour représenter EDX:EAX et la mémoire il n'est pas possible de faire une concaténation
         // car cela ne pourra pas traiter le cas ou les deux registres sont démarqués
         // on pourrait envisager de faire un ObjectSource d'1 valeur de 64bits
@@ -209,22 +209,22 @@ void SEMAPHORE::sCMPXCHG8B(THREADID tid, ADDRINT address, ADDRINT regEAXValue, A
     // puis        un MOVRM de ECX dans addr + 3 (tr.    partie haute)
     if ((srcMemLowValue == regEAXValue) && (srcMemHighValue == regEDXValue))
     {
-        DATAXFER::sMOV_RM<32>(tid, REG_EBX, address       INSADDRESS);
-        DATAXFER::sMOV_RM<32>(tid, REG_ECX, (address + 3) INSADDRESS);
+        DATAXFER::sMOV_RM<32>(tid, REG_EBX, address       ,insAddress);
+        DATAXFER::sMOV_RM<32>(tid, REG_ECX, (address + 3) ,insAddress);
     }
     // sinon EDX:EAX <- mem
     // on fera un MOVMR de addr     dans EAX (partie basse)
     // puis    un MOVMR de addr + 3 dans EDX (partie haute)
     else
     {
-        DATAXFER::sMOV_MR<32>(tid, address,       REG_EAX INSADDRESS);
-        DATAXFER::sMOV_MR<32>(tid, (address + 3), REG_ECX INSADDRESS);
+        DATAXFER::sMOV_MR<32>(tid, address,       REG_EAX ,insAddress);
+        DATAXFER::sMOV_MR<32>(tid, (address + 3), REG_ECX ,insAddress);
     }
 }// sCMPXCHG8B
 
 
 #if TARGET_IA32E
-void SEMAPHORE::sCMPXCHG16B(THREADID tid, ADDRINT address, ADDRINT regRAXValue, ADDRINT regRDXValue ADDRESS_DEBUG)
+void SEMAPHORE::sCMPXCHG16B(THREADID tid, ADDRINT address, ADDRINT regRAXValue, ADDRINT regRDXValue, ADDRINT insAddress)
 {
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     
@@ -243,7 +243,7 @@ void SEMAPHORE::sCMPXCHG16B(THREADID tid, ADDRINT address, ADDRINT regRAXValue, 
     if ( !(isMemTainted || isRAXTainted || isRDXTainted))  pTmgrTls->unTaintAllFlags();
     else 
     {
-        _LOGTAINT("CMPXCHG16B - FLAG MARQUE"); 
+        _LOGTAINT(tid, insAddress, "CMPXCHG16B - FLAG MARQUE"); 
         // pour représenter RDX:RAX et la mémoire il n'est pas possible de faire une concaténation
         // car cela ne pourra pas traiter le cas ou les deux registres sont démarqués
         // cf CMPXCHG16B
@@ -277,16 +277,16 @@ void SEMAPHORE::sCMPXCHG16B(THREADID tid, ADDRINT address, ADDRINT regRAXValue, 
     // puis        un MOVRM de RCX dans addr + 3 (tr.    partie haute)
     if ((srcMemLowValue == regRAXValue) && (srcMemHighValue == regRDXValue))
     {
-        DATAXFER::sMOV_RM<64>(tid, REG_RBX, address       INSADDRESS);
-        DATAXFER::sMOV_RM<64>(tid, REG_RCX, (address + 3) INSADDRESS);
+        DATAXFER::sMOV_RM<64>(tid, REG_RBX, address       ,insAddress);
+        DATAXFER::sMOV_RM<64>(tid, REG_RCX, (address + 3) ,insAddress);
     }
     // sinon RDX:RAX <- mem
     // on fera un MOVMR de addr     dans RAX (partie basse)
     // puis    un MOVMR de addr + 3 dans RDX (partie haute)
     else
     {
-        DATAXFER::sMOV_MR<64>(tid, address,       REG_RAX INSADDRESS);
-        DATAXFER::sMOV_MR<64>(tid, (address + 3), REG_RCX INSADDRESS);
+        DATAXFER::sMOV_MR<64>(tid, address,       REG_RAX ,insAddress);
+        DATAXFER::sMOV_MR<64>(tid, (address + 3), REG_RCX ,insAddress);
     }
 } // sCMPXCHG16B
 #endif

@@ -28,8 +28,7 @@ public:
     bool    _timeStamp;         // ajout de l'heure aux lignes de log
     bool    _hashFiles;         // calcul du hash de chaque entrée pour éviter les collisions
     bool    _traceOnly;         // simple trace d'exécution de l'entrée initiale
-    UINT32 _maxExecutionTime;   // temps maximal d'exécution (pour tuer le processus de la cible lancé en débug)
-  
+    UINT32 _maxExecutionTime;   // temps maximal d'exécution (pour tuer le processus de la cible lancé en débug) 
 };
 
 // création de la classe algorithme adapté à la ligne de commande

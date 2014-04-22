@@ -2,7 +2,7 @@
 
 #if TARGET_IA32
 template<UINT32 lenDest, UINT32 lenEA> 
-void MISC::sLEA(THREADID tid, REG regDest ADDRESS_DEBUG)
+void MISC::sLEA(THREADID tid, REG regDest, ADDRINT insAddress)
 {
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     
@@ -39,7 +39,7 @@ void MISC::sLEA(THREADID tid, REG regDest ADDRESS_DEBUG)
 #else
 
 template<UINT32 lenDest, UINT32 lenEA> 
-void MISC::sLEA(THREADID tid, REG regDest ADDRESS_DEBUG)
+void MISC::sLEA(THREADID tid, REG regDest, ADDRINT insAddress)
 {
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     

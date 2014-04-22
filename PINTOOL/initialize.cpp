@@ -111,26 +111,21 @@ int pintoolInit()
             if ((HANDLE)(WINDOWS::LONG_PTR) (-1) == g_hPipe)  return (INIT_ERROR);
         }
 
-        // 2) log de déssasemblage
-        g_logasm = KLogAsm.Value();
-        if (g_logasm)
+        // 2) mode verbeux : création des fichiers de log
+        g_verbose = KVerbose.Value();
+        if (g_verbose)
         {
             // création et ouverture du fichier de log dessasemblage
             std::string logfile(g_inputFile + "_asm.log");
-            g_debug.open(logfile);
-            if (!g_debug.good()) return (INIT_ERROR);    
-            // stockage de l'heure du top départ pour statistiques
-            g_timeBegin = clock();
-        }
+            g_debug.open(logfile); 
 
-        // 3) log de marquage
-        g_logtaint = KLogTaint.Value();
-        if (g_logtaint)
-        {
-            // création et ouverture du fichier de log dessasemblage
+            // création et ouverture du fichier de log de marquage
             std::string taintfile(g_inputFile + "_taint.log");
             g_taint.open(taintfile);
-            if (!g_taint.good()) return (INIT_ERROR);
+            if (!g_taint.good() || !g_debug.good()) return (INIT_ERROR);
+
+            // stockage de l'heure du top départ pour statistiques
+            g_timeBegin = clock();
         }
 
         // 4) intervalles d'octets source à marquer, si option présente

@@ -166,7 +166,7 @@ void UTILS::computeEA_BISD(FUNCARGS_BISD)
     // il faut au moins un des registres base ou index marqués, sinon ne rien faire
     if (isIndexRegTainted || isBaseRegTainted) 
     {
-        _LOGTAINT("BISD");
+        _LOGTAINT(tid, insAddress, "BISD");
         
         // construction du squelette de l'objet (il y aura au moins une addition)
         // ajout de la base (SOURCE 1) lors de la construction, selon son marquage
@@ -223,7 +223,7 @@ void UTILS::computeEA_BIS(FUNCARGS_BIS)
     // il faut au moins un des registres base ou index marqués, sinon ne rien faire
     if (isIndexRegTainted || isBaseRegTainted) 
     {
-        _LOGTAINT("BIS");
+        _LOGTAINT(tid, insAddress, "BIS");
         
         // construction du squelette de l'objet (il y aura au moins une addition)
         // ajout de la base (SOURCE 1) lors de la construction, selon son marquage
@@ -272,7 +272,7 @@ void UTILS::computeEA_BID(FUNCARGS_BID)
     // il faut au moins un des registres base ou index marqués, sinon ne rien faire
     if (isIndexRegTainted || isBaseRegTainted) 
     {
-        _LOGTAINT("BID");
+        _LOGTAINT(tid, insAddress, "BID");
     
         // construction du squelette de l'objet (il y aura au moins une addition)
         // ajout de la base (SOURCE 1) lors de la construction, selon son marquage
@@ -317,7 +317,7 @@ void UTILS::computeEA_BI(FUNCARGS_BI)
     // il faut au moins un des registres base ou index marqués, sinon ne rien faire
     if (isIndexRegTainted || isBaseRegTainted) 
     {
-        _LOGTAINT("BI");
+        _LOGTAINT(tid, insAddress, "BI");
         // source 1 : base
         ObjectSource baseSrc((isBaseRegTainted) 
             ? ObjectSource(pTmgrTls->getRegisterTaint<32>(baseReg, baseRegValue))
@@ -345,7 +345,7 @@ void UTILS::computeEA_BD(FUNCARGS_BD)
     // traitement ssi base marquée
     if (pTmgrTls->isRegisterTainted<32>(baseReg)) 
     {
-        _LOGTAINT("BD")
+        _LOGTAINT(tid, insAddress, "BD");
         Relation rel    = (displ > 0) ? X_ADD : X_SUB;
         UINT32 absDispl = abs(displ);
 
@@ -364,7 +364,7 @@ void UTILS::computeEA_B(FUNCARGS_B)
     // traitement ssi base marquée
     if (pTmgrTls->isRegisterTainted<32>(baseReg)) 
     {
-        _LOGTAINT("B")
+        _LOGTAINT(tid, insAddress, "B");
         // stockage dans TaintManager
         pTmgrTls->storeTaintEffectiveAddress(pTmgrTls->getRegisterTaint<32>(baseReg, baseRegValue));
     }
@@ -380,7 +380,7 @@ void UTILS::computeEA_ISD(FUNCARGS_ISD)
     // traitement ssi index marqué, sinon ne rien faire
     if (pTmgrTls->isRegisterTainted<32>(indexReg)) 
     {
-        _LOGTAINT("ISD");
+        _LOGTAINT(tid, insAddress, "ISD");
    
         // valeur du déplacement (avec scale = 2^depl)
         UINT32 shiftValue = (scale == 2) ? 1 : ((scale == 4) ? 2 : 3);
@@ -413,7 +413,7 @@ void UTILS::computeEA_IS(FUNCARGS_IS)
     // traitement ssi index marqué, sinon ne rien faire
     if (pTmgrTls->isRegisterTainted<32>(indexReg)) 
     {
-        _LOGTAINT("IS");
+        _LOGTAINT(tid, insAddress, "IS");
    
         // valeur du déplacement (avec scale = 2^depl)
         UINT32 shiftValue = (scale == 2) ? 1 : ((scale == 4) ? 2 : 3);
@@ -448,7 +448,7 @@ void UTILS::computeEA_BISD(FUNCARGS_BISD)
     // il faut au moins un des registres base ou index marqués, sinon ne rien faire
     if (isIndexRegTainted || isBaseRegTainted) 
     {
-        _LOGTAINT("BISD");
+        _LOGTAINT(tid, insAddress, "BISD");
         
         // construction du squelette de l'objet (il y aura au moins une addition)
         // ajout de la base (SOURCE 1) lors de la construction, selon son marquage
@@ -505,7 +505,7 @@ void UTILS::computeEA_BIS(FUNCARGS_BIS)
     // il faut au moins un des registres base ou index marqués, sinon ne rien faire
     if (isIndexRegTainted || isBaseRegTainted) 
     {
-        _LOGTAINT("BIS");
+        _LOGTAINT(tid, insAddress, "BIS");
         
         // construction du squelette de l'objet (il y aura au moins une addition)
         // ajout de la base (SOURCE 1) lors de la construction, selon son marquage
@@ -554,7 +554,7 @@ void UTILS::computeEA_BID(FUNCARGS_BID)
     // il faut au moins un des registres base ou index marqués, sinon ne rien faire
     if (isIndexRegTainted || isBaseRegTainted) 
     {
-        _LOGTAINT("BID");
+        _LOGTAINT(tid, insAddress, "BID");
     
         // construction du squelette de l'objet (il y aura au moins une addition)
         // ajout de la base (SOURCE 1) lors de la construction, selon son marquage
@@ -599,7 +599,7 @@ void UTILS::computeEA_BI(FUNCARGS_BI)
     // il faut au moins un des registres base ou index marqués, sinon ne rien faire
     if (isIndexRegTainted || isBaseRegTainted) 
     {
-        _LOGTAINT("BI");
+        _LOGTAINT(tid, insAddress, "BI");
         // source 1 : base
         ObjectSource baseSrc((isBaseRegTainted) 
             ? ObjectSource(pTmgrTls->getRegisterTaint<64>(baseReg, baseRegValue))
@@ -629,7 +629,7 @@ void UTILS::computeEA_BD(FUNCARGS_BD)
     // traitement ssi base marquée
     if (pTmgrTls->isRegisterTainted<64>(baseReg) && (baseReg != REG_RIP)) 
     {
-        _LOGTAINT("BD");
+        _LOGTAINT(tid, insAddress, "BD");
         Relation rel    = (displ > 0) ? X_ADD : X_SUB;
         UINT32 absDispl = abs(displ);
 
@@ -647,7 +647,7 @@ void UTILS::computeEA_B(FUNCARGS_B)
     // traitement ssi base marquée
     if (pTmgrTls->isRegisterTainted<64>(baseReg)) 
     {
-        _LOGTAINT("B");
+        _LOGTAINT(tid, insAddress, "B");
         // stockage dans TaintManager
         pTmgrTls->storeTaintEffectiveAddress(pTmgrTls->getRegisterTaint<64>(baseReg, baseRegValue));
     }
@@ -663,7 +663,7 @@ void UTILS::computeEA_ISD(FUNCARGS_ISD)
     // traitement ssi index marqué, sinon ne rien faire
     if (pTmgrTls->isRegisterTainted<64>(indexReg)) 
     {
-        _LOGTAINT("ISD");
+        _LOGTAINT(tid, insAddress, "ISD");
    
         // valeur du déplacement (avec scale = 2^depl)
         UINT32 shiftValue = (scale == 2) ? 1 : ((scale == 4) ? 2 : 3);
@@ -696,7 +696,7 @@ void UTILS::computeEA_IS(FUNCARGS_IS)
     // traitement ssi index marqué, sinon ne rien faire
     if (pTmgrTls->isRegisterTainted<64>(indexReg)) 
     {
-        _LOGTAINT("IS");
+        _LOGTAINT(tid, insAddress, "IS");
    
         // valeur du déplacement (avec scale = 2^depl)
         UINT32 shiftValue = (scale == 2) ? 1 : ((scale == 4) ? 2 : 3);

@@ -40,7 +40,7 @@ void CMOV::cIfPredicated_CMOVcc(INS &ins)
             IARG_THREAD_ID,
             IARG_MEMORYREAD_EA,    
             IARG_UINT32, regDest, 
-            CALLBACK_DEBUG IARG_END);
+            IARG_INST_PTR, IARG_END);
     }
     else 
     {    // registre -> registre = MOVRR si predicat vrai
@@ -61,7 +61,7 @@ void CMOV::cIfPredicated_CMOVcc(INS &ins)
             IARG_THREAD_ID,
             IARG_UINT32, regSrc,    // registre source
             IARG_UINT32, regDest,   // registre destination
-            CALLBACK_DEBUG IARG_END);
+            IARG_INST_PTR, IARG_END);
     }
 }// cIfPredicated_CMOVcc
 
@@ -303,7 +303,7 @@ void CMOV::sCMOVB(THREADID tid, bool isPredicatTrue, ADDRINT insAddress)
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     if (pTmgrTls->isCarryFlagTainted()) 
     {
-        _LOGTAINT("CMOVB");
+        _LOGTAINT(tid, insAddress, "CMOVB");
         g_pFormula->addConstraintJcc(pTmgrTls, PREDICATE_BELOW, isPredicatTrue, insAddress);
     }
 }// sCMOVB
@@ -314,7 +314,7 @@ void CMOV::sCMOVNB(THREADID tid, bool isPredicatTrue, ADDRINT insAddress)
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     if (pTmgrTls->isCarryFlagTainted()) 
     {
-        _LOGTAINT("CMOVNB");
+        _LOGTAINT(tid, insAddress, "CMOVNB");
         g_pFormula->addConstraintJcc(pTmgrTls, PREDICATE_NOT_BELOW, isPredicatTrue, insAddress);
     }
 }// sCMOVNB
@@ -325,7 +325,7 @@ void CMOV::sCMOVS(THREADID tid, bool isPredicatTrue, ADDRINT insAddress)
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     if (pTmgrTls->isSignFlagTainted()) 
     {
-        _LOGTAINT("CMOVS");
+        _LOGTAINT(tid, insAddress, "CMOVS");
         g_pFormula->addConstraintJcc(pTmgrTls, PREDICATE_SIGN, isPredicatTrue, insAddress);
     }
 }// sCMOVS
@@ -336,7 +336,7 @@ void CMOV::sCMOVNS(THREADID tid, bool isPredicatTrue, ADDRINT insAddress)
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     if (pTmgrTls->isSignFlagTainted()) 
     {
-        _LOGTAINT("CMOVNS");
+        _LOGTAINT(tid, insAddress, "CMOVNS");
         g_pFormula->addConstraintJcc(pTmgrTls, PREDICATE_NOT_SIGN, isPredicatTrue, insAddress);
     }
 }// sCMOVNS
@@ -347,7 +347,7 @@ void CMOV::sCMOVO (THREADID tid, bool isPredicatTrue, ADDRINT insAddress)
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     if (pTmgrTls->isOverflowFlagTainted())  
     {
-        _LOGTAINT("CMOVO");
+        _LOGTAINT(tid, insAddress, "CMOVO");
         g_pFormula->addConstraintJcc(pTmgrTls, PREDICATE_OVERFLOW, isPredicatTrue, insAddress);
     }
 }// sCMOVO
@@ -358,7 +358,7 @@ void CMOV::sCMOVNO(THREADID tid, bool isPredicatTrue, ADDRINT insAddress)
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     if (pTmgrTls->isOverflowFlagTainted()) 
     {
-        _LOGTAINT("CMOVNO");
+        _LOGTAINT(tid, insAddress, "CMOVNO");
         g_pFormula->addConstraintJcc(pTmgrTls, PREDICATE_NOT_OVERFLOW, isPredicatTrue, insAddress);
     }
 }// sCMOVNO
@@ -369,7 +369,7 @@ void CMOV::sCMOVP (THREADID tid, bool isPredicatTrue, ADDRINT insAddress)
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     if (pTmgrTls->isParityFlagTainted()) 
     {
-        _LOGTAINT("CMOVP");
+        _LOGTAINT(tid, insAddress, "CMOVP");
         g_pFormula->addConstraintJcc(pTmgrTls, PREDICATE_PARITY, isPredicatTrue, insAddress);
     }
 }// sCMOVP
@@ -380,7 +380,7 @@ void CMOV::sCMOVNP(THREADID tid, bool isPredicatTrue, ADDRINT insAddress)
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     if (pTmgrTls->isParityFlagTainted()) 
     {
-        _LOGTAINT("CMOVNP");
+        _LOGTAINT(tid, insAddress, "CMOVNP");
         g_pFormula->addConstraintJcc(pTmgrTls, PREDICATE_NOT_PARITY, isPredicatTrue, insAddress);
     }
 }// sCMOVNP
@@ -391,7 +391,7 @@ void CMOV::sCMOVZ (THREADID tid, bool isPredicatTrue, ADDRINT insAddress)
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     if (pTmgrTls->isZeroFlagTainted()) 
     {
-        _LOGTAINT("CMOVZ");
+        _LOGTAINT(tid, insAddress, "CMOVZ");
         g_pFormula->addConstraintJcc(pTmgrTls, PREDICATE_ZERO, isPredicatTrue, insAddress);
     }
 }// sCMOVZ
@@ -402,7 +402,7 @@ void CMOV::sCMOVNZ(THREADID tid, bool isPredicatTrue, ADDRINT insAddress)
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     if (pTmgrTls->isZeroFlagTainted()) 
     {
-        _LOGTAINT("CMOVNZ");
+        _LOGTAINT(tid, insAddress, "CMOVNZ");
         g_pFormula->addConstraintJcc(pTmgrTls, PREDICATE_NOT_ZERO, isPredicatTrue, insAddress);
     }
 }// sCMOVNZ
@@ -413,7 +413,7 @@ void CMOV::sCMOVBE(THREADID tid, bool isPredicatTrue, ADDRINT regEflagsValue, AD
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     if (pTmgrTls->isZeroFlagTainted() || pTmgrTls->isCarryFlagTainted() ) 
     {
-        _LOGTAINT("CMOVBE");
+        _LOGTAINT(tid, insAddress, "CMOVBE");
         g_pFormula->addConstraintJcc(pTmgrTls, PREDICATE_BELOW_OR_EQUAL, isPredicatTrue, insAddress, regEflagsValue);
     }
 }// sCMOVBE
@@ -424,7 +424,7 @@ void CMOV::sCMOVNBE(THREADID tid, bool isPredicatTrue, ADDRINT regEflagsValue, A
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     if (pTmgrTls->isZeroFlagTainted() || pTmgrTls->isCarryFlagTainted() ) 
     {
-        _LOGTAINT("CMOVNBE");
+        _LOGTAINT(tid, insAddress, "CMOVNBE");
         g_pFormula->addConstraintJcc(pTmgrTls, PREDICATE_NOT_BELOW_OR_EQUAL, isPredicatTrue, insAddress, regEflagsValue);
     }
 }// sCMOVNBE
@@ -435,7 +435,7 @@ void CMOV::sCMOVL(THREADID tid, bool isPredicatTrue, ADDRINT regEflagsValue, ADD
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     if (pTmgrTls->isSignFlagTainted() || pTmgrTls->isOverflowFlagTainted() ) 
     {
-        _LOGTAINT("CMOVL");
+        _LOGTAINT(tid, insAddress, "CMOVL");
         g_pFormula->addConstraintJcc(pTmgrTls, PREDICATE_LESS, isPredicatTrue, insAddress, regEflagsValue);
     }
 }// sCMOVL
@@ -446,7 +446,7 @@ void CMOV::sCMOVNL(THREADID tid, bool isPredicatTrue, ADDRINT regEflagsValue, AD
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     if (pTmgrTls->isSignFlagTainted() || pTmgrTls->isOverflowFlagTainted() ) 
     {
-        _LOGTAINT("CMOVNL");
+        _LOGTAINT(tid, insAddress, "CMOVNL");
         g_pFormula->addConstraintJcc(pTmgrTls, PREDICATE_NOT_LESS, isPredicatTrue, insAddress, regEflagsValue);
     }
 }// sCMOVNL
@@ -459,7 +459,7 @@ void CMOV::sCMOVLE(THREADID tid, bool isPredicatTrue, ADDRINT regEflagsValue, AD
         || pTmgrTls->isSignFlagTainted() 
         || pTmgrTls->isOverflowFlagTainted() ) 
     {
-        _LOGTAINT("CMOVLE");
+        _LOGTAINT(tid, insAddress, "CMOVLE");
         g_pFormula->addConstraintJcc(pTmgrTls, PREDICATE_LESS_OR_EQUAL, isPredicatTrue, insAddress, regEflagsValue);
     }
 }// sCMOVLE
@@ -472,7 +472,7 @@ void CMOV::sCMOVNLE(THREADID tid, bool isPredicatTrue, ADDRINT regEflagsValue, A
         || pTmgrTls->isSignFlagTainted() 
         || pTmgrTls->isOverflowFlagTainted() ) 
     {
-        _LOGTAINT("CMOVNLE");
+        _LOGTAINT(tid, insAddress, "CMOVNLE");
         g_pFormula->addConstraintJcc(pTmgrTls, PREDICATE_NOT_LESS_OR_EQUAL, isPredicatTrue, insAddress, regEflagsValue);
     }
 }// sCMOVNLE

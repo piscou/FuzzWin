@@ -20,6 +20,7 @@ void cJL  (INS &ins);
 void cJNL (INS &ins);
 void cJLE (INS &ins);
 void cJNLE(INS &ins);
+void cJRCXZ(INS &ins);
 
 // SIMULATE 
 void sBELOW   (THREADID tid, bool isTaken, ADDRINT insAddress);
@@ -39,4 +40,7 @@ void sNOT_ZERO    (THREADID tid, bool isTaken, ADDRINT insAddress);
 void sNOT_LESS    (THREADID tid, bool isTaken, ADDRINT eflagsValue, ADDRINT insAddress);
 void sNOT_BELOW_OR_EQUAL(THREADID tid, bool isTaken, ADDRINT eflagsValue, ADDRINT insAddress);
 void sNOT_LESS_OR_EQUAL (THREADID tid, bool isTaken, ADDRINT eflagsValue, ADDRINT insAddress);
+
+template<UINT32 lengthInBits>
+void sJRCXZ(THREADID tid, bool isTaken, ADDRINT registerValue, ADDRINT insAddress);
 } // namespace CONDITIONAL_BR

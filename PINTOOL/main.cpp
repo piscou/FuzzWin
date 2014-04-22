@@ -62,7 +62,7 @@ TLS_KEY             g_tlsKeySyscallData;
 PIN_LOCK            g_lock;      
 
 // handle du pipe de communication avec l'extérieur
-// en MODE DEBUG : correspond à STDOUT
+// en MODE nopipe : correspond à STDOUT
 HANDLE              g_hPipe;     
 
 // variable déterminant l'instrumentation ou non des instructions
@@ -77,24 +77,23 @@ std::string         g_option;
 UINT32              g_maxConstraints;
 // temps maximal d'exécution du pintool (en secondes)
 UINT32              g_maxTime;
-// log de dessasemblage du binaire
-bool                g_logasm;
-// log de marquage
-bool                g_logtaint;
+
+// mode verbeux : logs de désassemblage et de marquage
+bool                g_verbose;
+ofstream            g_debug;      // fichier de log de dessassemblage
+ofstream            g_taint;      // fichier de log du marquage
+clock_t             g_timeBegin;  // temps d'exécution du pintool pour statistiques
+
 // option pipe ou non pour l'échange du fichier initial  et de la formule finale
 bool                g_nopipe;
 // type d'OS hote. Sert à déterminer les numéros de syscalls
 OSTYPE              g_osType;
 // adresse de la fonction NtQueryObject (NtDll.dll)
-t_NtQueryObject     g_AddressOfNtQueryObject = nullptr;
+t_NtQueryObject     g_AddressOfNtQueryObject;
 
 /** OPTION CHECKSCORE **/
 // nombre d'instructions exécutées
 UINT64              g_nbIns;
-
-ofstream            g_debug;      // fichier de log de dessassemblage
-ofstream            g_taint;      // fichier de log du marquage
-clock_t             g_timeBegin;  // temps d'exécution du pintool pour statistiques
 
 /* ===================================================================== */
 // Command line switches
@@ -106,8 +105,7 @@ KNOB<std::string> KBytes(KNOB_MODE_WRITEONCE,     "pintool", "range", "", "inter
 KNOB<UINT32>      KMaxConstr(KNOB_MODE_WRITEONCE, "pintool", "maxconstraints", "0", "nombre maximal de contraintes");
 KNOB<std::string> KOption(KNOB_MODE_WRITEONCE,    "pintool", "option", "", "option 'taint' ou 'checkscore'");
 KNOB<UINT32>      KOsType(KNOB_MODE_WRITEONCE,    "pintool", "os", "11", "OS hote (de 1 à 10); 11 = erreur");
-KNOB<BOOL>        KLogAsm(KNOB_MODE_WRITEONCE,    "pintool", "logasm", "0", "log de dessasemblage");
-KNOB<BOOL>        KLogTaint(KNOB_MODE_WRITEONCE,  "pintool", "logtaint", "0", "log de marquage");
+KNOB<BOOL>        KVerbose(KNOB_MODE_WRITEONCE,   "pintool", "verbose", "0", "mode verbeux : logs de désassemblage et de marquage");
 KNOB<BOOL>        KNoPipe(KNOB_MODE_WRITEONCE,    "pintool", "nopipe", "0", "ne pas utiliser de tube nommé (option 'input' obligatoire)");
 
 /* ===================================================================== */
@@ -123,7 +121,7 @@ INT32 Usage()
 
 int main(int argc, char *argv[]) 
 {
-    // Initialisation de la gestion des symboles 'exports
+    // Initialisation de la gestion des symboles exports
     // obligatoire pour l'instrumentation des images
     //PIN_InitSymbolsAlt(EXPORT_SYMBOLS);
     

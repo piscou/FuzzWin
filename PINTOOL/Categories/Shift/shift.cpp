@@ -74,7 +74,7 @@ void SHIFT::cSHL(INS &ins)
                 IARG_THREAD_ID,
                 IARG_UINT32, maskedDepl,
                 IARG_MEMORYWRITE_EA,   
-                CALLBACK_DEBUG IARG_END);
+                IARG_INST_PTR, IARG_END);
         }
         else // DESTINATION = REGISTRE (SHL_IR)
         {         
@@ -99,7 +99,7 @@ void SHIFT::cSHL(INS &ins)
                 IARG_UINT32, maskedDepl,
                 IARG_UINT32,    reg,    // registre décalé
                 IARG_REG_VALUE, reg,    // sa valeur lors du callback
-                CALLBACK_DEBUG IARG_END);
+                IARG_INST_PTR, IARG_END);
         }
     }
     // DECALAGE PAR REGISTRE : SHL_RM ou SHL_RR
@@ -122,7 +122,7 @@ void SHIFT::cSHL(INS &ins)
                 IARG_THREAD_ID,
                 IARG_REG_VALUE, REG_CL, // valeur numérique du déplacement
                 IARG_MEMORYWRITE_EA,   
-                CALLBACK_DEBUG IARG_END);
+                IARG_INST_PTR, IARG_END);
         }
         else // DESTINATION = REGISTRE (SHL_RR)
         {         
@@ -143,7 +143,7 @@ void SHIFT::cSHL(INS &ins)
                 IARG_REG_VALUE, REG_CL, // valeur numérique du déplacement
                 IARG_UINT32,    reg,    // registre décalé
                 IARG_REG_VALUE, reg,    // sa valeur lors du callback
-                CALLBACK_DEBUG IARG_END);
+                IARG_INST_PTR, IARG_END);
         }
     }
 } // cSHL
@@ -243,7 +243,7 @@ void SHIFT::cSHR(INS &ins)
                 IARG_THREAD_ID,
                 IARG_UINT32, maskedDepl,
                 IARG_MEMORYWRITE_EA,   
-                CALLBACK_DEBUG IARG_END);
+                IARG_INST_PTR, IARG_END);
         }
         else // DESTINATION = REGISTRE (SHR_IR)
         {         
@@ -267,7 +267,7 @@ void SHIFT::cSHR(INS &ins)
                 IARG_UINT32, maskedDepl,
                 IARG_UINT32,    reg,    // registre décalé
                 IARG_REG_VALUE, reg,    // sa valeur lors du callback
-                CALLBACK_DEBUG IARG_END);
+                IARG_INST_PTR, IARG_END);
         }
     }
     // DECALAGE PAR REGISTRE : SHR_RM ou SHR_RR
@@ -290,7 +290,7 @@ void SHIFT::cSHR(INS &ins)
                 IARG_THREAD_ID,
                 IARG_REG_VALUE, REG_CL, // valeur numérique du déplacement
                 IARG_MEMORYWRITE_EA,   
-                CALLBACK_DEBUG IARG_END);
+                IARG_INST_PTR, IARG_END);
         }
         else // DESTINATION = REGISTRE (SHR_RR)
         {         
@@ -311,7 +311,7 @@ void SHIFT::cSHR(INS &ins)
                 IARG_REG_VALUE, REG_CL, // valeur numérique du déplacement
                 IARG_UINT32,    reg,    // registre décalé
                 IARG_REG_VALUE, reg,    // sa valeur lors du callback
-                CALLBACK_DEBUG IARG_END);
+                IARG_INST_PTR, IARG_END);
         }
     }
 } // cSHR
@@ -407,7 +407,7 @@ void SHIFT::cSAR(INS &ins)
                 IARG_THREAD_ID,
                 IARG_UINT32, maskedDepl,
                 IARG_MEMORYWRITE_EA,   
-                CALLBACK_DEBUG IARG_END);
+                IARG_INST_PTR, IARG_END);
         }
         else // DESTINATION = REGISTRE (SAR_IR)
         {         
@@ -431,7 +431,7 @@ void SHIFT::cSAR(INS &ins)
                 IARG_UINT32, maskedDepl,
                 IARG_UINT32,    reg,    // registre décalé
                 IARG_REG_VALUE, reg,    // sa valeur lors du callback
-                CALLBACK_DEBUG IARG_END);
+                IARG_INST_PTR, IARG_END);
         }
     }
     // DECALAGE PAR REGISTRE : SAR_RM ou SAR_RR
@@ -454,7 +454,7 @@ void SHIFT::cSAR(INS &ins)
                 IARG_THREAD_ID,
                 IARG_REG_VALUE, REG_CL, // valeur numérique du déplacement
                 IARG_MEMORYWRITE_EA,   
-                CALLBACK_DEBUG IARG_END);
+                IARG_INST_PTR, IARG_END);
         }
         else // DESTINATION = REGISTRE (SAR_RR)
         {         
@@ -474,7 +474,7 @@ void SHIFT::cSAR(INS &ins)
                 IARG_REG_VALUE, REG_CL, // valeur numérique du déplacement
                 IARG_UINT32,    reg,    // registre décalé
                 IARG_REG_VALUE, reg,    // sa valeur lors du callback
-                CALLBACK_DEBUG IARG_END);
+                IARG_INST_PTR, IARG_END);
         }
     }
 } // cSAR
@@ -571,7 +571,7 @@ void SHIFT::cSHLD(INS &ins)
                 IARG_UINT32, regSrc,
                 IARG_REG_VALUE, regSrc,
                 IARG_MEMORYWRITE_EA,   
-                CALLBACK_DEBUG IARG_END);
+                IARG_INST_PTR, IARG_END);
         }
         else // DESTINATION = REGISTRE (SHLD_IR)
         {         
@@ -598,7 +598,7 @@ void SHIFT::cSHLD(INS &ins)
                 IARG_REG_VALUE, regSrc,
                 IARG_UINT32,    regDest,    // registre décalé
                 IARG_REG_VALUE, regDest,    // sa valeur lors du callback
-                CALLBACK_DEBUG IARG_END);
+                IARG_INST_PTR, IARG_END);
         }
     }
     // DECALAGE PAR REGISTRE : SHLD_RM ou SHLD_RR
@@ -623,7 +623,7 @@ void SHIFT::cSHLD(INS &ins)
                 IARG_UINT32, regSrc,
                 IARG_REG_VALUE, regSrc,
                 IARG_MEMORYWRITE_EA,   
-                CALLBACK_DEBUG IARG_END);
+                IARG_INST_PTR, IARG_END);
         }
         else // DESTINATION = REGISTRE (SHLD_RR)
         {         
@@ -645,7 +645,7 @@ void SHIFT::cSHLD(INS &ins)
                 IARG_REG_VALUE, regSrc,
                 IARG_UINT32,    regDest,    // registre décalé
                 IARG_REG_VALUE, regDest,    // sa valeur lors du callback
-                CALLBACK_DEBUG IARG_END);
+                IARG_INST_PTR, IARG_END);
         }
     }
 } // cSHLD
@@ -729,7 +729,7 @@ void SHIFT::cSHRD(INS &ins)
                 IARG_UINT32, regSrc,
                 IARG_REG_VALUE, regSrc,
                 IARG_MEMORYWRITE_EA,   
-                CALLBACK_DEBUG IARG_END);
+                IARG_INST_PTR, IARG_END);
         }
         else // DESTINATION = REGISTRE (SHRD_IR)
         {         
@@ -756,7 +756,7 @@ void SHIFT::cSHRD(INS &ins)
                 IARG_REG_VALUE, regSrc,
                 IARG_UINT32,    regDest,    // registre décalé
                 IARG_REG_VALUE, regDest,    // sa valeur lors du callback
-                CALLBACK_DEBUG IARG_END);
+                IARG_INST_PTR, IARG_END);
         }
     }
     // DECALAGE PAR REGISTRE : SHRD_RM ou SHRD_RR
@@ -781,7 +781,7 @@ void SHIFT::cSHRD(INS &ins)
                 IARG_UINT32, regSrc,
                 IARG_REG_VALUE, regSrc,
                 IARG_MEMORYWRITE_EA,   
-                CALLBACK_DEBUG IARG_END);
+                IARG_INST_PTR, IARG_END);
         }
         else // DESTINATION = REGISTRE (SHRD_RR)
         {         
@@ -803,7 +803,7 @@ void SHIFT::cSHRD(INS &ins)
                 IARG_REG_VALUE, regSrc,
                 IARG_UINT32,    regDest,    // registre décalé
                 IARG_REG_VALUE, regDest,    // sa valeur lors du callback
-                CALLBACK_DEBUG IARG_END);
+                IARG_INST_PTR, IARG_END);
         }
     }
 } // cSHRD
@@ -860,7 +860,7 @@ void SHIFT::fSHRD(TaintManager_Thread *pTmgrTls, const TaintPtr &resultPtr, cons
         objTbCount));
 
     // POUR SHRD, OF vaut 1 si changement de signe, donc si MSB srcDest != LSB BitPattern
-    // probable surmarquage car OF marqué ssi depl == 1; solution : démarquer !!!
+    // probable surmarquage car OF marqué ssi depl == 1; seule solution : démarquer !!!
     pTmgrTls->unTaintOverflowFlag();
 } // fSHRD
 

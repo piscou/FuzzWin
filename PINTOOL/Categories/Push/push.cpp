@@ -29,7 +29,7 @@ void PUSH::cPUSH(INS &ins)
             IARG_THREAD_ID,
             IARG_UINT32,    reg, // registre source
             IARG_REG_VALUE, REG_STACK_PTR, // valeur d'ESP à ce moment là
-            CALLBACK_DEBUG IARG_END);
+            IARG_INST_PTR, IARG_END);
     }
     else if (INS_OperandIsImmediate(ins, 0)) // mise sur la pile d'une valeur immédiate
     {  
@@ -47,7 +47,7 @@ void PUSH::cPUSH(INS &ins)
         INS_InsertCall (ins, IPOINT_BEFORE, callback, 
             IARG_THREAD_ID,
             IARG_REG_VALUE, REG_STACK_PTR,  // valeur d'ESP à ce moment là   
-            CALLBACK_DEBUG IARG_END);
+            IARG_INST_PTR, IARG_END);
     }
     else // mise d'une valeur en mémoire sur la pile
     {      
@@ -66,7 +66,7 @@ void PUSH::cPUSH(INS &ins)
             IARG_THREAD_ID,
             IARG_MEMORYREAD_EA,             // adresse réelle de lecture
             IARG_REG_VALUE, REG_STACK_PTR,  // valeur d'ESP à ce moment là 
-            CALLBACK_DEBUG IARG_END);
+            IARG_INST_PTR, IARG_END);
     }
 } // cPUSH
 
@@ -86,7 +86,7 @@ void PUSH::cPUSHF(INS &ins, UINT32 size)
         IARG_THREAD_ID,
         IARG_REG_VALUE, REG_GFLAGS,     // valeur des flags 
         IARG_REG_VALUE, REG_STACK_PTR,  // valeur d'ESP avant le PUSH
-        CALLBACK_DEBUG IARG_END);
+        IARG_INST_PTR, IARG_END);
 } // cPUSHF
 
 // SIMULATE
@@ -96,7 +96,7 @@ void PUSH::cPUSHA(INS &ins)
     INS_InsertCall (ins, IPOINT_BEFORE, (AFUNPTR) sPUSHA,  
         IARG_THREAD_ID,
         IARG_REG_VALUE, REG_STACK_PTR,  // valeur d'ESP à ce moment là
-        CALLBACK_DEBUG IARG_END);
+        IARG_INST_PTR, IARG_END);
 } // cPUSHA
 
 void PUSH::cPUSHAD(INS &ins)
@@ -104,10 +104,10 @@ void PUSH::cPUSHAD(INS &ins)
     INS_InsertCall (ins, IPOINT_BEFORE, (AFUNPTR) sPUSHAD,  
         IARG_THREAD_ID,
         IARG_REG_VALUE, REG_STACK_PTR,  // valeur d'ESP à ce moment là
-        CALLBACK_DEBUG IARG_END);
+        IARG_INST_PTR, IARG_END);
 } // cPUSHAD
 
-void PUSH::sPUSHA(THREADID tid, ADDRINT stackAddressBeforePush ADDRESS_DEBUG) 
+void PUSH::sPUSHA(THREADID tid, ADDRINT stackAddressBeforePush, ADDRINT insAddress) 
 { 
     // mise sur la pile des registres dans l'ordre AX, CX, DX, BX, SP (original), BP, SI, et DI
     // du point de vue marquage, equivalent à un MOVRM [SP-2], reg 
@@ -139,7 +139,7 @@ void PUSH::sPUSHA(THREADID tid, ADDRINT stackAddressBeforePush ADDRESS_DEBUG)
             } 
         }
         // Sinon, simulation du PUSH du registre
-        else DATAXFER::sMOV_RM<16>(tid, reg, spAddress INSADDRESS); 
+        else DATAXFER::sMOV_RM<16>(tid, reg, spAddress ,insAddress); 
     } 
 
     // mise à jour du marquage du REGISTRE SP, dans le cas où il est marqué avant le PUSHA
@@ -152,7 +152,7 @@ void PUSH::sPUSHA(THREADID tid, ADDRINT stackAddressBeforePush ADDRESS_DEBUG)
     }
 } // sPUSHA
 
-void PUSH::sPUSHAD(THREADID tid, ADDRINT stackAddressBeforePush ADDRESS_DEBUG) 
+void PUSH::sPUSHAD(THREADID tid, ADDRINT stackAddressBeforePush, ADDRINT insAddress) 
 { 
     // mise sur la pile des registres dans l'ordre EAX, ECX, EDX, EBX, ESP (orig.), EBP, ESI, EDI
     // du point de vue marquage, equivalent à un MOVRM [ESP-4], reg si reg marqué, sinon démarquage
@@ -188,7 +188,7 @@ void PUSH::sPUSHAD(THREADID tid, ADDRINT stackAddressBeforePush ADDRESS_DEBUG)
             }
         }
         // Sinon, simulation du PUSH du registre
-        else DATAXFER::sMOV_RM<32>(tid, reg, espAddress INSADDRESS); 
+        else DATAXFER::sMOV_RM<32>(tid, reg, espAddress ,insAddress); 
     } 
     
     // mise à jour du marquage du REGISTRE ESP, dans le cas où il est marqué avant le PUSHA

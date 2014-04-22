@@ -137,9 +137,9 @@ enum Relation
     F_CARRY_SUB,
     // CARRY_NEG : Source0 : src (vrai ssi source non nulle)
     F_CARRY_NEG,
-    // CARRY_MUL : Source0 : resultat. Si partie haute du resultat nulle, CF mis à 1
+    // CARRY_MUL : Source0 : resultat. Si partie haute du resultat nulle, CF mis à 0 
     F_CARRY_MUL, 
-    // CARRY_IMUL : Source0 : resultat; si resultat = sign_extend partie basse, alors CF mis à 1
+    // CARRY_IMUL : Source0 : resultat; si resultat = sign_extend partie basse, alors CF mis à 0
     F_CARRY_IMUL,  
     // CARRY_SHL : denier bit ejecté (cas ou la source est marqué sinon traitement direct par extract)
     // Source0 : source, source1 : depl (marqué - 8bits, sera masqué à 0x1f ou 0x3f dans la formule)
@@ -151,8 +151,7 @@ enum Relation
     // Source0 : source, source1 : depl (marqué - 8bits, sera masqué à 0x1f ou 0x3f dans la formule)
     // IDENTIQUE A CARRY_SHR car le deplacement est masqué, donc au maximal ce sera le MSB de la source
     // qui sera éjecté
-    F_CARRY_SAR = F_CARRY_SHR,
-   
+    F_CARRY_SAR = F_CARRY_SHR, 
     // CARRY_RCL : denier bit ejecté (cas ou la source est marqué sinon traitement direct par extract)
     // Source0 : source, source1: depl (marqué - 8bits, sera masqué à 0x1f ou 0x3f dans la formule)
     F_CARRY_RCL,
@@ -193,35 +192,32 @@ enum Relation
     // Src0 = resultat, src1 = src
     F_OVERFLOW_SHL, 
     // OF_SHRD (ssi depl == 1). 1 si signe avant et apres change 
-    // donc si MSB src != LSB Bit Pattern. .
+    // donc si MSB src != LSB Bit Pattern.
     // Source0 = concatenation bitPattern(partie haute) et source shiftée
     F_OVERFLOW_SHRD,
-    // OF_ROL (ssi depl == 1). 1 si signe change entre src et resultat.
-    // Pour ROL <=> LSB(result) = MSB(result). Source0 = result
+    // OF_ROL (ssi depl == 1). MSB(DEST) XOR CF : cf manuel Intel
+    // Source0 = resultat, source1 = CF apres rotation (marqué, 1bit)
     F_OVERFLOW_ROL,
-    // OF_ROR (ssi depl == 1). 1 si signe change entre src et resultat.
-    // Pour ROR <=> LSB(src) = MSB(src). Source0 = src, et donc identique à ROL
-    F_OVERFLOW_ROR = F_OVERFLOW_ROL,
-    // OF_RCL (ssi depl == 1): 0 si valeur CF AVANT rotation == MSB result
-    // Src0 = result, src1 : CF_after (1bit)
-    F_OVERFLOW_RCL,
-    // OF_RCR (ssi depl == 1): 0 si valeur CF AVANT rotation == MSB source
-    // Src0 = source, src1 : CF_before (1bit), donc identique RCL
-    F_OVERFLOW_RCR = F_OVERFLOW_RCL,
+    // OF_ROR (ssi depl == 1). MSB(DEST) XOR ((MSB-1) DEST) : cf manuel Intel
+    // Source0 = resultat
+    F_OVERFLOW_ROR,
 
     // AUXILIARY FLAG
+    // AUXILIARY_ADD : Source0 : src/dest, source1 : src
     F_AUXILIARY_ADD,
+    // AUXILIARY_NEG : source0 = source
     F_AUXILIARY_NEG,
+    // AUXILIARY_SUB : Source0 : src/dest, source1 : src
     F_AUXILIARY_SUB,
-    F_AUXILIARY_CMP,
+    // AUXILIARY_INC : source0 = source
     F_AUXILIARY_INC,
+    // AUXILIARY_DEC : source0 = source
     F_AUXILIARY_DEC,
 
     RELATION_LAST
 };
 
-#if DEBUG
-const static std::string enum_strings[RELATION_LAST] = 
+const static std::string relationStrings[RELATION_LAST] = 
 {
     // TaintObject issu de la source suivie
     "BYTESOURCE", 
@@ -278,15 +274,12 @@ const static std::string enum_strings[RELATION_LAST] =
     "F_OVERFLOW_ADD", "F_OVERFLOW_SUB",
     "F_OVERFLOW_INC", "F_OVERFLOW_DEC/NEG",
     "F_OVERFLOW_SHL", "F_OVERFLOW_SHRD",
-    "F_OVERFLOW_ROL/RCL", 
-    "F_OVERFLOW_RCR/RCL",
+    "F_OVERFLOW_ROL", "F_OVERFLOW_ROR",
     
     // AUXILIARY FLAG
     "F_AUXILIARY_ADD",
     "F_AUXILIARY_NEG",
     "F_AUXILIARY_SUB",
-    "F_AUXILIARY_CMP",
     "F_AUXILIARY_INC",
     "F_AUXILIARY_DEC"
 };
-#endif

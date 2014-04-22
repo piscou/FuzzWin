@@ -24,7 +24,7 @@ void BINARY::cNEG(INS &ins)
         INS_InsertCall (ins, IPOINT_BEFORE, callback,
             IARG_THREAD_ID,
             IARG_MEMORYWRITE_EA,
-            CALLBACK_DEBUG IARG_END);
+            IARG_INST_PTR, IARG_END);
     } 
     else // NEGR
     {                                  
@@ -43,7 +43,7 @@ void BINARY::cNEG(INS &ins)
             IARG_THREAD_ID,
             IARG_UINT32,	reg,	// registre source
             IARG_REG_VALUE, reg,	// sa valeur lors du callback
-            CALLBACK_DEBUG IARG_END);
+            IARG_INST_PTR, IARG_END);
     }
 }
 
@@ -85,7 +85,7 @@ void BINARY::cINC(INS &ins)
         INS_InsertCall (ins, IPOINT_BEFORE, callback,
             IARG_THREAD_ID,
             IARG_MEMORYWRITE_EA,
-            CALLBACK_DEBUG IARG_END);
+            IARG_INST_PTR, IARG_END);
     } 
     else // INCR
     {                                  
@@ -104,7 +104,7 @@ void BINARY::cINC(INS &ins)
             IARG_THREAD_ID,
             IARG_UINT32,	reg,	// registre source
             IARG_REG_VALUE, reg,	// sa valeur lors du callback
-            CALLBACK_DEBUG IARG_END);
+            IARG_INST_PTR, IARG_END);
     }
 } // cINC
 
@@ -158,7 +158,7 @@ void BINARY::cDEC(INS &ins)
         INS_InsertCall (ins, IPOINT_BEFORE, callback,
             IARG_THREAD_ID,
             IARG_MEMORYWRITE_EA,
-            CALLBACK_DEBUG IARG_END);
+            IARG_INST_PTR, IARG_END);
     } 
     else  // DECR
     {                                 
@@ -177,7 +177,7 @@ void BINARY::cDEC(INS &ins)
             IARG_THREAD_ID,
             IARG_UINT32,	reg,	// registre source
             IARG_REG_VALUE, reg,	// sa valeur lors du callback
-            CALLBACK_DEBUG IARG_END);
+            IARG_INST_PTR, IARG_END);
     }
 } // cDEC
 
@@ -223,7 +223,7 @@ void BINARY::cADC(INS &ins)
                 IARG_ADDRINT, (ADDRINT) INS_OperandImmediate(ins, 1),
                 IARG_MEMORYWRITE_EA,
                 IARG_REG_VALUE, REG_GFLAGS, // valeur des flags (pour CF)
-                CALLBACK_DEBUG IARG_END);
+                IARG_INST_PTR, IARG_END);
         } 
         else // ADC_RM
         { 
@@ -244,7 +244,7 @@ void BINARY::cADC(INS &ins)
                 IARG_REG_VALUE, regSrc, 
                 IARG_MEMORYWRITE_EA, 
                 IARG_REG_VALUE, REG_GFLAGS, // valeur des flags (pour CF)
-                CALLBACK_DEBUG IARG_END);
+                IARG_INST_PTR, IARG_END);
         }
     }
     else // DESTINATION = REGISTRE
@@ -270,7 +270,7 @@ void BINARY::cADC(INS &ins)
                 IARG_UINT32, regDest,	    // registre destination
                 IARG_REG_VALUE, regDest,    // valeur lors du callback
                 IARG_REG_VALUE, REG_GFLAGS, // valeur des flags (pour CF)
-                CALLBACK_DEBUG IARG_END);
+                IARG_INST_PTR, IARG_END);
         }
         else if (INS_OperandIsImmediate(ins, 1))  // ADC_IR
         {         
@@ -290,7 +290,7 @@ void BINARY::cADC(INS &ins)
                 IARG_UINT32, regDest,	    // registre destination
                 IARG_REG_VALUE, regDest,    // valeur lors du callback
                 IARG_REG_VALUE, REG_GFLAGS, // valeur des flags (pour CF)
-                CALLBACK_DEBUG IARG_END);
+                IARG_INST_PTR, IARG_END);
         }
         else // ADC_RR
         {    
@@ -313,7 +313,7 @@ void BINARY::cADC(INS &ins)
                 IARG_UINT32,    regDest,	// registre de destination
                 IARG_REG_VALUE, regDest,	// valeur lors du callback
                 IARG_REG_VALUE, REG_GFLAGS, // valeur des flags (pour CF)
-                CALLBACK_DEBUG IARG_END);
+                IARG_INST_PTR, IARG_END);
         }  
     }
 } // cADC
@@ -345,7 +345,7 @@ void BINARY::cADD(INS &ins)
                 IARG_THREAD_ID,
                 IARG_ADDRINT, (ADDRINT) INS_OperandImmediate(ins, 1),
                 IARG_MEMORYWRITE_EA,
-                CALLBACK_DEBUG IARG_END);
+                IARG_INST_PTR, IARG_END);
         } 
         else // ADDRM
         { 
@@ -365,7 +365,7 @@ void BINARY::cADD(INS &ins)
                 IARG_UINT32, regSrc, 
                 IARG_REG_VALUE, regSrc, 
                 IARG_MEMORYWRITE_EA, 
-                CALLBACK_DEBUG IARG_END);
+                IARG_INST_PTR, IARG_END);
         }
     }
     else // DESTINATION = REGISTRE
@@ -391,7 +391,7 @@ void BINARY::cADD(INS &ins)
                 IARG_MEMORYREAD_EA,		// adresse réelle de lecture
                 IARG_UINT32, regDest,	// registre destination
                 IARG_REG_VALUE, regDest,// valeur lors du callback
-                CALLBACK_DEBUG IARG_END);
+                IARG_INST_PTR, IARG_END);
         }
         else if (INS_OperandIsImmediate(ins, 1))  // ADDIR
         {         
@@ -410,7 +410,7 @@ void BINARY::cADD(INS &ins)
                 IARG_ADDRINT, (ADDRINT) INS_OperandImmediate(ins, 1),
                 IARG_UINT32, regDest,	// registre destination
                 IARG_REG_VALUE, regDest,// valeur lors du callback
-                CALLBACK_DEBUG IARG_END);
+                IARG_INST_PTR, IARG_END);
         }
         else // ADDRR
         {    
@@ -432,7 +432,7 @@ void BINARY::cADD(INS &ins)
                 IARG_REG_VALUE, regSrc,		// valeur lors du callback
                 IARG_UINT32,    regDest,	// registre de destination
                 IARG_REG_VALUE, regDest,	// valeur lors du callback
-                CALLBACK_DEBUG IARG_END);
+                IARG_INST_PTR, IARG_END);
         }  
     }
 } // cADD
@@ -481,7 +481,7 @@ void BINARY::cSBB(INS &ins)
                 IARG_ADDRINT, (ADDRINT) INS_OperandImmediate(ins, 1),
                 IARG_MEMORYWRITE_EA,
                 IARG_REG_VALUE, REG_GFLAGS, // valeur des flags (pour CF)
-                CALLBACK_DEBUG IARG_END);
+                IARG_INST_PTR, IARG_END);
         } 
         else // SBB_RM
         { 
@@ -502,7 +502,7 @@ void BINARY::cSBB(INS &ins)
                 IARG_REG_VALUE, regSrc, 
                 IARG_MEMORYWRITE_EA, 
                 IARG_REG_VALUE, REG_GFLAGS, // valeur des flags (pour CF)
-                CALLBACK_DEBUG IARG_END);
+                IARG_INST_PTR, IARG_END);
         }
     }
     else // DESTINATION = REGISTRE
@@ -528,7 +528,7 @@ void BINARY::cSBB(INS &ins)
                 IARG_UINT32, regDest,	    // registre destination
                 IARG_REG_VALUE, regDest,    // valeur lors du callback
                 IARG_REG_VALUE, REG_GFLAGS, // valeur des flags (pour CF)
-                CALLBACK_DEBUG IARG_END);
+                IARG_INST_PTR, IARG_END);
         }
         else if (INS_OperandIsImmediate(ins, 1))  // SBB_IR
         {         
@@ -548,7 +548,7 @@ void BINARY::cSBB(INS &ins)
                 IARG_UINT32, regDest,	    // registre destination
                 IARG_REG_VALUE, regDest,    // valeur lors du callback
                 IARG_REG_VALUE, REG_GFLAGS, // valeur des flags (pour CF)
-                CALLBACK_DEBUG IARG_END);
+                IARG_INST_PTR, IARG_END);
         }
         else // SBB_RR
         {    
@@ -571,7 +571,7 @@ void BINARY::cSBB(INS &ins)
                 IARG_UINT32,    regDest,	// registre de destination
                 IARG_REG_VALUE, regDest,	// valeur lors du callback
                 IARG_REG_VALUE, REG_GFLAGS, // valeur des flags (pour CF)
-                CALLBACK_DEBUG IARG_END);
+                IARG_INST_PTR, IARG_END);
         }  
     }
 } // cSBB
@@ -604,7 +604,7 @@ void BINARY::cSUB(INS &ins)
                 IARG_THREAD_ID,
                 IARG_ADDRINT, (ADDRINT) INS_OperandImmediate(ins, 1),
                 IARG_MEMORYWRITE_EA,
-                CALLBACK_DEBUG IARG_END);
+                IARG_INST_PTR, IARG_END);
         } 
         else // SUBRM
         { 
@@ -624,7 +624,7 @@ void BINARY::cSUB(INS &ins)
                 IARG_UINT32, regSrc, 
                 IARG_REG_VALUE, regSrc, 
                 IARG_MEMORYWRITE_EA, 
-                CALLBACK_DEBUG IARG_END);
+                IARG_INST_PTR, IARG_END);
         }
     }
     else // DESTINATION = REGISTRE
@@ -650,7 +650,7 @@ void BINARY::cSUB(INS &ins)
                 IARG_MEMORYREAD_EA,		// adresse réelle de lecture
                 IARG_UINT32, regDest,	// registre destination
                 IARG_REG_VALUE, regDest,// valeur lors du callback
-                CALLBACK_DEBUG IARG_END);
+                IARG_INST_PTR, IARG_END);
         }
         else if (INS_OperandIsImmediate(ins, 1))  // SUBIR
         {         
@@ -669,7 +669,7 @@ void BINARY::cSUB(INS &ins)
                 IARG_ADDRINT, (ADDRINT) INS_OperandImmediate(ins, 1),
                 IARG_UINT32, regDest,	// registre destination
                 IARG_REG_VALUE, regDest,// valeur lors du callback
-                CALLBACK_DEBUG IARG_END);
+                IARG_INST_PTR, IARG_END);
         }
         else // SUBRR
         {    
@@ -691,7 +691,7 @@ void BINARY::cSUB(INS &ins)
                 IARG_REG_VALUE, regSrc,		// valeur lors du callback
                 IARG_UINT32, regDest,		// registre de destination
                 IARG_REG_VALUE, regDest,	// valeur lors du callback
-                CALLBACK_DEBUG IARG_END);
+                IARG_INST_PTR, IARG_END);
         }  
     }
 } // cSUB
@@ -742,7 +742,7 @@ void BINARY::cCMP(INS &ins)
                 IARG_ADDRINT, (ADDRINT) INS_OperandImmediate(ins, 1),
                 IARG_UINT32, regDest,	// registre destination
                 IARG_REG_VALUE, regDest,// valeur lors du callback
-                CALLBACK_DEBUG IARG_END);
+                IARG_INST_PTR, IARG_END);
         }
         else if (INS_IsMemoryRead(ins)) // CMPMR
         {			
@@ -761,7 +761,7 @@ void BINARY::cCMP(INS &ins)
                 IARG_MEMORYREAD_EA,		// adresse réelle de lecture
                 IARG_UINT32, regDest,	// registre destination
                 IARG_REG_VALUE, regDest,// valeur lors du callback
-                CALLBACK_DEBUG IARG_END);
+                IARG_INST_PTR, IARG_END);
         }
         else // CMPRR
         {    
@@ -783,7 +783,7 @@ void BINARY::cCMP(INS &ins)
                 IARG_REG_VALUE, regSrc,		// valeur lors du callback
                 IARG_UINT32, regDest,		// registre de destination
                 IARG_REG_VALUE, regDest,	// valeur lors du callback
-                CALLBACK_DEBUG IARG_END);
+                IARG_INST_PTR, IARG_END);
         }  
     }
     else // 1ere opérande = MEMOIRE (IM/RM)
@@ -805,7 +805,7 @@ void BINARY::cCMP(INS &ins)
                 IARG_THREAD_ID,
                 IARG_ADDRINT, (ADDRINT) INS_OperandImmediate(ins, 1),
                 IARG_MEMORYREAD_EA, // et non pas WRITE car CMP ne change pas la dest
-                CALLBACK_DEBUG IARG_END);
+                IARG_INST_PTR, IARG_END);
         } 
         else // CMPRM
         { 
@@ -825,7 +825,7 @@ void BINARY::cCMP(INS &ins)
                 IARG_UINT32, regSrc, 
                 IARG_REG_VALUE, regSrc, 
                 IARG_MEMORYREAD_EA, // et non pas WRITE car CMP ne change pas la dest
-                CALLBACK_DEBUG IARG_END);
+                IARG_INST_PTR, IARG_END);
         }
     }
 } // cCMP
@@ -907,7 +907,7 @@ void BINARY::cIMUL(INS &ins)
                 IARG_MEMORYREAD_EA,			// adresse réelle de lecture
                 IARG_UINT32,    regSrcDest, // registre source et destination
                 IARG_REG_VALUE, regSrcDest, // sa valeur lors du callback
-                CALLBACK_DEBUG IARG_END);
+                IARG_INST_PTR, IARG_END);
         }
         else if (INS_OperandIsImmediate(ins, 1)) 
         {	
@@ -930,7 +930,7 @@ void BINARY::cIMUL(INS &ins)
                 IARG_UINT32,    regSrcDest,	// source = destination
                 IARG_REG_VALUE, regSrcDest,	// sa valeur lors du callback
                 IARG_UINT32,    regSrcDest,	// registre destination
-                CALLBACK_DEBUG IARG_END);
+                IARG_INST_PTR, IARG_END);
         }
         else // 2ème source = registre
         {	
@@ -952,7 +952,7 @@ void BINARY::cIMUL(INS &ins)
                 IARG_REG_VALUE, regSrc,		// sa valeur lors du callback
                 IARG_UINT32,    regSrcDest, // registre dest et source2
                 IARG_REG_VALUE, regSrcDest, // sa valeur lors du callback
-                CALLBACK_DEBUG IARG_END);
+                IARG_INST_PTR, IARG_END);
         }
     }
     // 1ere opérande en écriture seule => cas 3
@@ -979,7 +979,7 @@ void BINARY::cIMUL(INS &ins)
                 IARG_ADDRINT, (ADDRINT) INS_OperandImmediate(ins, 2), 
                 IARG_MEMORYREAD_EA,		// adresse réelle de lecture (source1)
                 IARG_UINT32, regDest,	// registre destination
-                CALLBACK_DEBUG IARG_END);
+                IARG_INST_PTR, IARG_END);
         }
         else // 2eme source = registre, donc type IMUL3 IR
         { 
@@ -1002,7 +1002,7 @@ void BINARY::cIMUL(INS &ins)
                 IARG_UINT32,    regSrc,		// registre source1
                 IARG_REG_VALUE, regSrc,		// sa valeur lors du callback
                 IARG_UINT32,    regDest,	// registre destination
-                CALLBACK_DEBUG	IARG_END);
+                IARG_INST_PTR,	IARG_END);
         }
     }										  
     else // sinon on se trouve dans le cas 1 (une seule opérande explicite)
@@ -1038,7 +1038,7 @@ void BINARY::cIMUL(INS &ins)
                 IARG_THREAD_ID,
                 IARG_MEMORYREAD_EA,		     // adresse réelle de lecture 
                 IARG_REG_VALUE, implicitReg, // valeur du registre implicite
-                CALLBACK_DEBUG IARG_END);
+                IARG_INST_PTR, IARG_END);
         }
         else // source = registre, donc type IMUL 1R.
         {			
@@ -1072,7 +1072,7 @@ void BINARY::cIMUL(INS &ins)
                 IARG_UINT32,    regSrc, // registre source 1
                 IARG_REG_VALUE, regSrc, // sa valeur lors du callback
                 IARG_REG_VALUE, implicitReg,// valeur du registre implicite
-                CALLBACK_DEBUG IARG_END);
+                IARG_INST_PTR, IARG_END);
         }
     }
 }
@@ -1143,7 +1143,7 @@ void BINARY::cDIVISION(INS &ins, bool isSignedDivision)
             IARG_BOOL, isSignedDivision,    // true = division signée
             IARG_REG_VALUE, lowDividendReg,	// valeur de AL/AX/EAX/RAX lors du callback  
             IARG_REG_VALUE, highDividendReg,	// valeur de AH/DX/EDX/RDX lors du callback
-            CALLBACK_DEBUG IARG_END);
+            IARG_INST_PTR, IARG_END);
     }
     else
     {
@@ -1181,6 +1181,6 @@ void BINARY::cDIVISION(INS &ins, bool isSignedDivision)
             IARG_BOOL, isSignedDivision,    // true = division signée
             IARG_REG_VALUE, lowDividendReg,	// valeur de AL/AX/EAX/RAX lors du callback  
             IARG_REG_VALUE, highDividendReg,// valeur de AH/DX/EDX/RDX lors du callback
-            CALLBACK_DEBUG IARG_END);
+            IARG_INST_PTR, IARG_END);
     }
 }// cDIVISION
