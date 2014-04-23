@@ -36,7 +36,7 @@ private:
  
     // renvoie la déclaration SMTLIB du tableau De Bruijn (utilisé pour BSR/BSF)
     // et met le booléen "isDeBruijnDeclared" à true
-    const std::string getDeBruijnArray();
+    std::string getDeBruijnArray();
 
     /****************************************/
     /** IMPLEMENTATION METHODES VIRTUELLES **/
@@ -44,26 +44,26 @@ private:
 
 protected:
     // affectation d'un nom de variable à un objet
-    const std::string setObjectName(const TaintPtr &tPtr);
+    std::string setObjectName(const TaintPtr &tPtr);
     
     // récupère le nom de l'objet source 'objSrc'
     // => soit le numéro de variable, soit une valeur numérique
-    const std::string getSourceName(const ObjectSource &objSrc) const;
+    std::string getSourceName(const ObjectSource &objSrc) const;
 
     /** CONTRAINTES **/
     
     // déclaration de l'entête d'une nouvelle contrainte sur un predicat
-    const std::string getConstraintHeader(ADDRINT insAddress, PREDICATE p) const;
+    std::string getConstraintHeader(ADDRINT insAddress, PREDICATE p) const;
 
     // déclaration du 'final' d'une contrainte sur un predicat
-    const std::string getConstraintFooter(bool taken) const;
+    std::string getConstraintFooter(bool taken) const;
 
     /***********************************/
     /** TRADUCTION DE CHAQUE RELATION **/
     /***********************************/
 
     // renvoie la traduction du prédicat fourni en argument
-    const std::string getPredicateTranslation
+    std::string getPredicateTranslation
         (TaintManager_Thread *pTmgrTls, PREDICATE pred, ADDRINT flagsOrRegValue);
 
     // entete de la déclaration pour une instruction : "(define-fun XX () (BitVec nb) ("

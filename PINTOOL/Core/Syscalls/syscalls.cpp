@@ -16,7 +16,7 @@ static WINDOWS::DWORD PIN_NtMapViewOfSection;
 static std::string SYSCALLS::unicodeToAscii(const std::wstring &input)
 {  
     size_t lengthOfInput = input.length();
-    char *ascii = new char[lengthOfInput + 1];
+    char *ascii = new char[lengthOfInput + 2];
     ascii[lengthOfInput + 1] = 0;
 
     WINDOWS::WideCharToMultiByte(CP_ACP, 0, input.c_str(), 

@@ -335,12 +335,13 @@ void INSTRUMENTATION::threadStart(THREADID tid, CONTEXT *, INT32 , VOID *)
 {
     _LOGDEBUG("Création du thread n° " + decstr(tid) + " et TLS associée");
 
-    // classe de gestion du marquage des registres
     TaintManager_Thread *pTmgrTls = new TaintManager_Thread;
     Syscall_Data *pSyscallData    = new Syscall_Data;
+    ScasInformation *pScasInfo    = new ScasInformation;
 
     PIN_SetThreadData(g_tlsKeyTaint, pTmgrTls, tid);
     PIN_SetThreadData(g_tlsKeySyscallData, pSyscallData, tid);
+    PIN_SetThreadData(g_tlsSCAS, pScasInfo, tid);
 }
 
 // Fonction de notification lors de la fin d'un thread
@@ -354,6 +355,10 @@ void INSTRUMENTATION::threadFini(THREADID tid, const CONTEXT *, INT32 , VOID *)
     Syscall_Data *pSysData = 
         static_cast<Syscall_Data*>(PIN_GetThreadData(g_tlsKeySyscallData, tid));
     delete (pSysData);
+
+    ScasInformation *pScasInfo =  
+        static_cast<ScasInformation*>(PIN_GetThreadData(g_tlsSCAS, tid));
+    delete (pScasInfo);
 }
 
 /*** INSTRUMENTATION DES IMAGES ***/

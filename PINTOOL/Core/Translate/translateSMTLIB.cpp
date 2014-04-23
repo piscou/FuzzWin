@@ -3,7 +3,7 @@
 TranslateToSMTLIB::TranslateToSMTLIB()
     : TranslateToIR(), _isDeBruijnDeclared(false) {}
 
-const std::string TranslateToSMTLIB::getDeBruijnArray()
+std::string TranslateToSMTLIB::getDeBruijnArray()
 {
     // variables utilisées par les instructions BSR et BSF
     // cf. commentaires dans translate.h
@@ -42,13 +42,13 @@ const std::string TranslateToSMTLIB::getDeBruijnArray()
     result += ")\n";
 
     // le tableau et la constante sont déclarés
-    this->_isDeBruijnDeclared = true;
+    _isDeBruijnDeclared = true;
 
     return (result);
 }
 
 // affectation d'un nom de variable à un objet
-const std::string TranslateToSMTLIB::setObjectName(const TaintPtr &tPtr)
+std::string TranslateToSMTLIB::setObjectName(const TaintPtr &tPtr)
 {
     // fabrication du nom de variable unique selon la taille du resultat
     std::string name;
@@ -63,11 +63,11 @@ const std::string TranslateToSMTLIB::setObjectName(const TaintPtr &tPtr)
     default : name = "error"; break;
     }
     tPtr->setName(name);
-    return (name);
+    return (name); // R-VALUE
 } // setObjectName
 
 // nom de variable pour les objets, utilisées dans les formules SMTLIB
-const std::string TranslateToSMTLIB::getSourceName(const ObjectSource &objSrc) const
+std::string TranslateToSMTLIB::getSourceName(const ObjectSource &objSrc) const
 {
     // si objet marqué, retourner son nom de variable
     if (objSrc.isSrcTainted())	 return (objSrc.getTaintedSource()->getName()); 
@@ -96,7 +96,7 @@ const std::string TranslateToSMTLIB::getSourceName(const ObjectSource &objSrc) c
 ////////////////////////////////////
 
 // formule correspondant au calcul d'un prédicat
-const std::string TranslateToSMTLIB::getPredicateTranslation(TaintManager_Thread *pTmgrTls, 
+std::string TranslateToSMTLIB::getPredicateTranslation(TaintManager_Thread *pTmgrTls, 
     PREDICATE pred, ADDRINT flagsOrRegValue)
 {
     // la déclaration d'un prédicat se fait en deux étapes
@@ -362,7 +362,7 @@ void TranslateToSMTLIB::translate_BYTESOURCE(const TaintPtr &tPtr)
     tPtr->setName(objectName);
 
     // déclaration particulière en "declare-const", sans header ni footer
-    this->_formula << "(declare-const " << objectName << " (_ BitVec 8))\n";
+    _formula << "(declare-const " << objectName << " (_ BitVec 8))\n";
 }
 
 void TranslateToSMTLIB::translate_EXTRACT(const TaintPtr &tPtr)
@@ -518,7 +518,7 @@ void TranslateToSMTLIB::translate_X_DIV_QUO(const TaintPtr &tPtr)
     // taille resultat = taille diviseur = 1/2 taille dividende
     // il faut donc effectuer l'opération "Dividende / zero_extend(diviseur)" 
     // et en extraire la partie basse pour obtenir le résultat
-    _formula << "(_ extract " << (lengthOfQuotient - 1) << " 0) bvudiv ";
+    _formula << "(_ extract " << (lengthOfQuotient - 1) << " 0) (bvudiv ";
     
     if (lengthOfQuotient == 8)
     {
@@ -526,7 +526,7 @@ void TranslateToSMTLIB::translate_X_DIV_QUO(const TaintPtr &tPtr)
         // le dividende est composé d'un seul registre (AX)
         // source 0 : dividende entier, source1 : diviseur à etendre sur 16bits
         _formula << this->getSourceName(sources.front());
-        _formula << " ((_ zero_extend 8) " << this->getSourceName(sources[1]) << ')';
+        _formula << " ((_ zero_extend 8) " << this->getSourceName(sources[1]) << "))";
     }
     else
     {
@@ -535,7 +535,7 @@ void TranslateToSMTLIB::translate_X_DIV_QUO(const TaintPtr &tPtr)
         _formula << ' '        << this->getSourceName(sources[1]) << ") ";       
    
         // Source2 : diviseur à étendre à la taille du dividende = ajouter 'lengthResult' zéros
-        _formula << " ((_ zero_extend " << lengthOfQuotient << ") " << this->getSourceName(sources[2]) << ')';
+        _formula << "((_ zero_extend " << lengthOfQuotient << ") " << this->getSourceName(sources[2]) << "))";
     }
 
     END_RELATION_DECLARATION;
@@ -551,7 +551,7 @@ void TranslateToSMTLIB::translate_X_DIV_REM(const TaintPtr &tPtr)
     // taille resultat = taille diviseur = 1/2 taille dividende
     // il faut donc effectuer l'opération "Dividende / zero_extend(diviseur)" 
     // et en extraire la partie basse pour obtenir le résultat
-    _formula << "(_ extract " << (lengthOfQuotient - 1) << " 0) bvurem ";
+    _formula << "(_ extract " << (lengthOfQuotient - 1) << " 0) (bvurem ";
     
     if (lengthOfQuotient == 8)
     {
@@ -559,7 +559,7 @@ void TranslateToSMTLIB::translate_X_DIV_REM(const TaintPtr &tPtr)
         // le dividende est composé d'un seul registre (AX)
         // source 0 : dividende entier, source1 : diviseur à etendre sur 16bits
         _formula << this->getSourceName(sources.front());
-        _formula << " ((_ zero_extend 8) " << this->getSourceName(sources[1]) << ')';
+        _formula << " ((_ zero_extend 8) " << this->getSourceName(sources[1]) << "))";
     }
     else
     {
@@ -568,7 +568,7 @@ void TranslateToSMTLIB::translate_X_DIV_REM(const TaintPtr &tPtr)
         _formula << ' '        << this->getSourceName(sources[1]) << ") ";       
    
         // Source2 : diviseur à étendre à la taille du dividende = ajouter 'lengthResult' zéros
-        _formula << " ((_ zero_extend " << lengthOfQuotient << ") " << this->getSourceName(sources[2]) << ')';
+        _formula << "((_ zero_extend " << lengthOfQuotient << ") " << this->getSourceName(sources[2]) << "))";
     }
     
     END_RELATION_DECLARATION;
@@ -584,7 +584,7 @@ void TranslateToSMTLIB::translate_X_IDIV_QUO(const TaintPtr &tPtr)
     // taille resultat = taille diviseur = 1/2 taille dividende
     // il faut donc effectuer l'opération "Dividende / zero_extend(diviseur)" 
     // et en extraire la partie basse pour obtenir le résultat
-    _formula << "(_ extract " << (lengthOfQuotient - 1) << " 0) bvsdiv ";
+    _formula << "(_ extract " << (lengthOfQuotient - 1) << " 0) (bvsdiv ";
     
     if (lengthOfQuotient == 8)
     {
@@ -592,7 +592,7 @@ void TranslateToSMTLIB::translate_X_IDIV_QUO(const TaintPtr &tPtr)
         // le dividende est composé d'un seul registre (AX)
         // source 0 : dividende entier, source1 : diviseur à etendre sur 16bits
         _formula << this->getSourceName(sources.front());
-        _formula << " ((_ zero_extend 8) " << this->getSourceName(sources[1]) << ')';
+        _formula << " ((_ zero_extend 8) " << this->getSourceName(sources[1]) << "))";
     }
     else
     {
@@ -601,7 +601,7 @@ void TranslateToSMTLIB::translate_X_IDIV_QUO(const TaintPtr &tPtr)
         _formula << ' '        << this->getSourceName(sources[1]) << ") ";       
    
         // Source2 : diviseur à étendre à la taille du dividende = ajouter 'lengthResult' zéros
-        _formula << " ((_ zero_extend " << lengthOfQuotient << ") " << this->getSourceName(sources[2]) << ')';
+        _formula << "((_ zero_extend " << lengthOfQuotient << ") " << this->getSourceName(sources[2]) << "))";
     }
         
     END_RELATION_DECLARATION;
@@ -617,7 +617,7 @@ void TranslateToSMTLIB::translate_X_IDIV_REM(const TaintPtr &tPtr)
     // taille resultat = taille diviseur = 1/2 taille dividende
     // il faut donc effectuer l'opération "Dividende / zero_extend(diviseur)" 
     // et en extraire la partie basse pour obtenir le résultat
-    _formula << "(_ extract " << (lengthOfQuotient - 1) << " 0) bvsrem ";
+    _formula << "(_ extract " << (lengthOfQuotient - 1) << " 0) (bvsrem ";
     
     if (lengthOfQuotient == 8)
     {
@@ -625,7 +625,7 @@ void TranslateToSMTLIB::translate_X_IDIV_REM(const TaintPtr &tPtr)
         // le dividende est composé d'un seul registre (AX)
         // source 0 : dividende entier, source1 : diviseur à etendre sur 16bits
         _formula << this->getSourceName(sources.front());
-        _formula << " ((_ zero_extend 8) " << this->getSourceName(sources[1]) << ')';
+        _formula << " ((_ zero_extend 8) " << this->getSourceName(sources[1]) << "))";
     }
     else
     {
@@ -634,7 +634,7 @@ void TranslateToSMTLIB::translate_X_IDIV_REM(const TaintPtr &tPtr)
         _formula << ' '        << this->getSourceName(sources[1]) << ") ";       
    
         // Source2 : diviseur à étendre à la taille du dividende = ajouter 'lengthResult' zéros
-        _formula << " ((_ zero_extend " << lengthOfQuotient << ") " << this->getSourceName(sources[2]) << ')';
+        _formula << "((_ zero_extend " << lengthOfQuotient << ") " << this->getSourceName(sources[2]) << "))";
     }
         
     END_RELATION_DECLARATION;
@@ -1224,7 +1224,7 @@ void TranslateToSMTLIB::translate_X_BSF(const TaintPtr &tPtr)
     UINT32 lengthOfSource   = operandSrc.getLength();
 
     // si le tableau et la constante n'ont pas encore été déclaré, le faire
-    if (!this->_isDeBruijnDeclared) _formula << this->getDeBruijnArray();
+    if (!_isDeBruijnDeclared) _formula << this->getDeBruijnArray();
 
     BEGIN_RELATION_DECLARATION;
 
@@ -1291,10 +1291,9 @@ void TranslateToSMTLIB::translate_X_BSR(const TaintPtr &tPtr)
 
     ObjectSource operandSrc = tPtr->getSource(0);
     UINT32 lengthOfSource   = operandSrc.getLength();
-    std::string lastShift;
 
     // si le tableau et la constante n'ont pas encore été déclaré, le faire
-    if (!this->_isDeBruijnDeclared) _formula << this->getDeBruijnArray();
+    if (!_isDeBruijnDeclared) _formula << this->getDeBruijnArray();
 
     BEGIN_RELATION_DECLARATION;
 
@@ -1878,13 +1877,10 @@ void TranslateToSMTLIB::translate_F_AUXILIARY_ADD(const TaintPtr &tPtr)
 
 void TranslateToSMTLIB::translate_F_AUXILIARY_NEG(const TaintPtr &tPtr)
 {
-    ObjectSource src0  = tPtr->getSource(0);
-    UINT32 lengthOfSrc = src0.getLength();
-
     BEGIN_RELATION_DECLARATION;
     
     // idem CARRY_NEG mais sur 4 bits : le flag vaut 0 ssi la valeur est nulle (sur 4bits)
-    _formula << "ite (= (_ bv0 4) ((_ extract 3 0) " << this->getSourceName(src0);
+    _formula << "ite (= (_ bv0 4) ((_ extract 3 0) " << this->getSourceName(tPtr->getSource(0));
     _formula << ") #b0 #b1";
     
     END_RELATION_DECLARATION;
@@ -1908,11 +1904,9 @@ void TranslateToSMTLIB::translate_F_AUXILIARY_SUB(const TaintPtr &tPtr)
 void TranslateToSMTLIB::translate_F_AUXILIARY_INC(const TaintPtr &tPtr)
 {
     // retenue provoquée uniquement quand les 4 bits faibles valent 0xf
-    ObjectSource src0  = tPtr->getSource(0);
-
     BEGIN_RELATION_DECLARATION;
 
-    _formula << "ite (= (_ bv15 4) ((_ extract 3 0) " << this->getSourceName(src0) << ")) #b1 #b0";
+    _formula << "ite (= (_ bv15 4) ((_ extract 3 0) " << this->getSourceName(tPtr->getSource(0)) << ")) #b1 #b0";
 
     END_RELATION_DECLARATION;
 }
@@ -1933,7 +1927,7 @@ void TranslateToSMTLIB::translate_F_AUXILIARY_DEC(const TaintPtr &tPtr)
 // DECLARATION DES CONTRAINTES //
 /////////////////////////////////
 
-const std::string TranslateToSMTLIB::getConstraintHeader(ADDRINT insAddress, PREDICATE p) const
+std::string TranslateToSMTLIB::getConstraintHeader(ADDRINT insAddress, PREDICATE p) const
 {
     // définition de l'entête de la contrainte : insertion d'un commentaire
     // avec le n° de contrainte, l'instruction et son adresse 
@@ -1944,7 +1938,7 @@ const std::string TranslateToSMTLIB::getConstraintHeader(ADDRINT insAddress, PRE
     return (result);
 }
  
-const std::string TranslateToSMTLIB::getConstraintFooter(bool taken) const
+std::string TranslateToSMTLIB::getConstraintFooter(bool taken) const
 {
     // déclaration de l'assertion en fin de contrainte 
     // selon que la branche a été prise ou non

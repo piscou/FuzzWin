@@ -77,8 +77,10 @@ extern bool         g_nopipe;
 extern bool         g_beginInstrumentationOfInstructions;
 
 // clefs de stockage locales pour chaque thread
-extern TLS_KEY      g_tlsKeyTaint; 
-extern TLS_KEY      g_tlsKeySyscallData;
+
+extern TLS_KEY      g_tlsKeyTaint;          // classe de marquage des registres
+extern TLS_KEY      g_tlsKeySyscallData;    // stockage des données avant/apres syscall
+extern TLS_KEY      g_tlsSCAS;              // données statiques pour l'instruction SCAS
 
 // structure de blocage inter-thread    
 extern PIN_LOCK     g_lock;  

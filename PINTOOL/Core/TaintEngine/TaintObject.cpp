@@ -56,23 +56,20 @@ bool Taint::isDeclared() const  { return (_isDeclaredFlag); }
 
 void Taint::setDeclared() { _isDeclaredFlag = true; }
 
-void Taint::setName(const std::string &name) { _objectName = name; }
+void Taint::setName(std::string name) { _objectName = std::move(name); } // Passage par RVALUE
 
-const std::string& Taint::getName() const { return (_objectName); }
+std::string Taint::getName() const { return (_objectName); }
 
-const std::vector<ObjectSource>& Taint::getSources() const { return (_sources); }
+std::vector<ObjectSource> Taint::getSources() const { return (_sources); }
 
-const ObjectSource& Taint::getSource(UINT32 i) const { return (_sources.at(i)); }
+ObjectSource Taint::getSource(UINT32 i) const { return (_sources.at(i)); }
 
 void Taint::addSource(const TaintPtr &taintPtr) { _sources.push_back(ObjectSource(taintPtr)); }
 
-void Taint::addSource(const ObjectSource &src) { _sources.push_back(src); }   
-
-// définit les détails supplémentaires pour cet objet (mode verbose)
-void Taint::setVerboseDetails(const std::string &data) { _additionalData = data; }
+void Taint::addSource(ObjectSource src) { _sources.push_back(std::move(src)); }  // Passage par RVALUE
 
 // retourne les détails supplémentaires de cet objet (mode verbose)
-const std::string& Taint::getVerboseDetails() const { return _additionalData; }
+std::string Taint::getVerboseDetails() const { return _verboseData; }
 
 /** TAINTOBJECT : classe dérivée **/
 

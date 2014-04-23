@@ -230,7 +230,9 @@ void STRINGOP::cSCAS(INS &ins, UINT32 size)
             IARG_REG_VALUE, regSrc,		    // AL/AX/EAX/RAX selon archi
             IARG_INST_PTR,                  // adresse de l'instruction
             IARG_END);
-        // insertion callback d'analyse de CHAQUE itération d'instruction
+
+        // insertion callback d'analyse de CHAQUE itération d'instruction, si le predicat est vrai
+        // sinon la fonction n'est pas appelée
         INS_InsertPredicatedCall(ins, IPOINT_BEFORE, callback, 
             IARG_THREAD_ID,
             IARG_MEMORYREAD_EA,		// Adresse de lecture (répétition "n")

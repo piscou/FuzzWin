@@ -54,21 +54,21 @@ protected:
     /*******************************/
 
     // affectation d'un nom de variable à un objet (retourné également)
-    virtual const std::string setObjectName(const TaintPtr &tPtr) = 0;
+    virtual std::string setObjectName(const TaintPtr &tPtr) = 0;
 
     // récupère le nom de l'objet source 'objSrc'
     // => soit le numéro de variable, soit une valeur numérique
-    virtual const std::string getSourceName(const ObjectSource &objSrc) const = 0;
+    virtual std::string getSourceName(const ObjectSource &objSrc) const = 0;
 
     // déclaration de l'entête d'une nouvelle contrainte sur un predicat
-    virtual const std::string getConstraintHeader(ADDRINT insAddress, PREDICATE p) const = 0;
+    virtual std::string getConstraintHeader(ADDRINT insAddress, PREDICATE p) const = 0;
 
     // renvoie la traduction du prédicat fourni en argument
-    virtual const std::string getPredicateTranslation
+    virtual std::string getPredicateTranslation
         (TaintManager_Thread *pTmgrTls, PREDICATE pred, ADDRINT flagsOrRegValue) = 0;
 
     // déclaration du 'final' d'une contrainte sur un predicat
-    virtual const std::string getConstraintFooter(bool taken) const = 0;
+    virtual std::string getConstraintFooter(bool taken) const = 0;
 
     /***********************************/
     /** TRADUCTION DE CHAQUE RELATION **/

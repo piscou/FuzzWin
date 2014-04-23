@@ -11,6 +11,8 @@ void MISC::sLEA(THREADID tid, REG regDest, ADDRINT insAddress)
     if (!pTmgrTls->isEffectiveAddressTainted()) pTmgrTls->unTaintRegister<32>(regDest);
     else
     {
+        _LOGTAINT(tid, insAddress, "LEA");
+
         TaintDwordPtr eaPtr = pTmgrTls->getTaintEffectiveAddress();
     
         // Boucle de 0 à (lenEA >> 3)  : extraction octet i de l'objet marqué
@@ -34,6 +36,7 @@ void MISC::sLEA(THREADID tid, REG regDest, ADDRINT insAddress)
         // démarquage octets forts (si lenDest > lenEA car zeroextend de l'EA)
         while (regPart < (lenDest >> 3))  pTmgrTls->unTaintRegisterPart(regDestIndex, regPart++);
     }
+    pTmgrTls->clearTaintEffectiveAddress();
 } // sLEA(32bits)
 
 #else
@@ -50,6 +53,8 @@ void MISC::sLEA(THREADID tid, REG regDest, ADDRINT insAddress)
     {
         TaintQwordPtr eaPtr = pTmgrTls->getTaintEffectiveAddress();
     
+        _LOGTAINT(tid, insAddress, "LEA");
+
         // Boucle de 0 à (lenEA >> 3)  : extraction octet i de l'objet marqué
         // et affectation à octet i du registre de destination (sauf si lenDest < leaEA : on arrete avant)
         // octets de (lenEA >> 3) à (lenDest >> 3) mis à zéro si besoin
@@ -71,6 +76,7 @@ void MISC::sLEA(THREADID tid, REG regDest, ADDRINT insAddress)
         // démarquage octets forts (si lenDest > lenEA car zeroextend de l'EA)
         while (regPart < (lenDest >> 3))  pTmgrTls->unTaintRegisterPart(regDestIndex, regPart++);
     }
+    pTmgrTls->clearTaintEffectiveAddress();
 } // sLEA(64bits)
 
 #endif

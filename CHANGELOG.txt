@@ -1,24 +1,57 @@
-Version 1.3.3 - 15 avril 2014
 
-** PINTOOL
+*****************************
+Version 1.4 - 24 avril 2014
+*****************************
+
+ALGORITHME
+----------
++ résolution du bug de non-fermeture d'un processus ayant provoqué une faute lors du debug
+
+PINTOOL
+-------
++ modification du moteur de traduction des relations en IR : toutes les traductions héritent désormais
+  de la classe "TranslateToIR". Seule traduction implémentée actuellement : 'TranslateToSMTLIB'
++ disparation du mode DEBUG : l'adresse de l'instruction est désormais systématiquement passée comme argument
+  aux fonctions d'analyse. Elle est utilisée ou non en fonction du mode verbuex choisi
++ les logs ASM et TAINT sont désormais générés en mode verbeux (pas d'option spécifique)
++ Class TAINT : ajout des méthodes set/getVerboseDetails, qui déterminent les infos complémentaires sur
+  l'objet marqué (instruction originale et adresse). Disparition des destructeurs (implémentation par défaut)
++ implémentation de la traduction SMTLIB pour X_SETCC et F_AUXILIARY_?? 
++ ROTATE : traitement plus efficace du marquage des flags
++ ROTATE : le déplacmeent est désormais masqué et/ou pris modulo dans la fonction d'analyse
++ CONDITIONAL_BR : ajout de l'instruction JRCXZ
++ STRINGOP/SCAS : la mise en cache des paramètres identiques à chaque répétition se fait désormais via un slot TLS
+  et non plus dans la classe TaintManager_Thread
++ Style : uniformisation des noms de variables membres de classes ('_xxx'), 
++ Style : utilisation de 'this->' uniquement pour l'appel aux fonctions membres
++ C++0x11 : optimisation des fonctions pour prendre en compte la sémantique RVALUE et std::move quand cela est possible
+
+
+
+******************************
+Vesion 1.3.3 - 15 avril 2014
+******************************
+
+PINTOOL
+-------
 + modification du traitement des instructions SETcc, avec introduction d'une nouvelle relation X_SETCC
 + modification du traitement de PUSHF/PUSHFD/PUSHFQ (implémentation erronée)
 + correction bug POPF sur le flag Overflow
 + effacement de code de test
 
-** GUI
+GUI
+---
 + modification du QSpinBox traitant le nombre de contraintes (maximum fixé à 1 million)
 
-
+******************************
 Version 1.3.2 - 11 avril 2014
+******************************
 
-----------
 ALGORITHME
 ----------
 + construction de la ligne de commande du pintool intégré dans l'algorithme
 + TODO : fermer correctement les processus qui ont subi une exception
 
--------
 PINTOOL
 -------
 + ajout des options -logasm (log de dessasemblage), -logtaint (log de marquage), -nopipe (pas d'emploi de tube nommé)
@@ -29,13 +62,11 @@ PINTOOL
 + réorganisation du dossier BUILD : les DLL du pintool sont dans un dossier \pintool
 + réorganisation des fichiers source dans deux dossiers 'categories' et 'core'
 
--------
 CMDLINE
 -------
 + prise en compte du changement de mode de passage des arguments
 + prise en compte des nouvelles options de log
 
----
 GUI
 ---
 + prise en compte du changement de mode de passage des arguments

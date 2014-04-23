@@ -52,10 +52,9 @@ TaintManager_Global *pTmgrGlobal;
 // pointeur global vers classe de gestion de la traduction SMT-LIB
 SolverFormula       *g_pFormula;
 
-// Clef de la TLS pour la classe de gestion du marquage registres
-TLS_KEY             g_tlsKeyTaint;
-// Clef de la TLS pour la classe de gestion des arguments des appels systèmes
-TLS_KEY             g_tlsKeySyscallData;
+TLS_KEY             g_tlsKeyTaint;          // classe de marquage des registres
+TLS_KEY             g_tlsKeySyscallData;    // stockage des données avant/apres syscall
+TLS_KEY             g_tlsSCAS;              // données statiques pour l'instruction SCAS
 
 // structure de verrou, utilisée pour accéder aux variables globales
 // en multithread

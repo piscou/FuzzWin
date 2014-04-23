@@ -28,8 +28,9 @@ public:
     // création du 'nb' nouvel objet dérivé de l'objet 'pFather' à la contrainte 'b'
     CInput(CInput* pFather, UINT64 nb, UINT32 b); 
 
-    ~CInput() ;
-
+    // destructeur n'agit pas sur les ressources mais sur l'effacement du fichier
+    // donc pas besoin d'appliquer la "rule of three"
+    ~CInput();  
     const bool   _keepFiles;  // si VRAI, ne pas effacer physiquement le fichier à la destruction 
 
     CInput* getFather() const;
@@ -38,8 +39,8 @@ public:
     UINT32 getBound() const;
     UINT32 getScore() const;
     UINT32 getExceptionCode() const;
-    const std::string& getFilePath() const;
-    const std::string& getFileName() const;
+    std::string getFilePath() const;
+    std::string getFileName() const;
 
     // numéro de contrainte inversée qui a donné naissance à cette entrée
     void setBound(const UINT32 b);

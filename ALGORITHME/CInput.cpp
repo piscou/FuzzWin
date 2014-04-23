@@ -10,7 +10,7 @@ CInput::CInput(const std::string &firstInputPath, bool keepfiles)
     _bound(0), 
     _exceptionCode(0), 
     _score(0),
-    _filePath(firstInputPath), 
+    _filePath(firstInputPath), // move semantics
     _pFather(nullptr)    // pas de père pour la première entrée
 {
     std::string::size_type pos = std::string(firstInputPath).find_last_of("\\/");
@@ -47,9 +47,9 @@ CInput::~CInput()
 CInput* CInput::getFather() const { return _pFather; }
 UINT32  CInput::getBound() const  { return _bound; }
 UINT32  CInput::getScore() const  { return _score; }
-UINT32  CInput::getExceptionCode() const       { return _exceptionCode; }
-const std::string& CInput::getFilePath() const { return _filePath; }
-const std::string& CInput::getFileName() const { return _fileName; }
+UINT32  CInput::getExceptionCode() const { return _exceptionCode; }
+std::string CInput::getFilePath() const  { return _filePath; }
+std::string CInput::getFileName() const  { return _fileName; }
 
 // numéro de contrainte inversée qui a donné naissance à cette entrée
 void CInput::setBound(const UINT32 b)	{ _bound = b; }

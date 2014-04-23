@@ -15,7 +15,6 @@ public:
     ObjectSource();
     ObjectSource(const TaintPtr &taintPtr);
     ObjectSource(UINT32 lengthInBits, ADDRINT value);
-    ~ObjectSource() {} 
 
     UINT32  getLength() const;
     bool    isSrcTainted() const;

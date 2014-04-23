@@ -61,13 +61,9 @@ DWORD FuzzwinAlgorithm::debugTarget(CInput *pNewInput)
     /* DEBUT DU DEBUGGAGE */
     /**********************/
 
-     BOOL result, result2 ,result3 ;
-
     while (continueDebug)	
     {
         WaitForDebugEvent(&e, INFINITE);
-
-        // parmi les evenements, seuls les evenements "DEBUG" nous interessent
         switch (e.dwDebugEventCode) 
         { 
         
@@ -119,18 +115,14 @@ DWORD FuzzwinAlgorithm::debugTarget(CInput *pNewInput)
                 // actions spécifiques cmdline/gui à mener lors de la découverte d'une faute
                 this->faultFound();
 
-                // acquitter
-                ContinueDebugEvent(e.dwProcessId, e.dwThreadId,  DBG_EXCEPTION_HANDLED); 
-
+                // arret du debug
+                DebugActiveProcessStop(pi.dwProcessId);
                 // fermeture des handles du programme débuggé
-                result = TerminateThread(pi.hThread, 0xDEAD);
-                result = TerminateProcess(pi.hProcess, 0);
-                result2 = CloseHandle(pi.hProcess); 
-                result3 = CloseHandle(pi.hThread);
-
-                // arret du debug et retour du code d'erreur             
+                CloseHandle(pi.hProcess); 
+                CloseHandle(pi.hThread);
+                // retour du code d'erreur 
                 returnCode = exceptionCode;
-                //continueDebug = false;
+                continueDebug = false;
             }
             break;
 
@@ -142,24 +134,18 @@ DWORD FuzzwinAlgorithm::debugTarget(CInput *pNewInput)
             ContinueDebugEvent(e.dwProcessId, e.dwThreadId, DBG_CONTINUE); 
 
             // fermeture des handles du programme débuggé
-            result2 = CloseHandle(pi.hProcess); 
-            result3 = CloseHandle(pi.hThread);
+            CloseHandle(pi.hProcess); 
+            CloseHandle(pi.hThread);
 
             // quitter la boucle 
             continueDebug = false;	
             break;  // quitter la boucle 
         
         default: 
-            // acquitter
+            // acquitter les autres évènements
             ContinueDebugEvent(e.dwProcessId, e.dwThreadId, DBG_CONTINUE); 
             break;
         }      
-    }
-
-    if (returnCode)
-    {
-        BOOL result = TerminateProcess(pi.hProcess, -1);
-        WaitForSingleObject(pi.hProcess, INFINITE);
     }
 
     // arret du timer (sans effet si c'est le timer qui a provoqué l'arret du debug)

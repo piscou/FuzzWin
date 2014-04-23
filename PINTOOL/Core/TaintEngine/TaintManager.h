@@ -5,7 +5,6 @@
 #include "ObjectSource.h"
 
 #include <map>
-#include <stack> // enregistrement des adresses de retour lors des CALL/RET
 #include <regex> // parsing des octets à suivre en marquage
 
 // position des flags
@@ -60,22 +59,16 @@ template<UINT32 lengthInBits> ADDRINT getMemoryValue(ADDRINT address)
     return (returnValue);
 }
 
-// structure de sauvegarde des adresses de retour des fonctions
-// TODO : analyse à faire en option choisie par l'utilisateur
-typedef struct
+// Sauvegarde des éléments constitutifs d'une instruction SCAS
+class ScasInformation
 {
-    ADDRINT espAddress;     // valeur du registre de pile
-    ADDRINT returnValue;    // valeur de retour (déréférencée de la pile)
-} protectedAddresses;
-
-typedef struct 
-{
+public:
     bool isREPZ;        // VRAI si REPZ, faux si REPNZ
     bool isRegTainted;  // Vrai si registre AL/AX/EAX/RAX marqué
     TaintPtr tPtr;      // objet marqué représentant AL/AX/EAX/RAX
     ADDRINT regValue;   // Valeur de AL/AX/EAX/RAX
     ADDRINT instrPtr;   // adresse de l'instruction SCAS
-} StringOpInfo;
+};
 
 /************************************/
 /** CLASSES DE GESTION DU MARQUAGE **/
@@ -139,7 +132,7 @@ public:
             ++it;  
 
             // stockage du couple dans la liste
-            this->_bytesToTaint.push_back(std::make_pair(minBound, maxBound));
+            _bytesToTaint.push_back(std::make_pair(minBound, maxBound));
         }
     }
 
@@ -156,7 +149,7 @@ public:
         PIN_GetLock(&g_lock, 0); // obligatoire car classe globale
         while (address < lastAddress)
         { 
-            if (this->_memoryPtrs.find(address++) != this->_memoryPtrs.end())
+            if (_memoryPtrs.find(address++) != _memoryPtrs.end())
             {
                 result = true;
                 break;
@@ -172,8 +165,8 @@ public:
     template<> bool isMemoryTainted<8>(ADDRINT address) const 
     {
         PIN_GetLock(&g_lock, 0); // obligatoire car classe globale
-        auto it    = this->_memoryPtrs.find(address);
-        auto itEnd = this->_memoryPtrs.end();
+        auto it    = _memoryPtrs.find(address);
+        auto itEnd = _memoryPtrs.end();
         PIN_ReleaseLock(&g_lock);
 
         return (it != itEnd);
@@ -191,11 +184,11 @@ public:
         ADDRINT lastAddress = address + (lengthInBits >> 3);
         
         PIN_GetLock(&g_lock, 0); // obligatoire car classe globale
-        auto itEnd = this->_memoryPtrs.end();
+        auto itEnd = _memoryPtrs.end();
         
         while (address < lastAddress) 
         {
-            auto it = this->_memoryPtrs.find(address);
+            auto it = _memoryPtrs.find(address);
             if (it != itEnd) // si une entrée à été trouvée => adresse marquée
             {       
                 result.addSource(it->second);
@@ -212,8 +205,8 @@ public:
     template<> TaintBytePtr getMemoryTaint<8>(ADDRINT address) const
     {
         PIN_GetLock(&g_lock, 0); // obligatoire car classe globale
-        auto it    = this->_memoryPtrs.find(address);
-        auto itEnd = this->_memoryPtrs.end();
+        auto it    = _memoryPtrs.find(address);
+        auto itEnd = _memoryPtrs.end();
         PIN_ReleaseLock(&g_lock);
 
         return ( (it == itEnd) ? nullptr : it->second);
@@ -221,7 +214,7 @@ public:
 
     // renvoi d'une copie de la MAP : sert aux statistiques de fin de programme
     std::map<ADDRINT, TaintBytePtr> getSnapshotOfTaintedLocations() const
-    { return this->_memoryPtrs; }
+    { return _memoryPtrs; }
     
     /*******************************/
     /** CREATION D'OBJETS SOURCES **/
@@ -238,7 +231,7 @@ public:
 
         // Si le vecteur est vide, tous les octets de la source doivent être marqué
         // sinon il faudra vérifier que chaque octet est dans les intervelles à suivre
-        bool mustAllBytesBeTainted = this->_bytesToTaint.empty(); 
+        bool mustAllBytesBeTainted = _bytesToTaint.empty(); 
 
         // création de 'nb' objets à partir de l'adresse 'buffer'
         for (ADDRINT endOfBuffer = buffer + nb ; buffer < endOfBuffer ; ++buffer, ++offset)
@@ -249,8 +242,8 @@ public:
                 // recherche de la présence de l'offset dans l'un des intervalles
                 // par défaut on considère qu'il ne l'est pas
                 bool isThisByteToBeTainted = false;
-                auto it    = this->_bytesToTaint.begin();
-                auto itEnd = this->_bytesToTaint.end();
+                auto it    = _bytesToTaint.begin();
+                auto itEnd = _bytesToTaint.end();
                 while (it != itEnd)
                 {
                     // supérieur ou égal à borne min et inférieur ou égal à max
@@ -265,20 +258,20 @@ public:
                 if (!isThisByteToBeTainted) continue;
             }
 
-            auto it = this->_offsets.find(offset);
+            auto it = _offsets.find(offset);
             // si aucune entrée : lecture d'un nouvel offset dans le fichier
-            if (it == this->_offsets.end()) 
+            if (it == _offsets.end()) 
             {
                 // création du nouvel objet 8bits et ajout de son offset comme source
                 tbPtr = std::make_shared<TaintByte>(BYTESOURCE, ObjectSource(32, offset));
                 // Ajout de cet objet dans la liste des octets déjà lus dans la source
-                this->_offsets.insert(pair<UINT32, TaintBytePtr>(offset, tbPtr));
+                _offsets.insert(pair<UINT32, TaintBytePtr>(offset, tbPtr));
             }
             // sinon cet octet a déjà été lu : le TaintByte est déjà créé
             else tbPtr = it->second;     
 
             // marquage de la mémoire
-            this->_memoryPtrs[buffer] = tbPtr;          
+            _memoryPtrs[buffer] = tbPtr;          
         }
         PIN_ReleaseLock(&g_lock);
 
@@ -304,7 +297,7 @@ public:
             for (UINT32 i = 0 ; i < (lengthInBits >> 3) ; ++i, ++address) 
             { 
                 // extraction de 'objSrc' de l'octet (8bits) n°i et affectation à l'adresse adéquate
-                this->_memoryPtrs[address] = std::make_shared<TaintByte>
+                _memoryPtrs[address] = std::make_shared<TaintByte>
                     (EXTRACT, objSrc, ObjectSource(8, i));
             }
         }
@@ -316,8 +309,8 @@ public:
     template<> void updateMemoryTaint<8>(ADDRINT address, const TaintBytePtr &tbPtr) 
     { 
         PIN_GetLock(&g_lock, 0); // obligatoire car classe globale
-        if (!tbPtr) this->_memoryPtrs.erase(address);
-        else        this->_memoryPtrs[address] = tbPtr;
+        if (!tbPtr) _memoryPtrs.erase(address);
+        else        _memoryPtrs[address] = tbPtr;
         PIN_ReleaseLock(&g_lock);
     }
 
@@ -330,7 +323,7 @@ public:
     {            
         ADDRINT lastAddress = address + (lengthInBits >> 3);
         PIN_GetLock(&g_lock, 0); // obligatoire car classe globale
-        while (address < lastAddress) this->_memoryPtrs.erase(address++);
+        while (address < lastAddress) _memoryPtrs.erase(address++);
         PIN_ReleaseLock(&g_lock);
     }
 };
@@ -360,15 +353,6 @@ private:
     // cas du registre Eflags : marquage niveau bit 
     TaintBitPtr  _cFlagPtr, _pFlagPtr, _aFlagPtr, _zFlagPtr, _sFlagPtr, _oFlagPtr;
 
-    // enregistrement des adresses de retour mises sur la pile lors des instructions "CALL"
-    // lors d'un "RET", l'adresse de retour sera comparée à celle présente sur la pile
-    // s'ils sont différentes => exploitation possible. 
-    // ne se limite pas aux adresse de retour marquées (ex : buff overfl avec débordement tableau)
-    std::stack<protectedAddresses> _addressProtection;
-
-    // Stockage des informations récurrentes lors des opérations de chaines ("STRINGOP")
-    StringOpInfo _strInfo; 
-
     // stockage de l'objet permettant de calculer une addresse effective 
     // (taille selon architecture)
 #if TARGET_IA32
@@ -378,8 +362,6 @@ private:
 #endif
 
 public:
-    TaintManager_Thread()  {}
-    ~TaintManager_Thread() {}
 
     /**************************************************/
     /** GESTION DU MARQUAGE DES ADDRESSES EFFECTIVES **/
@@ -388,31 +370,31 @@ public:
 #if TARGET_IA32
     // mise en cache d'un objet calculant une addresse effective (32bits)
     void storeTaintEffectiveAddress(TaintDwordPtr tdwPtr)
-    { this->_effectiveAddressPtr = tdwPtr; }
+    { _effectiveAddressPtr = tdwPtr; }
 
     // récupération de l'objet mis en cache
     TaintDwordPtr getTaintEffectiveAddress() const
-    { return (this->_effectiveAddressPtr); }
+    { return (_effectiveAddressPtr); }
 
 #else
     // mise en cache d'un objet calculant une addresse effective (64bits)
     void storeTaintEffectiveAddress(TaintQwordPtr tqwPtr)
-    { this->_effectiveAddressPtr = tqwPtr; }
+    { _effectiveAddressPtr = tqwPtr; }
 
     // récupération de l'objet mis en cache
     TaintQwordPtr getTaintEffectiveAddress() const
-    { return (this->_effectiveAddressPtr); }
+    { return (_effectiveAddressPtr); }
 
 #endif
 
     // test si un objet a été mis en cache
     bool isEffectiveAddressTainted() const
-    { return (this->_effectiveAddressPtr != nullptr); }
+    { return (_effectiveAddressPtr != nullptr); }
 
     // spécifie que la valeur de l'adresse effective n'est pas marquée
     // fonction appelée systématiquement après le traitement de l'instruction
     void clearTaintEffectiveAddress() 
-    { this->_effectiveAddressPtr.reset(); }
+    { _effectiveAddressPtr.reset(); }
 
     /*******************************/
     /** INTERROGATION DU MARQUAGE **/
@@ -426,7 +408,7 @@ public:
         bool result = false;
         for (UINT32 i = 0 ; i < (lengthInBits >> 3) ; ++i) 
         { 
-            if ((bool) this->_registers8Ptr[regIndex][i])
+            if ((bool) _registers8Ptr[regIndex][i])
             {
                 result = true;
                 break;
@@ -442,23 +424,23 @@ public:
         REGINDEX regIndex = getRegIndex(reg);
        
         return (REG_is_Upper8(reg) 
-            ? (bool) this->_registers8Ptr[regIndex][1] 
-            : (bool) this->_registers8Ptr[regIndex][0]);
+            ? (bool) _registers8Ptr[regIndex][1] 
+            : (bool) _registers8Ptr[regIndex][0]);
     }
 
     // cas d'une partie spécifique du registre
     bool isRegisterPartTainted(REGINDEX regIndex, UINT32 regPart) const 
     { 
-        return ((bool) this->_registers8Ptr[regIndex][regPart]); 
+        return ((bool) _registers8Ptr[regIndex][regPart]); 
     }
 
     // renvoie TRUE si le flag est marqué
-    bool isCarryFlagTainted() const    { return ((bool) this->_cFlagPtr); }
-    bool isParityFlagTainted() const   { return ((bool) this->_pFlagPtr); }
-    bool isAuxiliaryFlagTainted() const{ return ((bool) this->_aFlagPtr); }
-    bool isZeroFlagTainted() const     { return ((bool) this->_zFlagPtr); }
-    bool isSignFlagTainted() const     { return ((bool) this->_sFlagPtr); }
-    bool isOverflowFlagTainted() const { return ((bool) this->_oFlagPtr); }
+    bool isCarryFlagTainted() const    { return ((bool) _cFlagPtr); }
+    bool isParityFlagTainted() const   { return ((bool) _pFlagPtr); }
+    bool isAuxiliaryFlagTainted() const{ return ((bool) _aFlagPtr); }
+    bool isZeroFlagTainted() const     { return ((bool) _zFlagPtr); }
+    bool isSignFlagTainted() const     { return ((bool) _sFlagPtr); }
+    bool isOverflowFlagTainted() const { return ((bool) _oFlagPtr); }
 
     /******************************/
     /** RECUPERATION DU MARQUAGE **/
@@ -485,23 +467,23 @@ public:
         REGINDEX regIndex = getRegIndex(reg16);
        
         // test du marquage 16 bits. Si absent => créer un nouvel objet
-        if (!(bool) this->_registers16Ptr[regIndex])
+        if (!(bool) _registers16Ptr[regIndex])
         {
             TaintWord result(CONCAT);
             for (UINT32 i = 0 ; i < 2 ; ++i) 
             {
                 // si la partie du registre est marqué, ajout de cet objet à la concaténation   
-                if ((bool) this->_registers8Ptr[regIndex][i]) 
+                if ((bool) _registers8Ptr[regIndex][i]) 
                 {
-                    result.addSource(this->_registers8Ptr[regIndex][i]);
+                    result.addSource(_registers8Ptr[regIndex][i]);
                 }
                 // sinon, ajout d'une source de type immédiate
                 else result.addConstantAsASource<8>(EXTRACTBYTE(reg16Value, i));
             }
             // association de l'objet nouvellement créé au registre 16bits
-            this->_registers16Ptr[regIndex] = std::make_shared<TaintWord>(result);
+            _registers16Ptr[regIndex] = std::make_shared<TaintWord>(result);
         }
-        return (this->_registers16Ptr[regIndex]);
+        return (_registers16Ptr[regIndex]);
     }
 
     // cas 32 bits : renvoi du TaintDword correspondant (si existant) 
@@ -511,26 +493,26 @@ public:
         REGINDEX regIndex = getRegIndex(reg32);      
 
         // test du marquage 32 bits. si aucune variable => la fabriquer
-        if (!(bool) this->_registers32Ptr[regIndex])
+        if (!(bool) _registers32Ptr[regIndex])
         {
             TaintDword result(CONCAT);
             for (UINT32 i = 0 ; i < 4 ; ++i) 
             {
                 // si la partie du registre est marqué, ajout de cet objet 
                 // à la concaténation   
-                if ((bool) this->_registers8Ptr[regIndex][i]) 
+                if ((bool) _registers8Ptr[regIndex][i]) 
                 {
-                    result.addSource(this->_registers8Ptr[regIndex][i]);
+                    result.addSource(_registers8Ptr[regIndex][i]);
                 }
                 // sinon, ajout d'une source de type immédiate
                 else result.addConstantAsASource<8>(EXTRACTBYTE(reg32Value, i));
             }
             
             // association de l'objet nouvellement créé au registre 32bits
-            this->_registers32Ptr[regIndex] = std::make_shared<TaintDword>(result);
+            _registers32Ptr[regIndex] = std::make_shared<TaintDword>(result);
         }
         // retour de l'objet 32bits existant ou créé
-        return (this->_registers32Ptr[regIndex]);
+        return (_registers32Ptr[regIndex]);
     }
  
 #if TARGET_IA32E
@@ -541,25 +523,25 @@ public:
         REGINDEX regIndex = getRegIndex(reg64);
 
         // test du marquage 32 bits
-        if (!(bool) this->_registers64Ptr[regIndex])
+        if (!(bool) _registers64Ptr[regIndex])
         {
             TaintQword result(CONCAT);
             for (UINT32 i = 0 ; i < 8 ; ++i) 
             {
                 // si la partie du registre est marqué, ajout de cet objet 
                 // à la concaténation   
-                if ((bool) this->_registers8Ptr[regIndex][i]) 
+                if ((bool) _registers8Ptr[regIndex][i]) 
                 {
-                    result.addSource(this->_registers8Ptr[regIndex][i]);
+                    result.addSource(_registers8Ptr[regIndex][i]);
                 }
                 // sinon, ajout d'une source de type immédiate
                 else result.addConstantAsASource<8>(EXTRACTBYTE(reg64Value, i));
             }
         
             // association de l'objet nouvellement créé au registre 64bits
-            this->_registers64Ptr[regIndex] = std::make_shared<TaintQword>(result);
+            _registers64Ptr[regIndex] = std::make_shared<TaintQword>(result);
         }
-        return (this->_registers64Ptr[regIndex]);
+        return (_registers64Ptr[regIndex]);
     }
 #endif
 
@@ -570,20 +552,20 @@ public:
         UINT32 regPart = REG_is_Upper8(reg) ? 1 : 0;
         REGINDEX regIndex = getRegIndex(reg);
 
-        return (this->_registers8Ptr[regIndex][regPart]);
+        return (_registers8Ptr[regIndex][regPart]);
     }
 
     // renvoie le marquage d'une partie de registre
     TaintBytePtr getRegisterPartTaint(REGINDEX regIndex, UINT32 regPart) const  
-    {  return (this->_registers8Ptr[regIndex][regPart]); }
+    {  return (_registers8Ptr[regIndex][regPart]); }
 
     // renvoie le marquage correspondant aux flags
-    TaintBitPtr getTaintCarryFlag()     const   { return (this->_cFlagPtr); }
-    TaintBitPtr getTaintParityFlag()    const   { return (this->_pFlagPtr); }
-    TaintBitPtr getTaintAuxiliaryFlag() const   { return (this->_aFlagPtr); }
-    TaintBitPtr getTaintZeroFlag()      const   { return (this->_zFlagPtr); }
-    TaintBitPtr getTaintSignFlag()      const   { return (this->_sFlagPtr); }
-    TaintBitPtr getTaintOverflowFlag()  const   { return (this->_oFlagPtr); }
+    TaintBitPtr getTaintCarryFlag()     const   { return (_cFlagPtr); }
+    TaintBitPtr getTaintParityFlag()    const   { return (_pFlagPtr); }
+    TaintBitPtr getTaintAuxiliaryFlag() const   { return (_aFlagPtr); }
+    TaintBitPtr getTaintZeroFlag()      const   { return (_zFlagPtr); }
+    TaintBitPtr getTaintSignFlag()      const   { return (_sFlagPtr); }
+    TaintBitPtr getTaintOverflowFlag()  const   { return (_oFlagPtr); }
 
     /*****************************************/
     /** FONCTIONS DE MARQUAGE DES REGISTRES **/
@@ -593,13 +575,13 @@ public:
     // l'objet TaintByte fourni
     void updateTaintRegisterPart(REGINDEX regIndex, UINT32 regPart, const TaintBytePtr &tbPtr) 
     {
-        this->_registers8Ptr[regIndex][regPart] = tbPtr;
+        _registers8Ptr[regIndex][regPart] = tbPtr;
         // si un registre plein était présent (16, ou 32, ou 64)
         // effacer le marquage, car une partie 8 bits a été modifiée
-        this->_registers16Ptr[regIndex].reset();
-        this->_registers32Ptr[regIndex].reset();
+        _registers16Ptr[regIndex].reset();
+        _registers32Ptr[regIndex].reset();
         #if TARGET_IA32E
-        this->_registers64Ptr[regIndex].reset();
+        _registers64Ptr[regIndex].reset();
         #endif
     }
 
@@ -616,13 +598,13 @@ public:
 
         // si un registre plein était présent (16, ou 32, ou 64)
         // effacer le marquage, car une partie 8 bits a été modifiée
-        this->_registers16Ptr[regIndex].reset();
-        this->_registers32Ptr[regIndex].reset();
+        _registers16Ptr[regIndex].reset();
+        _registers32Ptr[regIndex].reset();
         #if TARGET_IA32E
-        this->_registers64Ptr[regIndex].reset();
+        _registers64Ptr[regIndex].reset();
         #endif
         // marquage
-        this->_registers8Ptr[regIndex][(REG_is_Upper8(reg8)) ? 1 : 0] = tbPtr;
+        _registers8Ptr[regIndex][(REG_is_Upper8(reg8)) ? 1 : 0] = tbPtr;
     }
 
     // cas 16bits
@@ -632,20 +614,20 @@ public:
 
         // si un registre plein était présent : effacer le marquage
         // car une partie a été modifiée
-        this->_registers32Ptr[regIndex].reset();
+        _registers32Ptr[regIndex].reset();
         #if TARGET_IA32E
-        this->_registers64Ptr[regIndex].reset();
+        _registers64Ptr[regIndex].reset();
         #endif
         
         // marquage d'abord de la partie 16 bits, 
-        this->_registers16Ptr[regIndex] = twPtr;
+        _registers16Ptr[regIndex] = twPtr;
         // puis de chaque partie de 8 bits
         ObjectSource objSrc(twPtr); 
         // création des taintBytes extraits de l'objet pour affectation
         for (UINT32 i = 0 ; i < 2 ; ++i) 
         {
             // objet duquel l'octet est extrait (sous forme de source) + index d'extraction
-            this->_registers8Ptr[regIndex][i] = std::make_shared<TaintByte>
+            _registers8Ptr[regIndex][i] = std::make_shared<TaintByte>
                 (EXTRACT, objSrc, ObjectSource(8, i));
         }
     }
@@ -656,20 +638,20 @@ public:
         REGINDEX regIndex = getRegIndex(reg32);
         
         // si un registre plein était présent : effacer le marquage, car une partie a été modifiée
-        this->_registers16Ptr[regIndex].reset();        
+        _registers16Ptr[regIndex].reset();        
         #if TARGET_IA32E
-        this->_registers64Ptr[regIndex].reset();
+        _registers64Ptr[regIndex].reset();
         #endif
         
         // marquage d'abord de la partie 32 bits, 
-        this->_registers32Ptr[regIndex] = tdwPtr;
+        _registers32Ptr[regIndex] = tdwPtr;
         // puis de chaque partie de 8 bits
         ObjectSource objSrc(tdwPtr); 
         // création des taintBytes extraits de l'objet pour affectation
         for (UINT32 i = 0 ; i < 4 ; ++i) 
         {
             // objet duquel l'octet est extrait (sous forme de source) + index d'extraction
-            this->_registers8Ptr[regIndex][i] = std::make_shared<TaintByte>
+            _registers8Ptr[regIndex][i] = std::make_shared<TaintByte>
                 (EXTRACT, objSrc, ObjectSource(8, i)); 
         }
     }
@@ -682,18 +664,18 @@ public:
         
         // si un registre plein de 16 ou 32bits était présent 
         // effacer le marquage, car une partie a été modifiée
-        this->_registers16Ptr[regIndex].reset();  
-        this->_registers32Ptr[regIndex].reset();
+        _registers16Ptr[regIndex].reset();  
+        _registers32Ptr[regIndex].reset();
 
         // marquage d'abord de la partie 64 bits, 
-        this->_registers64Ptr[regIndex] = tqwPtr;
+        _registers64Ptr[regIndex] = tqwPtr;
         // puis de chaque partie de 8 bits
         ObjectSource objSrc(tqwPtr); 
         // création des taintBytes extraits de l'objet pour affectation
         for (UINT32 i = 0 ; i < 8 ; ++i) 
         {
              // objet duquel l'octet est extrait (sous forme de source) + index d'extraction
-            this->_registers8Ptr[regIndex][i] = std::make_shared<TaintByte>
+            _registers8Ptr[regIndex][i] = std::make_shared<TaintByte>
                 (EXTRACT, objSrc, ObjectSource(8, i));
         }
     }
@@ -703,12 +685,12 @@ public:
     /** FONCTIONS DE MARQUAGE DES FLAGS **/
     /*************************************/
 
-    void updateTaintCarryFlag  (const TaintBitPtr &ptr)  { this->_cFlagPtr = ptr;}
-    void updateTaintParityFlag (const TaintBitPtr &ptr)  { this->_pFlagPtr = ptr;}
-    void updateTaintAuxiliaryFlag(const TaintBitPtr &ptr){ this->_aFlagPtr = ptr;}
-    void updateTaintZeroFlag   (const TaintBitPtr &ptr)  { this->_zFlagPtr = ptr;}
-    void updateTaintSignFlag   (const TaintBitPtr &ptr)  { this->_sFlagPtr = ptr;}
-    void updateTaintOverflowFlag(const TaintBitPtr &ptr) { this->_oFlagPtr = ptr;}
+    void updateTaintCarryFlag  (const TaintBitPtr &ptr)  { _cFlagPtr = ptr;}
+    void updateTaintParityFlag (const TaintBitPtr &ptr)  { _pFlagPtr = ptr;}
+    void updateTaintAuxiliaryFlag(const TaintBitPtr &ptr){ _aFlagPtr = ptr;}
+    void updateTaintZeroFlag   (const TaintBitPtr &ptr)  { _zFlagPtr = ptr;}
+    void updateTaintSignFlag   (const TaintBitPtr &ptr)  { _sFlagPtr = ptr;}
+    void updateTaintOverflowFlag(const TaintBitPtr &ptr) { _oFlagPtr = ptr;}
 
     /*****************************/
     /** FONCTIONS DE DEMARQUAGE **/
@@ -718,11 +700,11 @@ public:
     void unTaintRegisterPart(REGINDEX regIndex, UINT32 regPart) 
     { 
         // effacement de la partie 8 bits (et forcement des registres 16/32/64)
-        this->_registers8Ptr[regIndex][regPart].reset();  
-        this->_registers16Ptr[regIndex].reset();
-        this->_registers32Ptr[regIndex].reset();
+        _registers8Ptr[regIndex][regPart].reset();  
+        _registers16Ptr[regIndex].reset();
+        _registers32Ptr[regIndex].reset();
         #if TARGET_IA32E
-        this->_registers64Ptr[regIndex].reset();
+        _registers64Ptr[regIndex].reset();
         #endif
     }
     
@@ -732,13 +714,13 @@ public:
         REGINDEX regIndex = getRegIndex(reg);
        
         // effacement des parties 8 bits 
-        for (UINT32 i = 0 ; i < (lengthInBits >> 3) ; ++i)   this->_registers8Ptr[regIndex][i].reset();
+        for (UINT32 i = 0 ; i < (lengthInBits >> 3) ; ++i)   _registers8Ptr[regIndex][i].reset();
         
         // effacement forcement des registres 16/32/64
-        this->_registers16Ptr[regIndex].reset();
-        this->_registers32Ptr[regIndex].reset();
+        _registers16Ptr[regIndex].reset();
+        _registers32Ptr[regIndex].reset();
         #if TARGET_IA32E
-        this->_registers64Ptr[regIndex].reset();
+        _registers64Ptr[regIndex].reset();
         #endif
     }
 
@@ -749,60 +731,32 @@ public:
         UINT32 regPart =  REG_is_Upper8((REG)reg) ? 1 : 0;
         
         // effacement des registres 8/16/32/64
-        this->_registers8Ptr[regIndex][regPart].reset();
-        this->_registers16Ptr[regIndex].reset();
-        this->_registers32Ptr[regIndex].reset();
+        _registers8Ptr[regIndex][regPart].reset();
+        _registers16Ptr[regIndex].reset();
+        _registers32Ptr[regIndex].reset();
         #if TARGET_IA32E
-        this->_registers64Ptr[regIndex].reset();
+        _registers64Ptr[regIndex].reset();
         #endif
     }
     
     // démarque le flag
-    void unTaintCarryFlag()    { this->_cFlagPtr.reset(); }
-    void unTaintParityFlag()   { this->_pFlagPtr.reset(); }
-    void unTaintAuxiliaryFlag(){ this->_aFlagPtr.reset(); }
-    void unTaintZeroFlag()     { this->_zFlagPtr.reset(); }
-    void unTaintSignFlag()     { this->_sFlagPtr.reset(); }
-    void unTaintOverflowFlag() { this->_oFlagPtr.reset(); }
+    void unTaintCarryFlag()    { _cFlagPtr.reset(); }
+    void unTaintParityFlag()   { _pFlagPtr.reset(); }
+    void unTaintAuxiliaryFlag(){ _aFlagPtr.reset(); }
+    void unTaintZeroFlag()     { _zFlagPtr.reset(); }
+    void unTaintSignFlag()     { _sFlagPtr.reset(); }
+    void unTaintOverflowFlag() { _oFlagPtr.reset(); }
 
     // supprime le marquage de tous les flags
     void unTaintAllFlags() 
     {
-        this->_cFlagPtr.reset();      
-        this->_pFlagPtr.reset();
-        this->_aFlagPtr.reset();      
-        this->_zFlagPtr.reset();
-        this->_sFlagPtr.reset();   
-        this->_oFlagPtr.reset();
+        _cFlagPtr.reset();      
+        _pFlagPtr.reset();
+        _aFlagPtr.reset();      
+        _zFlagPtr.reset();
+        _sFlagPtr.reset();   
+        _oFlagPtr.reset();
     }
-
-    /***************************/
-    /** CONTROLE DES CALL/RET **/
-    /***************************/
-    void pushProtectedAdresses(protectedAddresses pa) 
-    { this->_addressProtection.push(pa);}
-
-    bool isProtectedAddressesEmpty() 
-    { return (this->_addressProtection.empty());} 
-
-    protectedAddresses getProtectedAdresses()
-    {         
-        // remplacer par une copie de chaque élément avec déclaration
-        protectedAddresses temp = this->_addressProtection.top();
-        this->_addressProtection.pop();
-        return (temp);
-    }
-
-    /****************************/
-    /** MISE EN CACHE STRINGOP **/
-    /****************************/
-    
-    void storeStringOpInfo(const StringOpInfo &s) 
-    { this->_strInfo = s;}
-
-    StringOpInfo& getStoredStringOpInfo()  
-    { return this->_strInfo; }
-
 };
 
 // pointeur global vers classe de gestion du marquage mémoire

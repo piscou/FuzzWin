@@ -16,14 +16,10 @@ ObjectSource::ObjectSource(UINT32 lengthInBits, ADDRINT value)
       _val(value), 
       _lengthInBits(lengthInBits) {} 
 
-UINT32 ObjectSource::getLength() const
-{ return (this->_lengthInBits); }
+UINT32 ObjectSource::getLength() const  { return (_lengthInBits); }
 
-bool ObjectSource::isSrcTainted() const
-{ return ((bool) this->_src); }
+bool ObjectSource::isSrcTainted() const { return ((bool) _src); }
 
-ADDRINT ObjectSource::getValue() const
-{ return (this->_val); }
+ADDRINT ObjectSource::getValue() const  { return (_val); }
 
-const TaintPtr& ObjectSource::getTaintedSource() const
-{ return (this->_src); }
+const TaintPtr& ObjectSource::getTaintedSource() const  { return (_src); }

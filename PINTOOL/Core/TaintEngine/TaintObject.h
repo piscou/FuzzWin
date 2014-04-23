@@ -57,7 +57,7 @@ protected:
 
     // Mode verbeux uniquement : détails supplémentaires sur l'objet
     // En particulier : adresse et nom de l'instruction ayant généré cet objet.
-    std::string _additionalData;
+    std::string _verboseData;
     
     // constructeurs privés : classe non instanciable
     // obligation de passer par les classes filles
@@ -82,20 +82,20 @@ public:
     void    setDeclared();
 
     // fixe le nom de variable correspondant à cet objet
-    void    setName(const std::string &name);
+    void    setName(std::string name);
 
     // retourne le nom de variable de cet objet dans la formule du solveur
-    const   std::string& getName() const;
+    std::string getName() const;
 
     // retourne les sources de l'objet
-    const std::vector<ObjectSource>& getSources() const;
+    std::vector<ObjectSource> getSources() const;
     // retourne la source 'i' de l'objet
-    const ObjectSource& getSource(UINT32 i) const;
+    ObjectSource getSource(UINT32 i) const;
 
     // ajoute l'objet marque 'taintPtr' en tant que source à l'objet
     void addSource(const TaintPtr &taintPtr);
     // ajoute la structure ObjectSource 'src' en tant que source à l'objet
-    void addSource(const ObjectSource &src);
+    void addSource(ObjectSource src);
 
     // ajoute la valeur constante 'value' sur 'lengthInBits' bits en tant que source à l'objet
     template<UINT32 lengthInBits> inline void addConstantAsASource(ADDRINT value) 
@@ -103,11 +103,8 @@ public:
         _sources.push_back(ObjectSource(lengthInBits, value)); 
     }
 
-    // définit les détails supplémentaires pour cet objet (mode verbose)
-    void setVerboseDetails(const std::string &data);
-
     // retourne les détails supplémentaires de cet objet (mode verbose)
-    const std::string& getVerboseDetails() const;
+    std::string getVerboseDetails() const;
 };
 
 template<UINT32 lengthInBits> class TaintObject : public Taint 

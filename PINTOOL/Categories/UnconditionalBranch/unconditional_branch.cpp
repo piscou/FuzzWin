@@ -7,8 +7,6 @@ void UNCONDITIONAL_BR::cJMP(INS &ins)
     // seuls les cas de type JMP reg ou JMP ea (donc un JMP Near) sont traités
     // Si l'adresse de saut est marquée, alors ajout d'une contrainte
     // qui essaiera de sauter à un autre emplacement
-    
-    return;
 
     // cas JMP short : aucun marquage possible, pas d'instrumentation
     if (! INS_IsDirectBranch(ins))
@@ -97,7 +95,6 @@ void UNCONDITIONAL_BR::cJMP(INS &ins)
             if (baseReg == REG_RIP)  return;
 
             REG indexReg    = INS_MemoryIndexReg(ins); // Registre d'index (ou REG_INVALID)            
-            UINT32 addrSize = INS_MemoryReadSize(ins); // taille de l'adresse générée
             INT32 displ     = static_cast<INT32>(INS_MemoryDisplacement(ins));
             UINT32 scale    = INS_MemoryScale(ins);
 
