@@ -1,15 +1,3 @@
-/*!
-
- * \file pintool.h
- * \brief header général pour le pintool 
- * \author Sébastien LECOMTE
- * \version 05.a
- * \date 30/07/2013
-
- * contient les définitions générales utilisées par tous
- * les fichiers source du pintool
-*/
-
 #pragma once
 
 // le kit 62376 de PIN provoque un warning de cast (C4244) à la compilation
@@ -39,6 +27,8 @@ typedef WINDOWS::HANDLE HANDLE;
 /*********************/
 /* Constantes utiles */
 /*********************/
+
+#define FUZZWIN_VERSION     std::string("1.4.1 28 avril 2014")
 
 #define EXIT_EXCEPTION      -1 // exception trouvée (option checkscore)
 #define EXIT_MAX_CONSTRAINTS 2 // fin du pintool pour cause de contrainte max

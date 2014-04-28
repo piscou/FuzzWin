@@ -22,4 +22,4 @@ bool ObjectSource::isSrcTainted() const { return ((bool) _src); }
 
 ADDRINT ObjectSource::getValue() const  { return (_val); }
 
-const TaintPtr& ObjectSource::getTaintedSource() const  { return (_src); }
+TaintPtr ObjectSource::getTaintedSource() const  { return (_src); }

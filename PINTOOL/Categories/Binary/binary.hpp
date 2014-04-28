@@ -11,7 +11,7 @@ void BINARY::sNEG_M(THREADID tid, ADDRINT writeAddress, ADDRINT insAddress)
     if ( !pTmgrGlobal->isMemoryTainted<lengthInBits>(writeAddress))  pTmgrTls->unTaintAllFlags(); 
     else 
     {
-        _LOGTAINT(tid, insAddress, "negM" + decstr(lengthInBits));
+        _LOGTAINT(tid, insAddress, "NEG_M" + decstr(lengthInBits));
         ObjectSource objSrc(pTmgrGlobal->getMemoryTaint<lengthInBits>(writeAddress));
 
         // création de l'objet résultat
@@ -470,16 +470,33 @@ void BINARY::sADD_IR(THREADID tid, ADDRINT value, REG reg, ADDRINT regValue, ADD
     if ( !pTmgrTls->isRegisterTainted<lengthInBits>(reg) )	pTmgrTls->unTaintAllFlags();
     else 
     {
-        _LOGTAINT(tid, insAddress, "addIR" + decstr(lengthInBits));
+        _LOGTAINT(tid, insAddress, "ADDIR" + decstr(lengthInBits));
 
         ObjectSource objSrcDest(pTmgrTls->getRegisterTaint<lengthInBits>(reg, regValue));
-        ObjectSource objSrc(lengthInBits, value);		
+        
+        // si la valeur numérique est nulle, aucun changement de la destination
+        // et marquage des flags spécifique
+        if (!value)
+        {
+            // quelque soit la source, pas de Carry, ni d'Overflow, ni d'Aux Carry
+            pTmgrTls->unTaintCarryFlag();
+            pTmgrTls->unTaintAuxiliaryFlag();
+            pTmgrTls->unTaintOverflowFlag();
+            // marquage PF/SF/ZF avec la source marquée
+            pTmgrTls->updateTaintParityFlag(std::make_shared<TaintBit>(F_PARITY, objSrcDest));;
+            pTmgrTls->updateTaintZeroFlag(std::make_shared<TaintBit>(F_IS_NULL, objSrcDest));
+            pTmgrTls->updateTaintSignFlag(std::make_shared<TaintBit>(F_MSB, objSrcDest));
+        }
+        else
+        {
+            ObjectSource objSrc(lengthInBits, value);		
     
-        TAINT_OBJECT_PTR resultPtr = MK_TAINT_OBJECT_PTR(X_ADD, objSrcDest, objSrc);
+            TAINT_OBJECT_PTR resultPtr = MK_TAINT_OBJECT_PTR(X_ADD, objSrcDest, objSrc);
 
-        // marquage flags et destination
-        fTaintADD(pTmgrTls, objSrcDest, objSrc, resultPtr);	
-        pTmgrTls->updateTaintRegister<lengthInBits>(reg, resultPtr);			
+            // marquage flags et destination
+            fTaintADD(pTmgrTls, objSrcDest, objSrc, resultPtr);	
+            pTmgrTls->updateTaintRegister<lengthInBits>(reg, resultPtr);	
+        }
     }
 } // sADD_IR
 
@@ -491,16 +508,33 @@ void BINARY::sADD_IM(THREADID tid, ADDRINT value, ADDRINT writeAddress, ADDRINT 
     if ( !pTmgrGlobal->isMemoryTainted<lengthInBits>(writeAddress)) pTmgrTls->unTaintAllFlags();
     else 
     {
-        _LOGTAINT(tid, insAddress, "addIM" + decstr(lengthInBits));
+        _LOGTAINT(tid, insAddress, "ADDIM" + decstr(lengthInBits));
 
         ObjectSource objSrcDest(pTmgrGlobal->getMemoryTaint<lengthInBits>(writeAddress));
-        ObjectSource objSrc(lengthInBits, value);		
+        
+        // si la valeur numérique est nulle, aucun changement de la destination
+        // et marquage des flags spécifique
+        if (!value)
+        {
+            // quelque soit la source, pas de Carry, ni d'Overflow, ni d'Aux Carry
+            pTmgrTls->unTaintCarryFlag();
+            pTmgrTls->unTaintAuxiliaryFlag();
+            pTmgrTls->unTaintOverflowFlag();
+            // marquage PF/SF/ZF avec la source marquée
+            pTmgrTls->updateTaintParityFlag(std::make_shared<TaintBit>(F_PARITY, objSrcDest));;
+            pTmgrTls->updateTaintZeroFlag(std::make_shared<TaintBit>(F_IS_NULL, objSrcDest));
+            pTmgrTls->updateTaintSignFlag(std::make_shared<TaintBit>(F_MSB, objSrcDest));
+        }
+        else
+        {
+            ObjectSource objSrc(lengthInBits, value);		
     
-        TAINT_OBJECT_PTR resultPtr = MK_TAINT_OBJECT_PTR(X_ADD, objSrcDest, objSrc);
+            TAINT_OBJECT_PTR resultPtr = MK_TAINT_OBJECT_PTR(X_ADD, objSrcDest, objSrc);
 
-        // marquage flags et destination
-        fTaintADD(pTmgrTls, objSrcDest, objSrc, resultPtr);	
-        pTmgrGlobal->updateMemoryTaint<lengthInBits>(writeAddress, resultPtr);			
+            // marquage flags et destination
+            fTaintADD(pTmgrTls, objSrcDest, objSrc, resultPtr);	
+            pTmgrGlobal->updateMemoryTaint<lengthInBits>(writeAddress, resultPtr);	
+        }
     }
 } // sADD_IM
 
@@ -513,17 +547,74 @@ void BINARY::sADD_MR(THREADID tid, ADDRINT readAddress, REG regSrcDest, ADDRINT 
     bool isSrcTainted =		pTmgrGlobal->isMemoryTainted<lengthInBits>(readAddress);
 
     if ( !(isSrcDestTainted || isSrcTainted))  pTmgrTls->unTaintAllFlags();
+    // source non marquée, donc forcément src/dest l'est
+    else if (!isSrcTainted)
+    {
+        ObjectSource objSrcDest(pTmgrTls->getRegisterTaint<lengthInBits>(regSrcDest, regSrcDestValue));
+        ADDRINT srcValue = getMemoryValue<lengthInBits>(readAddress);
+
+        // si la valeur numérique est nulle, aucun changement de la destination
+        // et marquage des flags spécifique
+        if (!srcValue)
+        {
+            // quelque soit la source, pas de Carry, ni d'Overflow, ni d'Aux Carry
+            pTmgrTls->unTaintCarryFlag();
+            pTmgrTls->unTaintAuxiliaryFlag();
+            pTmgrTls->unTaintOverflowFlag();
+            // marquage PF/SF/ZF avec la source marquée
+            pTmgrTls->updateTaintParityFlag(std::make_shared<TaintBit>(F_PARITY, objSrcDest));;
+            pTmgrTls->updateTaintZeroFlag(std::make_shared<TaintBit>(F_IS_NULL, objSrcDest));
+            pTmgrTls->updateTaintSignFlag(std::make_shared<TaintBit>(F_MSB, objSrcDest));
+        }
+        else
+        {
+            ObjectSource objSrc(lengthInBits, srcValue);		
+    
+            TAINT_OBJECT_PTR resultPtr = MK_TAINT_OBJECT_PTR(X_ADD, objSrcDest, objSrc);
+
+            // marquage flags et destination
+            fTaintADD(pTmgrTls, objSrcDest, objSrc, resultPtr);	
+            pTmgrTls->updateTaintRegister<lengthInBits>(regSrcDest, resultPtr);	
+        }
+    }
+    // destination non marquée, donc forcément src l'est
+    else if (!isSrcDestTainted)
+    {
+        ObjectSource objSrc(pTmgrGlobal->getMemoryTaint<lengthInBits>(readAddress));
+        
+        // si la valeur de la destination est nulle, marquer flags et faire un ASSIGN SRC->DEST
+        if (!regSrcDestValue) 
+        {
+            // quelque soit la source, pas de Carry, ni d'Overflow, ni d'Aux Carry
+            pTmgrTls->unTaintCarryFlag();
+            pTmgrTls->unTaintAuxiliaryFlag();
+            pTmgrTls->unTaintOverflowFlag();
+            // marquage PF/SF/ZF avec la source marquée
+            pTmgrTls->updateTaintParityFlag(std::make_shared<TaintBit>(F_PARITY, objSrc));;
+            pTmgrTls->updateTaintZeroFlag(std::make_shared<TaintBit>(F_IS_NULL, objSrc));
+            pTmgrTls->updateTaintSignFlag(std::make_shared<TaintBit>(F_MSB, objSrc));
+
+            // ASSIGN SRC->DEST = MOV MR
+            DATAXFER::sMOV_MR<lengthInBits>(tid, readAddress, regSrcDest, insAddress);
+        }
+        else
+        {
+            ObjectSource objSrcDest(lengthInBits, regSrcDestValue);		
+    
+            TAINT_OBJECT_PTR resultPtr = MK_TAINT_OBJECT_PTR(X_ADD, objSrcDest, objSrc);
+
+            // marquage flags et destination
+            fTaintADD(pTmgrTls, objSrcDest, objSrc, resultPtr);	
+            pTmgrTls->updateTaintRegister<lengthInBits>(regSrcDest, resultPtr);	
+        }
+    }
+    // deux opérandes marquées
     else 
     {
-        _LOGTAINT(tid, insAddress, "addMR" + decstr(lengthInBits));
+        _LOGTAINT(tid, insAddress, "ADDMR" + decstr(lengthInBits));
 
-        ObjectSource objSrcDest = (isSrcDestTainted) 
-            ? ObjectSource(pTmgrTls->getRegisterTaint<lengthInBits>(regSrcDest, regSrcDestValue))
-            : ObjectSource(lengthInBits, regSrcDestValue);
-
-        ObjectSource objSrc = (isSrcTainted) 
-            ? ObjectSource(pTmgrGlobal->getMemoryTaint<lengthInBits>(readAddress))
-            : ObjectSource(lengthInBits, getMemoryValue<lengthInBits>(readAddress));
+        ObjectSource objSrcDest(pTmgrTls->getRegisterTaint<lengthInBits>(regSrcDest, regSrcDestValue));
+        ObjectSource objSrc(pTmgrGlobal->getMemoryTaint<lengthInBits>(readAddress));
 
         TAINT_OBJECT_PTR resultPtr = MK_TAINT_OBJECT_PTR(X_ADD, objSrcDest, objSrc);
 
@@ -542,17 +633,74 @@ void BINARY::sADD_RM(THREADID tid, REG regSrc, ADDRINT regSrcValue, ADDRINT writ
     bool isSrcTainted =		pTmgrTls->isRegisterTainted<lengthInBits>(regSrc);
 
     if ( !(isSrcDestTainted || isSrcTainted))  pTmgrTls->unTaintAllFlags();
+    // source non marquée, donc forcément src/dest l'est
+    else if (!isSrcTainted)
+    {
+        ObjectSource objSrcDest(pTmgrGlobal->getMemoryTaint<lengthInBits>(writeAddress));
+        
+        // si la valeur numérique est nulle, aucun changement de la destination
+        // et marquage des flags spécifique
+        if (!regSrcValue)
+        {
+            // quelque soit la source, pas de Carry, ni d'Overflow, ni d'Aux Carry
+            pTmgrTls->unTaintCarryFlag();
+            pTmgrTls->unTaintAuxiliaryFlag();
+            pTmgrTls->unTaintOverflowFlag();
+            // marquage PF/SF/ZF avec la source marquée
+            pTmgrTls->updateTaintParityFlag(std::make_shared<TaintBit>(F_PARITY, objSrcDest));;
+            pTmgrTls->updateTaintZeroFlag(std::make_shared<TaintBit>(F_IS_NULL, objSrcDest));
+            pTmgrTls->updateTaintSignFlag(std::make_shared<TaintBit>(F_MSB, objSrcDest));
+        }
+        else
+        {
+            ObjectSource objSrc(lengthInBits, regSrcValue);		
+    
+            TAINT_OBJECT_PTR resultPtr = MK_TAINT_OBJECT_PTR(X_ADD, objSrcDest, objSrc);
+
+            // marquage flags et destination
+            fTaintADD(pTmgrTls, objSrcDest, objSrc, resultPtr);	
+            pTmgrGlobal->updateMemoryTaint<lengthInBits>(writeAddress, resultPtr);	
+        }
+    }
+    // destination non marquée, donc forcément src l'est
+    else if (!isSrcDestTainted)
+    {
+        ObjectSource objSrc(pTmgrTls->getRegisterTaint<lengthInBits>(regSrc, regSrcValue));
+        ADDRINT destValue = getMemoryValue<lengthInBits>(writeAddress);
+
+        // si la valeur de la destination est nulle, marquer flags et faire un ASSIGN SRC->DEST
+        if (!destValue) 
+        {
+            // quelque soit la source, pas de Carry, ni d'Overflow, ni d'Aux Carry
+            pTmgrTls->unTaintCarryFlag();
+            pTmgrTls->unTaintAuxiliaryFlag();
+            pTmgrTls->unTaintOverflowFlag();
+            // marquage PF/SF/ZF avec la source marquée
+            pTmgrTls->updateTaintParityFlag(std::make_shared<TaintBit>(F_PARITY, objSrc));;
+            pTmgrTls->updateTaintZeroFlag(std::make_shared<TaintBit>(F_IS_NULL, objSrc));
+            pTmgrTls->updateTaintSignFlag(std::make_shared<TaintBit>(F_MSB, objSrc));
+
+            // ASSIGN SRC->DEST = MOV MR
+            DATAXFER::sMOV_RM<lengthInBits>(tid, regSrc, writeAddress, insAddress);
+        }
+        else
+        {
+            ObjectSource objSrcDest(lengthInBits, destValue);		
+    
+            TAINT_OBJECT_PTR resultPtr = MK_TAINT_OBJECT_PTR(X_ADD, objSrcDest, objSrc);
+
+            // marquage flags et destination
+            fTaintADD(pTmgrTls, objSrcDest, objSrc, resultPtr);	
+            pTmgrGlobal->updateMemoryTaint<lengthInBits>(writeAddress, resultPtr);	
+        }
+    }
+    // deux opérandes marquées
     else 
     {
-        _LOGTAINT(tid, insAddress, "addRM" + decstr(lengthInBits));
+        _LOGTAINT(tid, insAddress, "ADDRM" + decstr(lengthInBits));
            	
-        ObjectSource objSrcDest = (isSrcDestTainted)
-            ? ObjectSource(pTmgrGlobal->getMemoryTaint<lengthInBits>(writeAddress))
-            : ObjectSource(lengthInBits, getMemoryValue<lengthInBits>(writeAddress));
-
-        ObjectSource objSrc = (isSrcTainted) 
-            ? ObjectSource(pTmgrTls->getRegisterTaint<lengthInBits>(regSrc, regSrcValue))
-            : ObjectSource(lengthInBits, regSrcValue);
+        ObjectSource objSrcDest(pTmgrGlobal->getMemoryTaint<lengthInBits>(writeAddress));
+        ObjectSource objSrc(pTmgrTls->getRegisterTaint<lengthInBits>(regSrc, regSrcValue));
 
         TAINT_OBJECT_PTR resultPtr = MK_TAINT_OBJECT_PTR(X_ADD, objSrcDest, objSrc);
 
@@ -571,17 +719,73 @@ void BINARY::sADD_RR(THREADID tid, REG regSrc, ADDRINT regSrcValue, REG regSrcDe
     bool isSrcTainted =		pTmgrTls->isRegisterTainted<lengthInBits>(regSrc);
 
     if ( !(isSrcDestTainted || isSrcTainted))  pTmgrTls->unTaintAllFlags();
+    // source non marquée, donc forcément src/dest l'est
+    else if (!isSrcTainted)
+    {
+        ObjectSource objSrcDest(pTmgrTls->getRegisterTaint<lengthInBits>(regSrcDest, regSrcDestValue));
+                
+        // si la valeur numérique est nulle, aucun changement de la destination
+        // et marquage des flags spécifique
+        if (!regSrcValue)
+        {
+            // quelque soit la source, pas de Carry, ni d'Overflow, ni d'Aux Carry
+            pTmgrTls->unTaintCarryFlag();
+            pTmgrTls->unTaintAuxiliaryFlag();
+            pTmgrTls->unTaintOverflowFlag();
+            // marquage PF/SF/ZF avec la source marquée
+            pTmgrTls->updateTaintParityFlag(std::make_shared<TaintBit>(F_PARITY, objSrcDest));;
+            pTmgrTls->updateTaintZeroFlag(std::make_shared<TaintBit>(F_IS_NULL, objSrcDest));
+            pTmgrTls->updateTaintSignFlag(std::make_shared<TaintBit>(F_MSB, objSrcDest));
+        }
+        else
+        {
+            ObjectSource objSrc(lengthInBits, regSrcValue);		
+    
+            TAINT_OBJECT_PTR resultPtr = MK_TAINT_OBJECT_PTR(X_ADD, objSrcDest, objSrc);
+
+            // marquage flags et destination
+            fTaintADD(pTmgrTls, objSrcDest, objSrc, resultPtr);	
+            pTmgrTls->updateTaintRegister<lengthInBits>(regSrcDest, resultPtr);		
+        }
+    }
+    // destination non marquée, donc forcément src l'est
+    else if (!isSrcDestTainted)
+    {
+        ObjectSource objSrc(pTmgrTls->getRegisterTaint<lengthInBits>(regSrc, regSrcValue));
+
+        // si la valeur de la destination est nulle, marquer flags et faire un ASSIGN SRC->DEST
+        if (!regSrcDestValue) 
+        {
+            // quelque soit la source, pas de Carry, ni d'Overflow, ni d'Aux Carry
+            pTmgrTls->unTaintCarryFlag();
+            pTmgrTls->unTaintAuxiliaryFlag();
+            pTmgrTls->unTaintOverflowFlag();
+            // marquage PF/SF/ZF avec la source marquée
+            pTmgrTls->updateTaintParityFlag(std::make_shared<TaintBit>(F_PARITY, objSrc));;
+            pTmgrTls->updateTaintZeroFlag(std::make_shared<TaintBit>(F_IS_NULL, objSrc));
+            pTmgrTls->updateTaintSignFlag(std::make_shared<TaintBit>(F_MSB, objSrc));
+
+            // ASSIGN SRC->DEST = MOV RR
+            DATAXFER::sMOV_RR<lengthInBits>(tid, regSrc, regSrcDest, insAddress);
+        }
+        else
+        {
+            ObjectSource objSrcDest(lengthInBits, regSrcDestValue);		
+    
+            TAINT_OBJECT_PTR resultPtr = MK_TAINT_OBJECT_PTR(X_ADD, objSrcDest, objSrc);
+
+            // marquage flags et destination
+            fTaintADD(pTmgrTls, objSrcDest, objSrc, resultPtr);	
+            pTmgrTls->updateTaintRegister<lengthInBits>(regSrcDest, resultPtr);		
+        }
+    }
+    // deux opérandes marquées
     else 
     {
-        _LOGTAINT(tid, insAddress, "addRR" + decstr(lengthInBits));
+        _LOGTAINT(tid, insAddress, "ADDRR" + decstr(lengthInBits));
 
-        ObjectSource objSrcDest = (isSrcDestTainted) 
-                ? ObjectSource(pTmgrTls->getRegisterTaint<lengthInBits>(regSrcDest, regSrcDestValue))
-                : ObjectSource(lengthInBits, regSrcDestValue);
-
-        ObjectSource objSrc = (isSrcTainted)
-                ? ObjectSource(pTmgrTls->getRegisterTaint<lengthInBits>(regSrc, regSrcValue))
-                : ObjectSource(lengthInBits, regSrcValue);
+        ObjectSource objSrcDest(pTmgrTls->getRegisterTaint<lengthInBits>(regSrcDest, regSrcDestValue));
+        ObjectSource objSrc    (pTmgrTls->getRegisterTaint<lengthInBits>(regSrc, regSrcValue));
     
         TAINT_OBJECT_PTR resultPtr = MK_TAINT_OBJECT_PTR(X_ADD, objSrcDest, objSrc);
 
@@ -901,19 +1105,33 @@ void BINARY::sSUB_IR(THREADID tid, ADDRINT value, REG reg, ADDRINT regValue, ADD
     if ( !pTmgrTls->isRegisterTainted<lengthInBits>(reg) )	pTmgrTls->unTaintAllFlags();
     else 
     {
-        _LOGTAINT(tid, insAddress, "subIR" + decstr(lengthInBits));
+        _LOGTAINT(tid, insAddress, "SUBIR" + decstr(lengthInBits));
 
         ObjectSource objSrcDest(pTmgrTls->getRegisterTaint<lengthInBits>(reg, regValue));
-        ObjectSource objSrc(lengthInBits, value);		
+        
+        // si la valeur numérique est nulle, aucun changement de la destination
+        // et marquage des flags spécifique
+        if (!value)
+        {
+            // quelque soit la source, pas de Carry, ni d'Overflow, ni d'Aux Carry
+            pTmgrTls->unTaintCarryFlag();
+            pTmgrTls->unTaintAuxiliaryFlag();
+            pTmgrTls->unTaintOverflowFlag();
+            // marquage PF/SF/ZF avec la source marquée
+            pTmgrTls->updateTaintParityFlag(std::make_shared<TaintBit>(F_PARITY, objSrcDest));;
+            pTmgrTls->updateTaintZeroFlag(std::make_shared<TaintBit>(F_IS_NULL, objSrcDest));
+            pTmgrTls->updateTaintSignFlag(std::make_shared<TaintBit>(F_MSB, objSrcDest));
+        }
+        else
+        {
+            ObjectSource objSrc(lengthInBits, value);		
     
-        TAINT_OBJECT_PTR resultPtr = MK_TAINT_OBJECT_PTR(
-            X_SUB,
-            objSrcDest,
-            objSrc);
+            TAINT_OBJECT_PTR resultPtr = MK_TAINT_OBJECT_PTR(X_SUB, objSrcDest, objSrc);
 
-        // marquage flags et destination
-        fTaintSUB(pTmgrTls, objSrcDest, objSrc, resultPtr);	
-        pTmgrTls->updateTaintRegister<lengthInBits>(reg, resultPtr);			
+            // marquage flags et destination
+            fTaintSUB(pTmgrTls, objSrcDest, objSrc, resultPtr);	
+            pTmgrTls->updateTaintRegister<lengthInBits>(reg, resultPtr);	
+        }
     }
 } // sSUB_IR
 
@@ -925,19 +1143,33 @@ void BINARY::sSUB_IM(THREADID tid, ADDRINT value, ADDRINT writeAddress, ADDRINT 
     if ( !pTmgrGlobal->isMemoryTainted<lengthInBits>(writeAddress)) pTmgrTls->unTaintAllFlags();
     else 
     {
-        _LOGTAINT(tid, insAddress, "subIM" + decstr(lengthInBits));
+        _LOGTAINT(tid, insAddress, "SUBIM" + decstr(lengthInBits));
 
         ObjectSource objSrcDest(pTmgrGlobal->getMemoryTaint<lengthInBits>(writeAddress));
-        ObjectSource objSrc(lengthInBits, value);		
+        
+        // si la valeur numérique est nulle, aucun changement de la destination
+        // et marquage des flags spécifique
+        if (!value)
+        {
+            // quelque soit la source, pas de Carry, ni d'Overflow, ni d'Aux Carry
+            pTmgrTls->unTaintCarryFlag();
+            pTmgrTls->unTaintAuxiliaryFlag();
+            pTmgrTls->unTaintOverflowFlag();
+            // marquage PF/SF/ZF avec la source marquée
+            pTmgrTls->updateTaintParityFlag(std::make_shared<TaintBit>(F_PARITY, objSrcDest));;
+            pTmgrTls->updateTaintZeroFlag(std::make_shared<TaintBit>(F_IS_NULL, objSrcDest));
+            pTmgrTls->updateTaintSignFlag(std::make_shared<TaintBit>(F_MSB, objSrcDest));
+        }
+        else
+        {
+            ObjectSource objSrc(lengthInBits, value);		
     
-        TAINT_OBJECT_PTR resultPtr = MK_TAINT_OBJECT_PTR(
-            X_SUB,
-            objSrcDest,
-            objSrc);
+            TAINT_OBJECT_PTR resultPtr = MK_TAINT_OBJECT_PTR(X_SUB, objSrcDest, objSrc);
 
-        // marquage flags et destination
-        fTaintSUB(pTmgrTls, objSrcDest, objSrc, resultPtr);	
-        pTmgrGlobal->updateMemoryTaint<lengthInBits>(writeAddress, resultPtr);			
+            // marquage flags et destination
+            fTaintSUB(pTmgrTls, objSrcDest, objSrc, resultPtr);	
+            pTmgrGlobal->updateMemoryTaint<lengthInBits>(writeAddress, resultPtr);	
+        }
     }
 } // sSUB_IM
 
@@ -951,22 +1183,72 @@ void BINARY::sSUB_MR(THREADID tid, ADDRINT readAddress, REG regSrcDest,
     bool isSrcTainted =		pTmgrGlobal->isMemoryTainted<lengthInBits>(readAddress);
 
     if ( !(isSrcDestTainted || isSrcTainted))  pTmgrTls->unTaintAllFlags();
+    // source non marquée, donc forcément src/dest l'est
+    else if (!isSrcTainted)
+    {
+        ObjectSource objSrcDest(pTmgrTls->getRegisterTaint<lengthInBits>(regSrcDest, regSrcDestValue));
+        ADDRINT srcValue = getMemoryValue<lengthInBits>(readAddress);
+
+        // si la valeur numérique est nulle, aucun changement de la destination
+        // et marquage des flags spécifique
+        if (!srcValue)
+        {
+            // quelque soit la source, pas de Carry, ni d'Overflow, ni d'Aux Carry
+            pTmgrTls->unTaintCarryFlag();
+            pTmgrTls->unTaintAuxiliaryFlag();
+            pTmgrTls->unTaintOverflowFlag();
+            // marquage PF/SF/ZF avec la source marquée
+            pTmgrTls->updateTaintParityFlag(std::make_shared<TaintBit>(F_PARITY, objSrcDest));;
+            pTmgrTls->updateTaintZeroFlag(std::make_shared<TaintBit>(F_IS_NULL, objSrcDest));
+            pTmgrTls->updateTaintSignFlag(std::make_shared<TaintBit>(F_MSB, objSrcDest));
+        }
+        else
+        {
+            ObjectSource objSrc(lengthInBits, srcValue);		
+    
+            TAINT_OBJECT_PTR resultPtr = MK_TAINT_OBJECT_PTR(X_SUB, objSrcDest, objSrc);
+
+            // marquage flags et destination
+            fTaintSUB(pTmgrTls, objSrcDest, objSrc, resultPtr);	
+            pTmgrTls->updateTaintRegister<lengthInBits>(regSrcDest, resultPtr);	
+        }
+    }
+    // destination non marquée, donc forcément src l'est
+    else if (!isSrcDestTainted)
+    {
+        ObjectSource objSrc(pTmgrGlobal->getMemoryTaint<lengthInBits>(readAddress));
+        
+        // si la valeur de la destination est nulle, equivaut à NEG SRC (algo repris ici)
+        if (!regSrcDestValue) 
+        {
+            _LOGTAINT(tid, insAddress, "SUB_MR" + decstr(lengthInBits) + "->NEG");
+            // création de l'objet résultat
+            TAINT_OBJECT_PTR resultPtr = MK_TAINT_OBJECT_PTR(X_NEG, objSrc);
+
+            // marquage flags et destination
+            fTaintNEG(pTmgrTls, objSrc, resultPtr);
+            pTmgrTls->updateTaintRegister<lengthInBits>(regSrcDest, resultPtr);
+        }
+        else
+        {
+            ObjectSource objSrcDest(lengthInBits, regSrcDestValue);		
+    
+            TAINT_OBJECT_PTR resultPtr = MK_TAINT_OBJECT_PTR(X_SUB, objSrcDest, objSrc);
+
+            // marquage flags et destination
+            fTaintSUB(pTmgrTls, objSrcDest, objSrc, resultPtr);	
+            pTmgrTls->updateTaintRegister<lengthInBits>(regSrcDest, resultPtr);	
+        }
+    }
+    // deux opérandes marquées
     else 
     {
-        _LOGTAINT(tid, insAddress, "subMR" + decstr(lengthInBits));
+        _LOGTAINT(tid, insAddress, "SUBMR" + decstr(lengthInBits));
 
-        ObjectSource objSrcDest = (isSrcDestTainted) 
-            ? ObjectSource(pTmgrTls->getRegisterTaint<lengthInBits>(regSrcDest, regSrcDestValue))
-            : ObjectSource(lengthInBits, regSrcDestValue);
+        ObjectSource objSrcDest(pTmgrTls->getRegisterTaint<lengthInBits>(regSrcDest, regSrcDestValue));
+        ObjectSource objSrc(pTmgrGlobal->getMemoryTaint<lengthInBits>(readAddress));
 
-        ObjectSource objSrc = (isSrcTainted) 
-            ? ObjectSource(pTmgrGlobal->getMemoryTaint<lengthInBits>(readAddress))
-            : ObjectSource(lengthInBits, getMemoryValue<lengthInBits>(readAddress));
-
-        TAINT_OBJECT_PTR resultPtr = MK_TAINT_OBJECT_PTR(
-            X_SUB,
-            objSrcDest,
-            objSrc);
+        TAINT_OBJECT_PTR resultPtr = MK_TAINT_OBJECT_PTR(X_SUB, objSrcDest, objSrc);
 
         // marquage flags et dest
         fTaintSUB(pTmgrTls, objSrcDest, objSrc, resultPtr);	
@@ -984,22 +1266,72 @@ void BINARY::sSUB_RM(THREADID tid, REG regSrc, ADDRINT regSrcValue,
     bool isSrcTainted =		pTmgrTls->isRegisterTainted<lengthInBits>(regSrc);
 
     if ( !(isSrcDestTainted || isSrcTainted))  pTmgrTls->unTaintAllFlags();
+    // source non marquée, donc forcément src/dest l'est
+    else if (!isSrcTainted)
+    {
+        ObjectSource objSrcDest(pTmgrGlobal->getMemoryTaint<lengthInBits>(writeAddress));
+        
+        // si la valeur numérique est nulle, aucun changement de la destination
+        // et marquage des flags spécifique
+        if (!regSrcValue)
+        {
+            // quelque soit la source, pas de Carry, ni d'Overflow, ni d'Aux Carry
+            pTmgrTls->unTaintCarryFlag();
+            pTmgrTls->unTaintAuxiliaryFlag();
+            pTmgrTls->unTaintOverflowFlag();
+            // marquage PF/SF/ZF avec la source marquée
+            pTmgrTls->updateTaintParityFlag(std::make_shared<TaintBit>(F_PARITY, objSrcDest));;
+            pTmgrTls->updateTaintZeroFlag(std::make_shared<TaintBit>(F_IS_NULL, objSrcDest));
+            pTmgrTls->updateTaintSignFlag(std::make_shared<TaintBit>(F_MSB, objSrcDest));
+        }
+        else
+        {
+            ObjectSource objSrc(lengthInBits, regSrcValue);		
+    
+            TAINT_OBJECT_PTR resultPtr = MK_TAINT_OBJECT_PTR(X_SUB, objSrcDest, objSrc);
+
+            // marquage flags et destination
+            fTaintSUB(pTmgrTls, objSrcDest, objSrc, resultPtr);	
+            pTmgrGlobal->updateMemoryTaint<lengthInBits>(writeAddress, resultPtr);	
+        }
+    }
+    // destination non marquée, donc forcément src l'est
+    else if (!isSrcDestTainted)
+    {
+        ObjectSource objSrc(pTmgrTls->getRegisterTaint<lengthInBits>(regSrc, regSrcValue));
+        ADDRINT destValue = getMemoryValue<lengthInBits>(writeAddress);
+
+        // si la valeur de la destination est nulle, equivaut à NEG SRC (algo repris ici)
+        if (!destValue) 
+        {
+            _LOGTAINT(tid, insAddress, "SUB_RM" + decstr(lengthInBits) + "->NEG");
+            // création de l'objet résultat
+            TAINT_OBJECT_PTR resultPtr = MK_TAINT_OBJECT_PTR(X_NEG, objSrc);
+
+            // marquage flags et destination
+            fTaintNEG(pTmgrTls, objSrc, resultPtr);
+            pTmgrGlobal->updateMemoryTaint<lengthInBits>(writeAddress, resultPtr);
+        }
+        else
+        {
+            ObjectSource objSrcDest(lengthInBits, destValue);		
+    
+            TAINT_OBJECT_PTR resultPtr = MK_TAINT_OBJECT_PTR(X_SUB, objSrcDest, objSrc);
+
+            // marquage flags et destination
+            fTaintSUB(pTmgrTls, objSrcDest, objSrc, resultPtr);	
+            pTmgrGlobal->updateMemoryTaint<lengthInBits>(writeAddress, resultPtr);	
+        }
+    }
+    // deux opérandes marquées
     else 
     {
-        _LOGTAINT(tid, insAddress, "subRM" + decstr(lengthInBits));
+        _LOGTAINT(tid, insAddress, "SUBRM" + decstr(lengthInBits));
            	
-        ObjectSource objSrcDest = (isSrcDestTainted)
-            ? ObjectSource(pTmgrGlobal->getMemoryTaint<lengthInBits>(writeAddress))
-            : ObjectSource(lengthInBits, getMemoryValue<lengthInBits>(writeAddress));
+        ObjectSource objSrcDest(pTmgrGlobal->getMemoryTaint<lengthInBits>(writeAddress));
+        ObjectSource objSrc(pTmgrTls->getRegisterTaint<lengthInBits>(regSrc, regSrcValue));
 
-        ObjectSource objSrc = (isSrcTainted) 
-            ? ObjectSource(pTmgrTls->getRegisterTaint<lengthInBits>(regSrc, regSrcValue))
-            : ObjectSource(lengthInBits, regSrcValue);
-
-        TAINT_OBJECT_PTR resultPtr = MK_TAINT_OBJECT_PTR(
-            X_SUB,
-            objSrcDest,
-            objSrc);
+        TAINT_OBJECT_PTR resultPtr = MK_TAINT_OBJECT_PTR(X_SUB, objSrcDest, objSrc);
 
         // marquage flags et destination
         fTaintSUB(pTmgrTls, objSrcDest, objSrc, resultPtr);
@@ -1017,22 +1349,71 @@ void BINARY::sSUB_RR(THREADID tid, REG regSrc, ADDRINT regSrcValue, REG regSrcDe
     bool isSrcTainted =		pTmgrTls->isRegisterTainted<lengthInBits>(regSrc);
 
     if ( !(isSrcDestTainted || isSrcTainted))  pTmgrTls->unTaintAllFlags();
+    // source non marquée, donc forcément src/dest l'est
+    else if (!isSrcTainted)
+    {
+        ObjectSource objSrcDest(pTmgrTls->getRegisterTaint<lengthInBits>(regSrcDest, regSrcDestValue));
+                
+        // si la valeur numérique est nulle, aucun changement de la destination
+        // et marquage des flags spécifique
+        if (!regSrcValue)
+        {
+            // quelque soit la source, pas de Carry, ni d'Overflow, ni d'Aux Carry
+            pTmgrTls->unTaintCarryFlag();
+            pTmgrTls->unTaintAuxiliaryFlag();
+            pTmgrTls->unTaintOverflowFlag();
+            // marquage PF/SF/ZF avec la source marquée
+            pTmgrTls->updateTaintParityFlag(std::make_shared<TaintBit>(F_PARITY, objSrcDest));;
+            pTmgrTls->updateTaintZeroFlag(std::make_shared<TaintBit>(F_IS_NULL, objSrcDest));
+            pTmgrTls->updateTaintSignFlag(std::make_shared<TaintBit>(F_MSB, objSrcDest));
+        }
+        else
+        {
+            ObjectSource objSrc(lengthInBits, regSrcValue);		
+    
+            TAINT_OBJECT_PTR resultPtr = MK_TAINT_OBJECT_PTR(X_SUB, objSrcDest, objSrc);
+
+            // marquage flags et destination
+            fTaintSUB(pTmgrTls, objSrcDest, objSrc, resultPtr);	
+            pTmgrTls->updateTaintRegister<lengthInBits>(regSrcDest, resultPtr);		
+        }
+    }
+    // destination non marquée, donc forcément src l'est
+    else if (!isSrcDestTainted)
+    {
+        ObjectSource objSrc(pTmgrTls->getRegisterTaint<lengthInBits>(regSrc, regSrcValue));
+        
+        // si la valeur de la destination est nulle, equivaut à NEG SRC (algo repris ici)
+        if (!regSrcDestValue) 
+        {
+            _LOGTAINT(tid, insAddress, "SUB_RR" + decstr(lengthInBits) + "->NEG");
+            // création de l'objet résultat
+            TAINT_OBJECT_PTR resultPtr = MK_TAINT_OBJECT_PTR(X_NEG, objSrc);
+
+            // marquage flags et destination
+            fTaintNEG(pTmgrTls, objSrc, resultPtr);
+            pTmgrTls->updateTaintRegister<lengthInBits>(regSrcDest, resultPtr);
+        }
+        else
+        {
+            ObjectSource objSrcDest(lengthInBits, regSrcDestValue);		
+    
+            TAINT_OBJECT_PTR resultPtr = MK_TAINT_OBJECT_PTR(X_SUB, objSrcDest, objSrc);
+
+            // marquage flags et destination
+            fTaintSUB(pTmgrTls, objSrcDest, objSrc, resultPtr);	
+            pTmgrTls->updateTaintRegister<lengthInBits>(regSrcDest, resultPtr);	
+        }
+    }
+    // deux opérandes marquées
     else 
     {
-        _LOGTAINT(tid, insAddress, "subRR" + decstr(lengthInBits));
+        _LOGTAINT(tid, insAddress, "SUBRR" + decstr(lengthInBits));
 
-        ObjectSource objSrcDest = (isSrcDestTainted) 
-                ? ObjectSource(pTmgrTls->getRegisterTaint<lengthInBits>(regSrcDest, regSrcDestValue))
-                : ObjectSource(lengthInBits, regSrcDestValue);
-
-        ObjectSource objSrc = (isSrcTainted)
-                ? ObjectSource(pTmgrTls->getRegisterTaint<lengthInBits>(regSrc, regSrcValue))
-                : ObjectSource(lengthInBits, regSrcValue);
+        ObjectSource objSrcDest(pTmgrTls->getRegisterTaint<lengthInBits>(regSrcDest, regSrcDestValue));
+        ObjectSource objSrc    (pTmgrTls->getRegisterTaint<lengthInBits>(regSrc, regSrcValue));
     
-        TAINT_OBJECT_PTR resultPtr = MK_TAINT_OBJECT_PTR(
-            X_SUB,
-            objSrcDest,
-            objSrc);
+        TAINT_OBJECT_PTR resultPtr = MK_TAINT_OBJECT_PTR(X_SUB, objSrcDest, objSrc);
 
         // marquage flags et destination
         fTaintSUB(pTmgrTls, objSrcDest, objSrc, resultPtr);   
@@ -1531,15 +1912,15 @@ void BINARY::sIMUL_3R(THREADID tid, ADDRINT value, REG regSrc,
         // création de l'objet correspondant au quotient
         TaintObject<lengthInBits> quotient(
             (isSignedDivision) ? X_IDIV_QUO : X_DIV_QUO, /* division signée ou non */
-            objSrcLowDividend,
             objSrcHighDividend,
+            objSrcLowDividend,
             objSrcDivisor);
         
         // création de l'objet correspondant au reste
         TaintObject<lengthInBits> remainder(
             (isSignedDivision) ? X_IDIV_REM : X_DIV_REM, /* division signée ou non */
-            objSrcLowDividend,
             objSrcHighDividend,
+            objSrcLowDividend,
             objSrcDivisor);
 
         // Affectation quotient et reste aux registres adéquats (idem dividende, cf manuel Intel)
@@ -1561,7 +1942,7 @@ void BINARY::sDIVISION_R(THREADID tid, REG regSrc, ADDRINT regSrcValue,
     
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     
-    bool isDivisorTainted      = pTmgrTls->isRegisterTainted<lengthInBits>(regSrc, regSrcValue);
+    bool isDivisorTainted      = pTmgrTls->isRegisterTainted<lengthInBits>(regSrc);
     bool isLowDividendTainted  = pTmgrTls->isRegisterTainted<lengthInBits>(regACC);
     bool isHighDividendTainted = pTmgrTls->isRegisterTainted<lengthInBits>(regIO);
     
@@ -1584,15 +1965,15 @@ void BINARY::sDIVISION_R(THREADID tid, REG regSrc, ADDRINT regSrcValue,
         // création de l'objet correspondant au quotient
         TaintObject<lengthInBits> quotient(
             (isSignedDivision) ? X_IDIV_QUO : X_DIV_QUO, /* division signée ou non */
-            objSrcLowDividend,
             objSrcHighDividend,
+            objSrcLowDividend,
             objSrcDivisor);
         
         // création de l'objet correspondant au reste
         TaintObject<lengthInBits> remainder(
             (isSignedDivision) ? X_IDIV_REM : X_DIV_REM, /* division signée ou non */
-            objSrcLowDividend,
             objSrcHighDividend,
+            objSrcLowDividend,
             objSrcDivisor);
 
         // Affectation quotient et reste aux registres adéquats (idem dividende, cf manuel Intel)

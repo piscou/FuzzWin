@@ -1448,7 +1448,8 @@ template<UINT32 lengthInBits> void LOGICAL::sNOT_M(ADDRINT writeAddress, ADDRINT
                     X_NOT,
                     ObjectSource(pTmgrGlobal->getMemoryTaint<8>(writeAddress))));
             }
-        } while (++writeAddress < lastAddress);
+            ++writeAddress;
+        } while (writeAddress < lastAddress);
     }
 } // sNOT_M
 

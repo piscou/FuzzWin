@@ -6,6 +6,7 @@
 
 #include <map>
 #include <regex> // parsing des octets à suivre en marquage
+#include <array>
 
 // position des flags
 enum FLAGS_INDEX
@@ -400,7 +401,35 @@ public:
     /** INTERROGATION DU MARQUAGE **/
     /*******************************/
 
-    // renvoie TRUE tout ou partie du registre reg (de type PIN) est marqué
+    // renvoie TRUE si la TOTALITE du registre reg (de type PIN) est marqué
+    template<UINT32 lengthInBits> TAINT_OBJECT_PTR getFullRegisterTaint(REG reg) const
+    {
+        static_assert((lengthInBits % 8 == 0), "registre non multiple de 8 bits");
+    }
+
+    template<> TaintBytePtr getFullRegisterTaint<8>(REG reg) const
+    {
+        return (this->getRegisterTaint(reg));
+    }
+
+    template<> TaintWordPtr getFullRegisterTaint<16>(REG reg) const
+    {
+        return (_registers16Ptr[getRegIndex(reg)] );
+    }
+    
+    template<> TaintDwordPtr getFullRegisterTaint<32>(REG reg) const
+    {
+        return (_registers32Ptr[getRegIndex(reg)] );
+    }
+
+#if TARGET_IA32E
+    template<> TaintQwordPtr getFullRegisterTaint<64>(REG reg) const
+    {
+        return (_registers64Ptr[getRegIndex(reg)] );
+    }
+#endif
+
+        // renvoie TRUE si au moins une partie du registre reg (de type PIN) est marqué
     template<UINT32 lengthInBits> bool isRegisterTainted(REG reg) const
     {
         REGINDEX regIndex = getRegIndex(reg);
@@ -621,14 +650,33 @@ public:
         
         // marquage d'abord de la partie 16 bits, 
         _registers16Ptr[regIndex] = twPtr;
-        // puis de chaque partie de 8 bits
-        ObjectSource objSrc(twPtr); 
-        // création des taintBytes extraits de l'objet pour affectation
-        for (UINT32 i = 0 ; i < 2 ; ++i) 
+       
+        // si l'objet fourni est la concaténation de deux Objets de 8 bits, alors
+        // récupérer ces objets (evite la multiplication des CONCAT/EXTRACT)
+        if ((CONCAT == twPtr->getSourceRelation()) && (twPtr->getNumberOfSources() == 2))
         {
-            // objet duquel l'octet est extrait (sous forme de source) + index d'extraction
-            _registers8Ptr[regIndex][i] = std::make_shared<TaintByte>
-                (EXTRACT, objSrc, ObjectSource(8, i));
+            for (UINT32 i = 0 ; i < 2 ; ++i)
+            {
+                // Traitement de chaque source de la concaténation. 
+                // Si source marquée, affectation au registre via X_ASSIGN, sinon démarquage
+                if (twPtr->getSource(i).isSrcTainted())
+                {
+                    // on considère que lorsqu'il y a concaténation de 2 sources, 
+                    // elles sont toutes de 8 bits. A priori il ne peut pas avoir d'autres cas
+                    TaintBytePtr tbSrcPtr = 
+                    _registers8Ptr[regIndex][i] = std::make_shared<TaintByte>(
+                        X_ASSIGN, 
+                        ObjectSource(twPtr->getSource(i).getTaintedSource()));
+                }
+                else _registers8Ptr[regIndex][i].reset();
+            }
+        }
+        else
+        {
+            // création de TaintBytes extraits de l'objet pour affectation
+            ObjectSource objSrc(twPtr); 
+            _registers8Ptr[regIndex][0] = std::make_shared<TaintByte>(EXTRACT, objSrc, ObjectSource(8, 0));
+            _registers8Ptr[regIndex][1] = std::make_shared<TaintByte>(EXTRACT, objSrc, ObjectSource(8, 1));
         }
     }
 
@@ -643,16 +691,30 @@ public:
         _registers64Ptr[regIndex].reset();
         #endif
         
-        // marquage d'abord de la partie 32 bits, 
+        // marquage d'abord de la partie 32 bits 
         _registers32Ptr[regIndex] = tdwPtr;
-        // puis de chaque partie de 8 bits
-        ObjectSource objSrc(tdwPtr); 
-        // création des taintBytes extraits de l'objet pour affectation
-        for (UINT32 i = 0 ; i < 4 ; ++i) 
+        
+        // si l'objet fourni est la concaténation de 4 Objets de 8 bits, alors
+        // récupérer ces objets (evite la multiplication des CONCAT/EXTRACT)
+        if ((CONCAT == tdwPtr->getSourceRelation()) && (tdwPtr->getNumberOfSources() == 4))
         {
-            // objet duquel l'octet est extrait (sous forme de source) + index d'extraction
-            _registers8Ptr[regIndex][i] = std::make_shared<TaintByte>
-                (EXTRACT, objSrc, ObjectSource(8, i)); 
+            // on considère que lorsqu'il y a concaténation de 4 sources, elles sont toutes de 8 bits
+            // a priori il ne peut pas avoir d'autres cas
+            for (UINT32 i = 0 ; i < 4 ; ++i)
+            {
+                _registers8Ptr[regIndex][i] = tdwPtr->getSource(i).isSrcTainted() 
+                    ? std::static_pointer_cast<TaintByte>(tdwPtr->getSource(i).getTaintedSource()) 
+                    : nullptr;
+            }
+        }
+        else
+        {
+            // création de TaintBytes extraits de l'objet pour affectation
+            ObjectSource objSrc(tdwPtr); 
+            for (UINT32 i = 0 ; i < 4 ; ++i)
+            {
+                _registers8Ptr[regIndex][i] = std::make_shared<TaintByte>(EXTRACT, objSrc, ObjectSource(8, i));
+            }
         }
     }
 
@@ -669,14 +731,28 @@ public:
 
         // marquage d'abord de la partie 64 bits, 
         _registers64Ptr[regIndex] = tqwPtr;
-        // puis de chaque partie de 8 bits
-        ObjectSource objSrc(tqwPtr); 
-        // création des taintBytes extraits de l'objet pour affectation
-        for (UINT32 i = 0 ; i < 8 ; ++i) 
+        
+        // si l'objet fourni est la concaténation de 4 Objets de 8 bits, alors
+        // récupérer ces objets (evite la multiplication des CONCAT/EXTRACT)
+        if ((CONCAT == tqwPtr->getSourceRelation()) && (tqwPtr->getNumberOfSources() == 8))
         {
-             // objet duquel l'octet est extrait (sous forme de source) + index d'extraction
-            _registers8Ptr[regIndex][i] = std::make_shared<TaintByte>
-                (EXTRACT, objSrc, ObjectSource(8, i));
+            // on considère que lorsqu'il y a concaténation de 4 sources, elles sont toutes de 8 bits
+            // a priori il ne peut pas avoir d'autres cas
+            for (UINT32 i = 0 ; i < 8 ; ++i)
+            {
+                _registers8Ptr[regIndex][i] = tqwPtr->getSource(i).isSrcTainted() 
+                    ? std::static_pointer_cast<TaintByte>(tqwPtr->getSource(i).getTaintedSource())
+                    : nullptr;
+            }
+        }
+        else
+        {
+            // création de TaintBytes extraits de l'objet pour affectation
+            ObjectSource objSrc(tqwPtr); 
+            for (UINT32 i = 0 ; i < 8 ; ++i)
+            {
+                _registers8Ptr[regIndex][i] = std::make_shared<TaintByte>(EXTRACT, objSrc, ObjectSource(8, i));
+            }
         }
     }
 #endif
@@ -688,8 +764,8 @@ public:
     void updateTaintCarryFlag  (const TaintBitPtr &ptr)  { _cFlagPtr = ptr;}
     void updateTaintParityFlag (const TaintBitPtr &ptr)  { _pFlagPtr = ptr;}
     void updateTaintAuxiliaryFlag(const TaintBitPtr &ptr){ _aFlagPtr = ptr;}
-    void updateTaintZeroFlag   (const TaintBitPtr &ptr)  { _zFlagPtr = ptr;}
-    void updateTaintSignFlag   (const TaintBitPtr &ptr)  { _sFlagPtr = ptr;}
+    void updateTaintZeroFlag    (const TaintBitPtr &ptr) { _zFlagPtr = ptr;}
+    void updateTaintSignFlag    (const TaintBitPtr &ptr) { _sFlagPtr = ptr;}
     void updateTaintOverflowFlag(const TaintBitPtr &ptr) { _oFlagPtr = ptr;}
 
     /*****************************/

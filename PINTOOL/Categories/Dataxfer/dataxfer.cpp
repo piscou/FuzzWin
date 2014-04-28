@@ -49,7 +49,7 @@ void DATAXFER::cMOV(INS &ins)
         else if (INS_IsMemoryRead(ins)) // Mémoire -> Registre
         {                     
             /**********************/
-            UTILS::cGetKindOfEA(ins);
+            //UTILS::cGetKindOfEA(ins);
             /**********************/
 
             switch (regSize)

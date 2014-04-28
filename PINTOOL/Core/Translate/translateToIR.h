@@ -9,7 +9,7 @@ static const std::string predicateToString[PREDICATE_LAST] =
 {
     "",     // PREDICATE_ALWAYS_TRUE
     "",     // PREDICATE_INVALID
-    "B",    // PREDICATE_BELOW 
+    "B",    // BELOW 
     "BE",   // BELOW_OR_EQUAL
     "L",    // LESS
     "LE",   // LESS_OR_EQUAL

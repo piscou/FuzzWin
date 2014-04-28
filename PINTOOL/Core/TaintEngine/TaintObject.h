@@ -3,7 +3,7 @@
 #include <vector>
 #include <memory> // shared_ptr
 
-#include <pintool.h>
+#include "pintool.h"
 #include "relations.h"
 
 // classe décrivant la source d'un objet marqué
@@ -31,9 +31,9 @@ typedef std::shared_ptr<TaintDword> TaintDwordPtr;
 typedef std::shared_ptr<TaintQword> TaintQwordPtr;
 typedef std::shared_ptr<TaintDoubleQword> TaintDoubleQwordPtr;
 
-// pas très joli mais bien utile....
+// syntax sugar pour un pointeur intelligent d'un objet marqué
 #define TAINT_OBJECT_PTR    std::shared_ptr<TaintObject<lengthInBits>>
-// pas très joli mais bien utile....
+// syntax sugar pour la construction d'un pointeur intelligent d'un objet marqué
 #define MK_TAINT_OBJECT_PTR std::make_shared<TaintObject<lengthInBits>>
 
 class Taint 
@@ -61,19 +61,23 @@ protected:
     
     // constructeurs privés : classe non instanciable
     // obligation de passer par les classes filles
-    Taint(Relation rel, UINT32 lengthInBits);
-    Taint(Relation rel, UINT32 lengthInBits, const ObjectSource &os1);
-    Taint(Relation rel, UINT32 lengthInBits, const ObjectSource &os1, const ObjectSource &os2);
-    Taint(Relation rel, UINT32 lengthInBits, const ObjectSource &os1, const ObjectSource &os2, 
-                                    const ObjectSource &os3);
+    Taint(Relation rel, UINT32 lengthInBits, std::string VerboseDetails);
+    Taint(Relation rel, UINT32 lengthInBits, const ObjectSource &os1, std::string VerboseDetails);
     Taint(Relation rel, UINT32 lengthInBits, const ObjectSource &os1, const ObjectSource &os2,
-                                    const ObjectSource &os3, const ObjectSource &os4);
+            std::string VerboseDetails);
+    Taint(Relation rel, UINT32 lengthInBits, const ObjectSource &os1, const ObjectSource &os2,
+            const ObjectSource &os3, std::string VerboseDetails);
+    Taint(Relation rel, UINT32 lengthInBits, const ObjectSource &os1, const ObjectSource &os2,
+            const ObjectSource &os3, const ObjectSource &os4, std::string VerboseDetails);
 public:   
     // renvoie la longueur en bits de l'objet
-    const   UINT32 getLength() const;
+    UINT32 getLength() const;
+
+    // renvoie le nombre de sources de l'objet
+    UINT32 getNumberOfSources() const;
     
     // renvoie le type de relation qui lie cet objet à ses sources
-    const   Relation getSourceRelation() const;
+    Relation getSourceRelation() const;
     
     // retourne VRAI si l'objet a été déclaré dans la formule du solveur
     bool    isDeclared() const;
@@ -110,13 +114,14 @@ public:
 template<UINT32 lengthInBits> class TaintObject : public Taint 
 {
 public:
-    explicit TaintObject(Relation rel);
-    TaintObject(Relation rel, const ObjectSource &os1);
-    TaintObject(Relation rel, const ObjectSource &os1, const ObjectSource &os2);
+    TaintObject(Relation rel, std::string VerboseDetails = "");
+    TaintObject(Relation rel, const ObjectSource &os1, std::string VerboseDetails = "");
+    TaintObject(Relation rel, const ObjectSource &os1, const ObjectSource &os2,
+        std::string VerboseDetails = "");
     TaintObject(Relation rel, const ObjectSource &os1, const ObjectSource &os2, 
-                              const ObjectSource &os3);
+        const ObjectSource &os3, std::string VerboseDetails = "");
     TaintObject(Relation rel, const ObjectSource &os1, const ObjectSource &os2, 
-                              const ObjectSource &os3, const ObjectSource &os4);
+        const ObjectSource &os3, const ObjectSource &os4, std::string VerboseDetails = "");
 };
 
 

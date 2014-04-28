@@ -54,16 +54,18 @@ template<UINT32 lengthInBits> void STRINGOP::sSTOS
     // déplacement de "count" octets/mot/dble mots de AL/AX/EAX/RAX -> [EDI] 
     
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
-        
-    // 1) recupération du marquage du registre, et stockage dans un vecteur.
+    const UINT32 opSize = lengthInBits >> 3;
+
+    // 1) recupération du marquage de chaque octet du registre
     // et stockage dans un tableau d'objets (ou nullPtr)
-    vector<TaintBytePtr> vTaintRegSrc;
-    for (UINT32 regPart = 0 ; regPart < (lengthInBits >> 3) ; ++regPart) 
+    std::array<TaintBytePtr, opSize> vTaintRegSrc;
+
+    for (UINT32 regPart = 0 ; regPart < opSize ; ++regPart) 
     {
         #if TARGET_IA32
-        vTaintRegSrc.push_back(pTmgrTls->getRegisterPartTaint(regIndexEAX, regPart));
+        vTaintRegSrc[regPart] = pTmgrTls->getRegisterPartTaint(regIndexEAX, regPart);
         #else
-        vTaintRegSrc.push_back(pTmgrTls->getRegisterPartTaint(regIndexRAX, regPart));
+        vTaintRegSrc[regPart] = pTmgrTls->getRegisterPartTaint(regIndexRAX, regPart);
         #endif  
     }
 

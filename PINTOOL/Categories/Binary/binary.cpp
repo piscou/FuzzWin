@@ -1151,22 +1151,22 @@ void BINARY::cDIVISION(INS &ins, bool isSignedDivision)
         switch (getRegSize(regSrc))
         {
             case 1:	
-                callback = (AFUNPTR) sDIVISION_M<8>; 
+                callback = (AFUNPTR) sDIVISION_R<8>; 
                 lowDividendReg = REG_AL;
                 highDividendReg = REG_AH;
                 break;
             case 2:	
-                callback = (AFUNPTR) sDIVISION_M<16>; 
+                callback = (AFUNPTR) sDIVISION_R<16>; 
                 lowDividendReg = REG_AX;
                 highDividendReg = REG_DX;
                 break;
             case 4:	
-                callback = (AFUNPTR) sDIVISION_M<32>; 
+                callback = (AFUNPTR) sDIVISION_R<32>; 
                 lowDividendReg = REG_EAX;
                 highDividendReg = REG_EDX;
                 break;
             #if TARGET_IA32E
-            case 8: callback = (AFUNPTR) sDIVISION_M<64>;
+            case 8: callback = (AFUNPTR) sDIVISION_R<64>;
                 lowDividendReg = REG_RAX;
                 highDividendReg = REG_RDX;
                 break;

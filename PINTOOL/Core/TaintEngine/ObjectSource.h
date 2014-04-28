@@ -19,5 +19,5 @@ public:
     UINT32  getLength() const;
     bool    isSrcTainted() const;
     ADDRINT getValue() const;
-    const   TaintPtr& getTaintedSource() const;
+    TaintPtr getTaintedSource() const;
 };

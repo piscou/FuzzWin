@@ -19,13 +19,13 @@ void UTILS::cUNHANDLED(INS &ins)
     } 
     
     // récupération de tous les registres de destination, y compris Eflags, et démarquage
-    REG reg = INS_RegW(ins, 0); // premier registre accédé en écriture (REG_INVALID si aucun)
-    UINT32 kthReg = 0;          // kième registre accédé en écriture
-
-    while ( reg != REG_INVALID() ) // parcours de tous les registres accédés en écriture
+    for (UINT32 index = 0 ; index < INS_MaxNumWRegs(ins) ; ++index)
     {
+        REG reg = INS_RegW(ins, index); // registre accédé en écriture (REG_INVALID si aucun)
+        void (*callbackReg)() = nullptr; // pointeur sur la fonction à appeler
+
         // procédure spécifique pour les flags
-        if (reg == REG_GFLAGS) // GFLAGS = (E/R)FLAGS selon l'architecture
+        if (REG_GFLAGS == reg) // GFLAGS = (E/R)FLAGS selon l'architecture
         {
             INS_InsertCall (ins, IPOINT_BEFORE, (AFUNPTR) uFLAGS,
                 IARG_FAST_ANALYSIS_CALL,
@@ -34,29 +34,21 @@ void UTILS::cUNHANDLED(INS &ins)
         }
         else
         {
-            UINT32 regSize = getRegSize(reg); 
             // si registre suivi en marquage, le démarquer
-            // impossible de le mettre dans le switch avec un 'continue'
-            // car il faut que la ligne 'INS_RegW(ins, ++kthReg)' soit exécutée
-            if (regSize) 
-            {     
-                void (*callbackReg)() = nullptr; // pointeur sur la fonction à appeler
-                switch (regSize)        
-                {
-                    case 1: callbackReg = (AFUNPTR) uREG<8>;  break;
-                    case 2: callbackReg = (AFUNPTR) uREG<16>; break;
-                    case 4: callbackReg = (AFUNPTR) uREG<32>; break;
-                    case 8: callbackReg = (AFUNPTR) uREG<64>; break;
-                }
-                INS_InsertCall (ins, IPOINT_BEFORE, callbackReg,
-                    IARG_FAST_ANALYSIS_CALL, 
-                    IARG_THREAD_ID, 
-                    IARG_UINT32, reg, 
-                    IARG_END);                   
+            switch (getRegSize(reg))        
+            {
+                case 1: callbackReg = (AFUNPTR) uREG<8>;  break;
+                case 2: callbackReg = (AFUNPTR) uREG<16>; break;
+                case 4: callbackReg = (AFUNPTR) uREG<32>; break;
+                case 8: callbackReg = (AFUNPTR) uREG<64>; break;
+                default: continue;  break; // registre non suivi : ignorer
             }
+            INS_InsertCall (ins, IPOINT_BEFORE, callbackReg,
+                IARG_FAST_ANALYSIS_CALL, 
+                IARG_THREAD_ID, 
+                IARG_UINT32, reg, 
+                IARG_END);                   
         }
-        // récupération du prochain registre sur la liste avant rebouclage
-        reg = INS_RegW(ins, ++kthReg);
     } 
 } // cUNHANDLED
 
@@ -64,7 +56,10 @@ void UTILS::cUNHANDLED(INS &ins)
 void PIN_FAST_ANALYSIS_CALL UTILS::uMEM(ADDRINT address, UINT32 sizeInBytes)
 {  
     ADDRINT lastAddress = address + sizeInBytes;
-    while (address++ < lastAddress)    pTmgrGlobal->unTaintMemory<8>(address);
+    do
+    {
+        pTmgrGlobal->unTaintMemory<8>(address++);
+    } while (address < lastAddress);
 }
 
 void PIN_FAST_ANALYSIS_CALL UTILS::uFLAGS(THREADID tid)  

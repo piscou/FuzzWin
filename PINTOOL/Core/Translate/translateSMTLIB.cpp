@@ -1731,7 +1731,7 @@ void TranslateToSMTLIB::translate_F_OVERFLOW_SUB(const TaintPtr &tPtr)
     // A XOR RESULT
     _formula << "(bvxor " << this->getSourceName(srcA) << ' ' << sumName << ") ";
     // B XOR RESULT 
-    _formula << "(bvxor " << this->getSourceName(srcA) << ' ' << this->getSourceName(srcA) << "))";
+    _formula << "(bvxor " << this->getSourceName(srcA) << ' ' << this->getSourceName(srcB) << "))";
         
     END_RELATION_DECLARATION;
 }
@@ -1960,9 +1960,10 @@ void TranslateToSMTLIB::final()
         // option 'nopipe' : construction d'une formule "prete à l'emploi"
         // avec insertion de la logique, et des commandes "check-sat" et "get-model" 
         std::string formulaHeader =
-            ";*********************************\n" \
-            ";*** FUZZWIN 1.0 - MODE NOPIPE ***\n" \
-            ";*********************************\n" \
+            ";*********************************\n"     \
+            ";*** FUZZWIN " + FUZZWIN_VERSION + "***\n"\
+            ";***        MODE NO PIPE       ***\n"     \
+            ";*********************************\n"     \
             "; Fichier instrumenté : " + g_inputFile + "\n\n";
 
         formulaHeader +=

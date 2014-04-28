@@ -48,7 +48,7 @@ void ROTATE::sROL_IM(THREADID tid, UINT32 depl, ADDRINT writeAddress, ADDRINT in
         if ((tempDepl & 0x7) == 0) 
         {
             // sauvegarde du marquage de la source dans un vecteur
-            vector<TaintBytePtr> vSavedSrc;
+            std::vector<TaintBytePtr> vSavedSrc;
             ADDRINT highestAddress = writeAddress + (lengthInBits >> 3);
             for (ADDRINT targetAddress = writeAddress ; targetAddress < highestAddress ; ++targetAddress)
             {
@@ -57,8 +57,8 @@ void ROTATE::sROL_IM(THREADID tid, UINT32 depl, ADDRINT writeAddress, ADDRINT in
             }
 
             // itérateurs de début et de fin du vecteur représentant la source
-            vector<TaintBytePtr>::iterator it     = vSavedSrc.begin();
-            vector<TaintBytePtr>::iterator lastIt = vSavedSrc.end();
+            std::vector<TaintBytePtr>::iterator it     = vSavedSrc.begin();
+            std::vector<TaintBytePtr>::iterator lastIt = vSavedSrc.end();
 
             // parcours de chaque octet de la source, et affectation à l'octet de destination
             // pour ROL, l'octet 0 va se retrouver à l'octet d'offset 'maskedDepl >> 3'
@@ -125,7 +125,7 @@ void ROTATE::sROL_IR(THREADID tid, UINT32 depl, REG reg, ADDRINT regValue, ADDRI
         {
             // sauvegarde du marquage de la source dans un vecteur
             REGINDEX regIndex = getRegIndex(reg);
-            vector<TaintBytePtr> vSavedSrc;
+            std::vector<TaintBytePtr> vSavedSrc;
             for (UINT32 regPart = 0 ; regPart < (lengthInBits >> 3) ; ++regPart)
             {
                 // objet ou nullptr selon le marquage
@@ -283,7 +283,7 @@ void ROTATE::sROR_IM(THREADID tid, UINT32 depl, ADDRINT writeAddress, ADDRINT in
         if ((tempDepl & 0x7) == 0) 
         {
             // sauvegarde du marquage de la source dans un vecteur
-            vector<TaintBytePtr> vSavedSrc;
+            std::vector<TaintBytePtr> vSavedSrc;
             ADDRINT highestAddress = writeAddress + (lengthInBits >> 3);
             for (ADDRINT targetAddress = writeAddress ; targetAddress < highestAddress ; ++targetAddress)
             {
@@ -292,7 +292,8 @@ void ROTATE::sROR_IM(THREADID tid, UINT32 depl, ADDRINT writeAddress, ADDRINT in
             }
 
             // itérateurs de début et de fin du vecteur représentant la source
-            auto it = vSavedSrc.begin(), lastIt = vSavedSrc.end();
+            auto it = vSavedSrc.begin();
+            auto lastIt = vSavedSrc.end();
 
             // parcours de chaque octet de la source, et affectation à l'octet de destination
             // pour ROR, l'octet 0 va se retrouver à l'octet d'offset '(lengthInBits >> 3) - (maskedDepl >> 3)'
@@ -357,7 +358,7 @@ void ROTATE::sROR_IR(THREADID tid, UINT32 depl, REG reg, ADDRINT regValue, ADDRI
         {
             // sauvegarde du marquage de la source dans un vecteur
             REGINDEX regIndex = getRegIndex(reg);
-            vector<TaintBytePtr> vSavedSrc;
+            std::vector<TaintBytePtr> vSavedSrc;
             for (UINT32 regPart = 0 ; regPart < (lengthInBits >> 3) ; ++regPart)
             {
                 // objet ou nullptr selon le marquage
@@ -365,7 +366,8 @@ void ROTATE::sROR_IR(THREADID tid, UINT32 depl, REG reg, ADDRINT regValue, ADDRI
             }
 
             // itérateurs de début et de fin du vecteur représentant la source
-            auto it = vSavedSrc.begin(), lastIt = vSavedSrc.end();
+            auto it = vSavedSrc.begin();
+            auto lastIt = vSavedSrc.end();
 
             // parcours de chaque octet de la source, et affectation à l'octet de destination
             // pour ROR, l'octet 0 va se retrouver à l'octet 'lengthInBits >> 3' - 'maskedDepl >> 3'

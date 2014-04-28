@@ -48,7 +48,8 @@ void PUSH::sPUSH_M(THREADID tid, ADDRINT readAddress, ADDRINT stackAddressBefore
             }
             else  pTmgrGlobal->unTaintMemory<8>(espAddress);    // sinon démarquage
             ++readAddress;
-        } while (++espAddress < stackAddressBeforePush); 
+            ++espAddress;
+        } while (espAddress < stackAddressBeforePush); 
     }
 } //sPUSH_M
 

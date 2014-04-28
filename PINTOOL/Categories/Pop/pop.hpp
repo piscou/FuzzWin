@@ -49,7 +49,8 @@ void POP::sPOP_M(THREADID tid, ADDRINT writeAddress, ADDRINT stackAddressBeforeP
             else pTmgrGlobal->unTaintMemory<8>(writeAddress);
             ++writeAddress;
             ++stackAddressBeforePop; 
-        } while (++byteNumber < (lengthInBits >> 3)); 
+            ++byteNumber;
+        } while (byteNumber < (lengthInBits >> 3)); 
     }
 } // sPOP_M
 

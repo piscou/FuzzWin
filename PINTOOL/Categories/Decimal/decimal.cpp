@@ -1,5 +1,4 @@
 #include "decimal.h"
-#include <Translate\translate.h>
 
 // CALLBACKS
 
@@ -76,28 +75,42 @@ void DECIMAL::cDAS(INS &ins)
 
 void DECIMAL::sAAA(THREADID tid, ADDRINT regALValue, ADDRINT flagsValue, ADDRINT insAddress)
 {
-   /* SOURCE: BOCHS 2.6 (cpu\bcd.cc)
-    *    IF (((AL and 0FH) > 9) or (AF==1)
-    *    THEN
-    *        AL <- AL+6 ; AH <- AH+1 ; CF <- 1 ; AF <- 1 ; AL <- AL and 0Fh 
-    *    ELSE
-    *        CF <- 0 ; AF <- 0 ; AL <- AL and 0Fh 
-    *    ENDIF
-    */
+   /* Manuel Intel:
+    *    IF (((AL and 0FH) > 9) or (AF=1)
+    *    THEN   AL <- AL+6 ; AH <- AH+1 ; CF <- 1 ; AF <- 1 ; AL <- AL and 0Fh 
+    *    ELSE   CF <- 0 ; AF <- 0 ; AL <- AL and 0Fh   */
+    
+    // représentation des opérandes de destination par une relation pour chaque partie:
+    // X_AAA_AL, X_AAA_AH, F_AAA (commun AF et CF)
 
-    // AAA agit comme un branchement conditionnel "déguisé"
-    // Il faut donc insérer une contrainte sur la valeur de "((AL and 0x0F) > 9) or (AF==1)" 
-    // afin de pouvoir l'inverser 
-    // puis selon la valeur de l'expression, AH et AL seront mis à jour ou non
-    // EN REVANCHE CF et AF sont DEMARQUES (idem SETcc : leur valeur est fixe : 0 ou 1)
     TaintManager_Thread* pTmgrTls = getTmgrInTls(tid);
+
     bool isRegALTainted  = pTmgrTls->isRegisterTainted<8>(REG_AL);
+    bool isRegAHTainted  = pTmgrTls->isRegisterTainted<8>(REG_AH);
     bool isAFTainted     = pTmgrTls->isAuxiliaryFlagTainted();
-    
-    bool isALOver9       = ((regALValue & 0x0f) > 9) ? true : false ;
-    bool isAFSet         = ((flagsValue >> AUXILIARY_FLAG) & 1) ? true : false;
-    bool isTestTrue      = isALOver9 | isAFSet;
-    
+    UINT32 AFValue       = EXTRACTBIT(flagsValue, AUXILIARY_FLAG);
+
+    // condition du test non marquée
+    if (!(isRegALTainted || isAFTainted))
+    {
+        // CF : démarquage (AL et AH le sont déjà)
+        pTmgrTls->unTaintCarryFlag();
+
+        // AH : s'il est marqué et que condition vraie, équivalent à un INC AH
+        if (isRegAHTainted)
+        {
+            if (((regALValue & 0xf) > 9) || (AFValue == 1))
+            {
+                ObjectSource objAH(pTmgrTls->getRegisterTaint(REG_AH)); // forcément marqué
+                pTmgrTls->updateTaintRegister<8>(REG_AH, std::make_shared<TaintByte>(X_INC, objAH));
+            }
+        }
+    }
+    else
+    {
+
+
+    }
 
 } // sAAA
 

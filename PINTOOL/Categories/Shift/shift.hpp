@@ -401,9 +401,10 @@ void SHIFT::sSHR_IR(THREADID tid, UINT32 maskedDepl, REG reg, ADDRINT regValue, 
             // 2EME BOUCLE : demarquage des 'deplBytes' octets forts:
             // [(lengthInBits >> 3) - deplBytes; (lengthInBits >> 3) [
             UINT32 regPart = (lengthInBits >> 3) - deplBytes ;
-            while (++regPart < (lengthInBits >> 3))
+            while (regPart < (lengthInBits >> 3))
             {
                 pTmgrTls->unTaintRegisterPart(regIndex, regPart);
+                ++regPart;
             }
         }
         // 3) cas général : marquage destination, puis demarquage octets forts en fonction de l'intervalle de déplacement
