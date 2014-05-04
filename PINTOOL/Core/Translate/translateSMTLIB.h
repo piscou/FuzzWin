@@ -109,6 +109,18 @@ protected:
     void translate_X_BSF(const TaintPtr &tPtr);
     void translate_X_BSR(const TaintPtr &tPtr);
 
+    void translate_X_AAA_AL(const TaintPtr &tPtr);
+    void translate_X_AAA_AH(const TaintPtr &tPtr);
+    void translate_X_AAD(const TaintPtr &tPtr);
+    void translate_X_AAM_AL(const TaintPtr &tPtr);
+    void translate_X_AAM_AH(const TaintPtr &tPtr);
+    void translate_X_AAS_AL(const TaintPtr &tPtr);
+    void translate_X_AAS_AH(const TaintPtr &tPtr);
+    void translate_X_DAA_1ST(const TaintPtr &tPtr);
+    void translate_X_DAA_2ND(const TaintPtr &tPtr);
+    void translate_X_DAS_1ST(const TaintPtr &tPtr);
+    void translate_X_DAS_2ND(const TaintPtr &tPtr);
+
     // flags
 
     void translate_F_LSB(const TaintPtr &tPtr);
@@ -145,6 +157,9 @@ protected:
     void translate_F_AUXILIARY_SUB(const TaintPtr &tPtr);
     void translate_F_AUXILIARY_INC(const TaintPtr &tPtr);
     void translate_F_AUXILIARY_DEC(const TaintPtr &tPtr);
+
+    void translate_F_AAA(const TaintPtr &tPtr);
+    void translate_F_CARRY_DAA_DAS(const TaintPtr &tPtr);
     
 public:
     TranslateToSMTLIB();

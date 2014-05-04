@@ -1,8 +1,10 @@
 *****************************
-Version 1.4.1 - 24 avril 2014
+Version 1.4.1 - 04 mai 2014
 *****************************
 PINTOOL
 -------
+++ implémentation DECIMAL (AAA, AAD, AAS, AAM, DAA, DAS), relations et flags
+
 + correction bug division DIV_M / DIV_R
 + correction bug démarquage registre (mauvais calcul des bornes de la boucle)
 + correction bug traduction F_OVERFLOW_SUB
@@ -10,7 +12,7 @@ PINTOOL
 + optimisation du traitement MOV (utilisation des objets de 16, 32 ou 64 bits lorsqu'ils existent)
 + ajout de la procédure 'getFullTaintRegister' pour TaintManager
 + optimisations pour C++11 (rvalues)
-+ début implémentation DECIMAL (AAA, AAD, AAS, AAM, DAA, DAS)
+
 
 
 *****************************

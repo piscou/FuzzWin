@@ -285,7 +285,7 @@ public:
     // marquage de 'lengthInBits' octets avec l'objet 'tPtr' à partir de l'adresse 'address'
     // si 'tPtr' est nullptr, provoque le démarquage des 'lengthInBits' octets
     template<UINT32 lengthInBits> void updateMemoryTaint
-        (ADDRINT address, const TAINT_OBJECT_PTR &tPtr) 
+        (ADDRINT address, TAINT_OBJECT_PTR tPtr) 
     {
         static_assert((lengthInBits & 0x7) == 0, "taille memoire non valide");           
         PIN_GetLock(&g_lock, 0); // obligatoire car classe globale
@@ -307,11 +307,11 @@ public:
     }
 
     // spécialisation pour le cas 8bits
-    template<> void updateMemoryTaint<8>(ADDRINT address, const TaintBytePtr &tbPtr) 
+    template<> void updateMemoryTaint<8>(ADDRINT address, TaintBytePtr tbPtr) 
     { 
         PIN_GetLock(&g_lock, 0); // obligatoire car classe globale
         if (!tbPtr) _memoryPtrs.erase(address);
-        else        _memoryPtrs[address] = tbPtr;
+        else        _memoryPtrs[address] = std::move(tbPtr);
         PIN_ReleaseLock(&g_lock);
     }
 
@@ -602,7 +602,7 @@ public:
 
     // associe au registre "regIndex", partie "regPart"
     // l'objet TaintByte fourni
-    void updateTaintRegisterPart(REGINDEX regIndex, UINT32 regPart, const TaintBytePtr &tbPtr) 
+    void updateTaintRegisterPart(REGINDEX regIndex, UINT32 regPart, TaintBytePtr tbPtr) 
     {
         _registers8Ptr[regIndex][regPart] = tbPtr;
         // si un registre plein était présent (16, ou 32, ou 64)
@@ -617,11 +617,11 @@ public:
     // mise à jour du marquage du registre avec l'objet fourni
     // spécialisation complete du template pour marquer les registres "entiers"
     template<UINT32 lengthInBits> 
-    void updateTaintRegister(REG reg, const TAINT_OBJECT_PTR &tPtr)
+    void updateTaintRegister(REG reg, TAINT_OBJECT_PTR tPtr)
     {  static_assert((lengthInBits % 8 == 0), "registre non valide");  }
 
     // cas 8bits
-    template<> void updateTaintRegister<8>(REG reg8, const TaintBytePtr &tbPtr) 
+    template<> void updateTaintRegister<8>(REG reg8, TaintBytePtr tbPtr) 
     {
         REGINDEX regIndex = getRegIndex(reg8);
 
@@ -637,7 +637,7 @@ public:
     }
 
     // cas 16bits
-    template<> void updateTaintRegister<16>(REG reg16, const TaintWordPtr &twPtr) 
+    template<> void updateTaintRegister<16>(REG reg16, TaintWordPtr twPtr) 
     {
         REGINDEX regIndex = getRegIndex(reg16);
 
@@ -681,7 +681,7 @@ public:
     }
 
     // cas 32bits
-    template<> void updateTaintRegister<32>(REG reg32, const TaintDwordPtr &tdwPtr) 
+    template<> void updateTaintRegister<32>(REG reg32, TaintDwordPtr tdwPtr) 
     {
         REGINDEX regIndex = getRegIndex(reg32);
         
@@ -761,12 +761,12 @@ public:
     /** FONCTIONS DE MARQUAGE DES FLAGS **/
     /*************************************/
 
-    void updateTaintCarryFlag  (const TaintBitPtr &ptr)  { _cFlagPtr = ptr;}
-    void updateTaintParityFlag (const TaintBitPtr &ptr)  { _pFlagPtr = ptr;}
-    void updateTaintAuxiliaryFlag(const TaintBitPtr &ptr){ _aFlagPtr = ptr;}
-    void updateTaintZeroFlag    (const TaintBitPtr &ptr) { _zFlagPtr = ptr;}
-    void updateTaintSignFlag    (const TaintBitPtr &ptr) { _sFlagPtr = ptr;}
-    void updateTaintOverflowFlag(const TaintBitPtr &ptr) { _oFlagPtr = ptr;}
+    void updateTaintCarryFlag  (TaintBitPtr ptr)  { _cFlagPtr = ptr;}
+    void updateTaintParityFlag (TaintBitPtr ptr)  { _pFlagPtr = ptr;}
+    void updateTaintAuxiliaryFlag(TaintBitPtr ptr){ _aFlagPtr = ptr;}
+    void updateTaintZeroFlag    (TaintBitPtr ptr) { _zFlagPtr = ptr;}
+    void updateTaintSignFlag    (TaintBitPtr ptr) { _sFlagPtr = ptr;}
+    void updateTaintOverflowFlag(TaintBitPtr ptr) { _oFlagPtr = ptr;}
 
     /*****************************/
     /** FONCTIONS DE DEMARQUAGE **/

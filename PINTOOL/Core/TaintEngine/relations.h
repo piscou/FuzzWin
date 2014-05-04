@@ -121,6 +121,32 @@ enum Relation
     // BSR : Bit Scan Reverse = index du MSB de la source. Source 0 = source testée
     X_BSR,
 
+    /** DECIMAL **/
+    // AAA/AL : marquage de AL suite à AAA. Src0 = AL (8bits), src1 = AF (1bit)
+    X_AAA_AL,
+    // AAA/AH : marquage de AH suite à AAA. Src0 = AL (8bits), src1 = AF (1bit)
+    X_AAA_AH,
+    // AAD : marquage de AL suite à AAD. Src0 = AL (8bits), src1 = AH (8bits), src2 = base utilisée (valeur - 8bits)
+    X_AAD,
+    // AAM/AL : marquage de AL suite à AAM. Src0 = marquage AL (8bits), src1 = base utilisée (8bits)
+    X_AAM_AL,
+    // AAM/AH : marquage de AH suite à AAM. Src0 = marquage AH (8bits), src1 = base utilisée (8bits)
+    X_AAM_AH,
+    // AAS/AL : marquage de AL suite à AAS. Src0 = AH (8bits), src1 = AL (8bits), src2 = AF (1bit)
+    X_AAS_AL,
+    // AAS/AH : marquage de AH suite à AAS. Src0 = AH (8bits), src1 = AL (8bits), src2 = AF (1bit)
+    X_AAS_AH,
+    // DAA_1ST : relation calculant AL en fonction de la première condition de DAA. Src0 = AL (8bits), Src1 = AF (1bit)
+    X_DAA_1ST,
+    // DAA_2ND : relation calculant AL en fonction de la seconde condition de DAA
+    // Src0 = AL avant DAA (8 bits), Src1 = CF (1bit), src2 = AL apres 1ere condition de DAA (8bits)
+    X_DAA_2ND,
+    // DAS_1ST : relation calculant AL en fonction de la première condition de DAS. Src0 = AL (8bits), Src1 = AF (1bit)
+    X_DAS_1ST,
+    // DAS_2ND : relation calculant AL en fonction de la seconde condition de DAS
+    // Src0 = AL avant DAS (8 bits), Src1 = CF (1bit), src2 = AL apres 1ere condition de DAS (8bits)
+    X_DAS_2ND,
+
     /*******************************************************************/
     /**** Relations de modelisation des effets de bords (flags) x86 ****/
     /*******************************************************************/
@@ -214,6 +240,13 @@ enum Relation
     // AUXILIARY_DEC : source0 = source
     F_AUXILIARY_DEC,
 
+    /** DECIMAL **/
+    // AAA : marquage Carry/auxiliary suite à AAA . Identique pour AAS et DAA (pour AF)
+    // src0 = AL (8bits), src1 = AF (1 bit)
+    F_AAA,
+    // DAA et DAS (pour CF) : src0 = AL avant DAA (8 bits), src1 = CF (1bit)
+    F_CARRY_DAA_DAS,
+
     RELATION_LAST
 };
 
@@ -252,6 +285,10 @@ const static std::string relationStrings[RELATION_LAST] =
     // BIT_BYTE
     "X_SETCC", "X_COMPLEMENT_BIT", "X_SET_BIT", "X_CLEAR_BIT", "X_BSF", "X_BSR",
 
+    // DECIMAL
+    "X_AAA_AL", "X_AAA_AH", "X_AAD", "X_AAM_AL", "X_AAM_AH", "X_AAS_AL", "X_AAS_AH",
+    "X_DAA_1ST", "X_DAA_2ND", "X_DAS_1ST", "X_DAS_2ND",
+
     /**** Relations de modelisation des effets de bords (flags) x86 ****/
     
     "F_LSB", "F_MSB",   
@@ -281,5 +318,8 @@ const static std::string relationStrings[RELATION_LAST] =
     "F_AUXILIARY_NEG",
     "F_AUXILIARY_SUB",
     "F_AUXILIARY_INC",
-    "F_AUXILIARY_DEC"
+    "F_AUXILIARY_DEC",
+
+    // DECIMAL 
+    "F_AAA", "F_CARRY_DAA_DAS",
 };

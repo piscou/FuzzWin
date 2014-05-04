@@ -16,6 +16,18 @@ public:
     ObjectSource(const TaintPtr &taintPtr);
     ObjectSource(UINT32 lengthInBits, ADDRINT value);
 
+    /** RULE OF FIVE **/
+    // copy constructor
+    ObjectSource(const ObjectSource& other);
+    // move constructor
+    ObjectSource(ObjectSource&& other);
+    // copy assignment operator
+    ObjectSource& operator= (ObjectSource& other);
+    // move assignment operator
+    ObjectSource& operator= (ObjectSource&& other);
+    // destructor (vide)
+    ~ObjectSource() {}
+
     UINT32  getLength() const;
     bool    isSrcTainted() const;
     ADDRINT getValue() const;

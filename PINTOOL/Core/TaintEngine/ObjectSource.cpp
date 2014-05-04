@@ -16,6 +16,43 @@ ObjectSource::ObjectSource(UINT32 lengthInBits, ADDRINT value)
       _val(value), 
       _lengthInBits(lengthInBits) {} 
 
+/** RULE OF FIVE **/
+// copy constructor
+ObjectSource::ObjectSource(const ObjectSource& other)
+    : _src(other._src), _val(other._val), _lengthInBits(other._lengthInBits)
+{}
+
+// move constructor
+ObjectSource::ObjectSource(ObjectSource&& other)
+    : _src(std::move(other._src)), _val(other._val), _lengthInBits(other._lengthInBits)
+{}
+
+// copy assignment operator
+ObjectSource& ObjectSource::operator= (ObjectSource& other)
+{
+    if (this != &other)
+    {
+        _val          = other._val;
+        _src          = other._src;
+        _lengthInBits = other._lengthInBits;
+    }
+    return *this;        
+}
+
+// move assignment operator
+ObjectSource& ObjectSource::operator= (ObjectSource&& other)
+{
+    if (this != &other)
+    {
+        _val          = std::move(other._val);
+        _src          = other._src;
+        _lengthInBits = other._lengthInBits;
+    }
+    return *this; 
+}
+
+
+
 UINT32 ObjectSource::getLength() const  { return (_lengthInBits); }
 
 bool ObjectSource::isSrcTainted() const { return ((bool) _src); }

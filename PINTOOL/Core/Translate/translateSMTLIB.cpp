@@ -1338,6 +1338,214 @@ void TranslateToSMTLIB::translate_X_BSR(const TaintPtr &tPtr)
     END_RELATION_DECLARATION;
 }
 
+void TranslateToSMTLIB::translate_X_AAA_AL(const TaintPtr &tPtr)
+{
+    // condition de AAA : "IF (((AL and 0FH) > 9) or (AF=1)"
+    // condition vraie  => AL = (AL + 6) & 0xF
+    // condition fausse => AL = AL & 0xF
+    // formule SMT-LIB : 
+    // let ((condition (or (bvugt (bvand #x0f src0) #x09) (= src1 #b1)))) 
+    //  (ite (= condition true) (bvand #x0f (bvadd src0 #x06)) (bvand #x0f src0))
+
+    ObjectSource objAL         = tPtr->getSource(0);
+    ObjectSource objAuxFlag    = tPtr->getSource(1);
+    const std::string stringAL = this->getSourceName(objAL);
+
+    BEGIN_RELATION_DECLARATION;
+
+    _formula << "let ((condition (or (bvugt (bvand #x0f " << stringAL << ") #x09) ";
+    _formula <<                     "(= " << this->getSourceName(objAuxFlag) << " #b1)))) \n";
+    _formula << "(ite (= condition true) (bvand #x0f (bvadd " << stringAL << " #x06))";
+    _formula <<                        " (bvand #x0f "<< stringAL << "))";
+
+    END_RELATION_DECLARATION;
+}
+
+void TranslateToSMTLIB::translate_X_AAA_AH(const TaintPtr &tPtr)
+{
+    // condition de AAA : "IF (((AL and 0FH) > 9) or (AF=1)"
+    // condition vraie  => AH = AH + 1
+    // condition fausse => AH INCHANGE
+    // formule SMT-LIB : 
+    // let ((condition (or (bvugt (bvand #x0f src0) #x09) (= src1 #b1)))) 
+    //  (ite (= condition true) (bvadd src0 #x01) src0)
+
+    ObjectSource objAL         = tPtr->getSource(0);
+    ObjectSource objAuxFlag    = tPtr->getSource(1);
+    const std::string stringAL = this->getSourceName(objAL);
+
+    BEGIN_RELATION_DECLARATION;
+
+    _formula << "let ((condition (or (bvugt (bvand #x0f " << stringAL << ") #x09) ";
+    _formula <<                     "(= " << this->getSourceName(objAuxFlag) << " #b1)))) \n";
+    _formula << "(ite (= condition true) (bvadd " << stringAL << " #x01) " << stringAL << ")";
+
+    END_RELATION_DECLARATION;
+}
+
+void TranslateToSMTLIB::translate_X_AAD(const TaintPtr &tPtr)
+{
+    // AL = (AL + (AH ∗ imm8)) & xFF (le AND FF ne sert à rien ici car AL est sur 8 bits...)
+    // formule SMT-LIB : 
+    // bvadd src0 (bvmul src1 src2)
+
+    const std::string stringAL   = this->getSourceName(tPtr->getSource(0));
+    const std::string stringAH   = this->getSourceName(tPtr->getSource(1));
+    const std::string stringBase = this->getSourceName(tPtr->getSource(2));
+
+    BEGIN_RELATION_DECLARATION;
+    _formula << "bvadd " << stringAL << " (bvmul " << stringAH << ' ' << stringBase << ')';
+    END_RELATION_DECLARATION;
+}
+
+void TranslateToSMTLIB::translate_X_AAM_AL(const TaintPtr &tPtr)
+{
+    // AL = AL(src0) MOD BASE(src1)
+
+    BEGIN_RELATION_DECLARATION;
+    _formula << "bvurem " << this->getSourceName(tPtr->getSource(0)); // src0 = AL
+    _formula <<       ' ' << this->getSourceName(tPtr->getSource(1)); // src1 = base
+    END_RELATION_DECLARATION;
+}
+
+void TranslateToSMTLIB::translate_X_AAM_AH(const TaintPtr &tPtr)
+{
+    // AH = AL(src0) DIV BASE(src1)
+
+    BEGIN_RELATION_DECLARATION;
+    _formula << "bvudiv " << this->getSourceName(tPtr->getSource(0)); // src0 = AL
+    _formula <<       ' ' << this->getSourceName(tPtr->getSource(1)); // src1 = base
+    END_RELATION_DECLARATION;
+}
+
+void TranslateToSMTLIB::translate_X_AAS_AL(const TaintPtr &tPtr)
+{
+    // condition de AAS : "IF (((AL and 0FH) > 9) or (AF=1)" (idem AAA)
+    // condition vraie  => AL = ([0..7](AX - 6)) & 0xF
+    // condition fausse => AL = AL & 0xF
+    // formule SMT-LIB : 
+    // let ((condition (or (bvugt (bvand #x0f src1) #x09) (= src2 #b1))))
+    //  (let ((AX (concat src0 src1)))
+    //   (ite (= condition true) (bvand #x0f ((_ extract 7 0) (bvsub AX #x0006))) src1))
+
+    const std::string stringAH      = this->getSourceName(tPtr->getSource(0));
+    const std::string stringAL      = this->getSourceName(tPtr->getSource(1));
+    const std::string stringAuxFlag = this->getSourceName(tPtr->getSource(2));
+
+    BEGIN_RELATION_DECLARATION;
+
+    _formula << "let ((condition (or (bvugt (bvand #x0f " << stringAL << ") #x09) (= " << stringAuxFlag << " #b1))))\n";
+    _formula << "  (let ((AX (concat " << stringAH << ' ' << stringAL << ")))\n";
+    _formula << "   (ite (= condition true) (bvand #x0f ((_ extract 7 0) (bvsub AX #x0006))) " << stringAL << "))";
+
+    END_RELATION_DECLARATION;
+}
+
+void TranslateToSMTLIB::translate_X_AAS_AH(const TaintPtr &tPtr)
+{
+    // condition de AAS : "IF (((AL and 0FH) > 9) or (AF=1)" (idem AAA)
+    // condition vraie  => AH = ([15..8](AX - 6)) - 1, equivalent à [15..8](AX - 0x0106)
+    // condition fausse => AH inchangé
+    // formule SMT-LIB : 
+    // let ((condition (or (bvugt (bvand #x0f src1) #x09) (= src2 #b1))))
+    //  (let ((AX (concat src0 src1)))
+    //   (ite (= condition true) ((_ extract 15 8) (bvsub AX #x0106)) src0))
+
+    const std::string stringAH      = this->getSourceName(tPtr->getSource(0));
+    const std::string stringAL      = this->getSourceName(tPtr->getSource(1));
+    const std::string stringAuxFlag = this->getSourceName(tPtr->getSource(2));
+
+    BEGIN_RELATION_DECLARATION;
+
+    _formula << "let ((condition (or (bvugt (bvand #x0f " << stringAL << ") #x09) (= " << stringAuxFlag << " #b1))))\n";
+    _formula << "  (let ((AX (concat " << stringAH << ' ' << stringAL << ")))\n";
+    _formula << "   (ite (= condition true) ((_ extract 15 8) (bvsub AX #x0106)) " << stringAH << "))";
+
+    END_RELATION_DECLARATION;
+}
+
+void TranslateToSMTLIB::translate_X_DAA_1ST(const TaintPtr &tPtr)
+{
+    // 1ere condition de DAA : "IF (((AL and 0FH) > 9) or (AF=1)" (idem AAA)
+    // condition vraie  => AL = AL + 6 (sans masquage à 0xF)
+    // condition fausse => AL inchangé
+    // formule SMT-LIB : 
+    // let ((condition (or (bvugt (bvand #x0f src0) #x09) (= src1 #b1))))
+    //   (ite (= condition true) (bvadd src0 #x06) src0)
+
+    const std::string stringAL      = this->getSourceName(tPtr->getSource(0));
+    const std::string stringAuxFlag = this->getSourceName(tPtr->getSource(1));
+
+    BEGIN_RELATION_DECLARATION;
+
+    _formula << "let ((condition (or (bvugt (bvand #x0f " << stringAL << ") #x09) (= " << stringAuxFlag << " #b1))))\n";
+    _formula << "   (ite (= condition true) (bvadd " << stringAL << " #x06) " << stringAL << ')';
+
+    END_RELATION_DECLARATION;
+}
+
+void TranslateToSMTLIB::translate_X_DAA_2ND(const TaintPtr &tPtr)
+{
+    // 2eme condition de DAA : "IF (((OLD_AL > 0x99) or (OldCF=1)" 
+    // condition vraie  => ALApres1ereCondition = ALApres1ereCondition + 0x60
+    // condition fausse => ALApres1ereCondition inchangé
+    // formule SMT-LIB : 
+    // let ((condition (or (bvugt src0 #x99) (= src1 #b1))))
+    //   (ite (= condition true) (bvadd src2 #x60) src2)
+
+    const std::string stringAL             = this->getSourceName(tPtr->getSource(0));
+    const std::string stringCarryFlag      = this->getSourceName(tPtr->getSource(1));
+    const std::string stringALAfterDAA_1ST = this->getSourceName(tPtr->getSource(2));
+
+    BEGIN_RELATION_DECLARATION;
+
+    _formula << "let ((condition (or (bvugt " << stringAL << " #x99) (= " << stringCarryFlag << " #b1))))\n";
+    _formula << " (ite (= condition true) (bvadd " << stringALAfterDAA_1ST << " #x60) " << stringALAfterDAA_1ST << ')';
+
+    END_RELATION_DECLARATION;
+}
+
+void TranslateToSMTLIB::translate_X_DAS_1ST(const TaintPtr &tPtr)
+{
+    // 1ere condition de DAS : "IF (((AL and 0FH) > 9) or (AF=1)" (idem AAA)
+    // condition vraie  => AL = AL - 6 (sans masquage à 0xF)
+    // condition fausse => AL inchangé
+    // formule SMT-LIB : 
+    // let ((condition (or (bvugt (bvand #x0f src0) #x09) (= src1 #b1))))
+    //   (ite (= condition true) (bvsub src0 #x06) src0)
+
+    const std::string stringAL      = this->getSourceName(tPtr->getSource(0));
+    const std::string stringAuxFlag = this->getSourceName(tPtr->getSource(1));
+
+    BEGIN_RELATION_DECLARATION;
+
+    _formula << "let ((condition (or (bvugt (bvand #x0f " << stringAL << ") #x09) (= " << stringAuxFlag << " #b1))))\n";
+    _formula << "   (ite (= condition true) (bvsub " << stringAL << " #x06) " << stringAL << ')';
+
+    END_RELATION_DECLARATION;
+}
+
+void TranslateToSMTLIB::translate_X_DAS_2ND(const TaintPtr &tPtr)
+{
+    // 2eme condition de DAS : "IF (((OLD_AL > 0x99) or (OldCF=1)" 
+    // condition vraie  => ALApres1ereCondition = ALApres1ereCondition - 0x60
+    // condition fausse => ALApres1ereCondition inchangé
+    // formule SMT-LIB : 
+    // let ((condition (or (bvugt src0 #x99) (= src1 #b1))))
+    //   (ite (= condition true) (bvsub src2 #x60) src2)
+
+    const std::string stringAL             = this->getSourceName(tPtr->getSource(0));
+    const std::string stringCarryFlag      = this->getSourceName(tPtr->getSource(1));
+    const std::string stringALAfterDAA_1ST = this->getSourceName(tPtr->getSource(2));
+
+    BEGIN_RELATION_DECLARATION;
+
+    _formula << "let ((condition (or (bvugt " << stringAL << " #x99) (= " << stringCarryFlag << " #b1))))\n";
+    _formula << " (ite (= condition true) (bvsub " << stringALAfterDAA_1ST << " #x60) " << stringALAfterDAA_1ST << ')';
+
+    END_RELATION_DECLARATION;
+}
+
 // flags
 
 void TranslateToSMTLIB::translate_F_LSB(const TaintPtr &tPtr)
@@ -1919,6 +2127,48 @@ void TranslateToSMTLIB::translate_F_AUXILIARY_DEC(const TaintPtr &tPtr)
     BEGIN_RELATION_DECLARATION;
 
     _formula << "ite (= (_ bv0 4) ((_ extract 3 0) " << this->getSourceName(src0) << ")) #b1 #b0";
+
+    END_RELATION_DECLARATION;
+}
+
+void TranslateToSMTLIB::translate_F_AAA(const TaintPtr &tPtr)
+{
+    // condition de AAA : "IF (((AL and 0FH) > 9) or (AF=1)"
+    // condition vraie  => flag vaut 1
+    // condition fausse => flag vaut 0
+    // formule SMT-LIB : 
+    // let ((condition (or (bvugt (bvand #x0f src0) #x09) (= src1 #b1)))) 
+    //  (ite (= condition true) (bvadd src0 #x01) src0)
+
+    ObjectSource objAL      = tPtr->getSource(0);
+    ObjectSource objAuxFlag = tPtr->getSource(1);
+
+    BEGIN_RELATION_DECLARATION;
+
+    _formula << "let ((condition (or (bvugt (bvand #x0f " << this->getSourceName(objAL) << ") #x09) ";
+    _formula <<                     "(= " << this->getSourceName(objAuxFlag) << " #b1)))) \n";
+    _formula << "(ite (= condition true) #b1 #b0)";
+
+    END_RELATION_DECLARATION;
+}
+
+void TranslateToSMTLIB::translate_F_CARRY_DAA_DAS(const TaintPtr &tPtr)
+{
+    // calcul du carry fait dans la deuxième condition : "IF ((AL > 99H) or (CF = 1))"
+    // condition vraie  => flag vaut 1
+    // condition fausse => flag vaut 0
+    // formule SMT-LIB : 
+    // let ((condition (or (bvugt src0 #x99) (= src1 #b1)))) 
+    //  (ite (= condition true) #b1 #b0)
+
+    ObjectSource objAL        = tPtr->getSource(0);
+    ObjectSource objCarryFlag = tPtr->getSource(1);
+
+    BEGIN_RELATION_DECLARATION;
+
+    _formula << "let ((condition (or (bvugt " << this->getSourceName(objAL) << ") #x99) ";
+    _formula <<                     "(= " << this->getSourceName(objCarryFlag) << " #b1)))) \n";
+    _formula << "(ite (= condition true) #b1 #b0)";
 
     END_RELATION_DECLARATION;
 }

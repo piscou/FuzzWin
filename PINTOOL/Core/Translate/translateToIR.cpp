@@ -60,6 +60,20 @@ void TranslateToIR::declareObject(const TaintPtr &tPtr)
         case X_CLEAR_BIT:   this->translate_X_CLEAR_BIT(tPtr); break;
         case X_BSF:         this->translate_X_BSF(tPtr); break;
         case X_BSR:         this->translate_X_BSR(tPtr); break;
+        
+        case X_AAA_AL:      this->translate_X_AAA_AL(tPtr); break;
+        case X_AAA_AH:      this->translate_X_AAA_AH(tPtr); break;
+        case X_AAD:         this->translate_X_AAD(tPtr); break;
+        case X_AAM_AL:      this->translate_X_AAM_AL(tPtr); break;
+        case X_AAM_AH:      this->translate_X_AAM_AH(tPtr); break;
+        case X_AAS_AL:      this->translate_X_AAS_AL(tPtr); break;
+        case X_AAS_AH:      this->translate_X_AAS_AH(tPtr); break;
+        case X_DAA_1ST:     this->translate_X_DAA_1ST(tPtr); break;
+        case X_DAA_2ND:     this->translate_X_DAA_2ND(tPtr); break;
+        case X_DAS_1ST:     this->translate_X_DAS_1ST(tPtr); break;
+        case X_DAS_2ND:     this->translate_X_DAS_2ND(tPtr); break;
+            
+        /** FLAGS **/
 
         case F_LSB:         this->translate_F_LSB(tPtr); break;
         case F_MSB:         this->translate_F_MSB(tPtr); break;
@@ -90,6 +104,9 @@ void TranslateToIR::declareObject(const TaintPtr &tPtr)
         case F_AUXILIARY_SUB:   this->translate_F_AUXILIARY_SUB(tPtr); break;
         case F_AUXILIARY_INC:   this->translate_F_AUXILIARY_INC(tPtr); break;
         case F_AUXILIARY_DEC:   this->translate_F_AUXILIARY_DEC(tPtr); break;
+        
+        case F_AAA:             this->translate_F_AAA(tPtr); break;
+        case F_CARRY_DAA_DAS:   this->translate_F_CARRY_DAA_DAS(tPtr); break;
         }
     }
 } // declareObject
