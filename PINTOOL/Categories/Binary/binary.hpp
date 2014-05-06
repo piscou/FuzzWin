@@ -1559,6 +1559,117 @@ void BINARY::fTaintCMP(TaintManager_Thread *pTmgrTls, const ObjectSource &objSrc
         F_OVERFLOW_SUB, objSrcDest, objSrc, objResult));
 } // fTaintCMP
 
+/////////
+// MUL //
+/////////
+
+// SIMULATE
+template<UINT32 lengthInBits> 
+void BINARY::sMUL_1M(THREADID tid, ADDRINT readAddress, ADDRINT implicitRegValue, ADDRINT insAddress) 
+{ 
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
+    
+    // valeurs fixes calculées à la compilation (métaprogrammation)
+    // 1ere opérande et registre destination partie basse (AL/AX/EAX/RAX)
+    REG regACC = RegisterACC<lengthInBits>::getReg(); 
+    // registre de destination, partie haute (AH, DX, EDX, RDX)
+    REG regIO  = RegisterIO<lengthInBits>::getReg();  
+   
+    bool isSrcDestTainted = pTmgrTls->isRegisterTainted<lengthInBits>(regACC);
+    bool isSrcTainted     =	pTmgrGlobal->isMemoryTainted<lengthInBits>(readAddress);
+
+    if ( !(isSrcDestTainted || isSrcTainted)) 
+    {
+        // démarquage flags et partie haute dest (partie basse déjà non marquée)                       
+        pTmgrTls->unTaintCarryFlag();
+        pTmgrTls->unTaintOverflowFlag();	  
+        pTmgrTls->unTaintRegister<lengthInBits>(regIO);
+    }	
+    else 
+    {
+        _LOGTAINT(tid, insAddress, "mul1M" + decstr(lengthInBits));
+        	
+        ObjectSource objSrcDest = (isSrcDestTainted)
+            ? ObjectSource(pTmgrTls->getRegisterTaint<lengthInBits>(regACC, implicitRegValue))
+            : ObjectSource(lengthInBits, implicitRegValue);
+
+        ObjectSource objSrc = (isSrcTainted) 
+            ? ObjectSource(pTmgrGlobal->getMemoryTaint<lengthInBits>(readAddress))
+            : ObjectSource(lengthInBits, getMemoryValue<lengthInBits>(readAddress));
+        
+        // longueur résultat = double des sources	
+        std::shared_ptr<TaintObject<(2*lengthInBits)>> resultPtr = 
+            std::make_shared<TaintObject<(2*lengthInBits)>>(X_MUL, objSrcDest, objSrc);   
+        
+        // marquage des flags
+        fTaintMUL(pTmgrTls, resultPtr);	
+
+        // marquage destination : à partir du resultat, il faut extraire deux parties
+        ObjectSource objResult(resultPtr);
+
+        // -- partie faible -> registre d'accumulation (AL/AX/EAX/RAX)
+        pTmgrTls->updateTaintRegister<lengthInBits>(regACC, 
+            MK_TAINT_OBJECT_PTR(EXTRACT, objResult, ObjectSource(8, 0)));
+        
+        // -- partie forte  -> registre d'I/O (AH/DX/EDX/RDX)
+        pTmgrTls->updateTaintRegister<lengthInBits>(regIO, 
+            MK_TAINT_OBJECT_PTR(EXTRACT, objResult, ObjectSource(8, 1)));
+    }
+} // sMUL_1M
+
+template<UINT32 lengthInBits> 
+void BINARY::sMUL_1R(THREADID tid, REG regSrc, ADDRINT regSrcValue, ADDRINT implicitRegValue, ADDRINT insAddress) 
+{ 
+    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
+    
+    // valeurs fixes calculées à la compilation (métaprogrammation)
+    // 1ere opérande et registre destination partie basse (AL/AX/EAX/RAX)
+    REG regACC = RegisterACC<lengthInBits>::getReg(); 
+    // registre de destination, partie haute (AH, DX, EDX, RDX)
+    REG regIO  = RegisterIO<lengthInBits>::getReg();  
+    
+    bool isSrcDestTainted = pTmgrTls->isRegisterTainted<lengthInBits>(regACC);
+    bool isSrcTainted     = pTmgrTls->isRegisterTainted<lengthInBits>(regSrc);
+    
+    if ( !(isSrcDestTainted || isSrcTainted)) 
+    {
+        // démarquage flags et partie haute dest (partie basse non marquée)
+        pTmgrTls->unTaintCarryFlag();
+        pTmgrTls->unTaintOverflowFlag();	  
+        pTmgrTls->unTaintRegister<lengthInBits>(regIO);
+    }	
+    else 
+    {
+        _LOGTAINT(tid, insAddress, "mul1R" + decstr(lengthInBits));
+
+        ObjectSource objSrcDest = (isSrcDestTainted)
+            ? ObjectSource(pTmgrTls->getRegisterTaint<lengthInBits>(regACC, implicitRegValue))
+            : ObjectSource(lengthInBits, implicitRegValue);
+
+        ObjectSource objSrc = (isSrcTainted) 
+            ? ObjectSource(pTmgrTls->getRegisterTaint<lengthInBits>(regSrc, regSrcValue))
+            : ObjectSource(lengthInBits, regSrcValue);
+        
+        // longueur résultat = double des sources	
+        std::shared_ptr<TaintObject<(2*lengthInBits)>> resultPtr = 
+            std::make_shared<TaintObject<(2*lengthInBits)>>(X_MUL, objSrcDest, objSrc);
+
+        // marquage des flags
+        fTaintMUL(pTmgrTls, resultPtr);	
+
+        // marquage destination : à partir du resultat, il faut extraire deux parties
+        ObjectSource objResult(resultPtr);
+
+        // -- partie faible -> registre d'accumulation (AL/AX/EAX/RAX)
+        pTmgrTls->updateTaintRegister<lengthInBits>(regACC, 
+            MK_TAINT_OBJECT_PTR(EXTRACT, objResult, ObjectSource(8, 0)));
+        
+        // -- partie forte  -> registre d'I/O (AH/DX/EDX/RDX)
+        pTmgrTls->updateTaintRegister<lengthInBits>(regIO, 
+            MK_TAINT_OBJECT_PTR(EXTRACT, objResult, ObjectSource(8, 1)));
+    }
+} // sMUL_1R
+
 //////////
 // IMUL //
 //////////
@@ -1576,7 +1687,7 @@ void BINARY::sIMUL_1M(THREADID tid, ADDRINT readAddress, ADDRINT implicitRegValu
     REG regIO  = RegisterIO<lengthInBits>::getReg();  
    
     bool isSrcDestTainted = pTmgrTls->isRegisterTainted<lengthInBits>(regACC);
-    bool isSrcTainted =	pTmgrGlobal->isMemoryTainted<lengthInBits>(readAddress);
+    bool isSrcTainted     =	pTmgrGlobal->isMemoryTainted<lengthInBits>(readAddress);
 
     if ( !(isSrcDestTainted || isSrcTainted)) 
     {
@@ -1599,35 +1710,26 @@ void BINARY::sIMUL_1M(THREADID tid, ADDRINT readAddress, ADDRINT implicitRegValu
         
         // longueur résultat = double des sources	
         std::shared_ptr<TaintObject<(2*lengthInBits)>> resultPtr = 
-            std::make_shared<TaintObject<(2*lengthInBits)>>(X_IMUL, objSrcDest, objSrc);
-
+            std::make_shared<TaintObject<(2*lengthInBits)>>(X_IMUL, objSrcDest, objSrc);   
+        
         // marquage des flags
         fTaintIMUL(pTmgrTls, resultPtr);	
 
-        // marquage destination : à partir du resultat, il faut extraire
-        // --les (lengthInBits>>3) octets faibles -> registre d'accumulation (AL/AX/EAX/RAX)
-        // --les (lengthInBits>>3) octets forts   -> registre d'I/O (AH/DX/EDX/RDX)
-        REGINDEX regIndexes[2] = { getRegIndex(regACC), getRegIndex(regIO) };
-        UINT32 indexOfExtraction = 0;
+        // marquage destination : à partir du resultat, il faut extraire deux parties
         ObjectSource objResult(resultPtr);
+
+        // -- partie faible -> registre d'accumulation (AL/AX/EAX/RAX)
+        pTmgrTls->updateTaintRegister<lengthInBits>(regACC, 
+            MK_TAINT_OBJECT_PTR(EXTRACT, objResult, ObjectSource(8, 0)));
         
-        for (UINT32 index = 0 ; index < 2 ; ++index)
-        {
-            REGINDEX regIndex = regIndexes[index]; // partie basse puis partie haute
-            for (UINT32 regPart = 0 ; regPart < (lengthInBits >> 3) ; ++regPart, ++indexOfExtraction)
-            {
-                pTmgrTls->updateTaintRegisterPart(regIndex, regPart, std::make_shared<TaintByte>(
-                    EXTRACT,
-                    objResult,
-                    ObjectSource(8, indexOfExtraction)));
-            }
-        }
+        // -- partie forte  -> registre d'I/O (AH/DX/EDX/RDX)
+        pTmgrTls->updateTaintRegister<lengthInBits>(regIO, 
+            MK_TAINT_OBJECT_PTR(EXTRACT, objResult, ObjectSource(8, 1)));
     }
 } // sIMUL_1M
 
 template<UINT32 lengthInBits> 
-void BINARY::sIMUL_1R(THREADID tid, REG regSrc, ADDRINT regSrcValue,
-                      ADDRINT implicitRegValue, ADDRINT insAddress) 
+void BINARY::sIMUL_1R(THREADID tid, REG regSrc, ADDRINT regSrcValue, ADDRINT implicitRegValue, ADDRINT insAddress) 
 { 
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     
@@ -1638,9 +1740,8 @@ void BINARY::sIMUL_1R(THREADID tid, REG regSrc, ADDRINT regSrcValue,
     REG regIO  = RegisterIO<lengthInBits>::getReg();  
     
     bool isSrcDestTainted = pTmgrTls->isRegisterTainted<lengthInBits>(regACC);
-    bool isSrcTainted =	pTmgrTls->isRegisterTainted<lengthInBits>(regSrc);
+    bool isSrcTainted     = pTmgrTls->isRegisterTainted<lengthInBits>(regSrc);
     
-
     if ( !(isSrcDestTainted || isSrcTainted)) 
     {
         // démarquage flags et partie haute dest (partie basse non marquée)
@@ -1667,24 +1768,16 @@ void BINARY::sIMUL_1R(THREADID tid, REG regSrc, ADDRINT regSrcValue,
         // marquage des flags
         fTaintIMUL(pTmgrTls, resultPtr);	
 
-        // marquage destination : à partir du resultat, il faut extraire
-        // --les (lengthInBits>>3) octets faibles -> registre d'accumulation (AL/AX/EAX/RAX)
-        // --les (lengthInBits>>3) octets forts   -> registre d'I/O (AH/DX/EDX/RDX)
-        REGINDEX regIndexes[2] = { getRegIndex(regACC), getRegIndex(regIO) };
-        UINT32 indexOfExtraction = 0;
+        // marquage destination : à partir du resultat, il faut extraire deux parties
         ObjectSource objResult(resultPtr);
+
+        // -- partie faible -> registre d'accumulation (AL/AX/EAX/RAX)
+        pTmgrTls->updateTaintRegister<lengthInBits>(regACC, 
+            MK_TAINT_OBJECT_PTR(EXTRACT, objResult, ObjectSource(8, 0)));
         
-        for (UINT32 index = 0 ; index < 2 ; ++index)
-        {
-            REGINDEX regIndex = regIndexes[index]; // partie basse puis partie haute
-            for (UINT32 regPart = 0 ; regPart < (lengthInBits >> 3) ; ++regPart, ++indexOfExtraction)
-            {
-                pTmgrTls->updateTaintRegisterPart(regIndex, regPart, std::make_shared<TaintByte>(
-                    EXTRACT,
-                    objResult,
-                    ObjectSource(8, indexOfExtraction)));
-            }
-        }
+        // -- partie forte  -> registre d'I/O (AH/DX/EDX/RDX)
+        pTmgrTls->updateTaintRegister<lengthInBits>(regIO, 
+            MK_TAINT_OBJECT_PTR(EXTRACT, objResult, ObjectSource(8, 1)));
     }
 } // sIMUL_1R
 
@@ -1724,18 +1817,8 @@ void BINARY::sIMUL_2MR(THREADID tid, ADDRINT readAddress, REG regSrcDest,
         fTaintIMUL(pTmgrTls, resultPtr);	
         
         // marquage de la destination avec partie basse du résultat (partie haute ignorée)
-        // => marquage de "lengthInBits" objects de taille 8bits
-        // à partir du résultat de longueur lengthInBits*2
-        REGINDEX regIndex = getRegIndex(regSrcDest);
-        ObjectSource objResult(resultPtr);
-
-        for (UINT32 regPart = 0 ; regPart < (lengthInBits >> 3) ; ++regPart) 
-        {
-            pTmgrTls->updateTaintRegisterPart(regIndex, regPart, std::make_shared<TaintByte>(
-                EXTRACT,
-                objResult,
-                ObjectSource(8, regPart)));
-        }
+        pTmgrTls->updateTaintRegister<lengthInBits>(regSrcDest, 
+            MK_TAINT_OBJECT_PTR(EXTRACT, ObjectSource(resultPtr), ObjectSource(8, 0)));
     }
 } // sIMUL_2MR
 
@@ -1775,18 +1858,8 @@ void BINARY::sIMUL_2RR(THREADID tid, REG regSrc, ADDRINT regSrcValue, REG regSrc
         fTaintIMUL(pTmgrTls, resultPtr);	
         
         // marquage de la destination avec partie basse du résultat (partie haute ignorée)
-        // => marquage de "lengthInBits" objects de taille 8bits 
-        // à partir du résultat de longueur lengthInBits*2
-        REGINDEX regIndex = getRegIndex(regSrcDest);
-        ObjectSource objResult(resultPtr);
-
-        for (UINT32 regPart = 0 ; regPart < (lengthInBits >> 3) ; ++regPart) 
-        {
-            pTmgrTls->updateTaintRegisterPart(regIndex, regPart, std::make_shared<TaintByte>(
-                EXTRACT,
-                objResult,
-                ObjectSource(8, regPart)));
-        }
+        pTmgrTls->updateTaintRegister<lengthInBits>(regSrcDest, 
+            MK_TAINT_OBJECT_PTR(EXTRACT, ObjectSource(resultPtr), ObjectSource(8, 0)));
     }
 } // sIMUL_2RR
 
@@ -1815,18 +1888,8 @@ void BINARY::sIMUL_3M(THREADID tid, ADDRINT value, ADDRINT readAddress, REG regD
         fTaintIMUL(pTmgrTls, resultPtr);	
         
         // marquage de la destination avec partie basse du résultat (partie haute ignorée)
-        // => marquage de "lengthInBits" objects de taille 8bits 
-        // à partir du résultat de longueur lengthInBits*2
-        REGINDEX regIndex = getRegIndex(regDest);
-        ObjectSource objResult(resultPtr);
-
-        for (UINT32 regPart = 0 ; regPart < (lengthInBits >> 3) ; ++regPart) 
-        {
-            pTmgrTls->updateTaintRegisterPart(regIndex, regPart, std::make_shared<TaintByte>(
-                EXTRACT,
-                objResult,
-                ObjectSource(8, regPart)));
-        }
+        pTmgrTls->updateTaintRegister<lengthInBits>(regDest, 
+            MK_TAINT_OBJECT_PTR(EXTRACT, ObjectSource(resultPtr), ObjectSource(8, 0)));
     }
 } // sIMUL_3M
 
@@ -1856,18 +1919,8 @@ void BINARY::sIMUL_3R(THREADID tid, ADDRINT value, REG regSrc,
         fTaintIMUL(pTmgrTls, resultPtr);	
         
         // marquage de la destination avec partie basse du résultat (partie haute ignorée)
-        // => marquage de "lengthInBits" objects de taille 8bits
-        // à partir du résultat de longueur lengthInBits*2
-        REGINDEX regIndex = getRegIndex(regDest);
-        ObjectSource objResult(resultPtr);
-
-        for (UINT32 regPart = 0 ; regPart < (lengthInBits >> 3) ; ++regPart) 
-        {
-            pTmgrTls->updateTaintRegisterPart(regIndex, regPart, std::make_shared<TaintByte>(
-                EXTRACT,
-                objResult,
-                ObjectSource(8, regPart)));
-        }
+        pTmgrTls->updateTaintRegister<lengthInBits>(regDest, 
+            MK_TAINT_OBJECT_PTR(EXTRACT, ObjectSource(resultPtr), ObjectSource(8, 0)));
     }
 } // sIMUL_3R
 
@@ -1885,17 +1938,21 @@ void BINARY::sIMUL_3R(THREADID tid, ADDRINT value, REG regSrc,
     // partie forte du dividende = registre d'I/O (AH/DX/EDX/RDX)
     // valeurs fixes calculées à la compilation (métaprogrammation)
     REG regACC = RegisterACC<lengthInBits>::getReg(); 
-    REG regIO  = RegisterIO<lengthInBits>::getReg();  
-    
+    REG regIO  = RegisterIO<lengthInBits>::getReg(); 
+
+    Relation relQuotient  = (isSignedDivision) ? X_IDIV_QUO : X_DIV_QUO; /* division signée ou non */
+    Relation relRemainder = (isSignedDivision) ? X_IDIV_REM : X_DIV_REM; 
+
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     
-    bool isDivisorTainted =      pTmgrGlobal->isMemoryTainted<lengthInBits>(readAddress);
+    bool isDivisorTainted      = pTmgrGlobal->isMemoryTainted<lengthInBits>(readAddress);
     bool isLowDividendTainted  = pTmgrTls->isRegisterTainted<lengthInBits>(regACC);
     bool isHighDividendTainted = pTmgrTls->isRegisterTainted<lengthInBits>(regIO);
     
     if (isLowDividendTainted || isHighDividendTainted || isDivisorTainted) 
     {
-        _LOGTAINT(tid, insAddress, (isSignedDivision ? "IDIVM" : "DIVM") + decstr(lengthInBits));
+        const std::string divString(isSignedDivision ? "IDIVM" : "DIVM");
+        _LOGTAINT(tid, insAddress, divString + decstr(lengthInBits));
 
         ObjectSource objSrcLowDividend = (isLowDividendTainted)
             ? ObjectSource(pTmgrTls->getRegisterTaint<lengthInBits>(regACC, lowDividendValue))
@@ -1910,22 +1967,18 @@ void BINARY::sIMUL_3R(THREADID tid, ADDRINT value, REG regSrc,
             : ObjectSource(lengthInBits, getMemoryValue<lengthInBits>(readAddress));
 
         // création de l'objet correspondant au quotient
-        TaintObject<lengthInBits> quotient(
-            (isSignedDivision) ? X_IDIV_QUO : X_DIV_QUO, /* division signée ou non */
-            objSrcHighDividend,
-            objSrcLowDividend,
-            objSrcDivisor);
-        
+        TAINT_OBJECT_PTR quotientPtr = MK_TAINT_OBJECT_PTR(relQuotient, objSrcHighDividend, objSrcLowDividend, objSrcDivisor);
         // création de l'objet correspondant au reste
-        TaintObject<lengthInBits> remainder(
-            (isSignedDivision) ? X_IDIV_REM : X_DIV_REM, /* division signée ou non */
-            objSrcHighDividend,
-            objSrcLowDividend,
-            objSrcDivisor);
+        TaintObject<lengthInBits> remainder(relRemainder, objSrcHighDividend, objSrcLowDividend, objSrcDivisor);
 
         // Affectation quotient et reste aux registres adéquats (idem dividende, cf manuel Intel)
-        pTmgrTls->updateTaintRegister<lengthInBits>(regACC, MK_TAINT_OBJECT_PTR(quotient));
+        pTmgrTls->updateTaintRegister<lengthInBits>(regACC, quotientPtr);
         pTmgrTls->updateTaintRegister<lengthInBits>(regIO,  MK_TAINT_OBJECT_PTR(remainder));	
+
+        // AJOUT DES CONTRAINTES : sur le diviseur s'il est marqué (il doit être non nul) 
+        // et sur le quotient qui doit être compris dans un certain intervalle, sous peine de Divide Exception
+        g_pFormula->addConstraintDivision(pTmgrTls, isSignedDivision, quotientPtr, insAddress);
+
     }
 } // sDIVISION_M
 
@@ -1940,6 +1993,9 @@ void BINARY::sDIVISION_R(THREADID tid, REG regSrc, ADDRINT regSrcValue,
     REG regACC = RegisterACC<lengthInBits>::getReg(); 
     REG regIO  = RegisterIO<lengthInBits> ::getReg();  
     
+    Relation relQuotient  = (isSignedDivision) ? X_IDIV_QUO : X_DIV_QUO; /* division signée ou non */
+    Relation relRemainder = (isSignedDivision) ? X_IDIV_REM : X_DIV_REM;
+
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     
     bool isDivisorTainted      = pTmgrTls->isRegisterTainted<lengthInBits>(regSrc);
@@ -1963,21 +2019,16 @@ void BINARY::sDIVISION_R(THREADID tid, REG regSrc, ADDRINT regSrcValue,
             : ObjectSource(lengthInBits, regSrcValue);
          
         // création de l'objet correspondant au quotient
-        TaintObject<lengthInBits> quotient(
-            (isSignedDivision) ? X_IDIV_QUO : X_DIV_QUO, /* division signée ou non */
-            objSrcHighDividend,
-            objSrcLowDividend,
-            objSrcDivisor);
-        
+        TAINT_OBJECT_PTR quotientPtr = MK_TAINT_OBJECT_PTR(relQuotient, objSrcHighDividend, objSrcLowDividend, objSrcDivisor);
         // création de l'objet correspondant au reste
-        TaintObject<lengthInBits> remainder(
-            (isSignedDivision) ? X_IDIV_REM : X_DIV_REM, /* division signée ou non */
-            objSrcHighDividend,
-            objSrcLowDividend,
-            objSrcDivisor);
+        TaintObject<lengthInBits> remainder(relRemainder, objSrcHighDividend, objSrcLowDividend, objSrcDivisor);
 
         // Affectation quotient et reste aux registres adéquats (idem dividende, cf manuel Intel)
-        pTmgrTls->updateTaintRegister<lengthInBits>(regACC, MK_TAINT_OBJECT_PTR(quotient));
+        pTmgrTls->updateTaintRegister<lengthInBits>(regACC, quotientPtr);
         pTmgrTls->updateTaintRegister<lengthInBits>(regIO,  MK_TAINT_OBJECT_PTR(remainder));	
+
+        // AJOUT DES CONTRAINTES : sur le diviseur s'il est marqué (il doit être non nul) 
+        // et sur le quotient qui doit être compris dans un certain intervalle, sous peine de Divide Exception
+        g_pFormula->addConstraintDivision(pTmgrTls, isSignedDivision, quotientPtr, insAddress);	
     }
 } //sDIVISION_R

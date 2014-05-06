@@ -1,4 +1,5 @@
 #include "binary.h"
+#include <Translate\translate.h> // pour ajout des contraintes sur DIV/IDIV
 
 /////////
 // NEG //
@@ -193,7 +194,6 @@ void BINARY::fTaintDEC(TaintManager_Thread *pTmgrTls, const ObjectSource &objSrc
     pTmgrTls->updateTaintSignFlag(std::make_shared<TaintBit>(F_MSB, objResult));
     pTmgrTls->updateTaintOverflowFlag(std::make_shared<TaintBit>(F_OVERFLOW_DEC, objSrc));
 } // fTaintDEC
-
 
 /////////
 // ADC //
@@ -839,7 +839,52 @@ void BINARY::cCMP(INS &ins)
 // CALLBACKS
 void BINARY::cMUL(INS &ins) 
 { 
-    BINARY::cIMUL(ins); // TODO car SMT2 ne supporte pas la multiplication non signée
+    
+    void (*callback)() = nullptr;       // pointeur sur la fonction à appeler
+    REG implicitReg    = REG_INVALID(); // registre implicite : AL, AX, EAX ou RAX
+        
+    if (INS_IsMemoryRead(ins)) 
+    { 
+        // source = mémoire, donc type MUL M
+        switch (INS_MemoryReadSize(ins)) 
+        {
+        case 1:	 callback = (AFUNPTR) sMUL_1M<8>;	implicitReg = REG_AL;  break;
+        case 2:	 callback = (AFUNPTR) sMUL_1M<16>;	implicitReg = REG_AX;  break;
+        case 4:	 callback = (AFUNPTR) sMUL_1M<32>;	implicitReg = REG_EAX; break;
+        #if TARGET_IA32E
+        case 8:	 callback = (AFUNPTR) sMUL_1M<64>;  implicitReg = REG_RAX; break;
+        #endif
+        default: return;
+        }
+            
+        INS_InsertCall (ins, IPOINT_BEFORE, callback,
+            IARG_THREAD_ID,
+            IARG_MEMORYREAD_EA,		     // adresse réelle de lecture 
+            IARG_REG_VALUE, implicitReg, // valeur du registre implicite
+            IARG_INST_PTR, IARG_END);
+    }
+    else // source = registre, donc type IMUL 1R.
+    {			
+        REG regSrc = INS_OperandReg(ins, 0);// registre src en opérande 0
+           
+        switch (getRegSize(regSrc)) 
+        {
+        case 1:	 callback = (AFUNPTR) sMUL_1R<8>;	implicitReg = REG_AL;  break;
+        case 2:	 callback = (AFUNPTR) sMUL_1R<16>;	implicitReg = REG_AX;  break;
+        case 4:	 callback = (AFUNPTR) sMUL_1R<32>;	implicitReg = REG_EAX; break;
+        #if TARGET_IA32E
+        case 8:	 callback = (AFUNPTR) sMUL_1R<64>;  implicitReg = REG_RAX; break;
+        #endif
+        default: return;
+        }
+
+        INS_InsertCall (ins, IPOINT_BEFORE, callback,
+            IARG_THREAD_ID,
+            IARG_UINT32,    regSrc, // registre source 1
+            IARG_REG_VALUE, regSrc, // sa valeur lors du callback
+            IARG_REG_VALUE, implicitReg,// valeur du registre implicite
+            IARG_INST_PTR, IARG_END);
+    }
 } // cMUL
 
 // FLAGS
@@ -893,13 +938,13 @@ void BINARY::cIMUL(INS &ins)
             // 2eme source = mémoire, donc type reg = mem*reg
             switch (regSize) 
             {
-                // case 1:	impossible
-                case 2:	callback = (AFUNPTR) sIMUL_2MR<16>;	break;
-                case 4:	callback = (AFUNPTR) sIMUL_2MR<32>;	break;
-                #if TARGET_IA32E
-                case 8:	callback = (AFUNPTR) sIMUL_2MR<64>;	break;
-                #endif
-                default: return;
+            // case 1:	impossible
+            case 2:	callback = (AFUNPTR) sIMUL_2MR<16>;	break;
+            case 4:	callback = (AFUNPTR) sIMUL_2MR<32>;	break;
+            #if TARGET_IA32E
+            case 8:	callback = (AFUNPTR) sIMUL_2MR<64>;	break;
+            #endif
+            default: return;
             }
             
             INS_InsertCall (ins, IPOINT_BEFORE, callback,
@@ -915,13 +960,13 @@ void BINARY::cIMUL(INS &ins)
             // NB: sera codé en cas IMUL3IR, avec regSrc = regSrcDest
             switch (regSize) 
             {
-                // case 1:	impossible
-                case 2:	callback = (AFUNPTR) sIMUL_3R<16>;	break;
-                case 4:	callback = (AFUNPTR) sIMUL_3R<32>;	break;
-                #if TARGET_IA32E
-                case 8:	callback = (AFUNPTR) sIMUL_3R<64>;	break;
-                #endif
-                default: return;
+            // case 1:	impossible
+            case 2:	callback = (AFUNPTR) sIMUL_3R<16>;	break;
+            case 4:	callback = (AFUNPTR) sIMUL_3R<32>;	break;
+            #if TARGET_IA32E
+            case 8:	callback = (AFUNPTR) sIMUL_3R<64>;	break;
+            #endif
+            default: return;
             }
 
             INS_InsertCall (ins, IPOINT_BEFORE, callback,	// type IMUL IRR
@@ -936,13 +981,13 @@ void BINARY::cIMUL(INS &ins)
         {	
             switch (regSize) 
             {
-                // case 1:	impossible
-                case 2:	callback = (AFUNPTR) sIMUL_2RR<16>;	break;
-                case 4:	callback = (AFUNPTR) sIMUL_2RR<32>;	break;
-                #if TARGET_IA32E
-                case 8:	callback = (AFUNPTR) sIMUL_2RR<64>;	break;
-                #endif
-                default: return;
+            // case 1:	impossible
+            case 2:	callback = (AFUNPTR) sIMUL_2RR<16>;	break;
+            case 4:	callback = (AFUNPTR) sIMUL_2RR<32>;	break;
+            #if TARGET_IA32E
+            case 8:	callback = (AFUNPTR) sIMUL_2RR<64>;	break;
+            #endif
+            default: return;
             }
             REG regSrc = INS_OperandReg(ins, 1);
             
@@ -965,13 +1010,13 @@ void BINARY::cIMUL(INS &ins)
         {
             switch (regSize) 
             {
-                // case 1:	impossible
-                case 2:	callback = (AFUNPTR) sIMUL_3M<16>;	break;
-                case 4:	callback = (AFUNPTR) sIMUL_3M<32>;	break;
-                #if TARGET_IA32E
-                case 8:	callback = (AFUNPTR) sIMUL_3M<64>;	break;
-                #endif
-                default:	return;
+            // case 1:	impossible
+            case 2:	callback = (AFUNPTR) sIMUL_3M<16>;	break;
+            case 4:	callback = (AFUNPTR) sIMUL_3M<32>;	break;
+            #if TARGET_IA32E
+            case 8:	callback = (AFUNPTR) sIMUL_3M<64>;	break;
+            #endif
+            default:	return;
             }
             
             INS_InsertCall (ins, IPOINT_BEFORE, callback,
@@ -987,13 +1032,13 @@ void BINARY::cIMUL(INS &ins)
             
             switch (getRegSize(regSrc)) 
             {
-                // case 1:	impossible
-                case 2:	callback = (AFUNPTR) sIMUL_3R<16>;	break;
-                case 4:	callback = (AFUNPTR) sIMUL_3R<32>;	break;
-                #if TARGET_IA32E
-                case 8:	callback = (AFUNPTR) sIMUL_3R<64>;	break;
-                #endif
-                default: return;
+            // case 1:	impossible
+            case 2:	callback = (AFUNPTR) sIMUL_3R<16>;	break;
+            case 4:	callback = (AFUNPTR) sIMUL_3R<32>;	break;
+            #if TARGET_IA32E
+            case 8:	callback = (AFUNPTR) sIMUL_3R<64>;	break;
+            #endif
+            default: return;
             }
             
             INS_InsertCall (ins, IPOINT_BEFORE, callback,	// type IMUL IRR
@@ -1013,25 +1058,25 @@ void BINARY::cIMUL(INS &ins)
             // source = mémoire, donc type IMUL M
             switch (INS_MemoryReadSize(ins)) 
             {
-                case 1:	
-                    callback = (AFUNPTR) sIMUL_1M<8>;	
-                    implicitReg = REG_AL;
-                    break;
-                case 2:	
-                    callback = (AFUNPTR) sIMUL_1M<16>;	
-                    implicitReg = REG_AX;
-                    break;
-                case 4:	
-                    callback = (AFUNPTR) sIMUL_1M<32>;	
-                    implicitReg = REG_EAX;
-                    break;
-                #if TARGET_IA32E
-                case 8:	
-                    callback = (AFUNPTR) sIMUL_1M<64>;	
-                    implicitReg = REG_RAX;
-                    break;
-                #endif
-                default: return;
+            case 1:	
+                callback = (AFUNPTR) sIMUL_1M<8>;	
+                implicitReg = REG_AL;
+                break;
+            case 2:	
+                callback = (AFUNPTR) sIMUL_1M<16>;	
+                implicitReg = REG_AX;
+                break;
+            case 4:	
+                callback = (AFUNPTR) sIMUL_1M<32>;	
+                implicitReg = REG_EAX;
+                break;
+            #if TARGET_IA32E
+            case 8:	
+                callback = (AFUNPTR) sIMUL_1M<64>;	
+                implicitReg = REG_RAX;
+                break;
+            #endif
+            default: return;
             }
             
             INS_InsertCall (ins, IPOINT_BEFORE, callback,
@@ -1046,25 +1091,25 @@ void BINARY::cIMUL(INS &ins)
            
             switch (getRegSize(regSrc)) 
             {
-                case 1:	
-                    callback = (AFUNPTR) sIMUL_1R<8>;	
-                    implicitReg = REG_AL;
-                    break;
-                case 2:	
-                    callback = (AFUNPTR) sIMUL_1R<16>;	
-                    implicitReg = REG_AX;
-                    break;
-                case 4:	
-                    callback = (AFUNPTR) sIMUL_1R<32>;	
-                    implicitReg = REG_EAX;
-                    break;
-                #if TARGET_IA32E
-                case 8:	
-                    callback = (AFUNPTR) sIMUL_1R<64>;	
-                    implicitReg = REG_RAX;
-                    break;
-                #endif
-                default: return;
+            case 1:	
+                callback = (AFUNPTR) sIMUL_1R<8>;	
+                implicitReg = REG_AL;
+                break;
+            case 2:	
+                callback = (AFUNPTR) sIMUL_1R<16>;	
+                implicitReg = REG_AX;
+                break;
+            case 4:	
+                callback = (AFUNPTR) sIMUL_1R<32>;	
+                implicitReg = REG_EAX;
+                break;
+            #if TARGET_IA32E
+            case 8:	
+                callback = (AFUNPTR) sIMUL_1R<64>;	
+                implicitReg = REG_RAX;
+                break;
+            #endif
+            default: return;
             }
 
             INS_InsertCall (ins, IPOINT_BEFORE, callback,
@@ -1081,7 +1126,7 @@ void BINARY::cIMUL(INS &ins)
 void BINARY::fTaintIMUL(TaintManager_Thread *pTmgrTls, const TaintPtr &resultPtr)
 {
     // IMUL = OF / CF, marquage identique, autres flags inchangés
-    TaintBitPtr flagPtr = std::make_shared<TaintBit>(F_CARRY_MUL, ObjectSource(resultPtr));
+    TaintBitPtr flagPtr = std::make_shared<TaintBit>(F_CARRY_IMUL, ObjectSource(resultPtr));
 
     pTmgrTls->updateTaintOverflowFlag(flagPtr);
     pTmgrTls->updateTaintCarryFlag(flagPtr);
@@ -1102,8 +1147,8 @@ void BINARY::cDIVISION(INS &ins, bool isSignedDivision)
     // les procédures DIV/IDIV sont strictement les mêmes, seule la relation change
     // etant donné qu'il y a peu de chances de rencontrer ce type d'instruction
     // on se permet de passer le type signed/unsigned par parametre (pas par template)
-    void (*callback)() = nullptr;
-    REG lowDividendReg = REG_INVALID(); // AL/AX/EAX/RAX 
+    void (*callback)()  = nullptr;
+    REG lowDividendReg  = REG_INVALID(); // AL/AX/EAX/RAX 
     REG highDividendReg = REG_INVALID();// AH/DX/EDX/RDX 
 
     if (INS_IsMemoryRead(ins)) 
@@ -1112,29 +1157,29 @@ void BINARY::cDIVISION(INS &ins, bool isSignedDivision)
         // Dividende = AX, DX:AX, EDX:EAX ou RDX::RAX selon la taille de la mémoire
 
         switch (INS_MemoryReadSize(ins)) 
-            {
-            case 1:	
-                callback = (AFUNPTR) sDIVISION_M<8>; 
-                lowDividendReg = REG_AL;
-                highDividendReg = REG_AH;
-                break;
-            case 2:	
-                callback = (AFUNPTR) sDIVISION_M<16>; 
-                lowDividendReg = REG_AX;
-                highDividendReg = REG_DX;
-                break;
-            case 4:	
-                callback = (AFUNPTR) sDIVISION_M<32>; 
-                lowDividendReg = REG_EAX;
-                highDividendReg = REG_EDX;
-                break;
-            #if TARGET_IA32E
-            case 8: callback = (AFUNPTR) sDIVISION_M<64>;
-                lowDividendReg = REG_RAX;
-                highDividendReg = REG_RDX;
-                break;
-            #endif
-            default: return;
+        {
+        case 1:	
+            callback = (AFUNPTR) sDIVISION_M<8>; 
+            lowDividendReg = REG_AL;
+            highDividendReg = REG_AH;
+            break;
+        case 2:	
+            callback = (AFUNPTR) sDIVISION_M<16>; 
+            lowDividendReg = REG_AX;
+            highDividendReg = REG_DX;
+            break;
+        case 4:	
+            callback = (AFUNPTR) sDIVISION_M<32>; 
+            lowDividendReg = REG_EAX;
+            highDividendReg = REG_EDX;
+            break;
+        #if TARGET_IA32E
+        case 8: callback = (AFUNPTR) sDIVISION_M<64>;
+            lowDividendReg = REG_RAX;
+            highDividendReg = REG_RDX;
+            break;
+        #endif
+        default: return;
         }
 
         INS_InsertCall (ins, IPOINT_BEFORE, callback,
@@ -1150,28 +1195,28 @@ void BINARY::cDIVISION(INS &ins, bool isSignedDivision)
         REG regSrc = INS_OperandReg(ins, 0);	// registre src
         switch (getRegSize(regSrc))
         {
-            case 1:	
-                callback = (AFUNPTR) sDIVISION_R<8>; 
-                lowDividendReg = REG_AL;
-                highDividendReg = REG_AH;
-                break;
-            case 2:	
-                callback = (AFUNPTR) sDIVISION_R<16>; 
-                lowDividendReg = REG_AX;
-                highDividendReg = REG_DX;
-                break;
-            case 4:	
-                callback = (AFUNPTR) sDIVISION_R<32>; 
-                lowDividendReg = REG_EAX;
-                highDividendReg = REG_EDX;
-                break;
-            #if TARGET_IA32E
-            case 8: callback = (AFUNPTR) sDIVISION_R<64>;
-                lowDividendReg = REG_RAX;
-                highDividendReg = REG_RDX;
-                break;
-            #endif
-            default: return;
+        case 1:	
+            callback = (AFUNPTR) sDIVISION_R<8>; 
+            lowDividendReg = REG_AL;
+            highDividendReg = REG_AH;
+            break;
+        case 2:	
+            callback = (AFUNPTR) sDIVISION_R<16>; 
+            lowDividendReg = REG_AX;
+            highDividendReg = REG_DX;
+            break;
+        case 4:	
+            callback = (AFUNPTR) sDIVISION_R<32>; 
+            lowDividendReg = REG_EAX;
+            highDividendReg = REG_EDX;
+            break;
+        #if TARGET_IA32E
+        case 8: callback = (AFUNPTR) sDIVISION_R<64>;
+            lowDividendReg = REG_RAX;
+            highDividendReg = REG_RDX;
+            break;
+        #endif
+        default: return;
         }
 
         INS_InsertCall (ins, IPOINT_BEFORE, callback,

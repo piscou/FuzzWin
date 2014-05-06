@@ -13,7 +13,6 @@ template<UINT32 lengthInBits> void DATAXFER::sMOV_RR(THREADID tid, REG regSrc, R
     // on traite octet par octet pour éviter le surmarquage, et en plus
     // cela ne nécessite pas les valeurs des registres (gain en performances)
 
-
     REGINDEX regIndexDest = getRegIndex(regDest);	
     REGINDEX regIndexSrc  = getRegIndex(regSrc);
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
@@ -47,16 +46,24 @@ template<UINT32 lengthInBits> void DATAXFER::sMOV_RM(THREADID tid, REG regSrc, A
     REGINDEX regIndex = getRegIndex(regSrc);
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     
-    for (UINT32 regPart = 0 ; regPart < (lengthInBits >> 3) ; ++regPart, ++writeAddress) 
-    {	
-        if (pTmgrTls->isRegisterPartTainted(regIndex, regPart))  // octet marqué ? 
-        {  
-            _LOGTAINT(tid, insAddress, "movRM" + decstr(lengthInBits) + " octet " + decstr(regPart));	
-            pTmgrGlobal->updateMemoryTaint<8>(writeAddress, std::make_shared<TaintByte>(
-                X_ASSIGN, 
-                ObjectSource(pTmgrTls->getRegisterPartTaint(regIndex, regPart))));
+    // si le registre est entièrement marqué, récupérer l'objet et l'affecter
+    // au registre de destination
+    TAINT_OBJECT_PTR tPtr = pTmgrTls->getFullRegisterTaint<lengthInBits>(regSrc);
+    if ( (bool) tPtr)  pTmgrGlobal->updateMemoryTaint<lengthInBits>(writeAddress, tPtr);
+    // sinon traitement octet par octet
+    else
+    {
+        for (UINT32 regPart = 0 ; regPart < (lengthInBits >> 3) ; ++regPart, ++writeAddress) 
+        {	
+            if (pTmgrTls->isRegisterPartTainted(regIndex, regPart))  // octet marqué ? 
+            {  
+                _LOGTAINT(tid, insAddress, "movRM" + decstr(lengthInBits) + " octet " + decstr(regPart));	
+                pTmgrGlobal->updateMemoryTaint<8>(writeAddress, std::make_shared<TaintByte>(
+                    X_ASSIGN, 
+                    ObjectSource(pTmgrTls->getRegisterPartTaint(regIndex, regPart))));
+            }
+            else pTmgrGlobal->unTaintMemory<8>(writeAddress);   
         }
-        else pTmgrGlobal->unTaintMemory<8>(writeAddress);   
     }
 } // sMOV_RM
 

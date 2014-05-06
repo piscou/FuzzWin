@@ -74,6 +74,7 @@ protected:
     std::string  _z3Path;         // chemin vers le solveur Z3
 
     std::string  _cmdLinePin;   // ligne de commande du pintool, pré-rédigée
+    std::string  _cmdLineCheckScore;    // ligne de commande pour checkscore, pré-rédigée
     std::string  _faultFile;    // fichier texte retracant les fautes trouvées
     std::string  _formula;      // formule retournée par le pintool
 
@@ -142,6 +143,10 @@ protected:
     DWORD        debugTarget(CInput *pNewInput);        
     std::string  getCmdLineDebug(const CInput *pNewInput) const;
     static void  CALLBACK timerExpired(LPVOID arg, DWORD, DWORD);
+
+    /* PARTIE calcul du score (checkscore.cpp) */
+    void         checkScore(CInput *pNewChild);
+    std::string  getCmdLineCheckScore(const CInput *pNewChild) const;
 
 public:
 

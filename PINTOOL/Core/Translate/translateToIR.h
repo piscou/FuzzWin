@@ -60,15 +60,35 @@ protected:
     // => soit le numéro de variable, soit une valeur numérique
     virtual std::string getSourceName(const ObjectSource &objSrc) const = 0;
 
-    // déclaration de l'entête d'une nouvelle contrainte sur un predicat
-    virtual std::string getConstraintHeader(ADDRINT insAddress, PREDICATE p) const = 0;
+    /*** CONTRAINTES : PREDICAT ***/
 
+    // déclaration de l'entête d'une nouvelle contrainte sur un predicat
+    virtual std::string getConstraintPredicateHeader(ADDRINT insAddress, PREDICATE p) const = 0;
     // renvoie la traduction du prédicat fourni en argument
     virtual std::string getPredicateTranslation
         (TaintManager_Thread *pTmgrTls, PREDICATE pred, ADDRINT flagsOrRegValue) = 0;
-
     // déclaration du 'final' d'une contrainte sur un predicat
-    virtual std::string getConstraintFooter(bool taken) const = 0;
+    virtual std::string getConstraintPredicateFooter(bool taken) const = 0;
+
+    /*** CONTRAINTES : DIVISEUR NUL ***/
+
+    // déclaration de l'entête d'une nouvelle contrainte pour un diviseur nul
+    virtual std::string getConstraintNullDivisorHeader(ADDRINT insAddress) const = 0;
+    // renvoie la traduction de la formule imposant un diviseur nul
+    virtual std::string getNullDivisorTranslation
+        (TaintManager_Thread *pTmgrTls, const TaintPtr &divisorPtr) = 0;
+    // déclaration du 'final' d'une contrainte pour un diviseur nul
+    virtual std::string getConstraintNullDivisorFooter() const = 0;
+
+    /*** CONTRAINTES : QUOTIENT DIVISION HORS BORNES ***/
+
+    // déclaration de l'entête d'une nouvelle contrainte sur le résultat d'une division
+    virtual std::string getConstraintDivOverflowHeader(bool isSignedDivision, ADDRINT insAddress) const = 0;
+    // renvoie la traduction de la formule sur le résultat d'une division
+    virtual std::string getDivOverflowTranslation(TaintManager_Thread *pTmgrTls, 
+        bool isSignedDivision, const TaintPtr &quotientPtr) = 0;
+    // déclaration du 'final' d'une contrainte sur le résultat d'une division
+    virtual std::string getConstraintDivOverflowFooter() const = 0;
 
     /***********************************/
     /** TRADUCTION DE CHAQUE RELATION **/
@@ -170,7 +190,11 @@ public:
     // ajoute une contrainte sur un saut conditionnel (Jcc) marqué
     void addConstraintJcc(TaintManager_Thread *pTmgrTls, PREDICATE pred, 
         bool isTaken, ADDRINT insAddress, ADDRINT flagsOrRegValue = 0); 
+
+    // ajoute une contrainte sur une division marquée
+    void addConstraintDivision(TaintManager_Thread *pTmgrTls, bool isSignedDivision,
+        const TaintPtr &quotient, ADDRINT insAddress);
     
-    // fabrication de la formule finale, et envoi dans le pipe
+    // fabrication de la formule finale
     virtual void final() = 0;    
 };

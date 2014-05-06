@@ -73,7 +73,7 @@ void INSTRUMENTATION::Instruction(INS ins, void* )
     case XED_ICLASS_SETNL:  BITBYTE::cSETNL(ins);   break;
     case XED_ICLASS_SETLE:  BITBYTE::cSETLE(ins);   break;
     case XED_ICLASS_SETNLE: BITBYTE::cSETNLE(ins);  break;    
-    // BIBYTE (BTxx, BSR, BSF)
+    // BITBYTE (BTxx, BSR, BSF)
     case XED_ICLASS_BT:  BITBYTE::cBT(ins);  break;
     case XED_ICLASS_BTC: BITBYTE::cBTC(ins); break;
     case XED_ICLASS_BTR: BITBYTE::cBTR(ins); break;
@@ -201,7 +201,7 @@ void INSTRUMENTATION::Instruction(INS ins, void* )
 
     // MISC
     case XED_ICLASS_LEA:    MISC::cLEA(ins);    break;
-    //case XED_ICLASS_LEAVE:  MISC::cLEAVE(ins);  break;
+    case XED_ICLASS_LEAVE:  MISC::cLEAVE(ins);  break;
     case XED_ICLASS_XLAT:   MISC::cXLAT(ins);   break;
     case XED_ICLASS_PAUSE:  break;      // identique à NOP
     case XED_ICLASS_CPUID:  MISC::cCPUID(ins);  break;
@@ -256,7 +256,6 @@ void INSTRUMENTATION::Instruction(INS ins, void* )
     case XED_ICLASS_CMPXCHG16B: SEMAPHORE::cCMPXCHG16B(ins); break;
 #endif
     case XED_ICLASS_XADD:       SEMAPHORE::cXADD(ins);  break;  
-
 
     // ROTATE
     case XED_ICLASS_ROL: ROTATE::cROL(ins); break;
@@ -421,10 +420,10 @@ void INSTRUMENTATION::FiniCheckScore(INT32 code, void* )
 // ajout du nombre d'instructions de la trace au total
 void INSTRUMENTATION::insCount(TRACE trace, VOID *)
 {
-    PIN_GetLock(&g_lock, PIN_GetTid());
     for (BBL bbl = TRACE_BblHead(trace) ; BBL_Valid(bbl) ; bbl = BBL_Next(bbl))
     {
+        PIN_GetLock(&g_lock, PIN_GetTid());
         g_nbIns += BBL_NumIns(bbl);
-    }
-    PIN_ReleaseLock(&g_lock);
+        PIN_ReleaseLock(&g_lock);
+    }   
 }

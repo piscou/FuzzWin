@@ -50,21 +50,39 @@ protected:
     // => soit le numéro de variable, soit une valeur numérique
     std::string getSourceName(const ObjectSource &objSrc) const;
 
-    /** CONTRAINTES **/
-    
-    // déclaration de l'entête d'une nouvelle contrainte sur un predicat
-    std::string getConstraintHeader(ADDRINT insAddress, PREDICATE p) const;
+    /*** CONTRAINTES : PREDICAT ***/
 
+    // déclaration de l'entête d'une nouvelle contrainte sur un predicat
+    std::string getConstraintPredicateHeader(ADDRINT insAddress, PREDICATE p) const;
+    // renvoie la traduction du prédicat fourni en argument
+    std::string getPredicateTranslation
+        (TaintManager_Thread *pTmgrTls, PREDICATE pred, ADDRINT flagsOrRegValue);
     // déclaration du 'final' d'une contrainte sur un predicat
-    std::string getConstraintFooter(bool taken) const;
+    std::string getConstraintPredicateFooter(bool taken) const;
+
+    /*** CONTRAINTES : DIVISEUR NUL ***/
+
+    // déclaration de l'entête d'une nouvelle contrainte pour un diviseur nul
+    std::string getConstraintNullDivisorHeader(ADDRINT insAddress) const;
+    // renvoie la traduction de la formule imposant un diviseur nul
+    std::string getNullDivisorTranslation
+        (TaintManager_Thread *pTmgrTls, const TaintPtr &divisorPtr);
+    // déclaration du 'final' d'une contrainte pour un diviseur nul
+    std::string getConstraintNullDivisorFooter() const;
+
+    /*** CONTRAINTES : QUOTIENT DIVISION HORS BORNES ***/
+
+    // déclaration de l'entête d'une nouvelle contrainte sur le résultat d'une division
+    std::string getConstraintDivOverflowHeader(bool isSignedDivision, ADDRINT insAddress) const;
+    // renvoie la traduction de la formule sur le résultat d'une division
+    std::string getDivOverflowTranslation(TaintManager_Thread *pTmgrTls, 
+        bool isSignedDivision, const TaintPtr &quotientPtr);
+    // déclaration du 'final' d'une contrainte sur le résultat d'une division
+    std::string getConstraintDivOverflowFooter() const;
 
     /***********************************/
     /** TRADUCTION DE CHAQUE RELATION **/
     /***********************************/
-
-    // renvoie la traduction du prédicat fourni en argument
-    std::string getPredicateTranslation
-        (TaintManager_Thread *pTmgrTls, PREDICATE pred, ADDRINT flagsOrRegValue);
 
     // entete de la déclaration pour une instruction : "(define-fun XX () (BitVec nb) ("
     void declareRelationHeader(const TaintPtr &tPtr);

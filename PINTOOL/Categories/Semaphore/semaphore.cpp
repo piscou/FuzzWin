@@ -163,7 +163,7 @@ void SEMAPHORE::sCMPXCHG8B(THREADID tid, ADDRINT address, ADDRINT regEAXValue, A
     
     bool isMemTainted       = pTmgrGlobal->isMemoryTainted<64>(address); 
     ADDRINT srcMemLowValue  = getMemoryValue<32>(address);
-    ADDRINT srcMemHighValue = getMemoryValue<32>(address + 3);
+    ADDRINT srcMemHighValue = getMemoryValue<32>(address + 4);
  
     bool isEAXTainted =	pTmgrTls->isRegisterTainted<32>(REG_EAX);
     bool isEDXTainted =	pTmgrTls->isRegisterTainted<32>(REG_EDX);
@@ -184,8 +184,8 @@ void SEMAPHORE::sCMPXCHG8B(THREADID tid, ADDRINT address, ADDRINT regEAXValue, A
             ? ObjectSource(pTmgrGlobal->getMemoryTaint<32>(address))
             : ObjectSource(32, srcMemLowValue);
 
-        ObjectSource srcMemHigh = (pTmgrGlobal->isMemoryTainted<32>(address + 3))
-            ? ObjectSource(pTmgrGlobal->getMemoryTaint<32>(address + 3))
+        ObjectSource srcMemHigh = (pTmgrGlobal->isMemoryTainted<32>(address + 4))
+            ? ObjectSource(pTmgrGlobal->getMemoryTaint<32>(address + 4))
             : ObjectSource(32, srcMemHighValue);
 
         ObjectSource srcEAX = (isEAXTainted) 
@@ -210,7 +210,7 @@ void SEMAPHORE::sCMPXCHG8B(THREADID tid, ADDRINT address, ADDRINT regEAXValue, A
     if ((srcMemLowValue == regEAXValue) && (srcMemHighValue == regEDXValue))
     {
         DATAXFER::sMOV_RM<32>(tid, REG_EBX, address       ,insAddress);
-        DATAXFER::sMOV_RM<32>(tid, REG_ECX, (address + 3) ,insAddress);
+        DATAXFER::sMOV_RM<32>(tid, REG_ECX, (address + 4) ,insAddress);
     }
     // sinon EDX:EAX <- mem
     // on fera un MOVMR de addr     dans EAX (partie basse)
@@ -218,7 +218,7 @@ void SEMAPHORE::sCMPXCHG8B(THREADID tid, ADDRINT address, ADDRINT regEAXValue, A
     else
     {
         DATAXFER::sMOV_MR<32>(tid, address,       REG_EAX ,insAddress);
-        DATAXFER::sMOV_MR<32>(tid, (address + 3), REG_ECX ,insAddress);
+        DATAXFER::sMOV_MR<32>(tid, (address + 4), REG_ECX ,insAddress);
     }
 }// sCMPXCHG8B
 
@@ -234,7 +234,7 @@ void SEMAPHORE::sCMPXCHG16B(THREADID tid, ADDRINT address, ADDRINT regRAXValue, 
     
     bool isMemTainted       = pTmgrGlobal->isMemoryTainted<128>(address); 
     ADDRINT srcMemLowValue  = getMemoryValue<64>(address);
-    ADDRINT srcMemHighValue = getMemoryValue<64>(address + 7);
+    ADDRINT srcMemHighValue = getMemoryValue<64>(address + 8);
  
     bool isRAXTainted =	pTmgrTls->isRegisterTainted<64>(REG_EAX);
     bool isRDXTainted =	pTmgrTls->isRegisterTainted<64>(REG_EDX);
@@ -252,8 +252,8 @@ void SEMAPHORE::sCMPXCHG16B(THREADID tid, ADDRINT address, ADDRINT regRAXValue, 
             ? ObjectSource(pTmgrGlobal->getMemoryTaint<64>(address))
             : ObjectSource(64, srcMemLowValue);
 
-        ObjectSource srcMemHigh = (pTmgrGlobal->isMemoryTainted<64>(address + 7))
-            ? ObjectSource(pTmgrGlobal->getMemoryTaint<64>(address + 7))
+        ObjectSource srcMemHigh = (pTmgrGlobal->isMemoryTainted<64>(address + 8))
+            ? ObjectSource(pTmgrGlobal->getMemoryTaint<64>(address + 8))
             : ObjectSource(64, srcMemHighValue);
 
         ObjectSource srcRAX = (isRAXTainted) 
@@ -274,11 +274,11 @@ void SEMAPHORE::sCMPXCHG16B(THREADID tid, ADDRINT address, ADDRINT regRAXValue, 
     /**** 2EME PARTIE : ECHANGE (INDEPENDANT DU MARQUAGE DE ZF) ***/
     // si mem128 == RDX:RAX, alors mem <- RCX:RBX
     // on fera ici un MOVRM de RBX dans addr (traitement partie basse)
-    // puis        un MOVRM de RCX dans addr + 3 (tr.    partie haute)
+    // puis        un MOVRM de RCX dans addr + 8 (tr.    partie haute)
     if ((srcMemLowValue == regRAXValue) && (srcMemHighValue == regRDXValue))
     {
         DATAXFER::sMOV_RM<64>(tid, REG_RBX, address       ,insAddress);
-        DATAXFER::sMOV_RM<64>(tid, REG_RCX, (address + 3) ,insAddress);
+        DATAXFER::sMOV_RM<64>(tid, REG_RCX, (address + 8) ,insAddress);
     }
     // sinon RDX:RAX <- mem
     // on fera un MOVMR de addr     dans RAX (partie basse)
@@ -286,7 +286,7 @@ void SEMAPHORE::sCMPXCHG16B(THREADID tid, ADDRINT address, ADDRINT regRAXValue, 
     else
     {
         DATAXFER::sMOV_MR<64>(tid, address,       REG_RAX ,insAddress);
-        DATAXFER::sMOV_MR<64>(tid, (address + 3), REG_RCX ,insAddress);
+        DATAXFER::sMOV_MR<64>(tid, (address + 8), REG_RCX ,insAddress);
     }
 } // sCMPXCHG16B
 #endif

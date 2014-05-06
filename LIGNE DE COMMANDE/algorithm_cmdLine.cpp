@@ -171,7 +171,7 @@ std::string FuzzwinAlgorithm_cmdLine::initialize(int argc, char** argv)
             this->logEndOfLine();
             this->log("effacer son contenu et continuer ? (o/n)");
 
-            do { std::cin >> c;	} while ((c != 'o') && (c != 'n'));
+            do { std::cin >> c;	} while ((tolower(c) != 'o') && (tolower(c) != 'n'));
 
             if ('n' == tolower(c))	return ("");
 

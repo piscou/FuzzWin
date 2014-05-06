@@ -111,18 +111,17 @@ void TranslateToIR::declareObject(const TaintPtr &tPtr)
     }
 } // declareObject
 
-
 void TranslateToIR::addConstraintJcc(TaintManager_Thread *pTmgrTls, PREDICATE pred, 
         bool isTaken, ADDRINT insAddress, ADDRINT flagsOrRegValue)
 {
     // nouvelle contrainte => ajustement de son numéro
     ++_iAssert;
     // entete (informations sur la contrainte)
-    _formula << getConstraintHeader(insAddress, pred);
+    _formula << getConstraintPredicateHeader(insAddress, pred);
     // contrainte en elle-meme qui déclare récursivement les objets impliqués
     _formula << getPredicateTranslation(pTmgrTls, pred, flagsOrRegValue);
     // final = valeur de la contrainte à l'exécution
-    _formula << getConstraintFooter(isTaken);
+    _formula << getConstraintPredicateFooter(isTaken);
 
     // Si le nombre maximal de contraintes est atteint : quitter le pintool 
     // via la fonction "Fini" avec le code EXIT_MAX_CONSTRAINTS
@@ -130,4 +129,40 @@ void TranslateToIR::addConstraintJcc(TaintManager_Thread *pTmgrTls, PREDICATE pr
     if (_iAssert == g_maxConstraints)  PIN_ExitApplication(EXIT_MAX_CONSTRAINTS);
 }
 
+void TranslateToIR::addConstraintDivision(TaintManager_Thread *pTmgrTls, bool isSignedDivision,
+        const TaintPtr &quotientPtr, ADDRINT insAddress)
+{
+    /** CONTRAINTE SUR LES BORNES DU QUOTIENT **/
+
+    // nouvelle contrainte => ajustement de son numéro
+    ++_iAssert;
+    // entete (informations sur la contrainte)
+    _formula << getConstraintDivOverflowHeader(isSignedDivision, insAddress);
+    // contrainte en elle-meme qui déclare récursivement les objets impliqués
+    _formula << getDivOverflowTranslation(pTmgrTls, isSignedDivision, quotientPtr);
+    // final = contrainte forcément respectée (sinon il y aurait eu crash)
+    _formula << getConstraintDivOverflowFooter();
+
+    // Si le nombre maximal de contraintes est atteint : quitter le pintool 
+    // via la fonction "Fini" avec le code EXIT_MAX_CONSTRAINTS
+    // si g_maxConstraints est nul, ce cas n'arrive jamais (la première contrainte est la n°1)
+    if (_iAssert == g_maxConstraints)  PIN_ExitApplication(EXIT_MAX_CONSTRAINTS);
+
+    /** CONTRAINTE SUR LE DIVISEUR NON NUL **/
+
+    ObjectSource objDivisor = quotientPtr->getSource(2);
+    if (objDivisor.isSrcTainted())
+    {
+        // nouvelle contrainte => ajustement de son numéro
+        ++_iAssert;
+        // entete (informations sur la contrainte)
+        _formula << getConstraintNullDivisorHeader(insAddress);
+        // contrainte en elle-meme qui déclare récursivement les objets impliqués
+        _formula << getNullDivisorTranslation(pTmgrTls, objDivisor.getTaintedSource());
+        // final = valeur de la contrainte à l'exécution = diviseur forcément non nul :)
+        _formula << getConstraintNullDivisorFooter();
+
+        if (_iAssert == g_maxConstraints)  PIN_ExitApplication(EXIT_MAX_CONSTRAINTS);
+    }
+}
     

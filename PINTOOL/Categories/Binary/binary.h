@@ -109,6 +109,11 @@ template<UINT32 lengthInBits>
 void sCMP_RR(THREADID tid, REG regSrc, ADDRINT regSrcValue, REG regSrcDest, ADDRINT regSrcDestValue, ADDRINT insAddress);
 
 template<UINT32 lengthInBits> 
+void sMUL_1M(THREADID tid, ADDRINT readAddress, ADDRINT implicitRegValue, ADDRINT insAddress);
+template<UINT32 lengthInBits> 
+void sMUL_1R(THREADID tid, REG regSrc, ADDRINT regSrcValue, ADDRINT implicitRegValue, ADDRINT insAddress);
+
+template<UINT32 lengthInBits> 
 void sIMUL_1M(THREADID tid, ADDRINT readAddress, ADDRINT implicitRegValue, ADDRINT insAddress);
 template<UINT32 lengthInBits> 
 void sIMUL_1R(THREADID tid, REG regSrc, ADDRINT regSrcValue, ADDRINT implicitRegValue, ADDRINT insAddress);
@@ -122,8 +127,7 @@ template<UINT32 lengthInBits>
 void sIMUL_3R(THREADID tid, ADDRINT value, REG regSrc, ADDRINT regSrcValue, REG regDest, ADDRINT insAddress);
 
 template<UINT32 lengthInBits> 
-void sDIVISION_M(THREADID tid, ADDRINT readAddress, bool isSignedDivision, ADDRINT lowDividendValue, ADDRINT highDividendValue, ADDRINT insAddress);
-        
+void sDIVISION_M(THREADID tid, ADDRINT readAddress, bool isSignedDivision, ADDRINT lowDividendValue, ADDRINT highDividendValue, ADDRINT insAddress);      
 template<UINT32 lengthInBits> 
 void sDIVISION_R(THREADID tid, REG regSrc, ADDRINT regSrcValue, bool isSignedDivision, ADDRINT lowDividendValue, ADDRINT highDividendValue, ADDRINT insAddress);
 } // namespace BINARY

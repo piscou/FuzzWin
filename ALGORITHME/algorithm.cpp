@@ -145,6 +145,12 @@ int FuzzwinAlgorithm::finalizeInitialization(
              + "-t \"" + pintool_X86  + "\" " \
              + cmdLineOptions \
              + " -- \"" + _targetPath + "\" ";
+
+        _cmdLineCheckScore = "\"" + pin_X86 + "\" " \
+             + "-follow_execv " \
+             + "-t \"" + pintool_X86  + "\" " \
+             + "-option checkscore -maxtime " + std::to_string(_maxExecutionTime) + \
+             + " -- \"" + _targetPath + "\" ";
     }
     else
     {
@@ -157,6 +163,14 @@ int FuzzwinAlgorithm::finalizeInitialization(
             + "-t \""   + pintool_X86 + "\" " \
             + cmdLineOptions \
             + " -- \""   + _targetPath + "\" ";
+
+        _cmdLineCheckScore = "\"" + pin_X86 + "\" " \
+             + "-follow_execv " \
+            + "-p64 \"" + pin_X64     + "\" " \
+            + "-t64 \"" + pintool_X64 + "\" " \
+            + "-t \""   + pintool_X86 + "\" " \
+            + "-option checkscore -maxtime " + std::to_string(_maxExecutionTime) + \
+            + " -- \""  + _targetPath + "\" ";
     }
     
     /********************************************************/
@@ -585,19 +599,34 @@ ListOfInputs FuzzwinAlgorithm::expandExecution()
             if (createNewInput)
             {
                 // fabrication du nouvel objet "fils" à partir du père
-                CInput *newChild = new CInput(_pCurrentInput, ++_numberOfChilds, j);
+                CInput *pNewChild = new CInput(_pCurrentInput, ++_numberOfChilds, j);
 
                 // création du fichier et insertion du contenu modifié
-                std::ofstream newFile(newChild->getFilePath(), std::ios::binary);
+                std::ofstream newFile(pNewChild->getFilePath(), std::ios::binary);
                 newFile.write(newInputContent.c_str(), newInputContent.size());
                 newFile.close();
 
-                this->logVerbose(" -> nouveau fichier " + newChild->getFileName());
+                this->logVerbose(" -> nouveau fichier " + pNewChild->getFileName());
 
-                // test du fichier de suite
+                // test du fichier : procédure différente selon l'option "score" ou pas
+                if (_computeScore)
+                {
+                    // calcul du score via le pintool CheckScore
+                    this->checkScore(pNewChild);
+                    // si le score est nul => erreur trouvée, debugger pour obtenir plus d'infos
+                    if (!pNewChild->getScore()) this->debugTarget(pNewChild);
+                    // sinon insérer le fichier dans la liste de retour
+                    else result.push_back(pNewChild);
+                }
                 // si retour nul le fichier est valide, donc l'insérer dans la liste
                 // sinon ne SURTOUT PAS l'insérer dans la liste : il va faire planter le pintool
-                if (!this->debugTarget(newChild)) result.push_back(newChild);
+                else
+                {
+                    // debuggage direct sans calcul du score. Une valeur de retour non nulle
+                    // signifie qu'une erreur a été trouvée : ne pas insérer le fichier dans la liste
+                    DWORD debugResult = this->debugTarget(pNewChild);
+                    if (!debugResult)   result.push_back(pNewChild);
+                }
             }	     
         }
         // pas de solution trouvée par le solveur

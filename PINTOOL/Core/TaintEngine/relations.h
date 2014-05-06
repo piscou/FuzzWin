@@ -41,25 +41,17 @@ enum Relation
     X_MUL, 
     //! X_IMUL : source 1 = source, source 2 = src/dest.
     X_IMUL,
-    // X_DIV_QUO : quotient d'une division non signée
-    // Src 0 : totalité du dividende (cas 8 bits) sinon partie haute du dividende
-    // Src 1 : totalité du diviseur  (cas 8 bits) sinon partie basse du dividende 
-    // Src 2 : cas 8 bits : néant ; autres cas : totalité du diviseur
+    // X_DIV_QUO : quotient d'une division non signée (src 0, 1 et 2 de meme taille)
+    // Src 0 : partie haute du dividende, Src 1 : partie basse du dividende, Src 2 : totalité du diviseur
     X_DIV_QUO, 
-    // X_DIV_REM : reste d'une division non signée
-    // Src 0 : totalité du dividende (cas 8 bits) sinon partie haute du dividende
-    // Src 1 : totalité du diviseur  (cas 8 bits) sinon partie basse du dividende 
-    // Src 2 : cas 8 bits : néant ; autres cas : totalité du diviseur
+    // X_DIV_REM : reste d'une division non signée (src 0, 1 et 2 de meme taille)
+    // Src 0 : partie haute du dividende, Src 1 : partie basse du dividende, Src 2 : totalité du diviseur
     X_DIV_REM, 
-    // X_IDIV_QUO : quotient d'une division signée
-    // Src 0 : totalité du dividende (cas 8 bits) sinon partie haute du dividende
-    // Src 1 : totalité du diviseur  (cas 8 bits) sinon partie basse du dividende 
-    // Src 2 : cas 8 bits : néant ; autres cas : totalité du diviseur
+    // X_IDIV_QUO : quotient d'une division signée (src 0, 1 et 2 de meme taille)
+    // Src 0 : partie haute du dividende, Src 1 : partie basse du dividende, Src 2 : totalité du diviseur
     X_IDIV_QUO, 
-    // X_IDIV_REM : reste d'une division signée
-    // Src 0 : totalité du dividende (cas 8 bits) sinon partie haute du dividende
-    // Src 1 : totalité du diviseur  (cas 8 bits) sinon partie basse du dividende 
-    // Src 2 : cas 8 bits : néant ; autres cas : totalité du diviseur
+    // X_IDIV_REM : reste d'une division signée (src 0, 1 et 2 de meme taille)
+    // Src 0 : partie haute du dividende, Src 1 : partie basse du dividende, Src 2 : totalité du diviseur
     X_IDIV_REM,
 
     /** LOGICAL **/

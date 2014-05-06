@@ -28,6 +28,9 @@
     <ClCompile Include="algorithm_cmdLine.cpp">
       <Filter>Fichiers sources</Filter>
     </ClCompile>
+    <ClCompile Include="..\ALGORITHME\checkscore.cpp">
+      <Filter>Fichiers sources\Algorithme</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="getopt_pp.h">

@@ -107,6 +107,9 @@
     <ClCompile Include="algorithm_gui.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\ALGORITHME\checkscore.cpp">
+      <Filter>Source Files\Algorithme</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="fuzzwin_gui.h">

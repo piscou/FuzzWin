@@ -95,243 +95,6 @@ std::string TranslateToSMTLIB::getSourceName(const ObjectSource &objSrc) const
 // DECLARATION DES OBJETS MARQUES //
 ////////////////////////////////////
 
-// formule correspondant au calcul d'un prédicat
-std::string TranslateToSMTLIB::getPredicateTranslation(TaintManager_Thread *pTmgrTls, 
-    PREDICATE pred, ADDRINT flagsOrRegValue)
-{
-    // la déclaration d'un prédicat se fait en deux étapes
-    // 1) déclaration recursive des objets utilisés dans le calcul du ou des flags concernés
-    // 2) construction de l'expression représentant le prédicat
-    //    c'est à dire un expression de test sur la valeur du ou des flags
-    // Le predicat s'exprime comme un Booléen et porte le nom 'C_' + numéro de contrainte
-
-    std::string result("(define-fun C_" + decstr(_iAssert) + " () Bool (");
-    UINT32 oneFlagValue = 0;    // valeur d'un flag (extraction de FlagsOrRegValue)
-    
-    switch (pred)
-    {       
-    case PREDICATE_BELOW: 	    // Below (CF==1).
-    case PREDICATE_NOT_BELOW: 	// Not Below (CF==0)
-        // 1) déclaration récursive des sources du flag
-        this->declareObject(pTmgrTls->getTaintCarryFlag());
-        
-        // 2) construction de l'expression
-        result += "= ";
-        result += pTmgrTls->getTaintCarryFlag()->getName();
-        result += (PREDICATE_BELOW == pred) ? " #b1" : " #b0";
-        break;
-
-    case PREDICATE_SIGN:        // Sign (SF==1).
-    case PREDICATE_NOT_SIGN :	// Not Sign (SF==0).
-        // 1) déclaration récursive des sources du flag
-        this->declareObject(pTmgrTls->getTaintSignFlag());
-        
-        // 2) construction de l'expression
-        result += "= ";
-        result += pTmgrTls->getTaintSignFlag()->getName();
-        result += (PREDICATE_SIGN == pred) ? " #b1" : " #b0";
-        break;
-
-    case PREDICATE_ZERO: 	    // Zero (ZF==1).
-    case PREDICATE_NOT_ZERO:	// Not Zero (ZF==0).
-        // 1) déclaration récursive des sources du flag
-        this->declareObject(pTmgrTls->getTaintZeroFlag());
-        
-        // 2) construction de l'expression
-        result += "= ";
-        result += pTmgrTls->getTaintZeroFlag()->getName();
-        result += (PREDICATE_ZERO == pred) ? " #b1" : " #b0";
-        break;
-
-    case PREDICATE_OVERFLOW: 	 // Overflow (OF==1).
-    case PREDICATE_NOT_OVERFLOW: // Not Overflow (OF==0)
-        // 1) déclaration récursive des sources du flag
-        this->declareObject(pTmgrTls->getTaintOverflowFlag());
-        
-        // 2) construction de l'expression
-        result += "= ";
-        result += pTmgrTls->getTaintOverflowFlag()->getName();
-        result += (PREDICATE_OVERFLOW == pred) ? " #b1" : " #b0";
-        break;
-
-    case PREDICATE_PARITY: 	    // Parity (PF==1)
-    case PREDICATE_NOT_PARITY: 	// Not Parity (PF==0).
-        // 1) déclaration récursive des sources du flag
-        this->declareObject(pTmgrTls->getTaintParityFlag());
-
-        // 2) construction de l'expression
-        result += "= ";
-        result += pTmgrTls->getTaintParityFlag()->getName();
-        result += (PREDICATE_PARITY == pred) ? " #b1" : " #b0";
-        break;
-
-    case PREDICATE_LESS: 	    // Less (SF!=OF).
-    case PREDICATE_NOT_LESS: 	// Greater or Equal (SF==OF).
-        result += "ite (= ";
-
-        // insertion SIGN_FLAG : objet ou valeur selon marquage
-        if (pTmgrTls->isSignFlagTainted())
-        {
-            // 1) déclaration récursive des sources du flag
-            this->declareObject(pTmgrTls->getTaintSignFlag());
-            result += pTmgrTls->getTaintSignFlag()->getName();
-        }
-        else
-        {
-            oneFlagValue = EXTRACTBIT(flagsOrRegValue, SIGN_FLAG);
-            result      += (oneFlagValue) ? "#b1" : "#b0";
-        }
-
-        result += ' ';
-
-        // insertion OVERFLOW_FLAG : objet ou valeur selon marquage
-        if (pTmgrTls->isOverflowFlagTainted())
-        {
-            // 1) déclaration récursive des sources du flag
-            this->declareObject(pTmgrTls->getTaintOverflowFlag());
-            result += pTmgrTls->getTaintOverflowFlag()->getName();
-        }
-        else
-        {
-            oneFlagValue = EXTRACTBIT(flagsOrRegValue, OVERFLOW_FLAG);
-            result      += (oneFlagValue) ? "#b1" : "#b0";
-        }
-
-        // si egaux, flag vaut 0 dans cas LESS et 1 dans cas NOT_LESS
-        result += (PREDICATE_LESS == pred) ? ") false true" : ") true false";
-        break;
-
-    case PREDICATE_BELOW_OR_EQUAL: 	    // Below or Equal (CF==1 or ZF==1), ou (CF or ZF) == 1
-    case PREDICATE_NOT_BELOW_OR_EQUAL: 	// Above (CF==0 and ZF==0), ou (CF or ZF) == 0
-        // calcul et test de la valeur du OR entre les deux flags
-        result += "= (bvor ";
-
-        // insertion CARRY_FLAG : objet ou valeur selon marquage
-        if (pTmgrTls->isCarryFlagTainted())
-        {
-            // 1) déclaration récursive des sources du flag
-            this->declareObject(pTmgrTls->getTaintCarryFlag());
-            result += pTmgrTls->getTaintCarryFlag()->getName();
-        }
-        else
-        {
-            oneFlagValue = EXTRACTBIT(flagsOrRegValue, CARRY_FLAG);
-            result      += (oneFlagValue) ? "#b1" : "#b0";
-        }
-
-        result += ' ';
-
-        // insertion ZERO_FLAG : objet ou valeur selon marquage
-        if (pTmgrTls->isZeroFlagTainted())
-        {
-            // 1) déclaration récursive des sources du flag
-            this->declareObject(pTmgrTls->getTaintZeroFlag());
-            result += pTmgrTls->getTaintZeroFlag()->getName();
-        }
-        else
-        {
-            oneFlagValue = EXTRACTBIT(flagsOrRegValue, ZERO_FLAG);
-            result      += (oneFlagValue) ? "#b1" : "#b0";
-        }
-
-        // BELOW_OR_EQUAL: le flag vaut 1 si le 'OR' vaut 1
-        result += (PREDICATE_BELOW_OR_EQUAL == pred) ? ") #b1" : ") #b0";
-        break;
-
-    case PREDICATE_LESS_OR_EQUAL: // Less or Equal (ZF==1 or SF!=OF), ou ((SF ^ OF) or ZF) == 1
-    case PREDICATE_NOT_LESS_OR_EQUAL: // Greater (ZF==0 and SF==OF),  ou ((SF ^ OF) or ZF) == 0
-        // calcul et test de la valeur du OR entre (bvxor SF OF) et ZF
-        result += "= (bvor (bvxor ";
-
-        // insertion SIGN_FLAG : objet ou valeur selon marquage
-        if (pTmgrTls->isSignFlagTainted())
-        {
-            // 1) déclaration récursive des sources du flag
-            this->declareObject(pTmgrTls->getTaintSignFlag());
-            result += pTmgrTls->getTaintSignFlag()->getName();
-        }
-        else
-        {
-            oneFlagValue = EXTRACTBIT(flagsOrRegValue, SIGN_FLAG);
-            result      += (oneFlagValue) ? "#b1" : "#b0";
-        }
-
-        result += ' ';
-
-        // insertion OVERFLOW_FLAG : objet ou valeur selon marquage
-        if (pTmgrTls->isOverflowFlagTainted())
-        {
-            // 1) déclaration récursive des sources du flag
-            this->declareObject(pTmgrTls->getTaintOverflowFlag());
-            result += pTmgrTls->getTaintOverflowFlag()->getName();
-        }
-        else
-        {
-            oneFlagValue = EXTRACTBIT(flagsOrRegValue, OVERFLOW_FLAG);
-            result      += (oneFlagValue) ? "#b1" : "#b0";
-        }
-
-        result += ") ";
-
-        // insertion ZERO_FLAG : objet ou valeur selon marquage
-        if (pTmgrTls->isZeroFlagTainted())
-        {
-            // 1) déclaration récursive des sources du flag
-            this->declareObject(pTmgrTls->getTaintZeroFlag());
-            result += pTmgrTls->getTaintZeroFlag()->getName();
-        }
-        else
-        {
-            oneFlagValue = EXTRACTBIT(flagsOrRegValue, ZERO_FLAG);
-            result      += (oneFlagValue) ? "#b1" : "#b0";
-        }
-
-        // LESS_OR_EQUAL: le flag vaut 1 si le 'OR' vaut 1
-        result += (PREDICATE_LESS_OR_EQUAL == pred) ? ") #b1" : ") #b0";
-        break;
-
-    case PREDICATE_CX_NON_ZERO: 	// CX != 0.
-        {
-            // récupération de l'objet représentant CX, et déclaration de celui-ci
-            TaintWordPtr regCXPtr = pTmgrTls->getRegisterTaint<16>(REG_CX, flagsOrRegValue);
-            this->declareObject(regCXPtr);
-
-            // insertion de nom de l'objet, maintenant qu'il est déclaré, et comparaison à 0
-            result += "not (= " + regCXPtr->getName() + " (_ bv0 16))";
-            break;
-        }
-
-    case PREDICATE_ECX_NON_ZERO: 	// ECX != 0.
-        {
-            // récupération de l'objet représentant ECX, et déclaration de celui-ci
-            TaintDwordPtr regECXPtr = pTmgrTls->getRegisterTaint<32>(REG_ECX, flagsOrRegValue);
-            this->declareObject(regECXPtr);
-
-            // insertion de nom de l'objet, maintenant qu'il est déclaré, et comparaison à 0
-            result += "not (= " + regECXPtr->getName() + " (_ bv0 32))";
-            break;
-        }
-#if TARGET_IA32E
-    case PREDICATE_RCX_NON_ZERO: 	// RCX != 0.
-        {
-            // récupération de l'objet représentant RCX, et déclaration de celui-ci
-            TaintQwordPtr regRCXPtr = pTmgrTls->getRegisterTaint<64>(REG_RCX, flagsOrRegValue);
-            this->declareObject(regRCXPtr);
-
-            // insertion de nom de l'objet, maintenant qu'il est déclaré, et comparaison à 0
-            result += "not (= " + regRCXPtr->getName() + " (_ bv0 64))";
-            break;
-        }
-#endif
-    }
-    // fin de ligne = fermeture des parenthèses
-    result += ")); ";
-    if (g_verbose) result += predicateToString[pred];
-    result += '\n';
-
-    return (result);
-} // getPredicateFormula
-
 // entete de la déclaration : affectation d'un nom + '(define-fun XX () (BitVec nb) ('
 void TranslateToSMTLIB::declareRelationHeader(const TaintPtr &tPtr)
 {
@@ -416,13 +179,13 @@ void TranslateToSMTLIB::translate_X_ASSIGN(const TaintPtr &tPtr)
 void TranslateToSMTLIB::translate_X_SIGNEXTEND(const TaintPtr &tPtr)
 {
     UINT32 lengthOfResult = tPtr->getLength();
-    ObjectSource source   = tPtr->getSource(0);
+    ObjectSource source   = tPtr->getSource(0); // forcément marquée
     UINT32 lengthOfSource = source.getLength();
 
     BEGIN_RELATION_DECLARATION;
 
     _formula << "(_ sign_extend " << (lengthOfResult - lengthOfSource) << ") ";
-    _formula << this->getSourceName(source);
+    _formula << source.getTaintedSource()->getName();
 
     END_RELATION_DECLARATION;
 }
@@ -430,13 +193,13 @@ void TranslateToSMTLIB::translate_X_SIGNEXTEND(const TaintPtr &tPtr)
 void TranslateToSMTLIB::translate_X_ZEROEXTEND(const TaintPtr &tPtr)
 {
     UINT32 lengthOfResult = tPtr->getLength();
-    ObjectSource source   = tPtr->getSource(0);
+    ObjectSource source   = tPtr->getSource(0); // forcément marquée
     UINT32 lengthOfSource = source.getLength();
 
     BEGIN_RELATION_DECLARATION;
 
     _formula << "(_ zero_extend " << (lengthOfResult - lengthOfSource) << ") ";
-    _formula << this->getSourceName(source);
+    _formula << source.getTaintedSource()->getName();
 
     END_RELATION_DECLARATION;
 }
@@ -489,15 +252,9 @@ void TranslateToSMTLIB::translate_X_NEG(const TaintPtr &tPtr)
 // NON IMPLEMENTE : MUL
 void TranslateToSMTLIB::translate_X_MUL(const TaintPtr &tPtr)
 {
-    _formula << "non implémenté\n";
-}
-
-void TranslateToSMTLIB::translate_X_IMUL(const TaintPtr &tPtr)
-{
-    // IMUL : longueur resultat = 2*longueur des sources. Or en SMTLIB longueur resultat = longueur source
+    // MUL : longueur resultat = 2*longueur des sources. Or en SMTLIB longueur resultat = longueur source
     // donc necessite de mettre les opérandes à la longueur de la destination 
-    // le nombre de zéros à ajouter est égal à la longueur de la source 
-    // (= moitié longueur du résultat)
+    // pour MUL : on doit étendre les opérandes en zéro-extend
     const std::string zeroExtend("((_ zero_extend " + decstr(tPtr->getLength() >> 1) + ") ");
     ObjectSource src0 = tPtr->getSource(0);
     ObjectSource src1 = tPtr->getSource(1);
@@ -508,10 +265,27 @@ void TranslateToSMTLIB::translate_X_IMUL(const TaintPtr &tPtr)
     END_RELATION_DECLARATION;
 }
 
+void TranslateToSMTLIB::translate_X_IMUL(const TaintPtr &tPtr)
+{
+    // IMUL : longueur resultat = 2*longueur des sources. Or en SMTLIB longueur resultat = longueur source
+    // donc necessite de mettre les opérandes à la longueur de la destination 
+    // pour IMUL : on doit étendre les opérandes en sign-extend
+    const std::string signExtend("((_ sign_extend " + decstr(tPtr->getLength() >> 1) + ") ");
+    ObjectSource src0 = tPtr->getSource(0);
+    ObjectSource src1 = tPtr->getSource(1);
+
+    BEGIN_RELATION_DECLARATION;
+    _formula << "bvmul " << signExtend << this->getSourceName(src0) << ") ";
+    _formula <<             signExtend << this->getSourceName(src1) << ')';
+    END_RELATION_DECLARATION;
+}
+
 void TranslateToSMTLIB::translate_X_DIV_QUO(const TaintPtr &tPtr)
 {
     UINT32 lengthOfQuotient      = tPtr->getLength();
-    vector<ObjectSource> sources = tPtr->getSources();
+    ObjectSource objHighDividend = tPtr->getSource(0);
+    ObjectSource objLowDividend  = tPtr->getSource(1);
+    ObjectSource objDivisor      = tPtr->getSource(2);
 
     BEGIN_RELATION_DECLARATION;
 
@@ -520,23 +294,12 @@ void TranslateToSMTLIB::translate_X_DIV_QUO(const TaintPtr &tPtr)
     // et en extraire la partie basse pour obtenir le résultat
     _formula << "(_ extract " << (lengthOfQuotient - 1) << " 0) (bvudiv ";
     
-    if (lengthOfQuotient == 8)
-    {
-        // cas particulier de la division sur 8 bits 
-        // le dividende est composé d'un seul registre (AX)
-        // source 0 : dividende entier, source1 : diviseur à etendre sur 16bits
-        _formula << this->getSourceName(sources.front());
-        _formula << " ((_ zero_extend 8) " << this->getSourceName(sources[1]) << "))";
-    }
-    else
-    {
-        // Autres longueurs => concaténation de src0 : partie forte du dividende et de src1 : partie faible
-        _formula << "(concat " << this->getSourceName(sources.front());
-        _formula << ' '        << this->getSourceName(sources[1]) << ") ";       
+    // concaténation du dividende
+    _formula << "(concat " << this->getSourceName(objHighDividend);
+    _formula << ' '        << this->getSourceName(objLowDividend) << ')';       
    
-        // Source2 : diviseur à étendre à la taille du dividende = ajouter 'lengthResult' zéros
-        _formula << "((_ zero_extend " << lengthOfQuotient << ") " << this->getSourceName(sources[2]) << "))";
-    }
+    // Source2 : diviseur à étendre à la taille du dividende = ajouter 'lengthResult' zéros
+    _formula << " ((_ zero_extend " << lengthOfQuotient << ") " << this->getSourceName(objDivisor) << "))";
 
     END_RELATION_DECLARATION;
 }
@@ -544,7 +307,9 @@ void TranslateToSMTLIB::translate_X_DIV_QUO(const TaintPtr &tPtr)
 void TranslateToSMTLIB::translate_X_DIV_REM(const TaintPtr &tPtr)
 {
     UINT32 lengthOfQuotient      = tPtr->getLength();
-    vector<ObjectSource> sources = tPtr->getSources();
+    ObjectSource objHighDividend = tPtr->getSource(0);
+    ObjectSource objLowDividend  = tPtr->getSource(1);
+    ObjectSource objDivisor      = tPtr->getSource(2);
 
     BEGIN_RELATION_DECLARATION;
 
@@ -553,90 +318,61 @@ void TranslateToSMTLIB::translate_X_DIV_REM(const TaintPtr &tPtr)
     // et en extraire la partie basse pour obtenir le résultat
     _formula << "(_ extract " << (lengthOfQuotient - 1) << " 0) (bvurem ";
     
-    if (lengthOfQuotient == 8)
-    {
-        // cas particulier de la division sur 8 bits 
-        // le dividende est composé d'un seul registre (AX)
-        // source 0 : dividende entier, source1 : diviseur à etendre sur 16bits
-        _formula << this->getSourceName(sources.front());
-        _formula << " ((_ zero_extend 8) " << this->getSourceName(sources[1]) << "))";
-    }
-    else
-    {
-        // Autres longueurs => concaténation de src0 : partie forte du dividende et de src1 : partie faible
-        _formula << "(concat " << this->getSourceName(sources.front());
-        _formula << ' '        << this->getSourceName(sources[1]) << ") ";       
+    // concaténation du dividende
+    _formula << "(concat " << this->getSourceName(objHighDividend);
+    _formula << ' '        << this->getSourceName(objLowDividend) << ')';       
    
-        // Source2 : diviseur à étendre à la taille du dividende = ajouter 'lengthResult' zéros
-        _formula << "((_ zero_extend " << lengthOfQuotient << ") " << this->getSourceName(sources[2]) << "))";
-    }
-    
+    // Source2 : diviseur à étendre à la taille du dividende = ajouter 'lengthResult' zéros
+    _formula << " ((_ zero_extend " << lengthOfQuotient << ") " << this->getSourceName(objDivisor) << "))";
+
     END_RELATION_DECLARATION;
 }
 
 void TranslateToSMTLIB::translate_X_IDIV_QUO(const TaintPtr &tPtr)
 {
     UINT32 lengthOfQuotient      = tPtr->getLength();
-    vector<ObjectSource> sources = tPtr->getSources();
+    ObjectSource objHighDividend = tPtr->getSource(0);
+    ObjectSource objLowDividend  = tPtr->getSource(1);
+    ObjectSource objDivisor      = tPtr->getSource(2);
 
     BEGIN_RELATION_DECLARATION;
 
     // taille resultat = taille diviseur = 1/2 taille dividende
-    // il faut donc effectuer l'opération "Dividende / zero_extend(diviseur)" 
+    // il faut donc effectuer l'opération "Dividende / sign_extend(diviseur)" 
     // et en extraire la partie basse pour obtenir le résultat
     _formula << "(_ extract " << (lengthOfQuotient - 1) << " 0) (bvsdiv ";
     
-    if (lengthOfQuotient == 8)
-    {
-        // cas particulier de la division sur 8 bits 
-        // le dividende est composé d'un seul registre (AX)
-        // source 0 : dividende entier, source1 : diviseur à etendre sur 16bits
-        _formula << this->getSourceName(sources.front());
-        _formula << " ((_ zero_extend 8) " << this->getSourceName(sources[1]) << "))";
-    }
-    else
-    {
-        // Autres longueurs => concaténation de src0 : partie forte du dividende et de src1 : partie faible
-        _formula << "(concat " << this->getSourceName(sources.front());
-        _formula << ' '        << this->getSourceName(sources[1]) << ") ";       
+    // concaténation du dividende
+    _formula << "(concat " << this->getSourceName(objHighDividend);
+    _formula << ' '        << this->getSourceName(objLowDividend) << ')';       
    
-        // Source2 : diviseur à étendre à la taille du dividende = ajouter 'lengthResult' zéros
-        _formula << "((_ zero_extend " << lengthOfQuotient << ") " << this->getSourceName(sources[2]) << "))";
-    }
-        
+    // Source2 : diviseur à sign-extend à la taille du dividende
+    _formula << " ((_ sign_extend " << lengthOfQuotient << ") " << this->getSourceName(objDivisor) << "))";
+
     END_RELATION_DECLARATION;
 }
 
 void TranslateToSMTLIB::translate_X_IDIV_REM(const TaintPtr &tPtr)
 {
     UINT32 lengthOfQuotient      = tPtr->getLength();
-    vector<ObjectSource> sources = tPtr->getSources();
+    ObjectSource objHighDividend = tPtr->getSource(0);
+    ObjectSource objLowDividend  = tPtr->getSource(1);
+    ObjectSource objDivisor      = tPtr->getSource(2);
 
     BEGIN_RELATION_DECLARATION;
 
     // taille resultat = taille diviseur = 1/2 taille dividende
-    // il faut donc effectuer l'opération "Dividende / zero_extend(diviseur)" 
+    // il faut donc effectuer l'opération "Dividende / sign_extend(diviseur)" 
     // et en extraire la partie basse pour obtenir le résultat
     _formula << "(_ extract " << (lengthOfQuotient - 1) << " 0) (bvsrem ";
     
-    if (lengthOfQuotient == 8)
-    {
-        // cas particulier de la division sur 8 bits 
-        // le dividende est composé d'un seul registre (AX)
-        // source 0 : dividende entier, source1 : diviseur à etendre sur 16bits
-        _formula << this->getSourceName(sources.front());
-        _formula << " ((_ zero_extend 8) " << this->getSourceName(sources[1]) << "))";
-    }
-    else
-    {
-        // Autres longueurs => concaténation de src0 : partie forte du dividende et de src1 : partie faible
-        _formula << "(concat " << this->getSourceName(sources.front());
-        _formula << ' '        << this->getSourceName(sources[1]) << ") ";       
+    // concaténation du dividende
+    _formula << "(concat " << this->getSourceName(objHighDividend);
+    _formula << ' '        << this->getSourceName(objLowDividend) << ')';       
    
-        // Source2 : diviseur à étendre à la taille du dividende = ajouter 'lengthResult' zéros
-        _formula << "((_ zero_extend " << lengthOfQuotient << ") " << this->getSourceName(sources[2]) << "))";
-    }
-        
+    // Source2 : diviseur à sign-extend à la taille du dividende
+    _formula << " ((_ sign_extend " << lengthOfQuotient << ") " << this->getSourceName(objDivisor) << "))";
+
     END_RELATION_DECLARATION;
 }
 
@@ -1622,7 +1358,7 @@ void TranslateToSMTLIB::translate_F_CARRY_MUL(const TaintPtr &tPtr)
 
     _formula << "ite (= (_ bv0 " << lengthOfHighPart << ") ";
     _formula <<        "((_ extract " << lengthOfSrc - 1 << ' ' << lengthOfHighPart - 1 << ") ";
-    _formula <<  this->getSourceName(src0) << ") #b0 #b1";
+    _formula <<  src0.getTaintedSource()->getName() << ") #b0 #b1";
 
     END_RELATION_DECLARATION;
 }
@@ -1633,14 +1369,13 @@ void TranslateToSMTLIB::translate_F_CARRY_IMUL(const TaintPtr &tPtr)
     ObjectSource src0      = tPtr->getSource(0);
     UINT32 lengthOfSrc     = src0.getLength();
     UINT32 lengthOfLowPart = lengthOfSrc >> 1;
+    const std::string src0Name(src0.getTaintedSource()->getName());
  
     BEGIN_RELATION_DECLARATION;
 
     // variable temporaire : partie basse du resultat
-    _formula << "let ((lowPart ((_ extract " << lengthOfLowPart - 1 << " 0) " << this->getSourceName(src0) << "))) ";
-
-    _formula << "( ite (= ((_ sign_extend " << lengthOfLowPart << ") lowPart) ";
-    _formula <<           this->getSourceName(src0) << ") #b0 #b1)";
+    _formula << "let ((lowPart ((_ extract " << lengthOfLowPart - 1 << " 0) " << src0Name << ")))\n";
+    _formula << "( ite (= ((_ sign_extend " << lengthOfLowPart << ") lowPart) " << src0Name << ") #b0 #b1)";
     
     END_RELATION_DECLARATION;
 }
@@ -2177,7 +1912,9 @@ void TranslateToSMTLIB::translate_F_CARRY_DAA_DAS(const TaintPtr &tPtr)
 // DECLARATION DES CONTRAINTES //
 /////////////////////////////////
 
-std::string TranslateToSMTLIB::getConstraintHeader(ADDRINT insAddress, PREDICATE p) const
+/*** CONTRAINTES : PREDICAT ***/
+
+std::string TranslateToSMTLIB::getConstraintPredicateHeader(ADDRINT insAddress, PREDICATE p) const
 {
     // définition de l'entête de la contrainte : insertion d'un commentaire
     // avec le n° de contrainte, l'instruction et son adresse 
@@ -2187,8 +1924,245 @@ std::string TranslateToSMTLIB::getConstraintHeader(ADDRINT insAddress, PREDICATE
 
     return (result);
 }
+
+// formule correspondant au calcul d'un prédicat
+std::string TranslateToSMTLIB::getPredicateTranslation(TaintManager_Thread *pTmgrTls, 
+    PREDICATE pred, ADDRINT flagsOrRegValue)
+{
+    // la déclaration d'un prédicat se fait en deux étapes
+    // 1) déclaration recursive des objets utilisés dans le calcul du ou des flags concernés
+    // 2) construction de l'expression représentant le prédicat
+    //    c'est à dire un expression de test sur la valeur du ou des flags
+    // Le predicat s'exprime comme un Booléen et porte le nom 'C_' + numéro de contrainte
+
+    std::string result("(define-fun C_" + decstr(_iAssert) + " () Bool (");
+    UINT32 oneFlagValue = 0;    // valeur d'un flag (extraction de FlagsOrRegValue)
+    
+    switch (pred)
+    {       
+    case PREDICATE_BELOW: 	    // Below (CF==1).
+    case PREDICATE_NOT_BELOW: 	// Not Below (CF==0)
+        // 1) déclaration récursive des sources du flag
+        this->declareObject(pTmgrTls->getTaintCarryFlag());
+        
+        // 2) construction de l'expression
+        result += "= ";
+        result += pTmgrTls->getTaintCarryFlag()->getName();
+        result += (PREDICATE_BELOW == pred) ? " #b1" : " #b0";
+        break;
+
+    case PREDICATE_SIGN:        // Sign (SF==1).
+    case PREDICATE_NOT_SIGN :	// Not Sign (SF==0).
+        // 1) déclaration récursive des sources du flag
+        this->declareObject(pTmgrTls->getTaintSignFlag());
+        
+        // 2) construction de l'expression
+        result += "= ";
+        result += pTmgrTls->getTaintSignFlag()->getName();
+        result += (PREDICATE_SIGN == pred) ? " #b1" : " #b0";
+        break;
+
+    case PREDICATE_ZERO: 	    // Zero (ZF==1).
+    case PREDICATE_NOT_ZERO:	// Not Zero (ZF==0).
+        // 1) déclaration récursive des sources du flag
+        this->declareObject(pTmgrTls->getTaintZeroFlag());
+        
+        // 2) construction de l'expression
+        result += "= ";
+        result += pTmgrTls->getTaintZeroFlag()->getName();
+        result += (PREDICATE_ZERO == pred) ? " #b1" : " #b0";
+        break;
+
+    case PREDICATE_OVERFLOW: 	 // Overflow (OF==1).
+    case PREDICATE_NOT_OVERFLOW: // Not Overflow (OF==0)
+        // 1) déclaration récursive des sources du flag
+        this->declareObject(pTmgrTls->getTaintOverflowFlag());
+        
+        // 2) construction de l'expression
+        result += "= ";
+        result += pTmgrTls->getTaintOverflowFlag()->getName();
+        result += (PREDICATE_OVERFLOW == pred) ? " #b1" : " #b0";
+        break;
+
+    case PREDICATE_PARITY: 	    // Parity (PF==1)
+    case PREDICATE_NOT_PARITY: 	// Not Parity (PF==0).
+        // 1) déclaration récursive des sources du flag
+        this->declareObject(pTmgrTls->getTaintParityFlag());
+
+        // 2) construction de l'expression
+        result += "= ";
+        result += pTmgrTls->getTaintParityFlag()->getName();
+        result += (PREDICATE_PARITY == pred) ? " #b1" : " #b0";
+        break;
+
+    case PREDICATE_LESS: 	    // Less (SF!=OF).
+    case PREDICATE_NOT_LESS: 	// Greater or Equal (SF==OF).
+        result += "ite (= ";
+
+        // insertion SIGN_FLAG : objet ou valeur selon marquage
+        if (pTmgrTls->isSignFlagTainted())
+        {
+            // 1) déclaration récursive des sources du flag
+            this->declareObject(pTmgrTls->getTaintSignFlag());
+            result += pTmgrTls->getTaintSignFlag()->getName();
+        }
+        else
+        {
+            oneFlagValue = EXTRACTBIT(flagsOrRegValue, SIGN_FLAG);
+            result      += (oneFlagValue) ? "#b1" : "#b0";
+        }
+
+        result += ' ';
+
+        // insertion OVERFLOW_FLAG : objet ou valeur selon marquage
+        if (pTmgrTls->isOverflowFlagTainted())
+        {
+            // 1) déclaration récursive des sources du flag
+            this->declareObject(pTmgrTls->getTaintOverflowFlag());
+            result += pTmgrTls->getTaintOverflowFlag()->getName();
+        }
+        else
+        {
+            oneFlagValue = EXTRACTBIT(flagsOrRegValue, OVERFLOW_FLAG);
+            result      += (oneFlagValue) ? "#b1" : "#b0";
+        }
+
+        // si egaux, flag vaut 0 dans cas LESS et 1 dans cas NOT_LESS
+        result += (PREDICATE_LESS == pred) ? ") false true" : ") true false";
+        break;
+
+    case PREDICATE_BELOW_OR_EQUAL: 	    // Below or Equal (CF==1 or ZF==1), ou (CF or ZF) == 1
+    case PREDICATE_NOT_BELOW_OR_EQUAL: 	// Above (CF==0 and ZF==0), ou (CF or ZF) == 0
+        // calcul et test de la valeur du OR entre les deux flags
+        result += "= (bvor ";
+
+        // insertion CARRY_FLAG : objet ou valeur selon marquage
+        if (pTmgrTls->isCarryFlagTainted())
+        {
+            // 1) déclaration récursive des sources du flag
+            this->declareObject(pTmgrTls->getTaintCarryFlag());
+            result += pTmgrTls->getTaintCarryFlag()->getName();
+        }
+        else
+        {
+            oneFlagValue = EXTRACTBIT(flagsOrRegValue, CARRY_FLAG);
+            result      += (oneFlagValue) ? "#b1" : "#b0";
+        }
+
+        result += ' ';
+
+        // insertion ZERO_FLAG : objet ou valeur selon marquage
+        if (pTmgrTls->isZeroFlagTainted())
+        {
+            // 1) déclaration récursive des sources du flag
+            this->declareObject(pTmgrTls->getTaintZeroFlag());
+            result += pTmgrTls->getTaintZeroFlag()->getName();
+        }
+        else
+        {
+            oneFlagValue = EXTRACTBIT(flagsOrRegValue, ZERO_FLAG);
+            result      += (oneFlagValue) ? "#b1" : "#b0";
+        }
+
+        // BELOW_OR_EQUAL: le flag vaut 1 si le 'OR' vaut 1
+        result += (PREDICATE_BELOW_OR_EQUAL == pred) ? ") #b1" : ") #b0";
+        break;
+
+    case PREDICATE_LESS_OR_EQUAL: // Less or Equal (ZF==1 or SF!=OF), ou ((SF ^ OF) or ZF) == 1
+    case PREDICATE_NOT_LESS_OR_EQUAL: // Greater (ZF==0 and SF==OF),  ou ((SF ^ OF) or ZF) == 0
+        // calcul et test de la valeur du OR entre (bvxor SF OF) et ZF
+        result += "= (bvor (bvxor ";
+
+        // insertion SIGN_FLAG : objet ou valeur selon marquage
+        if (pTmgrTls->isSignFlagTainted())
+        {
+            // 1) déclaration récursive des sources du flag
+            this->declareObject(pTmgrTls->getTaintSignFlag());
+            result += pTmgrTls->getTaintSignFlag()->getName();
+        }
+        else
+        {
+            oneFlagValue = EXTRACTBIT(flagsOrRegValue, SIGN_FLAG);
+            result      += (oneFlagValue) ? "#b1" : "#b0";
+        }
+
+        result += ' ';
+
+        // insertion OVERFLOW_FLAG : objet ou valeur selon marquage
+        if (pTmgrTls->isOverflowFlagTainted())
+        {
+            // 1) déclaration récursive des sources du flag
+            this->declareObject(pTmgrTls->getTaintOverflowFlag());
+            result += pTmgrTls->getTaintOverflowFlag()->getName();
+        }
+        else
+        {
+            oneFlagValue = EXTRACTBIT(flagsOrRegValue, OVERFLOW_FLAG);
+            result      += (oneFlagValue) ? "#b1" : "#b0";
+        }
+
+        result += ") ";
+
+        // insertion ZERO_FLAG : objet ou valeur selon marquage
+        if (pTmgrTls->isZeroFlagTainted())
+        {
+            // 1) déclaration récursive des sources du flag
+            this->declareObject(pTmgrTls->getTaintZeroFlag());
+            result += pTmgrTls->getTaintZeroFlag()->getName();
+        }
+        else
+        {
+            oneFlagValue = EXTRACTBIT(flagsOrRegValue, ZERO_FLAG);
+            result      += (oneFlagValue) ? "#b1" : "#b0";
+        }
+
+        // LESS_OR_EQUAL: le flag vaut 1 si le 'OR' vaut 1
+        result += (PREDICATE_LESS_OR_EQUAL == pred) ? ") #b1" : ") #b0";
+        break;
+
+    case PREDICATE_CX_NON_ZERO: 	// CX != 0.
+        {
+            // récupération de l'objet représentant CX, et déclaration de celui-ci
+            TaintWordPtr regCXPtr = pTmgrTls->getRegisterTaint<16>(REG_CX, flagsOrRegValue);
+            this->declareObject(regCXPtr);
+
+            // insertion de nom de l'objet, maintenant qu'il est déclaré, et comparaison à 0
+            result += "not (= " + regCXPtr->getName() + " (_ bv0 16))";
+            break;
+        }
+
+    case PREDICATE_ECX_NON_ZERO: 	// ECX != 0.
+        {
+            // récupération de l'objet représentant ECX, et déclaration de celui-ci
+            TaintDwordPtr regECXPtr = pTmgrTls->getRegisterTaint<32>(REG_ECX, flagsOrRegValue);
+            this->declareObject(regECXPtr);
+
+            // insertion de nom de l'objet, maintenant qu'il est déclaré, et comparaison à 0
+            result += "not (= " + regECXPtr->getName() + " (_ bv0 32))";
+            break;
+        }
+#if TARGET_IA32E
+    case PREDICATE_RCX_NON_ZERO: 	// RCX != 0.
+        {
+            // récupération de l'objet représentant RCX, et déclaration de celui-ci
+            TaintQwordPtr regRCXPtr = pTmgrTls->getRegisterTaint<64>(REG_RCX, flagsOrRegValue);
+            this->declareObject(regRCXPtr);
+
+            // insertion de nom de l'objet, maintenant qu'il est déclaré, et comparaison à 0
+            result += "not (= " + regRCXPtr->getName() + " (_ bv0 64))";
+            break;
+        }
+#endif
+    }
+    // fin de ligne = fermeture des parenthèses
+    result += ")); ";
+    if (g_verbose) result += predicateToString[pred];
+    result += '\n';
+
+    return (result);
+} // getPredicateFormula
  
-std::string TranslateToSMTLIB::getConstraintFooter(bool taken) const
+std::string TranslateToSMTLIB::getConstraintPredicateFooter(bool taken) const
 {
     // déclaration de l'assertion en fin de contrainte 
     // selon que la branche a été prise ou non
@@ -2198,6 +2172,124 @@ std::string TranslateToSMTLIB::getConstraintFooter(bool taken) const
 
     return (result);
 } // addConstraintJcc
+
+
+/*** CONTRAINTES : DIVISEUR NUL ***/
+
+// déclaration de l'entête d'une nouvelle contrainte pour un diviseur nul
+std::string TranslateToSMTLIB::getConstraintNullDivisorHeader(ADDRINT insAddress) const
+{ 
+    // définition de l'entête de la contrainte : insertion d'un commentaire
+    // avec le n° de contrainte, l'instruction et son adresse 
+    return (";\n; contrainte " + decstr(_iAssert) \
+         + " - " + hexstr(insAddress) + " - DIVISION avec Diviseur Marqué\n;\n");
+}
+
+// renvoie la traduction de la formule imposant un diviseur nul
+std::string TranslateToSMTLIB::getNullDivisorTranslation
+    (TaintManager_Thread *pTmgrTls, const TaintPtr &divisorPtr)
+{ 
+    // déclaration de l'objet représentant le diviseur et de ses sources
+    this->declareObject(divisorPtr);
+    
+    // déclaration de la contrainte sur la nullité du diviseur
+    std::string result("(define-fun C_" + decstr(_iAssert) + " () Bool ");
+    result += "(= (_ bv0 " + decstr(divisorPtr->getLength()) + ") " + divisorPtr->getName() + "))\n";
+
+    return (result);
+}
+
+// déclaration du 'final' d'une contrainte pour un diviseur nul
+std::string TranslateToSMTLIB::getConstraintNullDivisorFooter() const
+{ 
+    // déclaration de l'assertion en fin de contrainte : à l'exécution le diviseur
+    // est forcément non nul, sinon il y aurait crash !!
+    return ("(assert (= C_" + decstr(_iAssert) + " false))\n");
+}
+
+/*** CONTRAINTES : QUOTIENT DIVISION HORS BORNES ***/
+
+// déclaration de l'entête d'une nouvelle contrainte sur le résultat d'une division
+std::string TranslateToSMTLIB::getConstraintDivOverflowHeader(bool isSignedDivision, ADDRINT insAddress) const
+{
+    // définition de l'entête de la contrainte : insertion d'un commentaire
+    // avec le n° de contrainte, l'instruction et son adresse 
+    return (";\n; contrainte " + decstr(_iAssert) + " - " + hexstr(insAddress) \
+        + " - DIVISION " + (isSignedDivision ? "signée" : "non signée") + "\n;\n");
+}
+
+// renvoie la traduction de la formule sur le résultat d'une division
+std::string TranslateToSMTLIB::getDivOverflowTranslation(TaintManager_Thread *pTmgrTls, 
+    bool isSignedDivision, const TaintPtr& quotientPtr)
+{ 
+    ObjectSource objHighDividend = quotientPtr->getSource(0);
+    ObjectSource objLowDividend  = quotientPtr->getSource(1);
+    ObjectSource objDivisor      = quotientPtr->getSource(2);
+    UINT32       divisorLength   = objDivisor.getLength();
+
+    // déclaration des operandes et de leurs sources
+    if (objHighDividend.isSrcTainted()) this->declareObject(objHighDividend.getTaintedSource());
+    if (objLowDividend.isSrcTainted())  this->declareObject(objLowDividend.getTaintedSource());
+    if (objDivisor.isSrcTainted())      this->declareObject(objDivisor.getTaintedSource());
+
+    // déclaration de la contrainte sur les bornes du resultat
+    std::string result("(define-fun C_" + decstr(_iAssert) + " () Bool (");
+    // concaténation du dividende
+    std::string dividend("(concat " + this->getSourceName(objHighDividend) + ' ' + this->getSourceName(objLowDividend) + ')');
+    
+    // cas division signée : resultat en dehors de [80h ; 7fh] pour provoquer un overflow
+    if (isSignedDivision)
+    {
+        std::string lowBound, highBound;
+        switch (divisorLength)
+        {
+        case 8:  lowBound = "#xFF80"; highBound = "#x007f"; break;
+        case 16: lowBound = "#xFFFF8000"; highBound = "#x00007fff"; break;
+        case 32: lowBound = "#xFFFFFFFF80000000"; highBound = "#x000000007fffffff"; break;
+#if TARGET_IA32E
+        case 64: 
+            lowBound  = "#xFFFFFFFFFFFFFFFF8000000000000000"; 
+            highBound = "#x00000000000000007fffffffffffffff"; 
+            break;
+#endif
+        default : return "";
+        }
+        
+        result += "let ((temp (bvsdiv " + dividend + " ((_ sign_extend " + decstr(divisorLength) + ") ";
+        result += this->getSourceName(objDivisor) + ")))) ";
+        result += "(or (bvsgt temp " + highBound + ") (bvslt temp " + lowBound + "))))\n";
+    }
+    // cas division non signée : resultat supérieur à FF / FFFF / ... pour provoquer un overflow
+    else
+    {
+        std::string highBound;
+        switch (divisorLength)
+        {
+        case 8:  highBound = "#x00ff"; break;
+        case 16: highBound = "#x0000ffff"; break;
+        case 32: highBound = "#x00000000ffffffff"; break;
+#if TARGET_IA32E
+        case 64: highBound = "#x0000000000000000ffffffffffffffff"; break;
+#endif
+        default : return "";
+        }
+        
+        result += "let ((temp (bvudiv " + dividend + " ((_ zero_extend " + decstr(divisorLength) + ") ";
+        result += this->getSourceName(objDivisor) + ")))) ";
+        result += "(bvugt temp " + highBound + ")))\n";
+    }
+
+    return (result);
+}
+
+// déclaration du 'final' d'une contrainte sur le résultat d'une division
+std::string TranslateToSMTLIB::getConstraintDivOverflowFooter() const
+{ 
+    // déclaration de l'assertion en fin de contrainte 
+    // à l'exécution le résultat est forcément dans les bornes, sinon il y aurait crash !!
+    return ("(assert (= C_" + decstr(_iAssert) + " false))\n"); 
+}
+
 
 // envoi des denières données : nombre total de contraintes
 void TranslateToSMTLIB::final() 

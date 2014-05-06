@@ -151,9 +151,9 @@ int pintoolInit()
     }
     else if ("checkscore" == g_option) // option....checkscore :)   
     {
+        // erreur si pipe ne peut pas être ouvert
+        if (EXIT_FAILURE == openPipe()) return (INIT_ERROR);
         returnValue = OPTION_CHECKSCORE;
-        // initialisation de la la variable globale qui compte le nombre d'instructions
-        g_nbIns = 0;
     }
     else return (INIT_ERROR); // option inconnue : erreur
 

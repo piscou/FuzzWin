@@ -186,6 +186,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\ALGORITHME\algorithm.cpp" />
+    <ClCompile Include="..\ALGORITHME\checkscore.cpp" />
     <ClCompile Include="..\ALGORITHME\CInput.cpp" />
     <ClCompile Include="..\ALGORITHME\debug_interface.cpp" />
     <ClCompile Include="..\ALGORITHME\md5.cpp" />

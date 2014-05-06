@@ -92,7 +92,7 @@ t_NtQueryObject     g_AddressOfNtQueryObject;
 
 /** OPTION CHECKSCORE **/
 // nombre d'instructions exécutées
-UINT64              g_nbIns;
+UINT64              g_nbIns = 0;
 
 /* ===================================================================== */
 // Command line switches

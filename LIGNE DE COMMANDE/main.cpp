@@ -30,14 +30,21 @@ int main(int argc, char *argv[])
         // lancement de l'algorithme
         algo->run();
         
+        // fin de l'algo : sa destruction libérera le tube nommé pour une autre analyse
+        delete (algo);
+
         std::cout << "\nAppuyer sur une touche pour quitter";
         fflush(stdin);
         getchar();
 
         returnCode = EXIT_SUCCESS;
     }
-    else std::cout << initResult << " --> ABANDON !!!" << std::endl;
+    else
+    {
+        std::cout << initResult << " --> ABANDON !!!" << std::endl;
+        delete (algo);
+    }
     
-    delete (algo);
+    
     return (returnCode);
 }
