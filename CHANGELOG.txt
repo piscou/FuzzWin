@@ -4,12 +4,16 @@ Version 1.4.2 - 06 mai 2014
 PINTOOL
 -------
 + implémentation contraintes sur divisions (overflow et division par zéro)
-+ correction bug démarquage registre (mauvais calcul des bornes de la boucle)
-+ correction bug traduction F_OVERFLOW_SUB
-+ optimisation du traitement ADD/SUB lorsque la valeur est non mrquée et nulle
-+ optimisation du traitement MOV (utilisation des objets de 16, 32 ou 64 bits lorsqu'ils existent)
-+ ajout de la procédure 'getFullTaintRegister' pour TaintManager
-+ optimisations pour C++11 (rvalues)
++ implémentation MUL (multiplication non signée)
++ implémentation LEAVE
++ correction traduction SMTLIB de DIV et MUL
++ correction traitement CMPXCHG (erreur dans les bornes de marquage)
++ correction du nombre d'arguments relations IDIV/DIV
+
+ALGORITHME
+----------
++ implémentation de l'option 'score' (pintool option 'checkscore')
+
 
 *****************************
 Version 1.4.1 - 04 mai 2014
@@ -25,7 +29,6 @@ PINTOOL
 + optimisation du traitement MOV (utilisation des objets de 16, 32 ou 64 bits lorsqu'ils existent)
 + ajout de la procédure 'getFullTaintRegister' pour TaintManager
 + optimisations pour C++11 (rvalues)
-
 
 
 *****************************
@@ -54,7 +57,6 @@ PINTOOL
 + Style : uniformisation des noms de variables membres de classes ('_xxx'), 
 + Style : utilisation de 'this->' uniquement pour l'appel aux fonctions membres
 + C++0x11 : optimisation des fonctions pour prendre en compte la sémantique RVALUE et std::move quand cela est possible
-
 
 
 ******************************
