@@ -12,7 +12,7 @@ template<UINT32 lengthInBits> void STRINGOP::sMOVS
     {
         if (pTmgrGlobal->isMemoryTainted<8>(readAddress))	
         {
-            _LOGTAINT(PIN_ThreadId(), insAddress, "MOVS" + decstr(lengthInBits));
+            _LOGTAINT(PIN_ThreadId(), insAddress, "MOVS" + decstr(lengthInBits) + " iterations = " + decstr(nbIterations) + " flagsValue = " + decstr(flagsValue));
             pTmgrGlobal->updateMemoryTaint<8>(writeAddress, std::make_shared<TaintByte>(
                 X_ASSIGN,
                 ObjectSource(pTmgrGlobal->getMemoryTaint<8>(readAddress))));
@@ -91,33 +91,33 @@ template<UINT32 lengthInBits> void STRINGOP::sSTOS
     }
 } // sSTOS
 
-template<UINT32 lengthInBits> void STRINGOP::sStoreTaintSCAS(
+template<UINT32 lengthInBits> void STRINGOP::sFirstRepScas(
     THREADID tid, BOOL isREPZ, ADDRINT regValue, ADDRINT insAddress) 
 { 
     // procédure appelée lors de la première itération (callback IF/THEN)
     // sert à stocker dans TaintManager les arguments (marquage, adresse)
     
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
-    ScasInformation    *pScasInfo = static_cast<ScasInformation*>(PIN_GetThreadData(g_tlsSCAS, tid));
+    StringOpInfo    *pStringOpInfo = static_cast<StringOpInfo*>(PIN_GetThreadData(g_tlsStringOpInfo, tid));
 
-    ZeroMemory(pScasInfo, sizeof(ScasInformation));
+    ZeroMemory(pStringOpInfo, sizeof(StringOpInfo));
 
     // mise en cache de la valeur du préfixe (true = REPZ/E, false = REPNZ/E) et de l'adresse
-    pScasInfo->isREPZ = isREPZ; 
-    pScasInfo->instrPtr = insAddress;
+    pStringOpInfo->isREPZ     = isREPZ; 
+    pStringOpInfo->insAddress = insAddress;
     
     // si registre marqué, stockage de l'objet, sinon mise à nullptr 
     // et stockage de la valeur
     if (pTmgrTls->isRegisterTainted<lengthInBits>(RegisterACC<lengthInBits>::getReg())) 
     {
-        pScasInfo->isRegTainted = true;
-        pScasInfo->tPtr = pTmgrTls->getRegisterTaint<lengthInBits>(
+        pStringOpInfo->isRegTainted = true;
+        pStringOpInfo->tPtr = pTmgrTls->getRegisterTaint<lengthInBits>(
             RegisterACC<lengthInBits>::getReg(), regValue);
     }
     else 
     {
-        pScasInfo->isRegTainted = false; 
-        pScasInfo->regValue = regValue; // stockage de la valeur du registre
+        pStringOpInfo->isRegTainted = false; 
+        pStringOpInfo->regValue = regValue; // stockage de la valeur du registre
     }
 } // storeTaintSCAS
 
@@ -127,21 +127,20 @@ template<UINT32 lengthInBits> void STRINGOP::sSCAS(THREADID tid, ADDRINT address
     // + ajout d'une contrainte sur ZFLAG, indiquant une répétition ou non
     // métohde identique à CMP_MR, reprise ici intégralement afin d'insérer la contrainte sur le ZFLAG
     
-    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
-    ScasInformation    *pScasInfo = static_cast<ScasInformation*>(PIN_GetThreadData(g_tlsSCAS, tid));
+    TaintManager_Thread *pTmgrTls  = getTmgrInTls(tid);
+    StringOpInfo    *pStringOpInfo = static_cast<StringOpInfo*>(PIN_GetThreadData(g_tlsStringOpInfo, tid));
     
-    bool isSrcDestTainted = pScasInfo->isRegTainted;
+    bool isSrcDestTainted = pStringOpInfo->isRegTainted;
     bool isSrcTainted =		pTmgrGlobal->isMemoryTainted<lengthInBits>(address);
 
     if ( !(isSrcDestTainted || isSrcTainted))   pTmgrTls->unTaintAllFlags();
     else 
     {
-        ADDRINT insAddress = pScasInfo->instrPtr; // adresse de l'ins (en cache)
-        _LOGTAINT(tid, insAddress, "SCAS");
+        _LOGTAINT(tid, pStringOpInfo->insAddress, "SCAS");
         
         // calcul des sources pour le futur objet
         ObjectSource srcDest = (isSrcDestTainted) 
-            ? ObjectSource(pScasInfo->tPtr) : ObjectSource(lengthInBits, pScasInfo->regValue);
+            ? ObjectSource(pStringOpInfo->tPtr) : ObjectSource(lengthInBits, pStringOpInfo->regValue);
         
         ObjectSource src = (isSrcTainted) 
             ? ObjectSource(pTmgrGlobal->getMemoryTaint<lengthInBits>(address))
@@ -149,9 +148,18 @@ template<UINT32 lengthInBits> void STRINGOP::sSCAS(THREADID tid, ADDRINT address
 
         // marquage flags 
         BINARY::fTaintCMP<lengthInBits>(pTmgrTls, srcDest, src);
-        // déclaration de la contrainte. Le predicat est forcément vrai puisque la fonction d'analyse a été appelée
+
+        /** TODO : RETRAVAILLER LA CONDITION DE LA CONTRAINTE **/
+        /** EN EFFET LE PREDICAT NE PORTE QUE SUR ECX/RCX : RIEN N'INDIQUE **/
+        /** LA POSITION SUR LE ZFLAG. SEULE SOLUTION POUR INSERER UNE CONTRAINTE : **/
+        /** TESTER EN INSTRUMENTANT EN IPOINT_AFTER ET TESTER LES FLAGS **/
+#if 0
+        // déclaration de la contrainte
+        // Le predicat est forcément vrai puisque la fonction d'analyse a été appelée
         PREDICATE pred = pScasInfo->isREPZ ? PREDICATE_ZERO : PREDICATE_NOT_ZERO;
-        g_pFormula->addConstraintJcc(pTmgrTls, pred, true, insAddress);
+        g_pFormula->addConstraintJcc(pTmgrTls, pred, true, pStringOpInfo->insAddress);
+#endif
+
     }
 } // sSCAS
 
@@ -178,8 +186,10 @@ template<UINT32 lengthInBits> void STRINGOP::sCMPS
 
         // marquage flags (resultat calculé dans la procédure Flags) 
         BINARY::fTaintCMP<lengthInBits>(pTmgrTls, srcDest, src);	
-        
-        // déclaration de la contrainte s'il y avait un préfixe REP (codes 1 REPE = 0 et 2)
-        if (repCode)  g_pFormula->addConstraintJcc(pTmgrTls, PREDICATE_ZERO, (repCode == 1), insAddress); 
+
+        /** TODO : TRAITER LE CAS DE LA CONTRAINTE **/
+        /** EN EFFET LE PREDICAT NE PORTE QUE SUR ECX/RCX : RIEN N'INDIQUE **/
+        /** LA POSITION SUR LE ZFLAG. SEULE SOLUTION :TESTER EN INSTRUMENTANT **/
+        /** EN IPOINT_AFTER ET TESTER LES FLAGS **/
     }
 } // sCMPS

@@ -4,33 +4,6 @@
 #include <sstream>
 #include <iostream> // cout (mode nopipe)
 
-/**** conversion LEVEL_BASE::predicate -> string ****/
-static const std::string predicateToString[PREDICATE_LAST] = 
-{
-    "",     // PREDICATE_ALWAYS_TRUE
-    "",     // PREDICATE_INVALID
-    "B",    // BELOW 
-    "BE",   // BELOW_OR_EQUAL
-    "L",    // LESS
-    "LE",   // LESS_OR_EQUAL
-    "NB",   // NOT_BELOW
-    "NBE",  // NOT_BELOW_OR_EQUAL
-    "NL",   // NOT_LESS
-    "NLE",  // NOT_LESS_OR_EQUAL
-    "NO",   // NOT_OVERFLOW
-    "NP",   // NOT_PARITY
-    "NS",   // NOT_SIGN
-    "NZ",   // NOT_ZERO
-    "O",    // OVERFLOW
-    "P",    // PARITY
-    "S",    // SIGN
-    "Z",    // ZERO
-    "CXZ",  // CX_NON_ZERO
-    "ECXZ", // ECX_NON_ZERO
-    "RCXZ", // RCX_NON_ZERO
-    "SAVED_GCX" // SAVED_GCX_NON_ZERO
-};
-
 class TranslateToIR
 {
 protected:
@@ -75,8 +48,7 @@ protected:
     // déclaration de l'entête d'une nouvelle contrainte pour un diviseur nul
     virtual std::string getConstraintNullDivisorHeader(ADDRINT insAddress) const = 0;
     // renvoie la traduction de la formule imposant un diviseur nul
-    virtual std::string getNullDivisorTranslation
-        (TaintManager_Thread *pTmgrTls, const TaintPtr &divisorPtr) = 0;
+    virtual std::string getNullDivisorTranslation(const TaintPtr &divisorPtr) = 0;
     // déclaration du 'final' d'une contrainte pour un diviseur nul
     virtual std::string getConstraintNullDivisorFooter() const = 0;
 
@@ -85,10 +57,30 @@ protected:
     // déclaration de l'entête d'une nouvelle contrainte sur le résultat d'une division
     virtual std::string getConstraintDivOverflowHeader(bool isSignedDivision, ADDRINT insAddress) const = 0;
     // renvoie la traduction de la formule sur le résultat d'une division
-    virtual std::string getDivOverflowTranslation(TaintManager_Thread *pTmgrTls, 
-        bool isSignedDivision, const TaintPtr &quotientPtr) = 0;
+    virtual std::string getDivOverflowTranslation(bool isSignedDivision, const TaintPtr &quotientPtr) = 0;
     // déclaration du 'final' d'une contrainte sur le résultat d'une division
     virtual std::string getConstraintDivOverflowFooter() const = 0;
+
+    /*** CONTRAINTES : BOUCLES (LOOP/LOOPE/LOOPNE) ***/
+
+    // déclaration de l'entête d'une nouvelle contrainte pour un diviseur nul
+    virtual std::string getConstraintLoopHeader(ADDRINT insAddress) const = 0;
+    // renvoie la traduction de la formule relatif à une boucle Loop (LOOP)
+    virtual std::string getLoopTranslation(const TaintPtr &regCounterPtr) = 0; 
+    // renvoie la traduction de la formule relatif à une boucle Loop (LOOPE/LOOPNE)
+    virtual std::string getLoopTranslation(PREDICATE pred, 
+        const ObjectSource &objRegCounter, const ObjectSource &objZF) = 0;
+    // déclaration du 'final' d'une contrainte sur le résultat d'une division
+    virtual std::string getConstraintLoopFooter() const = 0;
+
+    /*** CONTRAINTES : ADRESSES EFFECTIVES ***/
+
+    // déclaration de l'entête d'une nouvelle contrainte sur une addresse
+    virtual std::string getConstraintAddressHeader(ADDRINT insAddress) const = 0;
+    // renvoie la traduction de la formule sur la valeur d'une adresse
+    virtual std::string getConstraintAddressTranslation(const TaintPtr &addrPtr, ADDRINT addrValue) = 0; 
+    // déclaration du 'final' d'une contrainte sur une adresse
+    virtual std::string getConstraintAddressFooter() const = 0;
 
     /***********************************/
     /** TRADUCTION DE CHAQUE RELATION **/
@@ -144,6 +136,7 @@ protected:
     virtual void translate_X_DAS_1ST(const TaintPtr &tPtr) = 0;
     virtual void translate_X_DAS_2ND(const TaintPtr &tPtr) = 0;
 
+    virtual void translate_X_SALC(const TaintPtr &tPtr) = 0;
     // flags
 
     virtual void translate_F_LSB(const TaintPtr &tPtr) = 0;
@@ -192,8 +185,16 @@ public:
         bool isTaken, ADDRINT insAddress, ADDRINT flagsOrRegValue = 0); 
 
     // ajoute une contrainte sur une division marquée
-    void addConstraintDivision(TaintManager_Thread *pTmgrTls, bool isSignedDivision,
-        const TaintPtr &quotient, ADDRINT insAddress);
+    void addConstraintDivision(bool isSignedDivision, const TaintPtr &quotient, ADDRINT insAddress);
+
+    // ajoute une contrainte sur une boucle simple (LOOP)
+    void addConstraintLoop(const TaintPtr &regCounterPtr, ADDRINT insAddress);
+    // ajoute une contrainte sur une boucle avec test du zero flag (LOOPE / LOOPNE)
+    void addConstraintLoop(PREDICATE pred, const ObjectSource &objRegCounter, 
+        const ObjectSource &objZF, ADDRINT insAddress);
+
+    // Ajout d'une contrainte sur la valeur d'une addresse
+    void addConstraintAddress(const TaintPtr &addrPtr, ADDRINT addrValue, ADDRINT insAddress);
     
     // fabrication de la formule finale
     virtual void final() = 0;    

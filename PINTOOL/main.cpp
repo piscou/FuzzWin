@@ -54,7 +54,7 @@ SolverFormula       *g_pFormula;
 
 TLS_KEY             g_tlsKeyTaint;          // classe de marquage des registres
 TLS_KEY             g_tlsKeySyscallData;    // stockage des données avant/apres syscall
-TLS_KEY             g_tlsSCAS;              // données statiques pour l'instruction SCAS
+TLS_KEY             g_tlsStringOpInfo;      // données statiques pour les instructions CMPS / SCAS
 
 // structure de verrou, utilisée pour accéder aux variables globales
 // en multithread
@@ -91,8 +91,15 @@ OSTYPE              g_osType;
 t_NtQueryObject     g_AddressOfNtQueryObject;
 
 /** OPTION CHECKSCORE **/
-// nombre d'instructions exécutées
-UINT64              g_nbIns = 0;
+
+// nombre de threads démarrés
+UINT32 g_numThreads = 0;
+
+// vrai si erreur trouvée
+bool   g_faultFound;
+
+// compteur d'instruction de chaque thread
+ThreadCount g_icount[MaxNumThreads];
 
 /* ===================================================================== */
 // Command line switches
@@ -156,11 +163,20 @@ int main(int argc, char *argv[])
     }
     else if (OPTION_CHECKSCORE == initStatus)
     {
+        g_faultFound = false;
+        
+        for (UINT32 t = 0; t < MaxNumThreads; ++t) 
+        {
+            g_icount[t]._count = 0;
+        }     
+
+        PIN_AddThreadStartFunction(INSTRUMENTATION::ThreadStartCheckScore, 0);
+
         // fonction de notification des changements de contexte
         PIN_AddContextChangeFunction(INSTRUMENTATION::changeCtx, 0);
 
         // fonction d'instrumentation de chaque trace d'exécution
-        TRACE_AddInstrumentFunction(INSTRUMENTATION::insCount, 0);
+        TRACE_AddInstrumentFunction(INSTRUMENTATION::traceCheckScore, 0);
 
         // Fonction de notification lors de la fin du programme
         // version spécifique pour le multithreading

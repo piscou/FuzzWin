@@ -1,6 +1,6 @@
 #pragma once
 #include <TaintEngine\TaintManager.h>
-#include <TaintUtilities\utils.h>   // pour computeEA
+#include <TaintUtilities\utils.h>   
 #include <Dataxfer\dataxfer.h>      // pour LEAVE (POP encodé en MOVMR)
 
 

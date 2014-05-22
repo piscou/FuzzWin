@@ -70,14 +70,30 @@ extern bool         g_beginInstrumentationOfInstructions;
 
 extern TLS_KEY      g_tlsKeyTaint;          // classe de marquage des registres
 extern TLS_KEY      g_tlsKeySyscallData;    // stockage des données avant/apres syscall
-extern TLS_KEY      g_tlsSCAS;              // données statiques pour l'instruction SCAS
+extern TLS_KEY      g_tlsStringOpInfo;      // données statiques pour les instructions CMPS / SCAS
 
 // structure de blocage inter-thread    
 extern PIN_LOCK     g_lock;  
 
 /** OPTION CHECKSCORE **/
-// nombre d'instructions exécutées
-extern UINT64       g_nbIns;
+
+// nombre de threads démarrés, et nombre de threads maxi supportés (10000)
+extern UINT32         g_numThreads;
+#define MaxNumThreads 10000
+
+// vrai si erreur trouvée
+extern bool        g_faultFound;
+
+// nombre d'instructions exécutées par thread
+// padding à 256 bits pour optimisation (cache)
+class ThreadCount
+{
+public:
+    UINT64 _count;
+    UINT8 _pad[24]; 
+}; 
+
+extern ThreadCount g_icount[MaxNumThreads];
 
 /** OPTIONS DE LA LIGNE DE COMMANDE **/
 

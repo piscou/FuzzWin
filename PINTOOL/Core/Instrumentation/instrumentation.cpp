@@ -51,7 +51,7 @@ void INSTRUMENTATION::Instruction(INS ins, void* )
     case XED_ICLASS_DEC:  BINARY::cDEC(ins);  break;
     case XED_ICLASS_CMP:  BINARY::cCMP(ins);  break;
     case XED_ICLASS_NEG:  BINARY::cNEG(ins);  break;
-    case XED_ICLASS_MUL:  BINARY::cIMUL(ins); break; // Traitement identique à MUL
+    case XED_ICLASS_MUL:  BINARY::cMUL(ins); break;
     case XED_ICLASS_IMUL: BINARY::cIMUL(ins); break;
     case XED_ICLASS_IDIV: BINARY::cDIVISION(ins, true); break;  // true = signed
     case XED_ICLASS_DIV:  BINARY::cDIVISION(ins, false); break; // false = unsigned
@@ -117,6 +117,9 @@ void INSTRUMENTATION::Instruction(INS ins, void* )
     case XED_ICLASS_JLE:    CONDITIONAL_BR::cJLE(ins);  break;
     case XED_ICLASS_JNLE:   CONDITIONAL_BR::cJNLE(ins); break;
     case XED_ICLASS_JRCXZ:  CONDITIONAL_BR::cJRCXZ(ins); break;
+    case XED_ICLASS_LOOP:   CONDITIONAL_BR::cLOOP(ins);  break;
+    case XED_ICLASS_LOOPE:  CONDITIONAL_BR::cLOOPE(ins); break;
+    case XED_ICLASS_LOOPNE: CONDITIONAL_BR::cLOOPNE(ins);break;
    
     // CONVERT
     case XED_ICLASS_CBW:  CONVERT::cCBW(ins);  break;
@@ -207,11 +210,11 @@ void INSTRUMENTATION::Instruction(INS ins, void* )
     case XED_ICLASS_CPUID:  MISC::cCPUID(ins);  break;
     
     // RET
-    case XED_ICLASS_RET_FAR: // identique en traitement à RET_NEAR
-    case XED_ICLASS_RET_NEAR:    RET::cRET(ins);   break;
+    case XED_ICLASS_RET_FAR:    RET::cRET(ins, true); break;  // true  <=> FAR RET
+    case XED_ICLASS_RET_NEAR:   RET::cRET(ins, false); break;  // false  <=> NEAR RET
 
     // STRINGOP: le second argument est la taille des opérandes, en octets
-    case XED_ICLASS_CMPSB:  STRINGOP::cCMPS(ins, 1);  break;
+    //case XED_ICLASS_CMPSB:  STRINGOP::cCMPS(ins, 1);  break;
     case XED_ICLASS_CMPSW:  STRINGOP::cCMPS(ins, 2);  break;
     case XED_ICLASS_CMPSD:  STRINGOP::cCMPS(ins, 4);  break;
         
@@ -239,9 +242,9 @@ void INSTRUMENTATION::Instruction(INS ins, void* )
     case XED_ICLASS_STOSQ:  STRINGOP::cSTOS(ins, 8);  break;
     #endif
 
-    // CALL (call FAR traité niveau marquage comme un call Near)
-    case XED_ICLASS_CALL_FAR: 
-    case XED_ICLASS_CALL_NEAR: CALL::cCALL(ins); break;
+    // CALL 
+    case XED_ICLASS_CALL_FAR:  CALL::cCALL(ins, true); break;  // true  <=> FAR CALL
+    case XED_ICLASS_CALL_NEAR: CALL::cCALL(ins, false); break; // false <=> NEAR CALL
 
     // UNCONDITIONAL_BR
     case XED_ICLASS_JMP: UNCONDITIONAL_BR::cJMP(ins); break;
@@ -298,10 +301,7 @@ void INSTRUMENTATION::FiniTaint(INT32 code, void* )
         g_debug << "CODE DE FIN : " << code << std::endl;
         g_debug << "#eof\n";    
         g_debug.close(); 
-
-        // récupération du nombre d'objets encore marqués en mémoire
-        auto taintedMem = pTmgrGlobal->getSnapshotOfTaintedLocations();
-        g_taint << "nombre d'octets encore marqués : " << taintedMem.size() << std::endl;
+        
         g_taint << "#eof\n";    
         g_taint.close();
     }
@@ -336,11 +336,11 @@ void INSTRUMENTATION::threadStart(THREADID tid, CONTEXT *, INT32 , VOID *)
 
     TaintManager_Thread *pTmgrTls = new TaintManager_Thread;
     Syscall_Data *pSyscallData    = new Syscall_Data;
-    ScasInformation *pScasInfo    = new ScasInformation;
+    StringOpInfo *pStringOpInfo   = new StringOpInfo;
 
     PIN_SetThreadData(g_tlsKeyTaint, pTmgrTls, tid);
     PIN_SetThreadData(g_tlsKeySyscallData, pSyscallData, tid);
-    PIN_SetThreadData(g_tlsSCAS, pScasInfo, tid);
+    PIN_SetThreadData(g_tlsStringOpInfo, pStringOpInfo, tid);
 }
 
 // Fonction de notification lors de la fin d'un thread
@@ -355,9 +355,9 @@ void INSTRUMENTATION::threadFini(THREADID tid, const CONTEXT *, INT32 , VOID *)
         static_cast<Syscall_Data*>(PIN_GetThreadData(g_tlsKeySyscallData, tid));
     delete (pSysData);
 
-    ScasInformation *pScasInfo =  
-        static_cast<ScasInformation*>(PIN_GetThreadData(g_tlsSCAS, tid));
-    delete (pScasInfo);
+    StringOpInfo *pStringOpInfo =  
+        static_cast<StringOpInfo*>(PIN_GetThreadData(g_tlsStringOpInfo, tid));
+    delete (pStringOpInfo);
 }
 
 /*** INSTRUMENTATION DES IMAGES ***/
@@ -384,9 +384,9 @@ void INSTRUMENTATION::changeCtx
 {
     if (reason == CONTEXT_CHANGE_REASON_EXCEPTION) 
     {
-        // remise à zéro du nombre d'instructions => erreur
+        // => erreur
         PIN_GetLock(&g_lock, PIN_GetTid());
-        g_nbIns = 0;
+        g_faultFound = true;
         PIN_ReleaseLock(&g_lock);
 
         // appel de la fonction "FiniCheckscore" avant de quitter le programme
@@ -398,11 +398,20 @@ void INSTRUMENTATION::changeCtx
 void INSTRUMENTATION::FiniCheckScore(INT32 code, void* ) 
 {
     WINDOWS::DWORD cbWritten;
-    std::string message;
+    std::string message; // par défaut, aucun score (= faute trouvée)
 
     // si exception, le message sera '0'
     // sinon ce sera le nombre d'instructions exécutées
-    message = decstr(g_nbIns);
+    if (g_faultFound) message = "0";
+    else
+    {
+        UINT64 totalIns = 0;
+        
+        // somme des instructions de tous les threads
+        for (UINT32 t = 0; t < g_numThreads; ++t) totalIns += g_icount[t]._count;
+        
+        message = decstr(totalIns);
+    }
 
     // envoi du resultat en entier dans le pipe  (= stdout en mode nopipe)
     WINDOWS::WriteFile(g_hPipe, 
@@ -416,14 +425,28 @@ void INSTRUMENTATION::FiniCheckScore(INT32 code, void* )
     PIN_ExitProcess(code);
 }
 
+// fonction d'analyse qui compte le nombre d'instruction de chaque BBL
+VOID PIN_FAST_ANALYSIS_CALL INSTRUMENTATION::docount(THREADID tid, ADDRINT bblCount)
+{ 
+    g_icount[tid]._count += bblCount; 
+}
+
 // Fonction d'instrumentation des traces
 // ajout du nombre d'instructions de la trace au total
-void INSTRUMENTATION::insCount(TRACE trace, VOID *)
+void INSTRUMENTATION::traceCheckScore(TRACE trace, VOID *)
 {
     for (BBL bbl = TRACE_BblHead(trace) ; BBL_Valid(bbl) ; bbl = BBL_Next(bbl))
     {
-        PIN_GetLock(&g_lock, PIN_GetTid());
-        g_nbIns += BBL_NumIns(bbl);
-        PIN_ReleaseLock(&g_lock);
+        BBL_InsertCall(bbl, IPOINT_ANYWHERE, (AFUNPTR) docount, 
+            IARG_FAST_ANALYSIS_CALL,
+            IARG_THREAD_ID,
+            IARG_UINT32, BBL_NumIns(bbl),  
+            IARG_END); 
     }   
+}
+
+// Fonction de notification lors du lancement d'un nouveau thread
+void INSTRUMENTATION::ThreadStartCheckScore(THREADID tid, CONTEXT *, INT32 , VOID *)
+{
+    ++g_numThreads;
 }

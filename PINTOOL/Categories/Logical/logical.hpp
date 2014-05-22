@@ -70,7 +70,7 @@ template<UINT32 lengthInBits> void LOGICAL::sAND_IR(THREADID tid, ADDRINT value,
         // MARQUAGE DE LA DESTINATION
         REGINDEX regIndex = getRegIndex(reg);
         for (UINT32 regPart = 0 ; regPart < (lengthInBits >> 3) ; ++regPart) 
-        {
+        {  
             // dest non marquée : ne rien faire
             if (!pTmgrTls->isRegisterPartTainted(regIndex, regPart)) continue;
         

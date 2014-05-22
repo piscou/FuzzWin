@@ -216,10 +216,10 @@ void TranslateToSMTLIB::translate_X_ADD(const TaintPtr &tPtr)
 
 void TranslateToSMTLIB::translate_X_INC(const TaintPtr &tPtr)
 {
-    ObjectSource src0   = tPtr->getSource(0);
+    // source 0 forcément marquée
 
     BEGIN_RELATION_DECLARATION;
-    _formula << "bvadd " << this->getSourceName(src0) << " (_ bv1 " << tPtr->getLength() << ')';
+    _formula << "bvadd " << tPtr->getSource(0).getTaintedSource()->getName() << " (_ bv1 " << tPtr->getLength() << ')';
     END_RELATION_DECLARATION;
 }
 
@@ -235,17 +235,19 @@ void TranslateToSMTLIB::translate_X_SUB(const TaintPtr &tPtr)
 
 void TranslateToSMTLIB::translate_X_DEC(const TaintPtr &tPtr)
 {
-    ObjectSource src0   = tPtr->getSource(0);
+    // source 0 forcément marquée
 
     BEGIN_RELATION_DECLARATION;
-    _formula << "bvsub " << this->getSourceName(src0) << " (_ bv1 " << tPtr->getLength() << ')';
+    _formula << "bvsub " << tPtr->getSource(0).getTaintedSource()->getName()  << " (_ bv1 " << tPtr->getLength() << ')';
     END_RELATION_DECLARATION;
 }
 
 void TranslateToSMTLIB::translate_X_NEG(const TaintPtr &tPtr)
 {
+    // source 0 forcément marquée
+
     BEGIN_RELATION_DECLARATION;
-    _formula << "bvneg " << this->getSourceName(tPtr->getSource(0));
+    _formula << "bvneg " << tPtr->getSource(0).getTaintedSource()->getName();
     END_RELATION_DECLARATION;
 }
 
@@ -845,14 +847,14 @@ void TranslateToSMTLIB::translate_X_SETCC(const TaintPtr &tPtr)
     case PREDICATE_LESS_OR_EQUAL: // Less or Equal (ZF==1 or SF!=OF), ou ((SF ^ OF) or ZF) == 1
         _formula << "= (bvor " << this->getSourceName(tPtr->getSource(3)); // source3 = ZF
         _formula << " (bvxor " << this->getSourceName(tPtr->getSource(1)); // source1 = SF
-        _formula << ' ' << this->getSourceName(tPtr->getSource(2)) << ") #b1";
+        _formula << ' ' << this->getSourceName(tPtr->getSource(2)) << ")) #b1"; // source2 = OF
         break;
 
     // trois flags, SF, OF et ZF, en sources 1, 2 et 3 
     case PREDICATE_NOT_LESS_OR_EQUAL: // Greater (ZF==0 and SF==OF),  ou ((SF ^ OF) or ZF) == 0
         _formula << "= (bvor " << this->getSourceName(tPtr->getSource(3)); // source3 = ZF
         _formula << " (bvxor " << this->getSourceName(tPtr->getSource(1)); // source1 = SF
-        _formula << ' ' << this->getSourceName(tPtr->getSource(2)) << ") #b1";
+        _formula << ' ' << this->getSourceName(tPtr->getSource(2)) << ")) #b1"; // source2 = OF
         break;
     }
 
@@ -1282,6 +1284,16 @@ void TranslateToSMTLIB::translate_X_DAS_2ND(const TaintPtr &tPtr)
     END_RELATION_DECLARATION;
 }
 
+void TranslateToSMTLIB::translate_X_SALC(const TaintPtr &tPtr)
+{
+    // si CF == 0 => AL = 0 ; si CF == 1 => AL = FF
+    // formule SMT-LIB : ite (= src0 #b0) #x00 #xff (source0 sur 1 bit et forcément marquée)
+
+    BEGIN_RELATION_DECLARATION;
+    _formula << "ite (= #b0 " << tPtr->getSource(0).getTaintedSource()->getName() << ") #x00 #xff";
+    END_RELATION_DECLARATION;
+}
+
 // flags
 
 void TranslateToSMTLIB::translate_F_LSB(const TaintPtr &tPtr)
@@ -1312,7 +1324,7 @@ void TranslateToSMTLIB::translate_F_CARRY_ADD(const TaintPtr &tPtr)
 
     BEGIN_RELATION_DECLARATION;
 
-    _formula << "(_ extract " << extractBit << ' ' << extractBit + ") ";
+    _formula << "(_ extract " << extractBit << ' ' << extractBit << ") ";
     _formula << "(bvadd ((_ zero_extend 1) " << this->getSourceName(src0) << ") ";
     _formula <<        "((_ zero_extend 1) " << this->getSourceName(src1) << "))";
 
@@ -2186,8 +2198,7 @@ std::string TranslateToSMTLIB::getConstraintNullDivisorHeader(ADDRINT insAddress
 }
 
 // renvoie la traduction de la formule imposant un diviseur nul
-std::string TranslateToSMTLIB::getNullDivisorTranslation
-    (TaintManager_Thread *pTmgrTls, const TaintPtr &divisorPtr)
+std::string TranslateToSMTLIB::getNullDivisorTranslation(const TaintPtr &divisorPtr)
 { 
     // déclaration de l'objet représentant le diviseur et de ses sources
     this->declareObject(divisorPtr);
@@ -2219,8 +2230,7 @@ std::string TranslateToSMTLIB::getConstraintDivOverflowHeader(bool isSignedDivis
 }
 
 // renvoie la traduction de la formule sur le résultat d'une division
-std::string TranslateToSMTLIB::getDivOverflowTranslation(TaintManager_Thread *pTmgrTls, 
-    bool isSignedDivision, const TaintPtr& quotientPtr)
+std::string TranslateToSMTLIB::getDivOverflowTranslation(bool isSignedDivision, const TaintPtr& quotientPtr)
 { 
     ObjectSource objHighDividend = quotientPtr->getSource(0);
     ObjectSource objLowDividend  = quotientPtr->getSource(1);
@@ -2259,6 +2269,7 @@ std::string TranslateToSMTLIB::getDivOverflowTranslation(TaintManager_Thread *pT
         result += this->getSourceName(objDivisor) + ")))) ";
         result += "(or (bvsgt temp " + highBound + ") (bvslt temp " + lowBound + "))))\n";
     }
+
     // cas division non signée : resultat supérieur à FF / FFFF / ... pour provoquer un overflow
     else
     {
@@ -2291,6 +2302,105 @@ std::string TranslateToSMTLIB::getConstraintDivOverflowFooter() const
 }
 
 
+/*** CONTRAINTES : BOUCLES (LOOP/LOOPE/LOOPNE) ***/
+
+// déclaration de l'entête d'une nouvelle contrainte pour un diviseur nul
+std::string TranslateToSMTLIB::getConstraintLoopHeader(ADDRINT insAddress) const
+{
+    // définition de l'entête de la contrainte : insertion d'un commentaire
+    // avec le n° de contrainte, l'instruction et son adresse 
+    std::string result(";\n; contrainte " + decstr(_iAssert));
+    result += " - "  + hexstr(insAddress);
+    result += " - LOOP\n;\n";
+
+    return (result);
+}
+
+// renvoie la traduction de la formule relatif à une boucle Loop (LOOP)
+std::string TranslateToSMTLIB::getLoopTranslation(const TaintPtr &regCounterPtr)
+{    
+    // déclaration de l'objet représentant le registre compteur
+    this->declareObject(regCounterPtr);
+
+    // déclaration de la contrainte : le compteur doit être non nul
+    std::string result("(define-fun C_" + decstr(_iAssert) + " () Bool (");
+    
+    result += "not (= (_bv0 " + decstr(regCounterPtr->getLength()) + ") ";
+    result += regCounterPtr->getName() + ")))\n";
+
+    return (result);
+}
+
+// renvoie la traduction de la formule relatif à une boucle Loop (LOOPE/LOOPNE)
+std::string TranslateToSMTLIB::getLoopTranslation(PREDICATE pred, 
+    const ObjectSource &objRegCounter, const ObjectSource &objZF)
+{
+    // déclaration de l'objet représentant le registre compteur et Zero Flag, si marqués
+    if (objRegCounter.isSrcTainted()) this->declareObject(objRegCounter.getTaintedSource());
+    if (objZF.isSrcTainted())         this->declareObject(objZF.getTaintedSource());
+
+    std::string result("(define-fun C_" + decstr(_iAssert) + " () Bool (");
+    
+    // déclaration de la contrainte : deux conditions
+    result += "and";
+    // le compteur doit être non nul
+    result +=       " (not (= (_ bv0 " + decstr(objRegCounter.getLength()) + ") ";
+    result +=       this->getSourceName(objRegCounter) + "))";
+    // et le zeroFlag vaut 1 (cas LOOPE) ou 0 (cas LOOPNE)
+    result +=       " (= " + this->getSourceName(objZF) + " #b";
+    result +=         (PREDICATE_ZERO == pred) ? '1' : '0';
+    result +=       ")))\n";
+
+    return (result);
+}
+
+// déclaration du 'final' d'une contrainte sur le résultat d'une division
+std::string TranslateToSMTLIB::getConstraintLoopFooter() const
+{
+    // déclaration de l'assertion en fin de contrainte 
+    // pour les boucles, la contrainte est vraie car la branche a été prise
+    return ("(assert (= C_" + decstr(_iAssert) + " true))\n"); 
+}
+
+/*** CONTRAINTES : ADRESSES EFFECTIVES ***/
+
+// déclaration de l'entête d'une nouvelle contrainte sur une addresse
+std::string TranslateToSMTLIB::getConstraintAddressHeader(ADDRINT insAddress) const
+{
+    // définition de l'entête de la contrainte : insertion d'un commentaire
+    // avec le n° de contrainte, l'instruction et son adresse 
+    return (";\n; contrainte " + decstr(_iAssert) + " - " + hexstr(insAddress) + " - ADDRESSE MARQUEE\n;\n");
+}
+
+// renvoie la traduction de la formule sur la valeur d'une adresse
+std::string TranslateToSMTLIB::getConstraintAddressTranslation(const TaintPtr &addrPtr, ADDRINT addrValue)
+{ 
+    // déclaration de l'objet te de ses sources
+    this->declareObject(addrPtr);
+
+    // déclaration de la contrainte sur la valeur du résultat
+    std::string result("(define-fun C_" + decstr(_iAssert) + " () Bool (");
+    // valeur concrète de l'adresse
+    result += "= (_ bv" + decstr(addrValue) + ' ' + decstr(addrPtr->getLength()) + ") ";
+    // nom de la variable
+    result += addrPtr->getName() + "))";
+
+    if (g_verbose) result += "; ADDRESSE MARQUEE";
+
+    result += '\n';
+
+    return (result);
+}
+
+// déclaration du 'final' d'une contrainte sur le résultat d'une division
+std::string TranslateToSMTLIB::getConstraintAddressFooter() const
+{ 
+    // déclaration de l'assertion en fin de contrainte 
+    // à l'exécution la variable marquée vaut l'adresse réelle
+    return ("(assert (= C_" + decstr(_iAssert) + " true))\n"); 
+}
+
+
 // envoi des denières données : nombre total de contraintes
 void TranslateToSMTLIB::final() 
 {
@@ -2309,12 +2419,7 @@ void TranslateToSMTLIB::final()
             "; Fichier instrumenté : " + g_inputFile + "\n\n";
 
         formulaHeader +=
-            "(set-option :auto-config false)\n"   \
-            "(set-option :produce-models true)\n" \
-            "(set-option :produce-proofs false)\n"\
-            "(set-option :print-success false)\n" \
-            "(set-option :relevancy 0)\n"         \
-            "(set-option :smtlib2_compliant true)\n"  \
+            "(set-option :auto-config true)\n" \
             "(set-logic QF_AUFBV)\n";
 
         std::string formulaFooter = 

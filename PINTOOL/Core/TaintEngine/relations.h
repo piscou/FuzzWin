@@ -139,6 +139,10 @@ enum Relation
     // Src0 = AL avant DAS (8 bits), Src1 = CF (1bit), src2 = AL apres 1ere condition de DAS (8bits)
     X_DAS_2ND,
 
+    /** FLAGOP  **/
+    // SALC : source0 : carryFlag (1bit), resultat sur 8 bits (affecté à AL)
+    X_SALC,
+
     /*******************************************************************/
     /**** Relations de modelisation des effets de bords (flags) x86 ****/
     /*******************************************************************/
@@ -280,6 +284,9 @@ const static std::string relationStrings[RELATION_LAST] =
     // DECIMAL
     "X_AAA_AL", "X_AAA_AH", "X_AAD", "X_AAM_AL", "X_AAM_AH", "X_AAS_AL", "X_AAS_AH",
     "X_DAA_1ST", "X_DAA_2ND", "X_DAS_1ST", "X_DAS_2ND",
+    
+    // FLAGOP
+    "X_SALC",
 
     /**** Relations de modelisation des effets de bords (flags) x86 ****/
     

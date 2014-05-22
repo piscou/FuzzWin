@@ -1,11 +1,14 @@
 #include "ret.h"
 
-void RET::cRET(INS &ins)
+void RET::cRET(INS &ins, bool isFarRet)
 {
     INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR) sRET,
         IARG_INST_PTR, // adresse de l'instruction 
         IARG_BRANCH_TARGET_ADDR, // adresse de retour 
         IARG_END);
+
+    // ajouter l'entier de retour
+    // ajouter l'adresse de la pile (pour mise à jour marquage et test retour marqué)
 }
 
 void RET::sRET(ADDRINT insAddress, ADDRINT returnIp)

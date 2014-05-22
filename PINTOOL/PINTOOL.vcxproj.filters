@@ -210,6 +210,15 @@
     <ClInclude Include="Core\Translate\translate.h">
       <Filter>Core\Translate</Filter>
     </ClInclude>
+    <ClInclude Include="Categories\Call\call.hpp">
+      <Filter>Categories\Call</Filter>
+    </ClInclude>
+    <ClInclude Include="Categories\ConditionalBranch\conditional_branch.hpp">
+      <Filter>Categories\Conditional Branch</Filter>
+    </ClInclude>
+    <ClInclude Include="Categories\UnconditionalBranch\unconditional_branch.hpp">
+      <Filter>Categories\Unconditional Branch</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Core">

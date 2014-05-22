@@ -40,7 +40,7 @@ FUZZWIN_GUI::FUZZWIN_GUI() : QMainWindow(nullptr),
 
     // affectation à la fenetre et redimension
     this->setCentralWidget(_centralWidget);
-    this->resize(800, 500);
+    this->resize(900, 500);
 
     // connexion signaux/slots
     this->connectSignalsToSlots();

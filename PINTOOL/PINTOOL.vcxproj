@@ -429,8 +429,10 @@ del "$(TargetDir)$(TargetName).exp"</Command>
     <ClInclude Include="Categories\Bitbyte\bitbyte.h" />
     <ClInclude Include="Categories\Bitbyte\bitbyte.hpp" />
     <ClInclude Include="Categories\Call\call.h" />
+    <ClInclude Include="Categories\Call\call.hpp" />
     <ClInclude Include="Categories\Cmov\cmov.h" />
     <ClInclude Include="Categories\ConditionalBranch\conditional_branch.h" />
+    <ClInclude Include="Categories\ConditionalBranch\conditional_branch.hpp" />
     <ClInclude Include="Categories\Convert\convert.h" />
     <ClInclude Include="Categories\Dataxfer\dataxfer.h" />
     <ClInclude Include="Categories\Dataxfer\dataxfer.hpp" />
@@ -454,6 +456,7 @@ del "$(TargetDir)$(TargetName).exp"</Command>
     <ClInclude Include="Categories\StringOp\stringop.h" />
     <ClInclude Include="Categories\StringOp\stringop.hpp" />
     <ClInclude Include="Categories\UnconditionalBranch\unconditional_branch.h" />
+    <ClInclude Include="Categories\UnconditionalBranch\unconditional_branch.hpp" />
     <ClInclude Include="Core\Instrumentation\instrumentation.h" />
     <ClInclude Include="Core\Syscalls\syscalls.h" />
     <ClInclude Include="Core\TaintEngine\architecture.h" />

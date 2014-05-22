@@ -51,8 +51,6 @@ ObjectSource& ObjectSource::operator= (ObjectSource&& other)
     return *this; 
 }
 
-
-
 UINT32 ObjectSource::getLength() const  { return (_lengthInBits); }
 
 bool ObjectSource::isSrcTainted() const { return ((bool) _src); }

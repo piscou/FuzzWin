@@ -7,7 +7,6 @@ void FLAGOP::cCLC_STC(INS &ins)
     // CLC/STC : clear/set Carry Flag : sera fait dans la fonction d'analyse
     // peu importe avant ou après l'exécution
     INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR) sCLC_STC,
-        IARG_FAST_ANALYSIS_CALL,
         IARG_THREAD_ID,
         IARG_INST_PTR, IARG_END);
 } // cCLC
@@ -17,7 +16,6 @@ void FLAGOP::cCMC(INS &ins)
     // CMC : complément Carry Flag : sera fait dans la fonction d'analyse
     // peu importe avant ou après l'exécution (on inversera le marquage pas la valeur)
     INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR) sCMC,
-        IARG_FAST_ANALYSIS_CALL,
         IARG_THREAD_ID,
         IARG_INST_PTR, IARG_END);
 } // cCMC
@@ -32,7 +30,6 @@ void FLAGOP::cLAHF(INS &ins)
         IARG_INST_PTR, IARG_END);
 } // cLAHF
 
-
 void FLAGOP::cSAHF(INS &ins)
 {
     // SAHF : Store AH Into Flags
@@ -46,21 +43,18 @@ void FLAGOP::cSALC(INS &ins)
 {
     // SALC : SET AL on Carry Flag:  fonction non documentée par Intel (mais pour PIN oui !!!)
     // si CF == 0 => AL = 0 ; si CF == 1 => AL = FF
-    // => insertion d'une fonction d'analyse avec valeur de AL APRES exécution
-    // selon sa valeur on saura si CF valait 0 ou 1 avant exécution
-    // puis insertion d'une contrainte sur le CF, et démarquage AL
+    // => simple relation en instrumentation, qui sera traduite en formule si besoin
     // argument nécessaire = valeur des flags
-    INS_InsertCall(ins, IPOINT_AFTER, (AFUNPTR) sSALC,
+    INS_InsertCall(ins, IPOINT_BEFORE, (AFUNPTR) sSALC,
         IARG_THREAD_ID,
-        IARG_REG_VALUE, REG_AL, // valeur AL apres exécution (soit 0xff, soit 0)
+        IARG_REG_VALUE, REG_GFLAGS, // valeur des flags (pour CarryFlag)
         IARG_INST_PTR,
         IARG_END);
 } // cLAHF
 
-
 // SIMULATE
 
-void PIN_FAST_ANALYSIS_CALL FLAGOP::sCLC_STC(THREADID tid, ADDRINT insAddress)
+void FLAGOP::sCLC_STC(THREADID tid, ADDRINT insAddress)
 {
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     
@@ -68,7 +62,7 @@ void PIN_FAST_ANALYSIS_CALL FLAGOP::sCLC_STC(THREADID tid, ADDRINT insAddress)
     pTmgrTls->unTaintCarryFlag();
 } // sCLC
 
-void PIN_FAST_ANALYSIS_CALL FLAGOP::sCMC(THREADID tid, ADDRINT insAddress)
+void FLAGOP::sCMC(THREADID tid, ADDRINT insAddress)
 {
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     
@@ -170,24 +164,18 @@ void FLAGOP::sSAHF(THREADID tid, ADDRINT insAddress)
     }
 } // sSAHF
 
-void FLAGOP::sSALC(THREADID tid, ADDRINT regALValue, ADDRINT insAddress)
+void FLAGOP::sSALC(THREADID tid, ADDRINT regFlagsValue, ADDRINT insAddress)
 {
-#if 0
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
 
-    // insertion de la contrainte, si CF était marqué
+    // marquage AL ssi CF était marqué
     if (pTmgrTls->isCarryFlagTainted()) 
     {
         _LOGTAINT(tid, insAddress, "SALC");
-        
-        // test de la valeur d'AH pour en déduire la valeur de CF avant
-        bool valueCF = (regALValue == 0) ? false : true;
-        g_pFormula->addConstraint_BELOW(pTmgrTls, insAddress, valueCF);
-    }
+        ObjectSource objCf(pTmgrTls->getTaintCarryFlag());
 
-    // quoiqu'il arrive, démarquage AL qui est une valeur fixe
-    // la contrainte sur sa valeur a été exprimée via CF
-    // cf comportement identique que SETcc
-    pTmgrTls->unTaintRegister<8>(REG_AL);
-#endif
+        pTmgrTls->updateTaintRegister<8>(REG_AL, std::make_shared<TaintByte>(X_SALC, objCf));
+    }
+    else pTmgrTls->unTaintCarryFlag();
+
 } // sSALC

@@ -379,7 +379,7 @@ void FuzzwinAlgorithm::algorithmSearch()
         // la table de hachage permet d'écarter les doublons déjà générés
         ListOfInputs childInputs = expandExecution();
 
-        // si mode "traceonly : sortir de la boucle de suite
+        // si mode "traceonly" : sortir de la boucle de suite
         if  (_traceOnly) 
         {
             _status = ALGORITHM_TRACEONLY_FINISHED;
@@ -627,6 +627,7 @@ ListOfInputs FuzzwinAlgorithm::expandExecution()
                     DWORD debugResult = this->debugTarget(pNewChild);
                     if (!debugResult)   result.push_back(pNewChild);
                 }
+                this->logVerboseEndOfLine();
             }	     
         }
         // pas de solution trouvée par le solveur

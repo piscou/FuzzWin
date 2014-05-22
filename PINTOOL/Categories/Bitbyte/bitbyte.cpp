@@ -1053,7 +1053,7 @@ void BITBYTE::sSETLE_R(THREADID tid, REG regDest, ADDRINT flagsValue, ADDRINT in
 
         pTmgrTls->updateTaintRegister<8>(regDest, std::make_shared<TaintByte>(
             X_SETCC,
-            ObjectSource(32, PREDICATE_LESS),
+            ObjectSource(32, PREDICATE_LESS_OR_EQUAL),
             objSignFlag,
             objOverflowFlag,
             objZeroFlag));
@@ -1092,7 +1092,7 @@ void BITBYTE::sSETNLE_R(THREADID tid, REG regDest, ADDRINT flagsValue, ADDRINT i
 
         pTmgrTls->updateTaintRegister<8>(regDest, std::make_shared<TaintByte>(
             X_SETCC,
-            ObjectSource(32, PREDICATE_NOT_LESS),
+            ObjectSource(32, PREDICATE_NOT_LESS_OR_EQUAL),
             objSignFlag,
             objOverflowFlag,
             objZeroFlag));

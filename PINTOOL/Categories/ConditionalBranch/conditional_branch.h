@@ -22,6 +22,10 @@ void cJLE (INS &ins);
 void cJNLE(INS &ins);
 void cJRCXZ(INS &ins);
 
+void cLOOP(INS &ins);
+void cLOOPE(INS &ins);
+void cLOOPNE(INS &ins);
+
 // SIMULATE 
 void sBELOW   (THREADID tid, bool isTaken, ADDRINT insAddress);
 void sSIGN    (THREADID tid, bool isTaken, ADDRINT insAddress);
@@ -43,4 +47,13 @@ void sNOT_LESS_OR_EQUAL (THREADID tid, bool isTaken, ADDRINT eflagsValue, ADDRIN
 
 template<UINT32 lengthInBits>
 void sJRCXZ(THREADID tid, bool isTaken, ADDRINT registerValue, ADDRINT insAddress);
+
+template<UINT32 lengthInBits>
+void sLOOP(THREADID tid, bool isTaken, ADDRINT regValueAfterLoop, ADDRINT insAddress);
+template<UINT32 lengthInBits>
+void sLOOPE(THREADID tid, bool isTaken, ADDRINT regValueAfterLoop, ADDRINT flagsValue, ADDRINT insAddress);
+template<UINT32 lengthInBits>
+void sLOOPNE(THREADID tid, bool isTaken, ADDRINT regValueAfterLoop, ADDRINT flagsValue, ADDRINT insAddress);
 } // namespace CONDITIONAL_BR
+
+#include "conditional_branch.hpp"

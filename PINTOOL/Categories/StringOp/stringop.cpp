@@ -191,30 +191,30 @@ void STRINGOP::cSCAS(INS &ins, UINT32 size)
     void (*callback)() = nullptr;
 
     REG regSrc = REG_INVALID();	// registre source (AL si 8b, AX si 16b, etc...)
-    if (INS_HasRealRep(ins)) // instruction préfixée par REPE ou REPNE
+    if (INS_HasRealRep(ins))    // instruction préfixée par REPE ou REPNE
     {	
-        void (*storeTaint)() = nullptr;
+        void (*firstRepScas)() = nullptr;
         switch (size) 	// taille de l'opérande mémoire de destination
         {
         case 1:	
             callback	= (AFUNPTR) sSCAS<8>;	
-            storeTaint	= (AFUNPTR) sStoreTaintSCAS<8>;
+            firstRepScas	= (AFUNPTR) sFirstRepScas<8>;
             regSrc = REG_AL;
             break;
         case 2:	
             callback	= (AFUNPTR) sSCAS<16>;	
-            storeTaint	= (AFUNPTR) sStoreTaintSCAS<16>;
+            firstRepScas	= (AFUNPTR) sFirstRepScas<16>;
             regSrc = REG_AX;
             break;
         case 4:	
             callback	= (AFUNPTR) sSCAS<32>;	
-            storeTaint	= (AFUNPTR) sStoreTaintSCAS<32>;
+            firstRepScas	= (AFUNPTR) sFirstRepScas<32>;
             regSrc = REG_EAX;
             break;
         #if TARGET_IA32E
         case 8:	
             callback	= (AFUNPTR) sSCAS<64>;	
-            storeTaint	= (AFUNPTR) sStoreTaintSCAS<64>;
+            firstRepScas	= (AFUNPTR) sFirstRepScas<64>;
             regSrc = REG_RAX;
             break;
         #endif
@@ -224,14 +224,15 @@ void STRINGOP::cSCAS(INS &ins, UINT32 size)
             IARG_FAST_ANALYSIS_CALL,
             IARG_FIRST_REP_ITERATION, 
             IARG_END);
-        INS_InsertThenCall(ins, IPOINT_BEFORE, storeTaint,  
+        INS_InsertThenCall(ins, IPOINT_BEFORE, firstRepScas,  
             IARG_THREAD_ID,
             IARG_BOOL, INS_RepPrefix(ins),	// VRAI si REPZ, FAUX si REPNZ
             IARG_REG_VALUE, regSrc,		    // AL/AX/EAX/RAX selon archi
             IARG_INST_PTR,                  // adresse de l'instruction
             IARG_END);
 
-        // insertion callback d'analyse de CHAQUE itération d'instruction, si le predicat est vrai
+        // insertion callback d'analyse de CHAQUE itération d'instruction
+        // SSI le predicat sur ECX/RCX est vrai
         // sinon la fonction n'est pas appelée
         INS_InsertPredicatedCall(ins, IPOINT_BEFORE, callback, 
             IARG_THREAD_ID,
@@ -259,8 +260,6 @@ void STRINGOP::cSCAS(INS &ins, UINT32 size)
     }
 } // cSCAS
 
-
-
 //////////
 // CMPS //
 //////////
@@ -282,15 +281,19 @@ void STRINGOP::cCMPS(INS &ins, UINT32 size)
     }
 
     // convention pour le type de prefixe associé à CMPS
-    // 0 : aucun préfixe (1 seule répét) => pas de contrainte à déclarer
-    // 1 : prefixe REPZ     |
-    // 2 : prefixe REPNZ    | une contrainte ZFLAG sera déclarée (fin de boucle)
-    UINT32 repCode = INS_HasRealRep(ins) ? (INS_RepPrefix(ins) ? 1 : 2) : 0;
+    // 0 : prefixe REPZ / E   |
+    // 1 : prefixe REPNZ / NE | 
+    // 2 : aucun préfixe (1 seule répét) => pas de contrainte à déclarer
+   
+    UINT32 repCode = 2;      // par défaut pas de prefixe
+    if (INS_HasRealRep(ins)) // présence d'un prefixe REP
+    {
+        repCode = INS_RepPrefix(ins) ? 0 : 1; 
+    }
 
-    // callback "predicated" (appelée uniquement si ins executée)
-    // pas de stockage de l'adresse de l'instruction ici, inutile
+    // callback "predicated" (appelée uniquement si ECX/RCX non nul)
     INS_InsertPredicatedCall(ins, IPOINT_BEFORE, callback, 
-        IARG_THREAD_ID, // pour détermination du marquage Eflags à affecter (dépendante du thread)
+        IARG_THREAD_ID, 
         IARG_UINT32, repCode,	// code préfixe
         IARG_MEMORYREAD_EA,		// Source 1 (ESI)
         IARG_MEMORYREAD2_EA,	// source 2 (EDI)

@@ -968,7 +968,7 @@ void LOGICAL::cXOR(INS &ins)
         {    
             REG regSrc = INS_OperandReg(ins, 1);
             // cas particulier du XOR reg, reg (mise à zero du registre) 
-            // => démarquage destination et flags, en FAST_ANALYSIS_CALL
+            // => démarquage destination et flags
             if (regSrc == regDest) 
             {
                 switch (getRegSize(regDest)) 

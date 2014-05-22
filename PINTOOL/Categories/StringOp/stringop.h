@@ -25,7 +25,7 @@ void sSTOS(THREADID tid, ADDRINT count, ADDRINT flagsValue, ADDRINT writeAddress
 template<UINT32 lengthInBits> 
 void sSCAS(THREADID tid, ADDRINT address);
 template<UINT32 lengthInBits> 
-void sStoreTaintSCAS(THREADID tid, BOOL isREPZ, ADDRINT regValue, ADDRINT insAddress);
+void sFirstRepScas(THREADID tid, BOOL isREPZ, ADDRINT regValue, ADDRINT insAddress);
 
 template<UINT32 lengthInBits> 
 void sCMPS(THREADID tid, UINT32 repCode, ADDRINT esiAddr, ADDRINT ediAddr, ADDRINT insAddress);

@@ -4,7 +4,7 @@
 namespace RET 
 {
 // CALLBACKS
-void cRET(INS &ins);
+void cRET(INS &ins, bool isFarRet);
 
 // SIMULATE 
 void sRET(ADDRINT insAddress, ADDRINT espAddress);

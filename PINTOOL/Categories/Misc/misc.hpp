@@ -35,7 +35,11 @@ void MISC::sLEA(THREADID tid, REG regDest, ADDRINT insAddress)
         } while (regPart < lastTaintedByte);
 
         // démarquage octets forts (si lenDest > lenEA car zeroextend de l'EA)
-        while (regPart < (lenDest >> 3))  pTmgrTls->unTaintRegisterPart(regDestIndex, regPart++);
+        while (regPart < (lenDest >> 3))
+        {
+            pTmgrTls->unTaintRegisterPart(regDestIndex, regPart);
+            ++regPart;
+        }
     }
     pTmgrTls->clearTaintEffectiveAddress();
 } // sLEA(32bits)
@@ -76,7 +80,11 @@ void MISC::sLEA(THREADID tid, REG regDest, ADDRINT insAddress)
         } while (regPart < lastTaintedByte);
 
         // démarquage octets forts (si lenDest > lenEA car zeroextend de l'EA)
-        while (regPart < (lenDest >> 3))  pTmgrTls->unTaintRegisterPart(regDestIndex, regPart++);
+        while (regPart < (lenDest >> 3))
+        {
+            pTmgrTls->unTaintRegisterPart(regDestIndex, regPart);
+            ++regPart;
+        }
     }
     pTmgrTls->clearTaintEffectiveAddress();
 } // sLEA(64bits)

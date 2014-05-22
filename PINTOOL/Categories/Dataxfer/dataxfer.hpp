@@ -16,11 +16,15 @@ template<UINT32 lengthInBits> void DATAXFER::sMOV_RR(THREADID tid, REG regSrc, R
     REGINDEX regIndexDest = getRegIndex(regDest);	
     REGINDEX regIndexSrc  = getRegIndex(regSrc);
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
-    
+
     // si le registre est entièrement marqué, récupérer l'objet et l'affecter
     // au registre de destination
     TAINT_OBJECT_PTR tPtr = pTmgrTls->getFullRegisterTaint<lengthInBits>(regSrc);
-    if ( (bool) tPtr)  pTmgrTls->updateTaintRegister<lengthInBits>(regDest, tPtr);
+    if ( (bool) tPtr)  
+    {
+        _LOGTAINT(tid, insAddress, "movRR" + decstr(lengthInBits) + " objet complet");
+        pTmgrTls->updateTaintRegister<lengthInBits>(regDest, tPtr);
+    }
     // sinon traitement octet par octet
     else
     {
@@ -49,7 +53,11 @@ template<UINT32 lengthInBits> void DATAXFER::sMOV_RM(THREADID tid, REG regSrc, A
     // si le registre est entièrement marqué, récupérer l'objet et l'affecter
     // au registre de destination
     TAINT_OBJECT_PTR tPtr = pTmgrTls->getFullRegisterTaint<lengthInBits>(regSrc);
-    if ( (bool) tPtr)  pTmgrGlobal->updateMemoryTaint<lengthInBits>(writeAddress, tPtr);
+    if ( (bool) tPtr)
+    {
+        _LOGTAINT(tid, insAddress, "movRM" + decstr(lengthInBits) + " objet complet");
+        pTmgrGlobal->updateMemoryTaint<lengthInBits>(writeAddress, tPtr);
+    }
     // sinon traitement octet par octet
     else
     {
@@ -57,7 +65,7 @@ template<UINT32 lengthInBits> void DATAXFER::sMOV_RM(THREADID tid, REG regSrc, A
         {	
             if (pTmgrTls->isRegisterPartTainted(regIndex, regPart))  // octet marqué ? 
             {  
-                _LOGTAINT(tid, insAddress, "movRM" + decstr(lengthInBits) + " octet " + decstr(regPart));	
+                _LOGTAINT(tid, insAddress, "movRM" + decstr(lengthInBits) + " de l'octet " + decstr(regPart) + " de " + REG_StringShort(regSrc) + " vers adresse " + hexstr(writeAddress) );	
                 pTmgrGlobal->updateMemoryTaint<8>(writeAddress, std::make_shared<TaintByte>(
                     X_ASSIGN, 
                     ObjectSource(pTmgrTls->getRegisterPartTaint(regIndex, regPart))));
@@ -76,7 +84,7 @@ template<UINT32 lengthInBits> void DATAXFER::sMOV_MR(THREADID tid, ADDRINT readA
     {
         if (pTmgrGlobal->isMemoryTainted<8>(readAddress))  // octet marqué ? 
         {	
-            _LOGTAINT(tid, insAddress, "movMR" + decstr(lengthInBits) + " octet " + decstr(regPart));	
+            _LOGTAINT(tid, insAddress, "movMR" + decstr(lengthInBits) + " depuis adresse " + hexstr(readAddress) + " vers octet " + decstr(regPart) + " de " + REG_StringShort(regDest));
             pTmgrTls->updateTaintRegisterPart(regIndex, regPart, std::make_shared<TaintByte>(
                 X_ASSIGN, 
                 ObjectSource(pTmgrGlobal->getMemoryTaint<8>(readAddress))));
@@ -105,6 +113,7 @@ template<UINT32 lengthInBits> void DATAXFER::sXCHG_M(THREADID tid, REG reg, ADDR
         // récupération du marquage du registre et affectation directe à la mémoire
         if (pTmgrTls->isRegisterPartTainted(regIndex, regPart))
         {
+            _LOGTAINT(tid, insAddress, "XCHG_M" + decstr(lengthInBits) + " octet " + decstr(regPart));
             pTmgrGlobal->updateMemoryTaint<8>(address, pTmgrTls->getRegisterPartTaint(regIndex, regPart));
         }
         else pTmgrGlobal->unTaintMemory<8>(address);
@@ -131,6 +140,7 @@ template<UINT32 lengthInBits> void DATAXFER::sXCHG_R(THREADID tid, REG regSrc, R
         // récupération du marquage du registre src et affectation directe à la destination
         if (pTmgrTls->isRegisterPartTainted(regIndexSrc, regPart))
         {
+            _LOGTAINT(tid, insAddress, "XCHG_R" + decstr(lengthInBits) + " octet " + decstr(regPart));
             pTmgrTls->updateTaintRegisterPart(regIndexDest, regPart, pTmgrTls->getRegisterPartTaint(regIndexSrc, regPart));
         }
         else pTmgrTls->unTaintRegisterPart(regIndexDest, regPart);
@@ -155,7 +165,7 @@ void DATAXFER::sMOVSX_RR(THREADID tid, REG regSrc, ADDRINT regSrcValue, REG regD
     if ( !pTmgrTls->isRegisterTainted<lengthInBitsSrc>(regSrc)) pTmgrTls->unTaintRegister<lengthInBitsDest>(regDest);
     else 
     {
-        _LOGTAINT(tid, insAddress, "movsxRR" + decstr(lengthInBitsSrc) + "->" + decstr(lengthInBitsDest));
+        _LOGTAINT(tid, insAddress, "MOVSX_RR" + decstr(lengthInBitsSrc) + "->" + decstr(lengthInBitsDest));
         // création d'un nouvel objet de taille = à la destination
         // avec comme source l'objet de taille = à la source
         // et affectation au registre de destination
@@ -173,7 +183,7 @@ void DATAXFER::sMOVSX_MR(THREADID tid, ADDRINT readAddress, REG regDest, ADDRINT
     if ( !pTmgrGlobal->isMemoryTainted<lengthInBitsSrc>(readAddress)) pTmgrTls->unTaintRegister<lengthInBitsDest>(regDest);
     else 
     {
-        _LOGTAINT(tid, insAddress, "movsxMR" + decstr(lengthInBitsSrc) + "->" + decstr(lengthInBitsDest));
+        _LOGTAINT(tid, insAddress, "MOVSX_RR" + decstr(lengthInBitsSrc) + "->" + decstr(lengthInBitsDest));
         // création d'un nouvel objet de taille = à la destination
         // avec comme source l'objet de taille = à la source
         // et affectation au registre de destination
@@ -201,7 +211,7 @@ void DATAXFER::sMOVZX_RR(THREADID tid, REG regSrc, REG regDest, ADDRINT insAddre
     // marquage partie basse
     if (pTmgrTls->isRegisterTainted<lengthInBitsSrc>(regSrc)) 
     { 
-        _LOGTAINT(tid, insAddress, "movzxRR" + decstr(lengthInBitsSrc) + "->" + decstr(lengthInBitsDest));
+        _LOGTAINT(tid, insAddress, "MOVZX_RR" + decstr(lengthInBitsSrc) + "->" + decstr(lengthInBitsDest));
         REGINDEX regIndexSrc  = getRegIndex(regSrc);
         REGINDEX regIndexDest = getRegIndex(regDest);
 
@@ -228,7 +238,7 @@ template<UINT32 lengthInBitsDest> void DATAXFER::sMOVZX_8R(THREADID tid, REG reg
   
     if (pTmgrTls->isRegisterTainted<8>(regSrc))
     {
-        _LOGTAINT(tid, insAddress, "moxzxRR8->" + decstr(lengthInBitsDest));
+        _LOGTAINT(tid, insAddress, "MOVZX_8R->" + decstr(lengthInBitsDest));
         REGINDEX regIndex = getRegIndex(regDest);
         pTmgrTls->updateTaintRegisterPart(regIndex, 0, std::make_shared<TaintByte>(
             X_ASSIGN, 
@@ -248,7 +258,7 @@ void DATAXFER::sMOVZX_MR(THREADID tid, ADDRINT readAddress, REG regDest, ADDRINT
     
     if ( pTmgrGlobal->isMemoryTainted<lengthInBitsSrc>(readAddress)) 
     { 
-        _LOGTAINT(tid, insAddress, "movzxMR" + decstr(lengthInBitsSrc) + "->" + decstr(lengthInBitsDest));
+        _LOGTAINT(tid, insAddress, "MOVZX_MR" + decstr(lengthInBitsSrc) + "->" + decstr(lengthInBitsDest));
     
         REGINDEX regIndex = getRegIndex(regDest);	
         for (UINT32 regPart = 0 ; regPart < (lengthInBitsSrc >> 3) ; ++regPart, ++readAddress) 
@@ -288,6 +298,8 @@ template<UINT32 lengthInBits> void DATAXFER::sBSWAP(THREADID tid, REG reg, ADDRI
         // récupération du marquage du registre de l'octet fort et affectation directe à l'octet faible
         if (pTmgrTls->isRegisterPartTainted(regIndex, highestByte - regPart))
         {
+            _LOGTAINT(tid, insAddress, "BSWAP" + decstr(lengthInBitsSrc) + " octet" + decstr(regPart));
+    
             pTmgrTls->updateTaintRegisterPart(regIndex, regPart, 
                 pTmgrTls->getRegisterPartTaint(regIndex, highestByte - regPart));
         }

@@ -60,15 +60,15 @@ template<UINT32 lengthInBits> ADDRINT getMemoryValue(ADDRINT address)
     return (returnValue);
 }
 
-// Sauvegarde des éléments constitutifs d'une instruction SCAS
-class ScasInformation
+// Sauvegarde des éléments constitutifs d'une instruction de la famille STRINGOP (SCAS / CMPS)
+class StringOpInfo
 {
 public:
     bool isREPZ;        // VRAI si REPZ, faux si REPNZ
-    bool isRegTainted;  // Vrai si registre AL/AX/EAX/RAX marqué
-    TaintPtr tPtr;      // objet marqué représentant AL/AX/EAX/RAX
-    ADDRINT regValue;   // Valeur de AL/AX/EAX/RAX
-    ADDRINT instrPtr;   // adresse de l'instruction SCAS
+    bool isRegTainted;  // Vrai si registre AL/AX/EAX/RAX marqué - Valable pour SCAS
+    TaintPtr tPtr;      // objet marqué représentant AL/AX/EAX/RAX - Valable pour SCAS
+    ADDRINT regValue;   // Valeur de AL/AX/EAX/RAX - Valable pour SCAS
+    ADDRINT insAddress;   // adresse de l'instruction SCAS
 };
 
 /************************************/
@@ -212,10 +212,6 @@ public:
 
         return ( (it == itEnd) ? nullptr : it->second);
     }
-
-    // renvoi d'une copie de la MAP : sert aux statistiques de fin de programme
-    std::map<ADDRINT, TaintBytePtr> getSnapshotOfTaintedLocations() const
-    { return _memoryPtrs; }
     
     /*******************************/
     /** CREATION D'OBJETS SOURCES **/
@@ -223,59 +219,75 @@ public:
 
     // création de "nb" nouveaux TaintBytes initiaux à la position "offset" du fichier
     // et marquage de la mémoire pointée par "buffer"
-    void createNewSourceTaintBytes(ADDRINT buffer, UINT32 nb, UINT32 offset) 
+    void createNewSourceTaintBytes(ADDRINT startAddress, UINT32 nb, UINT32 offset) 
     {
-        TaintBytePtr tbPtr;
-        ADDRINT endOfBuffer = buffer + nb;  // dernier octet du buffer
-        
         PIN_GetLock(&g_lock, 0); // obligatoire car classe globale
 
-        // Si le vecteur est vide, tous les octets de la source doivent être marqué
-        // sinon il faudra vérifier que chaque octet est dans les intervelles à suivre
+        // Si le vecteur est vide, tous les octets de la source seront marqués
+        // sinon il faudra vérifier que chaque octet est dans les intervelles spécifiés
         bool mustAllBytesBeTainted = _bytesToTaint.empty(); 
 
-        // création de 'nb' objets à partir de l'adresse 'buffer'
-        for (ADDRINT endOfBuffer = buffer + nb ; buffer < endOfBuffer ; ++buffer, ++offset)
+        // création de 'nb' objets à partir de l'adresse de départ
+        ADDRINT currentAddress = startAddress;
+        ADDRINT lastAddress    = startAddress + nb;
+
+        while (currentAddress < lastAddress)
         {
+            // recherche de la présence de l'offset dans l'un des intervalles
+            // par défaut on considère qu'il ne l'est pas
+            bool isThisByteToBeTainted = false;
+
             // vérification du fait que cet octet doit être marqué
-            if (!mustAllBytesBeTainted)
+            if (mustAllBytesBeTainted) isThisByteToBeTainted = true;
+            else
             {
                 // recherche de la présence de l'offset dans l'un des intervalles
-                // par défaut on considère qu'il ne l'est pas
-                bool isThisByteToBeTainted = false;
-                auto it    = _bytesToTaint.begin();
-                auto itEnd = _bytesToTaint.end();
-                while (it != itEnd)
+                std::vector<std::pair<UINT32, UINT32>>::const_iterator it    = _bytesToTaint.begin();
+                std::vector<std::pair<UINT32, UINT32>>::const_iterator itEnd = _bytesToTaint.end();
+                for (; it != itEnd ; ++it)
                 {
                     // supérieur ou égal à borne min et inférieur ou égal à max
                     if ((offset >= it->first) && (offset <= it->second))
                     {
-                        isThisByteToBeTainted = true;
-                        break;
+                        isThisByteToBeTainted = true; 
+                        break; // l'octet figure dans au moins un intervalle
                     }
-                    ++it;
                 }
-                // si offset non trouvé : ne rien marquer, poursuivre au prochain octet
-                if (!isThisByteToBeTainted) continue;
             }
-
-            auto it = _offsets.find(offset);
-            // si aucune entrée : lecture d'un nouvel offset dans le fichier
-            if (it == _offsets.end()) 
+            
+            // si cet octet ne doit pas être marqué
+            // alors effacer l'éventuelle présence d'un marquage antérieur présent à cette addresse
+            if (!isThisByteToBeTainted) _memoryPtrs.erase(currentAddress);
+            else
             {
-                // création du nouvel objet 8bits et ajout de son offset comme source
-                tbPtr = std::make_shared<TaintByte>(BYTESOURCE, ObjectSource(32, offset));
-                // Ajout de cet objet dans la liste des octets déjà lus dans la source
-                _offsets.insert(pair<UINT32, TaintBytePtr>(offset, tbPtr));
-            }
-            // sinon cet octet a déjà été lu : le TaintByte est déjà créé
-            else tbPtr = it->second;     
+                TaintBytePtr tbPtr; // objet qui va représenter le marquage de cet offset
 
-            // marquage de la mémoire
-            _memoryPtrs[buffer] = tbPtr;          
+                // recherche de l'existence d'un objet déjà associé à cet offset
+                std::map<UINT32, TaintBytePtr>::iterator it = _offsets.find(offset);
+                
+                if (it == _offsets.end())  // offset non présent : création d'un nouvel objet
+                {
+                    // création du nouvel objet 8bits et ajout de son offset comme source
+                    tbPtr = std::make_shared<TaintByte>(BYTESOURCE, ObjectSource(32, offset));
+                    // Ajout de cet objet dans la liste des octets déjà lus dans la source
+                    _offsets.insert(pair<UINT32, TaintBytePtr>(offset, tbPtr));
+                    if (g_verbose)  g_taint <<  "création nouvel objet pour l'offset " << offset << std::endl;
+                }
+                // sinon récupérer l'objet existant
+                else 
+                {
+                    tbPtr = it->second;
+                    if (g_verbose) g_taint << "récupération objet existant pour l'offset " << offset << std::endl;
+                }
+                    
+                // marquage de la mémoire avec l'objet
+                _memoryPtrs[currentAddress] = tbPtr;  
+            }
+            // ajustement pour le prochain tour de boucle
+            ++currentAddress;
+            ++offset;
         }
         PIN_ReleaseLock(&g_lock);
-
     } // createNewSourceTaintBytes
 
     /*****************************************/
@@ -650,7 +662,7 @@ public:
         
         // marquage d'abord de la partie 16 bits, 
         _registers16Ptr[regIndex] = twPtr;
-       
+ 
         // si l'objet fourni est la concaténation de deux Objets de 8 bits, alors
         // récupérer ces objets (evite la multiplication des CONCAT/EXTRACT)
         if ((CONCAT == twPtr->getSourceRelation()) && (twPtr->getNumberOfSources() == 2))
@@ -663,10 +675,9 @@ public:
                 {
                     // on considère que lorsqu'il y a concaténation de 2 sources, 
                     // elles sont toutes de 8 bits. A priori il ne peut pas avoir d'autres cas
-                    TaintBytePtr tbSrcPtr = 
-                    _registers8Ptr[regIndex][i] = std::make_shared<TaintByte>(
-                        X_ASSIGN, 
-                        ObjectSource(twPtr->getSource(i).getTaintedSource()));
+                    _registers8Ptr[regIndex][i] = twPtr->getSource(i).isSrcTainted() 
+                        ? std::make_shared<TaintByte>(X_ASSIGN, ObjectSource(twPtr->getSource(i).getTaintedSource())) 
+                        : nullptr;
                 }
                 else _registers8Ptr[regIndex][i].reset();
             }
@@ -693,7 +704,7 @@ public:
         
         // marquage d'abord de la partie 32 bits 
         _registers32Ptr[regIndex] = tdwPtr;
-        
+
         // si l'objet fourni est la concaténation de 4 Objets de 8 bits, alors
         // récupérer ces objets (evite la multiplication des CONCAT/EXTRACT)
         if ((CONCAT == tdwPtr->getSourceRelation()) && (tdwPtr->getNumberOfSources() == 4))
@@ -703,7 +714,7 @@ public:
             for (UINT32 i = 0 ; i < 4 ; ++i)
             {
                 _registers8Ptr[regIndex][i] = tdwPtr->getSource(i).isSrcTainted() 
-                    ? std::static_pointer_cast<TaintByte>(tdwPtr->getSource(i).getTaintedSource()) 
+                    ? std::make_shared<TaintByte>(X_ASSIGN, ObjectSource(tdwPtr->getSource(i).getTaintedSource())) 
                     : nullptr;
             }
         }
@@ -720,7 +731,7 @@ public:
 
 #if TARGET_IA32E
     // cas 64bits
-    template<> void updateTaintRegister<64>(REG reg64, const TaintQwordPtr &tqwPtr) 
+    template<> void updateTaintRegister<64>(REG reg64, TaintQwordPtr tqwPtr) 
     {
         REGINDEX regIndex = getRegIndex(reg64);
         
@@ -740,8 +751,8 @@ public:
             // a priori il ne peut pas avoir d'autres cas
             for (UINT32 i = 0 ; i < 8 ; ++i)
             {
-                _registers8Ptr[regIndex][i] = tqwPtr->getSource(i).isSrcTainted() 
-                    ? std::static_pointer_cast<TaintByte>(tqwPtr->getSource(i).getTaintedSource())
+                _registers8Ptr[regIndex][i] = tdwPtr->getSource(i).isSrcTainted() 
+                    ? std::make_shared<TaintByte>(X_ASSIGN, ObjectSource(tdwPtr->getSource(i).getTaintedSource())) 
                     : nullptr;
             }
         }
@@ -804,7 +815,7 @@ public:
     template<> void unTaintRegister<8>(REG reg)  
     { 
         REGINDEX regIndex = getRegIndex(reg);
-        UINT32 regPart =  REG_is_Upper8((REG)reg) ? 1 : 0;
+        UINT32 regPart    = REG_is_Upper8(reg) ? 1 : 0;
         
         // effacement des registres 8/16/32/64
         _registers8Ptr[regIndex][regPart].reset();

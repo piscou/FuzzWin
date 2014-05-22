@@ -69,7 +69,7 @@ UINT32 Taint::getLength() const { return (_lengthInBits); }
 Relation Taint::getSourceRelation() const { return (_sourceRelation); } 
 
 // renvoie le nombre de sources de l'objet
-UINT32 Taint::getNumberOfSources() const { return (_sources.size()); }
+UINT32 Taint::getNumberOfSources() const { return (static_cast<UINT32>(_sources.size())); }
 
 // retourne VRAI si l'objet a été déclaré dans la formule à destination du solveur
 bool Taint::isDeclared() const  { return (_isDeclaredFlag); }

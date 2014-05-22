@@ -1,3 +1,19 @@
+*********************************
+Version 1.5 (beta) - 22 mai 2014
+*********************************
+ALGORITHME
+----------
++ choix de l'auto-config pour le solveur (plus rapide)
+
+PINTOOL
+-------
++ correction du bug lors de la lecture multiple et successive dans le fichier d'entrée
++ optimisation de la déclaration de contraintes sur les divisions
++ traitement nouveau du CALL et du LOOP/LOOPE/LOOPNE
++ correction typo SETLE/SETNLE
++ ajout traitement SALC
+
+
 *****************************
 Version 1.4.2 - 06 mai 2014
 *****************************

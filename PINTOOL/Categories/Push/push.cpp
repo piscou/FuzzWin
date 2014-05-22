@@ -158,8 +158,7 @@ void PUSH::sPUSHAD(THREADID tid, ADDRINT stackAddressBeforePush, ADDRINT insAddr
     // du point de vue marquage, equivalent à un MOVRM [ESP-4], reg si reg marqué, sinon démarquage
 
     REG regsToPush[8] = {REG_EAX, REG_ECX, REG_EDX, REG_EBX, REG_ESP, REG_EBP, REG_ESI, REG_EDI};
-    
-    // sauvegarde du marquage de ESP
+
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);    
     
     // sauvegarde du marquage de SP. Sauvegarde par octet pour éviter de devoir récupérer la valeur numérique de SP

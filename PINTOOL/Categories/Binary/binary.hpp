@@ -1408,7 +1408,7 @@ void BINARY::sSUB_RR(THREADID tid, REG regSrc, ADDRINT regSrcValue, REG regSrcDe
     // deux opérandes marquées
     else 
     {
-        _LOGTAINT(tid, insAddress, "SUBRR" + decstr(lengthInBits));
+        _LOGTAINT(tid, insAddress, "SUB_RR" + decstr(lengthInBits));
 
         ObjectSource objSrcDest(pTmgrTls->getRegisterTaint<lengthInBits>(regSrcDest, regSrcDestValue));
         ObjectSource objSrc    (pTmgrTls->getRegisterTaint<lengthInBits>(regSrc, regSrcValue));
@@ -1977,7 +1977,7 @@ void BINARY::sIMUL_3R(THREADID tid, ADDRINT value, REG regSrc,
 
         // AJOUT DES CONTRAINTES : sur le diviseur s'il est marqué (il doit être non nul) 
         // et sur le quotient qui doit être compris dans un certain intervalle, sous peine de Divide Exception
-        g_pFormula->addConstraintDivision(pTmgrTls, isSignedDivision, quotientPtr, insAddress);
+        g_pFormula->addConstraintDivision(isSignedDivision, quotientPtr, insAddress);
 
     }
 } // sDIVISION_M
@@ -2029,6 +2029,6 @@ void BINARY::sDIVISION_R(THREADID tid, REG regSrc, ADDRINT regSrcValue,
 
         // AJOUT DES CONTRAINTES : sur le diviseur s'il est marqué (il doit être non nul) 
         // et sur le quotient qui doit être compris dans un certain intervalle, sous peine de Divide Exception
-        g_pFormula->addConstraintDivision(pTmgrTls, isSignedDivision, quotientPtr, insAddress);	
+        g_pFormula->addConstraintDivision(isSignedDivision, quotientPtr, insAddress);	
     }
 } //sDIVISION_R

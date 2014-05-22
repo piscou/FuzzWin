@@ -23,6 +23,10 @@ static std::string SYSCALLS::unicodeToAscii(const std::wstring &input)
         -1, ascii, static_cast<int>(lengthOfInput), nullptr, nullptr);
 
     std::string result(ascii);
+
+    // suppression des caractères "\??\" si existant
+    if (result.substr(0, 4) == "\\??\\") result = result.substr(4);
+
     delete[] (ascii);
     return (result);
 }
@@ -140,11 +144,10 @@ void SYSCALLS::syscallEntry(THREADID tid, CONTEXT *ctxt, SYSCALL_STANDARD std, v
             }
         }
 
-
         _LOGSYSCALLS(syscallNumber, "]  Nom du fichier :" + filename);
 
         // si le nom du fichier est celui de la cible : sauvegarde des arguments
-        if (filename.find(g_inputFile) != std::string::npos) 
+        if (filename == g_inputFile) 
         { 
             // stockage du numéro du syscall dans la TLS pour traitement au retour du syscall
             pSysData->syscallNumber = PIN_NtCreateFile;

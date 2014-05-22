@@ -240,15 +240,17 @@ void CONDITIONAL_BR::cJNLE(INS &ins)
 void CONDITIONAL_BR::cJRCXZ(INS &ins) 
 {
     // JRCXZ : test si CX/ECX/RCX est nul
-    REG testedReg = INS_RegR(ins, 0);
+    REG testedReg = INS_RegR(ins, 0); // pour calcul de la taille de l'instruction
     void (*callback)() = nullptr;
 
     switch (getRegSize(testedReg))
     {
-    // case 8: impossible
-    case 16: callback = (AFUNPTR) sJRCXZ<16>; break;
-    case 32: callback = (AFUNPTR) sJRCXZ<32>; break;
-    case 64: callback = (AFUNPTR) sJRCXZ<64>; break;
+    // case 1: impossible
+    case 2: callback = (AFUNPTR) sJRCXZ<16>; break;
+    case 4: callback = (AFUNPTR) sJRCXZ<32>; break;
+#if TARGET_IA32E
+    case 8: callback = (AFUNPTR) sJRCXZ<64>; break;
+#endif
     default: return;
     }
 
@@ -265,7 +267,114 @@ void CONDITIONAL_BR::cJRCXZ(INS &ins)
         IARG_INST_PTR, IARG_END);
 } // cJRCXZ
 
-// SIMULATE
+/************/
+/*** LOOP ***/
+/************/
+
+// l'instruction LOOP n'est pas considérée comme "predicated" par PIN
+// en effet, quoi qu'il arrive CX/ECX/RCX sera décrémenté de 1
+// donc l'instruction est TOUJOURS exécutée.
+// traitement à l'identique de Jcc, avec des contraintes sur la valeur de ECX
+// et / ou du zéro flag
+
+
+void CONDITIONAL_BR::cLOOP(INS &ins) 
+{ 
+    REG testedReg = INS_RegR(ins, 0); // pour calcul de la taille de l'instruction
+    void (*callback)() = nullptr;
+
+    switch (getRegSize(testedReg))
+    {
+    // case 1: impossible
+    case 2: callback = (AFUNPTR) sLOOP<16>; break;
+    case 4: callback = (AFUNPTR) sLOOP<32>; break;
+#if TARGET_IA32E
+    case 8: callback = (AFUNPTR) sLOOP<64>; break;
+#endif
+    default: return;
+    }
+
+    // LOOP SIMPLE : test de la valeur du compteur (CX/ECX/RCX)
+    INS_InsertCall (ins, IPOINT_AFTER, callback,
+        IARG_THREAD_ID, 
+        IARG_BOOL, false,          // condition fausse (branche non prise)
+        IARG_REG_VALUE, testedReg, // valeur de CX/ECX/RCX
+        IARG_INST_PTR, IARG_END);
+
+    INS_InsertCall (ins, IPOINT_TAKEN_BRANCH, callback,
+        IARG_THREAD_ID, 
+        IARG_BOOL,      true,      // condition vraie (branche prise)
+        IARG_REG_VALUE, testedReg, // valeur de CX/ECX/RCX
+        IARG_INST_PTR, IARG_END);
+} // cLOOP
+
+void CONDITIONAL_BR::cLOOPE(INS &ins) 
+{ 
+    REG testedReg = INS_RegR(ins, 0); // pour calcul de la taille de l'instruction
+    void (*callback)() = nullptr;
+
+    switch (getRegSize(testedReg))
+    {
+    // case 1: impossible
+    case 2: callback = (AFUNPTR) sLOOPE<16>; break;
+    case 4: callback = (AFUNPTR) sLOOPE<32>; break;
+#if TARGET_IA32E
+    case 8: callback = (AFUNPTR) sLOOPE<64>; break;
+#endif
+    default: return;
+    }
+
+    // LOOPE : test de la valeur du compteur (CX/ECX/RCX) + zero Flag
+    INS_InsertCall (ins, IPOINT_AFTER, callback,
+        IARG_THREAD_ID, 
+        IARG_BOOL,      false,      // condition fausse (branche non prise)
+        IARG_REG_VALUE, testedReg,  // valeur de CX/ECX/RCX
+        IARG_REG_VALUE, REG_GFLAGS, // valeur des FLAGS
+        IARG_INST_PTR, IARG_END);
+
+    INS_InsertCall (ins, IPOINT_TAKEN_BRANCH, callback,
+        IARG_THREAD_ID, 
+        IARG_BOOL,      true,       // condition vraie (branche prise)
+        IARG_REG_VALUE, testedReg,  // valeur de CX/ECX/RCX
+        IARG_REG_VALUE, REG_GFLAGS, // valeur des FLAGS
+        IARG_INST_PTR, IARG_END);
+} // cLOOPE
+
+void CONDITIONAL_BR::cLOOPNE(INS &ins) 
+{ 
+    REG testedReg = INS_RegR(ins, 0); // pour calcul de la taille de l'instruction
+    void (*callback)() = nullptr;
+
+    switch (getRegSize(testedReg))
+    {
+    // case 1: impossible
+    case 2: callback = (AFUNPTR) sLOOPNE<16>; break;
+    case 4: callback = (AFUNPTR) sLOOPNE<32>; break;
+#if TARGET_IA32E
+    case 8: callback = (AFUNPTR) sLOOPNE<64>; break;
+#endif
+    default: return;
+    }
+
+    // LOOPNE : test de la valeur du compteur (CX/ECX/RCX) + valeur zero flag
+    INS_InsertCall (ins, IPOINT_AFTER, callback,
+        IARG_THREAD_ID, 
+        IARG_BOOL,      false,      // condition fausse (branche non prise)
+        IARG_REG_VALUE, testedReg,  // valeur de CX/ECX/RCX
+        IARG_REG_VALUE, REG_GFLAGS, // valeur des FLAGS
+        IARG_INST_PTR, IARG_END);
+
+    INS_InsertCall (ins, IPOINT_TAKEN_BRANCH, callback,
+        IARG_THREAD_ID, 
+        IARG_BOOL,      true,       // condition vraie (branche prise)
+        IARG_REG_VALUE, testedReg,  // valeur de CX/ECX/RCX
+        IARG_REG_VALUE, REG_GFLAGS, // valeur des FLAGS
+        IARG_INST_PTR, IARG_END);
+} // cLOOPNE
+
+/****************/
+/*** SIMULATE ***/
+/****************/
 
 void CONDITIONAL_BR::sBELOW(THREADID tid, bool isTaken, ADDRINT insAddress) 
 { 
@@ -439,21 +548,3 @@ void CONDITIONAL_BR::sNOT_LESS_OR_EQUAL(THREADID tid, bool isTaken, ADDRINT regE
         g_pFormula->addConstraintJcc(pTmgrTls, PREDICATE_NOT_LESS_OR_EQUAL, isTaken, insAddress, regEflagsValue);
     }
 } // sNOT_LESS_OR_EQUAL
-
-/**************************/
-/*** VERSION CX/ECX/RCX ***/
-/**************************/
-
-template<UINT32 lengthInBits>
-void CONDITIONAL_BR::sJRCXZ(THREADID tid, bool isTaken, ADDRINT registerValue, ADDRINT insAddress)
-{
-    TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
-    REG reg        = RegisterCount<lengthInBits>::getReg();
-    PREDICATE pred = RegisterCount<lengthInBits>::getPredicate();
-
-    if (pTmgrTls->isRegisterTainted<lengthInBits>(reg)) 
-    {
-        _LOGTAINT(tid, insAddress, "JRCXZ");
-        g_pFormula->addConstraintJcc(pTmgrTls, pred, isTaken, insAddress, registerValue);
-    }
-}

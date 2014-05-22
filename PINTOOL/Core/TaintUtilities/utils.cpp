@@ -55,11 +55,7 @@ void UTILS::cUNHANDLED(INS &ins)
 // démarquage rapide mémoire par callback. Pas de template car taille indéfinie 
 void PIN_FAST_ANALYSIS_CALL UTILS::uMEM(ADDRINT address, UINT32 sizeInBytes)
 {  
-    ADDRINT lastAddress = address + sizeInBytes;
-    do
-    {
-        pTmgrGlobal->unTaintMemory<8>(address++);
-    } while (address < lastAddress);
+    for (UINT32 i = 0 ; i < sizeInBytes ; ++i, ++address) pTmgrGlobal->unTaintMemory<8>(address);
 }
 
 void PIN_FAST_ANALYSIS_CALL UTILS::uFLAGS(THREADID tid)  
@@ -81,10 +77,10 @@ void UTILS::cGetKindOfEA(const INS &ins)
     ADDRDELTA displ = INS_MemoryDisplacement(ins); // déplacement (signé)
     UINT32 scale    = INS_MemoryScale(ins);        // scale (multiplie le registre d'index)
     
-    bool hasBaseReg  = (baseReg  != REG_INVALID()); 
-    bool hasIndexReg = (indexReg != REG_INVALID()); 
-    bool hasDispl    = (displ    != 0);          
-    UINT32 hasScale  = (scale    != 1);         
+    UINT32 hasBaseReg  = (baseReg  == REG_INVALID()) ? 0 : 1; 
+    UINT32 hasIndexReg = (indexReg == REG_INVALID()) ? 0 : 1; 
+    UINT32 hasDispl    = (displ    == 0) ? 0 : 1;          
+    UINT32 hasScale    = (scale    == 1) ? 0 : 1;         
 
     // construction d'un masque : cela évite les multiples IF...ELSE
     // ici un seul switch/case suffira pour définir le type d'EA
@@ -93,7 +89,7 @@ void UTILS::cGetKindOfEA(const INS &ins)
     
     // variables pour l'insertion de la fonction d'analyse : arguments et pointeur de fonction
     IARGLIST args = IARGLIST_Alloc();
-    void (*callback)();
+    void (*callback)() = nullptr;
 
     switch (mask)
     {

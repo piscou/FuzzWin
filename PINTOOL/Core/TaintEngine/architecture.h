@@ -72,7 +72,7 @@ inline REGINDEX getRegIndex(REG r)
     return (index); 
 }
 
-// taille d'un registre sous le format PIN
+// taille d'un registre EN OCTETS sous le format PIN
 inline UINT32 getRegSize(REG r) 
 {
     UINT32 size = 0;

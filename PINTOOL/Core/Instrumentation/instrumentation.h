@@ -8,12 +8,15 @@ namespace INSTRUMENTATION
     void FiniTaint(INT32 code, void *);
     void FiniCheckScore(INT32 code, void *);
 
-    void threadStart(THREADID tid, CONTEXT *, INT32 , void *);
-    void threadFini (THREADID tid, const CONTEXT *, INT32 , void *);
+    void threadStart          (THREADID tid, CONTEXT *, INT32 , void *);
+    void threadFini           (THREADID tid, const CONTEXT *, INT32 , void *);
+    void ThreadStartCheckScore(THREADID tid, CONTEXT *, INT32 , void *);
 
     void changeCtx(THREADID tid, CONTEXT_CHANGE_REASON reason,
                         const CONTEXT *, CONTEXT *, INT32 sig, VOID *);
-    void insCount(TRACE trace, VOID *);
+    void traceCheckScore(TRACE trace, VOID *);
+    // fonction d'analyse qui compte le nombre d'instruction de chaque BBL
+    void PIN_FAST_ANALYSIS_CALL docount(THREADID tid, ADDRINT bblCount);
 
     void Image(IMG img, void *);
 }

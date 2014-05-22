@@ -7,6 +7,33 @@
 // fin de déclaration d'une relation dans le format SMTLIB
 #define END_RELATION_DECLARATION    this->declareRelationFooter(tPtr)
 
+/**** conversion LEVEL_BASE::predicate -> string ****/
+static const std::string predicateToString[PREDICATE_LAST] = 
+{
+    "",     // PREDICATE_ALWAYS_TRUE
+    "",     // PREDICATE_INVALID
+    "B",    // BELOW 
+    "BE",   // BELOW_OR_EQUAL
+    "L",    // LESS
+    "LE",   // LESS_OR_EQUAL
+    "NB",   // NOT_BELOW
+    "NBE",  // NOT_BELOW_OR_EQUAL
+    "NL",   // NOT_LESS
+    "NLE",  // NOT_LESS_OR_EQUAL
+    "NO",   // NOT_OVERFLOW
+    "NP",   // NOT_PARITY
+    "NS",   // NOT_SIGN
+    "NZ",   // NOT_ZERO
+    "O",    // OVERFLOW
+    "P",    // PARITY
+    "S",    // SIGN
+    "Z",    // ZERO
+    "CXZ",  // CX_NON_ZERO
+    "ECXZ", // ECX_NON_ZERO
+    "RCXZ", // RCX_NON_ZERO
+    "SAVED_GCX" // SAVED_GCX_NON_ZERO
+};
+
 // constantes pour les instructions BSF/BSR
 // source : Chess Programming Wiki
 // pour BSF : http://chessprogramming.wikispaces.com/BitScan#Bitscan%20forward-De%20Bruijn%20Multiplication-With%20separated%20LS1B
@@ -65,8 +92,7 @@ protected:
     // déclaration de l'entête d'une nouvelle contrainte pour un diviseur nul
     std::string getConstraintNullDivisorHeader(ADDRINT insAddress) const;
     // renvoie la traduction de la formule imposant un diviseur nul
-    std::string getNullDivisorTranslation
-        (TaintManager_Thread *pTmgrTls, const TaintPtr &divisorPtr);
+    std::string getNullDivisorTranslation(const TaintPtr &divisorPtr);
     // déclaration du 'final' d'une contrainte pour un diviseur nul
     std::string getConstraintNullDivisorFooter() const;
 
@@ -75,10 +101,29 @@ protected:
     // déclaration de l'entête d'une nouvelle contrainte sur le résultat d'une division
     std::string getConstraintDivOverflowHeader(bool isSignedDivision, ADDRINT insAddress) const;
     // renvoie la traduction de la formule sur le résultat d'une division
-    std::string getDivOverflowTranslation(TaintManager_Thread *pTmgrTls, 
-        bool isSignedDivision, const TaintPtr &quotientPtr);
+    std::string getDivOverflowTranslation(bool isSignedDivision, const TaintPtr &quotientPtr);
     // déclaration du 'final' d'une contrainte sur le résultat d'une division
     std::string getConstraintDivOverflowFooter() const;
+
+    /*** CONTRAINTES : BOUCLES (LOOP/LOOPE/LOOPNE) ***/
+
+    // déclaration de l'entête d'une nouvelle contrainte pour un diviseur nul
+    std::string getConstraintLoopHeader(ADDRINT insAddress) const;
+    // renvoie la traduction de la formule relatif à une boucle Loop (LOOP)
+    std::string getLoopTranslation(const TaintPtr &regCounterPtr); 
+    // renvoie la traduction de la formule relatif à une boucle Loop (LOOPE/LOOPNE)
+    std::string getLoopTranslation(PREDICATE pred, const ObjectSource &objRegCounter, const ObjectSource &objZF);
+    // déclaration du 'final' d'une contrainte sur le résultat d'une division
+    std::string getConstraintLoopFooter() const;
+
+    /*** CONTRAINTES : ADRESSES EFFECTIVES ***/
+
+    // déclaration de l'entête d'une nouvelle contrainte sur une addresse
+    std::string getConstraintAddressHeader(ADDRINT insAddress) const;
+    // renvoie la traduction de la formule sur la valeur d'une adresse
+    std::string getConstraintAddressTranslation(const TaintPtr &addrPtr, ADDRINT addrValue); 
+    // déclaration du 'final' d'une contrainte sur une adresse
+    std::string getConstraintAddressFooter() const;
 
     /***********************************/
     /** TRADUCTION DE CHAQUE RELATION **/
@@ -138,6 +183,7 @@ protected:
     void translate_X_DAA_2ND(const TaintPtr &tPtr);
     void translate_X_DAS_1ST(const TaintPtr &tPtr);
     void translate_X_DAS_2ND(const TaintPtr &tPtr);
+    void translate_X_SALC(const TaintPtr &tPtr);
 
     // flags
 

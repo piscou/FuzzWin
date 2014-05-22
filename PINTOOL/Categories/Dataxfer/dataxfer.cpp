@@ -48,9 +48,6 @@ void DATAXFER::cMOV(INS &ins)
         if (!regSize) return;   // registre destination non suivi
         else if (INS_IsMemoryRead(ins)) // Mémoire -> Registre
         {                     
-            /**********************/
-            //UTILS::cGetKindOfEA(ins);
-            /**********************/
 
             switch (regSize)
             {
@@ -130,7 +127,7 @@ template<> void DATAXFER::sMOV_RM<8>(THREADID tid, REG regSrc, ADDRINT writeAddr
     if (!pTmgrTls->isRegisterTainted<8>(regSrc)) pTmgrGlobal->unTaintMemory<8>(writeAddress);
     else 
     {
-        _LOGTAINT(tid, insAddress, "movRM8");
+        _LOGTAINT(tid, insAddress, "movRM8 de" + REG_StringShort(regSrc) + " vers addresse " + hexstr(writeAddress));
         pTmgrGlobal->updateMemoryTaint<8>(writeAddress, std::make_shared<TaintByte>(
             X_ASSIGN, 
             ObjectSource(pTmgrTls->getRegisterTaint(regSrc))));
@@ -144,7 +141,7 @@ template<> void DATAXFER::sMOV_MR<8>(THREADID tid, ADDRINT readAddress, REG regD
     if (!pTmgrGlobal->isMemoryTainted<8>(readAddress)) pTmgrTls->unTaintRegister<8>(regDest);
     else 
     {
-        _LOGTAINT(tid, insAddress, "movMR8");
+        _LOGTAINT(tid, insAddress, "movMR8 de l'addresse " + hexstr(readAddress) + " vers " + REG_StringShort(regDest));
         pTmgrTls->updateTaintRegister<8>(regDest, std::make_shared<TaintByte>(
             X_ASSIGN, 
             ObjectSource(pTmgrGlobal->getMemoryTaint<8>(readAddress))));
