@@ -617,6 +617,7 @@ ListOfInputs FuzzwinAlgorithm::expandExecution()
                     if (!pNewChild->getScore()) this->debugTarget(pNewChild);
                     // sinon insérer le fichier dans la liste de retour
                     else result.push_back(pNewChild);
+                    this->logVerboseEndOfLine();
                 }
                 // si retour nul le fichier est valide, donc l'insérer dans la liste
                 // sinon ne SURTOUT PAS l'insérer dans la liste : il va faire planter le pintool
@@ -626,8 +627,7 @@ ListOfInputs FuzzwinAlgorithm::expandExecution()
                     // signifie qu'une erreur a été trouvée : ne pas insérer le fichier dans la liste
                     DWORD debugResult = this->debugTarget(pNewChild);
                     if (!debugResult)   result.push_back(pNewChild);
-                }
-                this->logVerboseEndOfLine();
+                } 
             }	     
         }
         // pas de solution trouvée par le solveur

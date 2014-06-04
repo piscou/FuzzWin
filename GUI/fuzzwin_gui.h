@@ -29,8 +29,11 @@
 
 #include "algorithm_gui.h"  
 #include "fuzzwin_widgets.h"
+
+#if 0 // en cours d'implémentation
 #include "fuzzwin_modelview.h"
 #include "qhexview.h"
+#endif
 
 class FUZZWIN_GUI : public QMainWindow
 {
@@ -120,13 +123,17 @@ private:
         QWidget     *_logTab;
         QHBoxLayout *_hLayout2;
         QTextEdit   *_logWindow;
+        
+        // en cours d'implémentation
+#if 0
         QWidget     *_entriesTab;
         QVBoxLayout *_vLayout2;
         QTreeView   *_inputsView;
         TreeModel   *_inputsModel;
-    // boutons de sauvegarde
+#endif
+        // boutons de sauvegarde
     QPushButton *_saveLogButton;
-    QPushButton *_saveConfigButton;
+    QPushButton *_saveConfigButton; // en cours d'implémentation (désactivé pour l'instant)
     QLabel      *_labelFaultsFound;
     QSpinBox    *_faultsFound;
 
@@ -158,7 +165,7 @@ public slots:
     void start_clicked();
     void stop_clicked();
     void saveLog_clicked(); 
-    void saveConfig_clicked(); 
+    void saveConfig_clicked();  // non implémenté
     void quitFuzzwin();
     
     void checkPinPath(QString path);  // vérification de l'intégrité du dossier racine de PIN

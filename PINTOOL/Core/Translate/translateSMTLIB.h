@@ -1,6 +1,6 @@
 #pragma once
 
-#include "translateToIR.h"
+#include "TranslateIR.h"
 
 // entete de déclaration d'une relation dans le format SMTLIB
 #define BEGIN_RELATION_DECLARATION  this->declareRelationHeader(tPtr)
@@ -55,7 +55,7 @@ static const int index64[64] =
 /**** constante associée à cette table ****/
 static const UINT64 debruijn64 = 0x03f79d71b4cb0a89;
 
-class TranslateToSMTLIB : public TranslateToIR
+class TranslateToSMTLIB : public TranslateIR
 {
 private:
     // BSR/BSF : booléen pour indiquer que les éléments 'De Bruijn' ont été déclarés

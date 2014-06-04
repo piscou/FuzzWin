@@ -28,7 +28,7 @@ typedef WINDOWS::HANDLE HANDLE;
 /* Constantes utiles */
 /*********************/
 
-#define FUZZWIN_VERSION     std::string("1.4.1 28 avril 2014")
+#define FUZZWIN_VERSION     "V0.5 26 avril 2014"
 
 #define EXIT_EXCEPTION      -1 // exception trouvée (option checkscore)
 #define EXIT_MAX_CONSTRAINTS 2 // fin du pintool pour cause de contrainte max

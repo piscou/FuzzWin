@@ -197,6 +197,7 @@ void FUZZWIN_GUI::initGroupResultats()
     _hLayout2->addWidget(_logWindow);
     _logWindow->setAcceptDrops(false);
 
+#if 0 // en cours d'implémentation
     _entriesTab = new QWidget();    
     
     _inputsView = new QTreeView(_entriesTab);
@@ -220,7 +221,7 @@ void FUZZWIN_GUI::initGroupResultats()
     }
 
     /// TEST POUR LA PARTIE MODELE/VUE
-#if 0
+
     QList<int> firstInputData;
     firstInputData << 0 << 55 << 44 << 1;
 
@@ -257,13 +258,13 @@ void FUZZWIN_GUI::initGroupResultats()
     _saveConfigButton = new QPushButton("Sauvegarder configuration");
     _saveConfigButton->setSizePolicy(_fixedSizePolicy);
     _saveConfigButton->setMinimumWidth(150);
-
+#if 0
     _vLayout2     = new QVBoxLayout(_entriesTab);
     _vLayout2->setContentsMargins(11, 11, 11, 11);
     _vLayout2->addWidget(_inputsView);
-
+#endif
     _Tabs->addTab(_logTab,     "Log");
-    _Tabs->addTab(_entriesTab, "Entrées");    
+ //   _Tabs->addTab(_entriesTab, "Entrées");    
     _Tabs->setCurrentIndex(0);
 
     _gLayout2 = new QGridLayout(_groupResultats);

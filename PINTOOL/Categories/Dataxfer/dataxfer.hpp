@@ -298,7 +298,7 @@ template<UINT32 lengthInBits> void DATAXFER::sBSWAP(THREADID tid, REG reg, ADDRI
         // récupération du marquage du registre de l'octet fort et affectation directe à l'octet faible
         if (pTmgrTls->isRegisterPartTainted(regIndex, highestByte - regPart))
         {
-            _LOGTAINT(tid, insAddress, "BSWAP" + decstr(lengthInBitsSrc) + " octet" + decstr(regPart));
+            _LOGTAINT(tid, insAddress, "BSWAP" + decstr(lengthInBits) + " octet" + decstr(regPart));
     
             pTmgrTls->updateTaintRegisterPart(regIndex, regPart, 
                 pTmgrTls->getRegisterPartTaint(regIndex, highestByte - regPart));

@@ -28,7 +28,7 @@ static const std::string infoHeader
     (   
     "; **************************************************\n" 
     "; *  FUZZWIN : FUZZER AUTOMATIQUE SOUS WINDOWS     *\n" 
-    "; *  v1.3 (c) Sebastien LECOMTE 26/03/2014         *\n"
+    "; *  v0.5 (c) Sebastien LECOMTE 26/05/2014         *\n"
     "; *  PIN Version 2.13 kit 62732 et Z3 version 4.3  *\n"
     "; **************************************************\n" 
     );

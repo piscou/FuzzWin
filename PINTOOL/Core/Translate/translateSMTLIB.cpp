@@ -1,7 +1,7 @@
 ﻿#include "translateSMTLIB.h"
 
 TranslateToSMTLIB::TranslateToSMTLIB()
-    : TranslateToIR(), _isDeBruijnDeclared(false) {}
+    : TranslateIR(), _isDeBruijnDeclared(false) {}
 
 std::string TranslateToSMTLIB::getDeBruijnArray()
 {
@@ -2413,7 +2413,7 @@ void TranslateToSMTLIB::final()
         // avec insertion de la logique, et des commandes "check-sat" et "get-model" 
         std::string formulaHeader =
             ";*********************************\n"     \
-            ";*** FUZZWIN " + FUZZWIN_VERSION + "***\n"\
+            ";*** FUZZWIN " + std::string(FUZZWIN_VERSION) + "***\n"\
             ";***        MODE NO PIPE       ***\n"     \
             ";*********************************\n"     \
             "; Fichier instrumenté : " + g_inputFile + "\n\n";

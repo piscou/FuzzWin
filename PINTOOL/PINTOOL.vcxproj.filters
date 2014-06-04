@@ -78,7 +78,7 @@
     <ClCompile Include="Core\Translate\translateSMTLIB.cpp">
       <Filter>Core\Translate</Filter>
     </ClCompile>
-    <ClCompile Include="Core\Translate\translateToIR.cpp">
+    <ClCompile Include="Core\Translate\translateIR.cpp">
       <Filter>Core\Translate</Filter>
     </ClCompile>
   </ItemGroup>
@@ -201,9 +201,6 @@
     <ClInclude Include="Categories\UnconditionalBranch\unconditional_branch.h">
       <Filter>Categories\Unconditional Branch</Filter>
     </ClInclude>
-    <ClInclude Include="Core\Translate\translateToIR.h">
-      <Filter>Core\Translate</Filter>
-    </ClInclude>
     <ClInclude Include="Core\Translate\translateSMTLIB.h">
       <Filter>Core\Translate</Filter>
     </ClInclude>
@@ -218,6 +215,9 @@
     </ClInclude>
     <ClInclude Include="Categories\UnconditionalBranch\unconditional_branch.hpp">
       <Filter>Categories\Unconditional Branch</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Translate\translateIR.h">
+      <Filter>Core\Translate</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

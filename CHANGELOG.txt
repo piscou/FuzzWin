@@ -9,6 +9,8 @@ PINTOOL
 -------
 + correction du bug lors de la lecture multiple et successive dans le fichier d'entrée
 + optimisation de la déclaration de contraintes sur les divisions
++ optimisation du traitement de CMPS et SCAS
++ optimisation du traitement des syscalls
 + traitement nouveau du CALL et du LOOP/LOOPE/LOOPNE
 + correction typo SETLE/SETNLE
 + ajout traitement SALC

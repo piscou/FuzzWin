@@ -10,7 +10,7 @@
 
 [Dd]ebug/
 [Rr]elease/
-build/
+#build/
 [Bb]in/
 [Oo]bj/
 
@@ -150,4 +150,5 @@ $RECYCLE.BIN/
 .DS_Store
 
 # locals files for dev
-PINTOOL_STANDALONE.bat
+BUILD/x86/fuzzwin.exe
+BUILD/x64/fuzzwin.exe

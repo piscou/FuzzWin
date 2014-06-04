@@ -115,6 +115,12 @@ DWORD FuzzwinAlgorithm::debugTarget(CInput *pNewInput)
                 // actions spécifiques cmdline/gui à mener lors de la découverte d'une faute
                 this->faultFound();
 
+                // Fermeture du processus
+                TerminateProcess(pi.hProcess, 0);
+                
+                // acquitter
+                //ContinueDebugEvent(e.dwProcessId, e.dwThreadId, DBG_CONTINUE); 
+
                 // arret du debug
                 DebugActiveProcessStop(pi.dwProcessId);
                 // fermeture des handles du programme débuggé
