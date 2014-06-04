@@ -751,8 +751,8 @@ public:
             // a priori il ne peut pas avoir d'autres cas
             for (UINT32 i = 0 ; i < 8 ; ++i)
             {
-                _registers8Ptr[regIndex][i] = tdwPtr->getSource(i).isSrcTainted() 
-                    ? std::make_shared<TaintByte>(X_ASSIGN, ObjectSource(tdwPtr->getSource(i).getTaintedSource())) 
+                _registers8Ptr[regIndex][i] = tqwPtr->getSource(i).isSrcTainted() 
+                    ? std::make_shared<TaintByte>(X_ASSIGN, ObjectSource(tqwPtr->getSource(i).getTaintedSource())) 
                     : nullptr;
             }
         }
