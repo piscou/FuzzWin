@@ -13,6 +13,9 @@
 #build/
 [Bb]in/
 [Oo]bj/
+*.exe
+BUILD/pintool/fuzzwinX86.dll
+BUILD/pintool/fuzzwinX64.dll
 
 # Enable "build/" folder in the NuGet Packages folder since NuGet packages use it for MSBuild targets
 !packages/*/build/
@@ -149,6 +152,4 @@ $RECYCLE.BIN/
 # Mac crap
 .DS_Store
 
-# locals files for dev
-BUILD/x86/fuzzwin.exe
-BUILD/x64/fuzzwin.exe
+
