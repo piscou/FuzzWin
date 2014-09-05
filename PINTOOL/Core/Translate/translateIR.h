@@ -4,6 +4,60 @@
 #include <sstream>
 #include <iostream> // cout (mode nopipe)
 
+// entete de déclaration d'une relation
+#define BEGIN_RELATION_DECLARATION  this->declareRelationHeader(tPtr)
+// fin de déclaration d'une relation
+#define END_RELATION_DECLARATION    this->declareRelationFooter(tPtr)
+
+/**** conversion LEVEL_BASE::predicate -> string ****/
+static const std::string predicateToString[PREDICATE_LAST] = 
+{
+    "",     // PREDICATE_ALWAYS_TRUE
+    "",     // PREDICATE_INVALID
+    "B",    // BELOW 
+    "BE",   // BELOW_OR_EQUAL
+    "L",    // LESS
+    "LE",   // LESS_OR_EQUAL
+    "NB",   // NOT_BELOW
+    "NBE",  // NOT_BELOW_OR_EQUAL
+    "NL",   // NOT_LESS
+    "NLE",  // NOT_LESS_OR_EQUAL
+    "NO",   // NOT_OVERFLOW
+    "NP",   // NOT_PARITY
+    "NS",   // NOT_SIGN
+    "NZ",   // NOT_ZERO
+    "O",    // OVERFLOW
+    "P",    // PARITY
+    "S",    // SIGN
+    "Z",    // ZERO
+    "CXZ",  // CX_NON_ZERO
+    "ECXZ", // ECX_NON_ZERO
+    "RCXZ", // RCX_NON_ZERO
+    "SAVED_GCX" // SAVED_GCX_NON_ZERO
+};
+
+// constantes pour les instructions BSF/BSR
+// source : Chess Programming Wiki
+// pour BSF : http://chessprogramming.wikispaces.com/BitScan#Bitscan%20forward-De%20Bruijn%20Multiplication-With%20separated%20LS1B
+// pour BSR : http://chessprogramming.wikispaces.com/BitScan#Bitscan%20reverse-De%20Bruijn%20Multiplication
+
+/**** table De Bruijn ****/
+static const int index64[64] = 
+{
+    0, 47,  1, 56, 48, 27,  2, 60,
+   57, 49, 41, 37, 28, 16,  3, 61,
+   54, 58, 35, 52, 50, 42, 21, 44,
+   38, 32, 29, 23, 17, 11,  4, 62,
+   46, 55, 26, 59, 40, 36, 15, 53,
+   34, 51, 20, 43, 31, 22, 10, 45,
+   25, 39, 14, 33, 19, 30,  9, 24,
+   13, 18,  8, 12,  7,  6,  5, 63
+}; 
+
+/**** constante associée à cette table ****/
+static const UINT64 debruijn64 = 0x03f79d71b4cb0a89;
+
+
 class TranslateIR
 {
 protected:
@@ -137,6 +191,7 @@ protected:
     virtual void translate_X_DAS_2ND(const TaintPtr &tPtr) = 0;
 
     virtual void translate_X_SALC(const TaintPtr &tPtr) = 0;
+    
     // flags
 
     virtual void translate_F_LSB(const TaintPtr &tPtr) = 0;

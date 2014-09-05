@@ -1,9 +1,9 @@
-﻿#include "translateSMTLIB.h"
+﻿#include "translateC.h"
 
-TranslateToSMTLIB::TranslateToSMTLIB()
+TranslateToC::TranslateToC()
     : TranslateIR(), _isDeBruijnDeclared(false) {}
 
-std::string TranslateToSMTLIB::getDeBruijnArray()
+std::string TranslateToC::getDeBruijnArray()
 {
     // variables utilisées par les instructions BSR et BSF
     // cf. commentaires dans translate.h
@@ -11,35 +11,19 @@ std::string TranslateToSMTLIB::getDeBruijnArray()
     std::string result;
 
     // déclaration de la constante multiplicative
-    result += "(define-const constante (_ BitVec 64) #x";
-    result += hexstr(debruijn64, 8).substr(2); // pour éliminer le "Ox"
-    result += ")\n";
+    result += "uint64_t deBruinjConstant = " + hexstr(debruijn64, 8) + ";\n";
 
-    // définition du tableau debruijn64. Il se crée via une fonction:
-    // paramètre 'x'    = index
-    // valeur de retour = valeur du tableau
-    // ALTERNATIVE A UN ARRAY CAR UN ARRAY NE PERMET PAS D'UTILISER UN '(get-model)'
-    // pour obtenir les résultats !!!!!
-    result += "(define-fun index64 ((x (_ BitVec 64))) (_ BitVec 64)\n";
-        
-    // stockage de 64 valeurs : 64x la fonction "(ite (= x (_ bvAA 64)) (_ bvVAL 64) ";
+    // définition du tableau debruijn64, 64 valeurs sur 64 bits
+    result += "const uint64_t deBruinjArray[64] = {";  
+      
+    // stockage de 64 valeurs sous forme de chaine de caractères, séparés par une virgule
     for (UINT32 index = 0 ; index < 64 ; ++index)   
     {
-        result += "  (ite (= x (_ bv" + decstr(index) + " 64)) ";
-        result +=             "(_ bv" + decstr(index64[index]) + " 64)\n";
+        result += decstr(index64[index]) + ", ";
     }
 
-    // pour le dernier ite, si non égal renvoyer 0 (comme si une erreur était arrivée)
-    result +=     "  (_ bv0 64)";
-
-    // 64 parenthèses fermantes (une par 'ite') 
-    for (UINT32 index = 0 ; index < 8 ; ++index)
-    {
-        result += "))))))))"; // 8 parenthèses par 8
-    }
-
-    // parenthèse finale
-    result += ")\n";
+    // crochet final
+    result += "};\n";
 
     // le tableau et la constante sont déclarés
     _isDeBruijnDeclared = true;
@@ -48,46 +32,39 @@ std::string TranslateToSMTLIB::getDeBruijnArray()
 }
 
 // affectation d'un nom de variable à un objet
-std::string TranslateToSMTLIB::setObjectName(const TaintPtr &tPtr)
+std::string TranslateToC::setObjectName(const TaintPtr &tPtr)
 {
     // fabrication du nom de variable unique selon la taille du resultat
-    std::string name;
-    switch (tPtr->getLength()) 
+    // ie var[1/8/16/32/64]_XX
+    UINT32 length = tPtr->getLength();
+    std::string name("var" + decstr(length) + '_');
+    switch (length) 
     {
-    case 1:	  name = "TBIT" + decstr(++_iTbit); break;
-    case 8:	  name = "TB"   + decstr(++_iTb);   break;
-    case 16:  name = "TW"   + decstr(++_iTw);   break;
-    case 32:  name = "TDW"  + decstr(++_iTdw);  break;
-    case 64:  name = "TQW"  + decstr(++_iTqw);  break;
-    case 128: name = "TDQW" + decstr(++_iTdqw); break;
-    default : name = "error"; break;
+    case 1:	  name += decstr(++_iTbit); break;
+    case 8:	  name += decstr(++_iTb);   break;
+    case 16:  name += decstr(++_iTw);   break;
+    case 32:  name += decstr(++_iTdw);  break;
+    case 64:  name += decstr(++_iTqw);  break;
+    case 128: name += decstr(++_iTdqw); break;
+    default : name += "unknown"; break;
     }
     tPtr->setName(name);
     return (name); 
 } // setObjectName
 
 // nom de variable pour les objets, utilisées dans les formules SMTLIB
-std::string TranslateToSMTLIB::getSourceName(const ObjectSource &objSrc) const
+std::string TranslateToC::getSourceName(const ObjectSource &objSrc) const
 {
     // si objet marqué, retourner son nom de variable
     if (objSrc.isSrcTainted())	 return (objSrc.getTaintedSource()->getName()); 
-    // sinon fabrication de la valeur, en format SMTLIB
+    // sinon retour de la valeur, en la castant si nécessaire
     else 
     {
-        UINT32 srcLength = objSrc.getLength(); // longueur de l'objet (en bits)
-        ADDRINT value    = objSrc.getValue();  // valeur numérique représentée par l'objet
-        
-        // cas TaintBit : résultat décrit en binaire
-        if (srcLength == 1)	  return (value ? "#b1" : "#b0");
-        // dans les autres cas : resultat en hexa
-        else
-        {
-            // la fonction StringFromAddrint (API PIN) convertit un ADDRINT 
-            // en chaine de caractères. Or la source est encodée sur 'srcLength' bits
-            // donc extraire les 2/4/8/16 derniers chiffres de la chaine
-            std::string valueString(StringFromAddrint(value));
-            return ("#x" + valueString.substr(valueString.size() - (srcLength >> 2)));       
-        }
+        ADDRINT     value  = objSrc.getValue();  // valeur numérique représentée par l'objet
+        UINT32      length = objSrc.getLength(); // taille de la valeur
+
+        if (1 == length) return (value ? "1" : "0");
+        else             return ("(uint" + decstr(length) + "_t) 0x" + hexstr(value)); 
     }
 } // getSourceName
 
@@ -95,40 +72,48 @@ std::string TranslateToSMTLIB::getSourceName(const ObjectSource &objSrc) const
 // DECLARATION DES OBJETS MARQUES //
 ////////////////////////////////////
 
-// entete de la déclaration : affectation d'un nom + '(define-fun XX () (BitVec nb) ('
-void TranslateToSMTLIB::declareRelationHeader(const TaintPtr &tPtr)
+// entete de la déclaration : type de variable et affectation d'un nom + '(define-fun XX () (BitVec nb) ('
+void TranslateToC::declareRelationHeader(const TaintPtr &tPtr)
 {
     const std::string name = this->setObjectName(tPtr);
 
     // declaration de l'entête de ligne : nom de variable et longueur
-    _formula << "(define-fun " << name << " () (_ BitVec " << tPtr->getLength() << ") (";
+    _formula << "uint" << tPtr->getLength() << "_t " << name << " = ";
 }
 
-// fin de la déclaration : )); + infos du mode verbeux si présent
-void TranslateToSMTLIB::declareRelationFooter(const TaintPtr &tPtr)
+// fin de la déclaration : ';' + infos du mode verbeux si présent
+void TranslateToC::declareRelationFooter(const TaintPtr &tPtr)
 {
-    _formula << "));";
+    _formula << ';';
     if (g_verbose)
     {
-        _formula << relationStrings[tPtr->getSourceRelation()] << " / ";
-        _formula << tPtr->getVerboseDetails();
+        _formula << "/* " <<relationStrings[tPtr->getSourceRelation()] << ' ';
+        _formula << tPtr->getVerboseDetails() << " */";
     }
     _formula  << '\n';
 }
 
 /** RELATIONS **/
 
-void TranslateToSMTLIB::translate_BYTESOURCE(const TaintPtr &tPtr)
+void TranslateToC::translate_BYTESOURCE(const TaintPtr &tPtr)
 {
     // BYTESOURCE : nom de variable spécifique
     std::string objectName("OFF" + decstr(tPtr->getSource(0).getValue()));
     tPtr->setName(objectName);
 
-    // déclaration particulière en "declare-const", sans header ni footer
-    _formula << "(declare-const " << objectName << " (_ BitVec 8))\n";
+    // déclaration d'une valeur non initialisée
+    _formula << "uint8_t " << objectName << ";\n";
 }
 
-void TranslateToSMTLIB::translate_EXTRACT(const TaintPtr &tPtr)
+
+
+
+
+/*
+
+
+
+void TranslateToC::translate_EXTRACT(const TaintPtr &tPtr)
 {
     // EXTRACT : source0 forcément marqué, source1 (index) forcément valeur
     ObjectSource source      = tPtr->getSource(0);
@@ -149,7 +134,7 @@ void TranslateToSMTLIB::translate_EXTRACT(const TaintPtr &tPtr)
     END_RELATION_DECLARATION;
 }
 
-void TranslateToSMTLIB::translate_CONCAT(const TaintPtr &tPtr)
+void TranslateToC::translate_CONCAT(const TaintPtr &tPtr)
 {
     // CONCAT : concaténation des objets fournis en Sources
     // Attention : les objets seront inséres du plus fort au plus faible
@@ -169,14 +154,14 @@ void TranslateToSMTLIB::translate_CONCAT(const TaintPtr &tPtr)
 
 // instructions
 
-void TranslateToSMTLIB::translate_X_ASSIGN(const TaintPtr &tPtr)
+void TranslateToC::translate_X_ASSIGN(const TaintPtr &tPtr)
 {
     // on affecte à l'objet le nom de la source
     // cela evite de déclarer une nouvelle variable dans le solveur 
     tPtr->setName(tPtr->getSource(0).getTaintedSource()->getName());
 }
 
-void TranslateToSMTLIB::translate_X_SIGNEXTEND(const TaintPtr &tPtr)
+void TranslateToC::translate_X_SIGNEXTEND(const TaintPtr &tPtr)
 {
     UINT32 lengthOfResult = tPtr->getLength();
     ObjectSource source   = tPtr->getSource(0); // forcément marquée
@@ -190,7 +175,7 @@ void TranslateToSMTLIB::translate_X_SIGNEXTEND(const TaintPtr &tPtr)
     END_RELATION_DECLARATION;
 }
 
-void TranslateToSMTLIB::translate_X_ZEROEXTEND(const TaintPtr &tPtr)
+void TranslateToC::translate_X_ZEROEXTEND(const TaintPtr &tPtr)
 {
     UINT32 lengthOfResult = tPtr->getLength();
     ObjectSource source   = tPtr->getSource(0); // forcément marquée
@@ -204,7 +189,7 @@ void TranslateToSMTLIB::translate_X_ZEROEXTEND(const TaintPtr &tPtr)
     END_RELATION_DECLARATION;
 }
 
-void TranslateToSMTLIB::translate_X_ADD(const TaintPtr &tPtr)
+void TranslateToC::translate_X_ADD(const TaintPtr &tPtr)
 {
     ObjectSource src0   = tPtr->getSource(0);
     ObjectSource src1   = tPtr->getSource(1);
@@ -214,7 +199,7 @@ void TranslateToSMTLIB::translate_X_ADD(const TaintPtr &tPtr)
     END_RELATION_DECLARATION;
 }
 
-void TranslateToSMTLIB::translate_X_INC(const TaintPtr &tPtr)
+void TranslateToC::translate_X_INC(const TaintPtr &tPtr)
 {
     // source 0 forcément marquée
 
@@ -223,7 +208,7 @@ void TranslateToSMTLIB::translate_X_INC(const TaintPtr &tPtr)
     END_RELATION_DECLARATION;
 }
 
-void TranslateToSMTLIB::translate_X_SUB(const TaintPtr &tPtr)
+void TranslateToC::translate_X_SUB(const TaintPtr &tPtr)
 {
     ObjectSource src0   = tPtr->getSource(0);
     ObjectSource src1   = tPtr->getSource(1);
@@ -233,7 +218,7 @@ void TranslateToSMTLIB::translate_X_SUB(const TaintPtr &tPtr)
     END_RELATION_DECLARATION;
 }
 
-void TranslateToSMTLIB::translate_X_DEC(const TaintPtr &tPtr)
+void TranslateToC::translate_X_DEC(const TaintPtr &tPtr)
 {
     // source 0 forcément marquée
 
@@ -242,7 +227,7 @@ void TranslateToSMTLIB::translate_X_DEC(const TaintPtr &tPtr)
     END_RELATION_DECLARATION;
 }
 
-void TranslateToSMTLIB::translate_X_NEG(const TaintPtr &tPtr)
+void TranslateToC::translate_X_NEG(const TaintPtr &tPtr)
 {
     // source 0 forcément marquée
 
@@ -252,7 +237,7 @@ void TranslateToSMTLIB::translate_X_NEG(const TaintPtr &tPtr)
 }
 
 // NON IMPLEMENTE : MUL
-void TranslateToSMTLIB::translate_X_MUL(const TaintPtr &tPtr)
+void TranslateToC::translate_X_MUL(const TaintPtr &tPtr)
 {
     // MUL : longueur resultat = 2*longueur des sources. Or en SMTLIB longueur resultat = longueur source
     // donc necessite de mettre les opérandes à la longueur de la destination 
@@ -267,7 +252,7 @@ void TranslateToSMTLIB::translate_X_MUL(const TaintPtr &tPtr)
     END_RELATION_DECLARATION;
 }
 
-void TranslateToSMTLIB::translate_X_IMUL(const TaintPtr &tPtr)
+void TranslateToC::translate_X_IMUL(const TaintPtr &tPtr)
 {
     // IMUL : longueur resultat = 2*longueur des sources. Or en SMTLIB longueur resultat = longueur source
     // donc necessite de mettre les opérandes à la longueur de la destination 
@@ -282,7 +267,7 @@ void TranslateToSMTLIB::translate_X_IMUL(const TaintPtr &tPtr)
     END_RELATION_DECLARATION;
 }
 
-void TranslateToSMTLIB::translate_X_DIV_QUO(const TaintPtr &tPtr)
+void TranslateToC::translate_X_DIV_QUO(const TaintPtr &tPtr)
 {
     UINT32 lengthOfQuotient      = tPtr->getLength();
     ObjectSource objHighDividend = tPtr->getSource(0);
@@ -306,7 +291,7 @@ void TranslateToSMTLIB::translate_X_DIV_QUO(const TaintPtr &tPtr)
     END_RELATION_DECLARATION;
 }
 
-void TranslateToSMTLIB::translate_X_DIV_REM(const TaintPtr &tPtr)
+void TranslateToC::translate_X_DIV_REM(const TaintPtr &tPtr)
 {
     UINT32 lengthOfQuotient      = tPtr->getLength();
     ObjectSource objHighDividend = tPtr->getSource(0);
@@ -330,7 +315,7 @@ void TranslateToSMTLIB::translate_X_DIV_REM(const TaintPtr &tPtr)
     END_RELATION_DECLARATION;
 }
 
-void TranslateToSMTLIB::translate_X_IDIV_QUO(const TaintPtr &tPtr)
+void TranslateToC::translate_X_IDIV_QUO(const TaintPtr &tPtr)
 {
     UINT32 lengthOfQuotient      = tPtr->getLength();
     ObjectSource objHighDividend = tPtr->getSource(0);
@@ -354,7 +339,7 @@ void TranslateToSMTLIB::translate_X_IDIV_QUO(const TaintPtr &tPtr)
     END_RELATION_DECLARATION;
 }
 
-void TranslateToSMTLIB::translate_X_IDIV_REM(const TaintPtr &tPtr)
+void TranslateToC::translate_X_IDIV_REM(const TaintPtr &tPtr)
 {
     UINT32 lengthOfQuotient      = tPtr->getLength();
     ObjectSource objHighDividend = tPtr->getSource(0);
@@ -378,7 +363,7 @@ void TranslateToSMTLIB::translate_X_IDIV_REM(const TaintPtr &tPtr)
     END_RELATION_DECLARATION;
 }
 
-void TranslateToSMTLIB::translate_X_AND(const TaintPtr &tPtr)
+void TranslateToC::translate_X_AND(const TaintPtr &tPtr)
 {
     ObjectSource src0   = tPtr->getSource(0);
     ObjectSource src1   = tPtr->getSource(1);
@@ -388,7 +373,7 @@ void TranslateToSMTLIB::translate_X_AND(const TaintPtr &tPtr)
     END_RELATION_DECLARATION;
 }
 
-void TranslateToSMTLIB::translate_X_OR(const TaintPtr &tPtr)
+void TranslateToC::translate_X_OR(const TaintPtr &tPtr)
 {
     ObjectSource src0   = tPtr->getSource(0);
     ObjectSource src1   = tPtr->getSource(1);
@@ -398,7 +383,7 @@ void TranslateToSMTLIB::translate_X_OR(const TaintPtr &tPtr)
     END_RELATION_DECLARATION;
 }
 
-void TranslateToSMTLIB::translate_X_XOR(const TaintPtr &tPtr)
+void TranslateToC::translate_X_XOR(const TaintPtr &tPtr)
 {
     ObjectSource src0   = tPtr->getSource(0);
     ObjectSource src1   = tPtr->getSource(1);
@@ -408,14 +393,14 @@ void TranslateToSMTLIB::translate_X_XOR(const TaintPtr &tPtr)
     END_RELATION_DECLARATION;
 }
 
-void TranslateToSMTLIB::translate_X_NOT(const TaintPtr &tPtr)
+void TranslateToC::translate_X_NOT(const TaintPtr &tPtr)
 {
     BEGIN_RELATION_DECLARATION;
     _formula << "bvnot " << this->getSourceName(tPtr->getSource(0));
     END_RELATION_DECLARATION;
 }
 
-void TranslateToSMTLIB::translate_X_SHL(const TaintPtr &tPtr)
+void TranslateToC::translate_X_SHL(const TaintPtr &tPtr)
 {
     // récupération des sources : opérande déplacée (marqué ou non) et valeur du déplacement (marqué ou non)
     ObjectSource shiftedSrc = tPtr->getSource(0);
@@ -453,7 +438,7 @@ void TranslateToSMTLIB::translate_X_SHL(const TaintPtr &tPtr)
     END_RELATION_DECLARATION;
 }
 
-void TranslateToSMTLIB::translate_X_SHR(const TaintPtr &tPtr)
+void TranslateToC::translate_X_SHR(const TaintPtr &tPtr)
 {
     // récupération des sources : opérande déplacée (marqué ou non) et valeur du déplacement (marqué ou non)
     ObjectSource shiftedSrc = tPtr->getSource(0);
@@ -491,7 +476,7 @@ void TranslateToSMTLIB::translate_X_SHR(const TaintPtr &tPtr)
     END_RELATION_DECLARATION;
 }
 
-void TranslateToSMTLIB::translate_X_SAR(const TaintPtr &tPtr)
+void TranslateToC::translate_X_SAR(const TaintPtr &tPtr)
 {
     // récupération des sources : opérande déplacée (marqué ou non) et valeur du déplacement (marqué ou non)
     ObjectSource shiftedSrc = tPtr->getSource(0);
@@ -529,7 +514,7 @@ void TranslateToSMTLIB::translate_X_SAR(const TaintPtr &tPtr)
     END_RELATION_DECLARATION;
 }
 
-void TranslateToSMTLIB::translate_X_ROR(const TaintPtr &tPtr)
+void TranslateToC::translate_X_ROR(const TaintPtr &tPtr)
 {
     // récupération des sources : opérande déplacée (marqué ou non) et valeur du déplacement (marqué ou non)
     ObjectSource shiftedSrc = tPtr->getSource(0);
@@ -602,7 +587,7 @@ void TranslateToSMTLIB::translate_X_ROR(const TaintPtr &tPtr)
     END_RELATION_DECLARATION;
 }
 
-void TranslateToSMTLIB::translate_X_ROL(const TaintPtr &tPtr)
+void TranslateToC::translate_X_ROL(const TaintPtr &tPtr)
 {
     // récupération des sources : opérande déplacée (marqué ou non) et valeur du déplacement (marqué ou non)
     ObjectSource shiftedSrc = tPtr->getSource(0);
@@ -660,7 +645,7 @@ void TranslateToSMTLIB::translate_X_ROL(const TaintPtr &tPtr)
     END_RELATION_DECLARATION;
 }
 
-void TranslateToSMTLIB::translate_X_RCR(const TaintPtr &tPtr)
+void TranslateToC::translate_X_RCR(const TaintPtr &tPtr)
 {
     // récupération des sources : opérande déplacée (marqué ou non) , valeur du CF (marqué ou non) 
     // et valeur du déplacement (marqué ou non)
@@ -724,7 +709,7 @@ void TranslateToSMTLIB::translate_X_RCR(const TaintPtr &tPtr)
     END_RELATION_DECLARATION;
 }
 
-void TranslateToSMTLIB::translate_X_RCL(const TaintPtr &tPtr)
+void TranslateToC::translate_X_RCL(const TaintPtr &tPtr)
 {
     // récupération des sources : opérande déplacée (marqué ou non) , valeur du CF (marqué ou non) 
     // et valeur du déplacement (marqué ou non)
@@ -788,7 +773,7 @@ void TranslateToSMTLIB::translate_X_RCL(const TaintPtr &tPtr)
     END_RELATION_DECLARATION;
 }
 
-void TranslateToSMTLIB::translate_X_SETCC(const TaintPtr &tPtr) 
+void TranslateToC::translate_X_SETCC(const TaintPtr &tPtr) 
 {
     // déclaration similiaire à un predicat sauf qu'on déclare un objet sur 8 bits (et non un booléen)
     // et que les objets représentant les flags sont fournis (et non pas à récupérer via TaintManager)
@@ -864,7 +849,7 @@ void TranslateToSMTLIB::translate_X_SETCC(const TaintPtr &tPtr)
     END_RELATION_DECLARATION;
 }
 
-void TranslateToSMTLIB::translate_X_COMPLEMENT_BIT(const TaintPtr &tPtr)
+void TranslateToC::translate_X_COMPLEMENT_BIT(const TaintPtr &tPtr)
 {
     // COMPLEMENT_BIT : XOR de la source avec (1<<numero bit). Correspond à BTC
     // numéro du bit est pris modulo 16/32/64 (soit un AND avec 15/31/63)
@@ -890,7 +875,7 @@ void TranslateToSMTLIB::translate_X_COMPLEMENT_BIT(const TaintPtr &tPtr)
      END_RELATION_DECLARATION;
 }
 
-void TranslateToSMTLIB::translate_X_SET_BIT(const TaintPtr &tPtr)
+void TranslateToC::translate_X_SET_BIT(const TaintPtr &tPtr)
 {
     // SET_BIT : OR de la source avec (1<<numero bit). Correspond à BTS
     // numéro du bit est pris modulo 16/32/64 (soit un AND avec 15/31/63)
@@ -916,7 +901,7 @@ void TranslateToSMTLIB::translate_X_SET_BIT(const TaintPtr &tPtr)
      END_RELATION_DECLARATION;
 }
 
-void TranslateToSMTLIB::translate_X_CLEAR_BIT(const TaintPtr &tPtr)
+void TranslateToC::translate_X_CLEAR_BIT(const TaintPtr &tPtr)
 {
     // CLEAR_BIT : AND de la source avec ~(1<<numero bit). Correspond à BTR
     // numéro du bit est pris modulo 16/32/64 (soit un AND avec 15/31/63)
@@ -942,7 +927,7 @@ void TranslateToSMTLIB::translate_X_CLEAR_BIT(const TaintPtr &tPtr)
     END_RELATION_DECLARATION;
 }
 
-void TranslateToSMTLIB::translate_X_BSF(const TaintPtr &tPtr)
+void TranslateToC::translate_X_BSF(const TaintPtr &tPtr)
 {
     /* Bit Scan Forward : index du LSB de la source
     cet index vaut index64[((bb ^ (bb-1)) * debruijn64) >> 58]
@@ -1000,7 +985,7 @@ void TranslateToSMTLIB::translate_X_BSF(const TaintPtr &tPtr)
     END_RELATION_DECLARATION;
 }
 
-void TranslateToSMTLIB::translate_X_BSR(const TaintPtr &tPtr)
+void TranslateToC::translate_X_BSR(const TaintPtr &tPtr)
 {
     /* Bit Scan Reverse : index du MSB de la source
     cet index vaut :
@@ -1076,7 +1061,7 @@ void TranslateToSMTLIB::translate_X_BSR(const TaintPtr &tPtr)
     END_RELATION_DECLARATION;
 }
 
-void TranslateToSMTLIB::translate_X_AAA_AL(const TaintPtr &tPtr)
+void TranslateToC::translate_X_AAA_AL(const TaintPtr &tPtr)
 {
     // condition de AAA : "IF (((AL and 0FH) > 9) or (AF=1)"
     // condition vraie  => AL = (AL + 6) & 0xF
@@ -1099,7 +1084,7 @@ void TranslateToSMTLIB::translate_X_AAA_AL(const TaintPtr &tPtr)
     END_RELATION_DECLARATION;
 }
 
-void TranslateToSMTLIB::translate_X_AAA_AH(const TaintPtr &tPtr)
+void TranslateToC::translate_X_AAA_AH(const TaintPtr &tPtr)
 {
     // condition de AAA : "IF (((AL and 0FH) > 9) or (AF=1)"
     // condition vraie  => AH = AH + 1
@@ -1121,7 +1106,7 @@ void TranslateToSMTLIB::translate_X_AAA_AH(const TaintPtr &tPtr)
     END_RELATION_DECLARATION;
 }
 
-void TranslateToSMTLIB::translate_X_AAD(const TaintPtr &tPtr)
+void TranslateToC::translate_X_AAD(const TaintPtr &tPtr)
 {
     // AL = (AL + (AH ∗ imm8)) & xFF (le AND FF ne sert à rien ici car AL est sur 8 bits...)
     // formule SMT-LIB : 
@@ -1136,7 +1121,7 @@ void TranslateToSMTLIB::translate_X_AAD(const TaintPtr &tPtr)
     END_RELATION_DECLARATION;
 }
 
-void TranslateToSMTLIB::translate_X_AAM_AL(const TaintPtr &tPtr)
+void TranslateToC::translate_X_AAM_AL(const TaintPtr &tPtr)
 {
     // AL = AL(src0) MOD BASE(src1)
 
@@ -1146,7 +1131,7 @@ void TranslateToSMTLIB::translate_X_AAM_AL(const TaintPtr &tPtr)
     END_RELATION_DECLARATION;
 }
 
-void TranslateToSMTLIB::translate_X_AAM_AH(const TaintPtr &tPtr)
+void TranslateToC::translate_X_AAM_AH(const TaintPtr &tPtr)
 {
     // AH = AL(src0) DIV BASE(src1)
 
@@ -1156,7 +1141,7 @@ void TranslateToSMTLIB::translate_X_AAM_AH(const TaintPtr &tPtr)
     END_RELATION_DECLARATION;
 }
 
-void TranslateToSMTLIB::translate_X_AAS_AL(const TaintPtr &tPtr)
+void TranslateToC::translate_X_AAS_AL(const TaintPtr &tPtr)
 {
     // condition de AAS : "IF (((AL and 0FH) > 9) or (AF=1)" (idem AAA)
     // condition vraie  => AL = ([0..7](AX - 6)) & 0xF
@@ -1179,7 +1164,7 @@ void TranslateToSMTLIB::translate_X_AAS_AL(const TaintPtr &tPtr)
     END_RELATION_DECLARATION;
 }
 
-void TranslateToSMTLIB::translate_X_AAS_AH(const TaintPtr &tPtr)
+void TranslateToC::translate_X_AAS_AH(const TaintPtr &tPtr)
 {
     // condition de AAS : "IF (((AL and 0FH) > 9) or (AF=1)" (idem AAA)
     // condition vraie  => AH = ([15..8](AX - 6)) - 1, equivalent à [15..8](AX - 0x0106)
@@ -1202,7 +1187,7 @@ void TranslateToSMTLIB::translate_X_AAS_AH(const TaintPtr &tPtr)
     END_RELATION_DECLARATION;
 }
 
-void TranslateToSMTLIB::translate_X_DAA_1ST(const TaintPtr &tPtr)
+void TranslateToC::translate_X_DAA_1ST(const TaintPtr &tPtr)
 {
     // 1ere condition de DAA : "IF (((AL and 0FH) > 9) or (AF=1)" (idem AAA)
     // condition vraie  => AL = AL + 6 (sans masquage à 0xF)
@@ -1222,7 +1207,7 @@ void TranslateToSMTLIB::translate_X_DAA_1ST(const TaintPtr &tPtr)
     END_RELATION_DECLARATION;
 }
 
-void TranslateToSMTLIB::translate_X_DAA_2ND(const TaintPtr &tPtr)
+void TranslateToC::translate_X_DAA_2ND(const TaintPtr &tPtr)
 {
     // 2eme condition de DAA : "IF (((OLD_AL > 0x99) or (OldCF=1)" 
     // condition vraie  => ALApres1ereCondition = ALApres1ereCondition + 0x60
@@ -1243,7 +1228,7 @@ void TranslateToSMTLIB::translate_X_DAA_2ND(const TaintPtr &tPtr)
     END_RELATION_DECLARATION;
 }
 
-void TranslateToSMTLIB::translate_X_DAS_1ST(const TaintPtr &tPtr)
+void TranslateToC::translate_X_DAS_1ST(const TaintPtr &tPtr)
 {
     // 1ere condition de DAS : "IF (((AL and 0FH) > 9) or (AF=1)" (idem AAA)
     // condition vraie  => AL = AL - 6 (sans masquage à 0xF)
@@ -1263,7 +1248,7 @@ void TranslateToSMTLIB::translate_X_DAS_1ST(const TaintPtr &tPtr)
     END_RELATION_DECLARATION;
 }
 
-void TranslateToSMTLIB::translate_X_DAS_2ND(const TaintPtr &tPtr)
+void TranslateToC::translate_X_DAS_2ND(const TaintPtr &tPtr)
 {
     // 2eme condition de DAS : "IF (((OLD_AL > 0x99) or (OldCF=1)" 
     // condition vraie  => ALApres1ereCondition = ALApres1ereCondition - 0x60
@@ -1284,7 +1269,7 @@ void TranslateToSMTLIB::translate_X_DAS_2ND(const TaintPtr &tPtr)
     END_RELATION_DECLARATION;
 }
 
-void TranslateToSMTLIB::translate_X_SALC(const TaintPtr &tPtr)
+void TranslateToC::translate_X_SALC(const TaintPtr &tPtr)
 {
     // si CF == 0 => AL = 0 ; si CF == 1 => AL = FF
     // formule SMT-LIB : ite (= src0 #b0) #x00 #xff (source0 sur 1 bit et forcément marquée)
@@ -1296,7 +1281,7 @@ void TranslateToSMTLIB::translate_X_SALC(const TaintPtr &tPtr)
 
 // flags
 
-void TranslateToSMTLIB::translate_F_LSB(const TaintPtr &tPtr)
+void TranslateToC::translate_F_LSB(const TaintPtr &tPtr)
 {
     BEGIN_RELATION_DECLARATION;
     // extraction du bit de poids faible de l'unique source
@@ -1304,7 +1289,7 @@ void TranslateToSMTLIB::translate_F_LSB(const TaintPtr &tPtr)
     END_RELATION_DECLARATION;
 }
 
-void TranslateToSMTLIB::translate_F_MSB(const TaintPtr &tPtr)
+void TranslateToC::translate_F_MSB(const TaintPtr &tPtr)
 {
     ObjectSource src0  = tPtr->getSource(0);
     UINT32 msbIndex    = src0.getLength() - 1;
@@ -1315,7 +1300,7 @@ void TranslateToSMTLIB::translate_F_MSB(const TaintPtr &tPtr)
     END_RELATION_DECLARATION;
 }
 
-void TranslateToSMTLIB::translate_F_CARRY_ADD(const TaintPtr &tPtr)
+void TranslateToC::translate_F_CARRY_ADD(const TaintPtr &tPtr)
 {
     // Extension d'1 bit des opérandes afin d'extraire le bit fort de leur somme
     ObjectSource src0  = tPtr->getSource(0);
@@ -1331,7 +1316,7 @@ void TranslateToSMTLIB::translate_F_CARRY_ADD(const TaintPtr &tPtr)
     END_RELATION_DECLARATION;
 }
 
-void TranslateToSMTLIB::translate_F_CARRY_SUB(const TaintPtr &tPtr)
+void TranslateToC::translate_F_CARRY_SUB(const TaintPtr &tPtr)
 {
     ObjectSource src0  = tPtr->getSource(0);
     ObjectSource src1  = tPtr->getSource(1);
@@ -1345,7 +1330,7 @@ void TranslateToSMTLIB::translate_F_CARRY_SUB(const TaintPtr &tPtr)
     END_RELATION_DECLARATION;
 }
 
-void TranslateToSMTLIB::translate_F_CARRY_NEG(const TaintPtr &tPtr)
+void TranslateToC::translate_F_CARRY_NEG(const TaintPtr &tPtr)
 {
     ObjectSource src0  = tPtr->getSource(0);
     UINT32 lengthOfSrc = src0.getLength();
@@ -1359,7 +1344,7 @@ void TranslateToSMTLIB::translate_F_CARRY_NEG(const TaintPtr &tPtr)
     END_RELATION_DECLARATION;
 }
 
-void TranslateToSMTLIB::translate_F_CARRY_MUL(const TaintPtr &tPtr)
+void TranslateToC::translate_F_CARRY_MUL(const TaintPtr &tPtr)
 {
     // CARRY_MUL : Source0 : resultat. Si partie haute du resultat nulle, CF mis à 0
     ObjectSource src0       = tPtr->getSource(0);
@@ -1375,7 +1360,7 @@ void TranslateToSMTLIB::translate_F_CARRY_MUL(const TaintPtr &tPtr)
     END_RELATION_DECLARATION;
 }
 
-void TranslateToSMTLIB::translate_F_CARRY_IMUL(const TaintPtr &tPtr)
+void TranslateToC::translate_F_CARRY_IMUL(const TaintPtr &tPtr)
 {
     // CARRY_IMUL : Source0 : resultat; si resultat = sign_extend partie basse, alors CF mis à 0
     ObjectSource src0      = tPtr->getSource(0);
@@ -1392,7 +1377,7 @@ void TranslateToSMTLIB::translate_F_CARRY_IMUL(const TaintPtr &tPtr)
     END_RELATION_DECLARATION;
 }
 
-void TranslateToSMTLIB::translate_F_CARRY_SHL(const TaintPtr &tPtr)
+void TranslateToC::translate_F_CARRY_SHL(const TaintPtr &tPtr)
 {
     // dernier bit ejecté vers la gauche = bit (lengthInBits - count) de la source
     // récupération par LSB (src >> (lengthInBits - count))
@@ -1430,7 +1415,7 @@ void TranslateToSMTLIB::translate_F_CARRY_SHL(const TaintPtr &tPtr)
     END_RELATION_DECLARATION;
 }
 
-void TranslateToSMTLIB::translate_F_CARRY_SHR(const TaintPtr &tPtr) // SAR = idem
+void TranslateToC::translate_F_CARRY_SHR(const TaintPtr &tPtr) // SAR = idem
 {
     // dernier bit ejecté vers la gauche = bit (count - 1) de la source
     // récupération par LSB (src >> (count - 1))
@@ -1468,7 +1453,7 @@ void TranslateToSMTLIB::translate_F_CARRY_SHR(const TaintPtr &tPtr) // SAR = ide
     END_RELATION_DECLARATION;
 }
 
-void TranslateToSMTLIB::translate_F_CARRY_RCL(const TaintPtr &tPtr)
+void TranslateToC::translate_F_CARRY_RCL(const TaintPtr &tPtr)
 {
     // dernier bit ejecté vers la gauche = bit (lengthInBits - count) de la source
     // récupération par LSB (src >> (lengthInBits - count))
@@ -1514,7 +1499,7 @@ void TranslateToSMTLIB::translate_F_CARRY_RCL(const TaintPtr &tPtr)
     END_RELATION_DECLARATION;
 }
 
-void TranslateToSMTLIB::translate_F_CARRY_RCR(const TaintPtr &tPtr)
+void TranslateToC::translate_F_CARRY_RCR(const TaintPtr &tPtr)
 {
     // dernier bit ejecté vers la droite = bit (count - 1) de la source
     // récupération par LSB (src >> (count - 1))
@@ -1560,7 +1545,7 @@ void TranslateToSMTLIB::translate_F_CARRY_RCR(const TaintPtr &tPtr)
     END_RELATION_DECLARATION;
 }
 
-void TranslateToSMTLIB::translate_F_CARRY_BITBYTE(const TaintPtr &tPtr)
+void TranslateToC::translate_F_CARRY_BITBYTE(const TaintPtr &tPtr)
 {
     // extraction du bit 'source1' de 'source0'. Effectué par LSB(src0 >> src1)
     ObjectSource testedSrc    = tPtr->getSource(0);
@@ -1577,7 +1562,7 @@ void TranslateToSMTLIB::translate_F_CARRY_BITBYTE(const TaintPtr &tPtr)
     END_RELATION_DECLARATION;
 }
     
-void TranslateToSMTLIB::translate_F_PARITY(const TaintPtr &tPtr)
+void TranslateToC::translate_F_PARITY(const TaintPtr &tPtr)
 {
     // PARITY : parité de l'octet faible de la variable
     // source http://graphics.stanford.edu/~seander/bithacks.html
@@ -1600,7 +1585,7 @@ void TranslateToSMTLIB::translate_F_PARITY(const TaintPtr &tPtr)
     END_RELATION_DECLARATION;
 }
     
-void TranslateToSMTLIB::translate_F_IS_NULL(const TaintPtr &tPtr)
+void TranslateToC::translate_F_IS_NULL(const TaintPtr &tPtr)
 {
     ObjectSource src = tPtr->getSource(0);
     UINT32 srcLength = src.getLength();
@@ -1613,7 +1598,7 @@ void TranslateToSMTLIB::translate_F_IS_NULL(const TaintPtr &tPtr)
     END_RELATION_DECLARATION;
 }
 
-void TranslateToSMTLIB::translate_F_ARE_EQUAL(const TaintPtr &tPtr)
+void TranslateToC::translate_F_ARE_EQUAL(const TaintPtr &tPtr)
 {
     ObjectSource src0 = tPtr->getSource(0);
     ObjectSource src1 = tPtr->getSource(1);
@@ -1627,7 +1612,7 @@ void TranslateToSMTLIB::translate_F_ARE_EQUAL(const TaintPtr &tPtr)
     END_RELATION_DECLARATION;
 }
 
-void TranslateToSMTLIB::translate_F_CMPXCHG_8B16B(const TaintPtr &tPtr)
+void TranslateToC::translate_F_CMPXCHG_8B16B(const TaintPtr &tPtr)
 {
     ObjectSource memHighSrc = tPtr->getSource(0);
     ObjectSource memLowSrc  = tPtr->getSource(1);
@@ -1645,7 +1630,7 @@ void TranslateToSMTLIB::translate_F_CMPXCHG_8B16B(const TaintPtr &tPtr)
     END_RELATION_DECLARATION;
 }
 
-void TranslateToSMTLIB::translate_F_OVERFLOW_ADD(const TaintPtr &tPtr)
+void TranslateToC::translate_F_OVERFLOW_ADD(const TaintPtr &tPtr)
 {
     // ADD : Formule reprise à partir de BOCHS 2.6
     // OF(A+B) = MSB de (A XOR RESULT) AND (B XOR RESULT)
@@ -1668,7 +1653,7 @@ void TranslateToSMTLIB::translate_F_OVERFLOW_ADD(const TaintPtr &tPtr)
     END_RELATION_DECLARATION;
 }
 
-void TranslateToSMTLIB::translate_F_OVERFLOW_SUB(const TaintPtr &tPtr)
+void TranslateToC::translate_F_OVERFLOW_SUB(const TaintPtr &tPtr)
 {
     // SUB : formule de BOCHS 2.3.5 (BOCHS 2.6 fait différemment)
     // OF(A-B) = MSB de (A XOR RESULT) AND (A XOR B)
@@ -1691,7 +1676,7 @@ void TranslateToSMTLIB::translate_F_OVERFLOW_SUB(const TaintPtr &tPtr)
     END_RELATION_DECLARATION;
 }
 
-void TranslateToSMTLIB::translate_F_OVERFLOW_INC(const TaintPtr &tPtr)
+void TranslateToC::translate_F_OVERFLOW_INC(const TaintPtr &tPtr)
 {
     // INC déclenche un Overflow ssi la source vaut 0x7f/0x7fff/0x7fffffff/ ...
     // c'est à dire la valeur INT_MAX sur 8, 16, 32 ou 64bits
@@ -1717,7 +1702,7 @@ void TranslateToSMTLIB::translate_F_OVERFLOW_INC(const TaintPtr &tPtr)
     END_RELATION_DECLARATION;
 }
 
-void TranslateToSMTLIB::translate_F_OVERFLOW_DEC(const TaintPtr &tPtr) // NB : NEG IDEM
+void TranslateToC::translate_F_OVERFLOW_DEC(const TaintPtr &tPtr) // NB : NEG IDEM
 {
     // DEC (et NEG) déclenche un Overflow ssi la source vaut 0x80/0x8000/0x80000000/ ...
     // c'est à dire la valeur (INT_MAX + 1) sur 8, 16, 32 ou 64bits 
@@ -1743,7 +1728,7 @@ void TranslateToSMTLIB::translate_F_OVERFLOW_DEC(const TaintPtr &tPtr) // NB : N
     END_RELATION_DECLARATION;
 }
 
-void TranslateToSMTLIB::translate_F_OVERFLOW_SHL(const TaintPtr &tPtr)
+void TranslateToC::translate_F_OVERFLOW_SHL(const TaintPtr &tPtr)
 {
     // Manuel Intel : OF ← MSB(DEST) XOR CF; 
     // en FAIT OF vaut 1 si le signe change apres le déplacmeent
@@ -1764,7 +1749,7 @@ void TranslateToSMTLIB::translate_F_OVERFLOW_SHL(const TaintPtr &tPtr)
     END_RELATION_DECLARATION;
 }
 
-void TranslateToSMTLIB::translate_F_OVERFLOW_SHRD(const TaintPtr &tPtr)
+void TranslateToC::translate_F_OVERFLOW_SHRD(const TaintPtr &tPtr)
 {
     // Overflow si le signe change, donc si le LSB du 'bit pattern' et le MSB de l'operande destination
     // sont différents. 1 seule source : la concaténation 'bit Pattern / destination'
@@ -1783,7 +1768,7 @@ void TranslateToSMTLIB::translate_F_OVERFLOW_SHRD(const TaintPtr &tPtr)
     END_RELATION_DECLARATION;
 }
 
-void TranslateToSMTLIB::translate_F_OVERFLOW_ROL(const TaintPtr &tPtr)
+void TranslateToC::translate_F_OVERFLOW_ROL(const TaintPtr &tPtr)
 {
     // cf Manuel Intel : OF = MSB(DEST) XOR CF
     ObjectSource resultSrc    = tPtr->getSource(0);
@@ -1798,7 +1783,7 @@ void TranslateToSMTLIB::translate_F_OVERFLOW_ROL(const TaintPtr &tPtr)
     END_RELATION_DECLARATION;
 }
 
-void TranslateToSMTLIB::translate_F_OVERFLOW_ROR(const TaintPtr &tPtr)
+void TranslateToC::translate_F_OVERFLOW_ROR(const TaintPtr &tPtr)
 {
     // cf Manuel Intel : OF = MSB(DEST) XOR ((MSB-1) DEST)
     ObjectSource resultSrc = tPtr->getSource(0);
@@ -1814,7 +1799,7 @@ void TranslateToSMTLIB::translate_F_OVERFLOW_ROR(const TaintPtr &tPtr)
     END_RELATION_DECLARATION;
 }
 
-void TranslateToSMTLIB::translate_F_AUXILIARY_ADD(const TaintPtr &tPtr)
+void TranslateToC::translate_F_AUXILIARY_ADD(const TaintPtr &tPtr)
 {
     // idem F_CARRY_ADD, mais en considérant les opérandes sur leurs 4 bits les plus faibles
     // On additionne les deux extraits, étendus sur 5 bits, et on prend le bit de poids fort (le 4eme)
@@ -1830,7 +1815,7 @@ void TranslateToSMTLIB::translate_F_AUXILIARY_ADD(const TaintPtr &tPtr)
     END_RELATION_DECLARATION;
 }
 
-void TranslateToSMTLIB::translate_F_AUXILIARY_NEG(const TaintPtr &tPtr)
+void TranslateToC::translate_F_AUXILIARY_NEG(const TaintPtr &tPtr)
 {
     BEGIN_RELATION_DECLARATION;
     
@@ -1841,7 +1826,7 @@ void TranslateToSMTLIB::translate_F_AUXILIARY_NEG(const TaintPtr &tPtr)
     END_RELATION_DECLARATION;
 }
 
-void TranslateToSMTLIB::translate_F_AUXILIARY_SUB(const TaintPtr &tPtr)
+void TranslateToC::translate_F_AUXILIARY_SUB(const TaintPtr &tPtr)
 {
     ObjectSource src0  = tPtr->getSource(0);
     ObjectSource src1  = tPtr->getSource(1);
@@ -1856,7 +1841,7 @@ void TranslateToSMTLIB::translate_F_AUXILIARY_SUB(const TaintPtr &tPtr)
     END_RELATION_DECLARATION;
 }
 
-void TranslateToSMTLIB::translate_F_AUXILIARY_INC(const TaintPtr &tPtr)
+void TranslateToC::translate_F_AUXILIARY_INC(const TaintPtr &tPtr)
 {
     // retenue provoquée uniquement quand les 4 bits faibles valent 0xf
     BEGIN_RELATION_DECLARATION;
@@ -1866,7 +1851,7 @@ void TranslateToSMTLIB::translate_F_AUXILIARY_INC(const TaintPtr &tPtr)
     END_RELATION_DECLARATION;
 }
 
-void TranslateToSMTLIB::translate_F_AUXILIARY_DEC(const TaintPtr &tPtr)
+void TranslateToC::translate_F_AUXILIARY_DEC(const TaintPtr &tPtr)
 {
     // retenue provoquée uniquement quand les 4 bits faibles sont nuls
     ObjectSource src0  = tPtr->getSource(0);
@@ -1878,7 +1863,7 @@ void TranslateToSMTLIB::translate_F_AUXILIARY_DEC(const TaintPtr &tPtr)
     END_RELATION_DECLARATION;
 }
 
-void TranslateToSMTLIB::translate_F_AAA(const TaintPtr &tPtr)
+void TranslateToC::translate_F_AAA(const TaintPtr &tPtr)
 {
     // condition de AAA : "IF (((AL and 0FH) > 9) or (AF=1)"
     // condition vraie  => flag vaut 1
@@ -1899,7 +1884,7 @@ void TranslateToSMTLIB::translate_F_AAA(const TaintPtr &tPtr)
     END_RELATION_DECLARATION;
 }
 
-void TranslateToSMTLIB::translate_F_CARRY_DAA_DAS(const TaintPtr &tPtr)
+void TranslateToC::translate_F_CARRY_DAA_DAS(const TaintPtr &tPtr)
 {
     // calcul du carry fait dans la deuxième condition : "IF ((AL > 99H) or (CF = 1))"
     // condition vraie  => flag vaut 1
@@ -1926,7 +1911,7 @@ void TranslateToSMTLIB::translate_F_CARRY_DAA_DAS(const TaintPtr &tPtr)
 
 /*** CONTRAINTES : PREDICAT ***/
 
-std::string TranslateToSMTLIB::getConstraintPredicateHeader(ADDRINT insAddress, PREDICATE p) const
+std::string TranslateToC::getConstraintPredicateHeader(ADDRINT insAddress, PREDICATE p) const
 {
     // définition de l'entête de la contrainte : insertion d'un commentaire
     // avec le n° de contrainte, l'instruction et son adresse 
@@ -1938,7 +1923,7 @@ std::string TranslateToSMTLIB::getConstraintPredicateHeader(ADDRINT insAddress, 
 }
 
 // formule correspondant au calcul d'un prédicat
-std::string TranslateToSMTLIB::getPredicateTranslation(TaintManager_Thread *pTmgrTls, 
+std::string TranslateToC::getPredicateTranslation(TaintManager_Thread *pTmgrTls, 
     PREDICATE pred, ADDRINT flagsOrRegValue)
 {
     // la déclaration d'un prédicat se fait en deux étapes
@@ -2174,7 +2159,7 @@ std::string TranslateToSMTLIB::getPredicateTranslation(TaintManager_Thread *pTmg
     return (result);
 } // getPredicateFormula
  
-std::string TranslateToSMTLIB::getConstraintPredicateFooter(bool taken) const
+std::string TranslateToC::getConstraintPredicateFooter(bool taken) const
 {
     // déclaration de l'assertion en fin de contrainte 
     // selon que la branche a été prise ou non
@@ -2189,7 +2174,7 @@ std::string TranslateToSMTLIB::getConstraintPredicateFooter(bool taken) const
 /*** CONTRAINTES : DIVISEUR NUL ***/
 
 // déclaration de l'entête d'une nouvelle contrainte pour un diviseur nul
-std::string TranslateToSMTLIB::getConstraintNullDivisorHeader(ADDRINT insAddress) const
+std::string TranslateToC::getConstraintNullDivisorHeader(ADDRINT insAddress) const
 { 
     // définition de l'entête de la contrainte : insertion d'un commentaire
     // avec le n° de contrainte, l'instruction et son adresse 
@@ -2198,7 +2183,7 @@ std::string TranslateToSMTLIB::getConstraintNullDivisorHeader(ADDRINT insAddress
 }
 
 // renvoie la traduction de la formule imposant un diviseur nul
-std::string TranslateToSMTLIB::getNullDivisorTranslation(const TaintPtr &divisorPtr)
+std::string TranslateToC::getNullDivisorTranslation(const TaintPtr &divisorPtr)
 { 
     // déclaration de l'objet représentant le diviseur et de ses sources
     this->declareObject(divisorPtr);
@@ -2211,7 +2196,7 @@ std::string TranslateToSMTLIB::getNullDivisorTranslation(const TaintPtr &divisor
 }
 
 // déclaration du 'final' d'une contrainte pour un diviseur nul
-std::string TranslateToSMTLIB::getConstraintNullDivisorFooter() const
+std::string TranslateToC::getConstraintNullDivisorFooter() const
 { 
     // déclaration de l'assertion en fin de contrainte : à l'exécution le diviseur
     // est forcément non nul, sinon il y aurait crash !!
@@ -2221,7 +2206,7 @@ std::string TranslateToSMTLIB::getConstraintNullDivisorFooter() const
 /*** CONTRAINTES : QUOTIENT DIVISION HORS BORNES ***/
 
 // déclaration de l'entête d'une nouvelle contrainte sur le résultat d'une division
-std::string TranslateToSMTLIB::getConstraintDivOverflowHeader(bool isSignedDivision, ADDRINT insAddress) const
+std::string TranslateToC::getConstraintDivOverflowHeader(bool isSignedDivision, ADDRINT insAddress) const
 {
     // définition de l'entête de la contrainte : insertion d'un commentaire
     // avec le n° de contrainte, l'instruction et son adresse 
@@ -2230,7 +2215,7 @@ std::string TranslateToSMTLIB::getConstraintDivOverflowHeader(bool isSignedDivis
 }
 
 // renvoie la traduction de la formule sur le résultat d'une division
-std::string TranslateToSMTLIB::getDivOverflowTranslation(bool isSignedDivision, const TaintPtr& quotientPtr)
+std::string TranslateToC::getDivOverflowTranslation(bool isSignedDivision, const TaintPtr& quotientPtr)
 { 
     ObjectSource objHighDividend = quotientPtr->getSource(0);
     ObjectSource objLowDividend  = quotientPtr->getSource(1);
@@ -2294,7 +2279,7 @@ std::string TranslateToSMTLIB::getDivOverflowTranslation(bool isSignedDivision, 
 }
 
 // déclaration du 'final' d'une contrainte sur le résultat d'une division
-std::string TranslateToSMTLIB::getConstraintDivOverflowFooter() const
+std::string TranslateToC::getConstraintDivOverflowFooter() const
 { 
     // déclaration de l'assertion en fin de contrainte 
     // à l'exécution le résultat est forcément dans les bornes, sinon il y aurait crash !!
@@ -2305,7 +2290,7 @@ std::string TranslateToSMTLIB::getConstraintDivOverflowFooter() const
 /*** CONTRAINTES : BOUCLES (LOOP/LOOPE/LOOPNE) ***/
 
 // déclaration de l'entête d'une nouvelle contrainte pour un diviseur nul
-std::string TranslateToSMTLIB::getConstraintLoopHeader(ADDRINT insAddress) const
+std::string TranslateToC::getConstraintLoopHeader(ADDRINT insAddress) const
 {
     // définition de l'entête de la contrainte : insertion d'un commentaire
     // avec le n° de contrainte, l'instruction et son adresse 
@@ -2317,7 +2302,7 @@ std::string TranslateToSMTLIB::getConstraintLoopHeader(ADDRINT insAddress) const
 }
 
 // renvoie la traduction de la formule relatif à une boucle Loop (LOOP)
-std::string TranslateToSMTLIB::getLoopTranslation(const TaintPtr &regCounterPtr)
+std::string TranslateToC::getLoopTranslation(const TaintPtr &regCounterPtr)
 {    
     // déclaration de l'objet représentant le registre compteur
     this->declareObject(regCounterPtr);
@@ -2332,7 +2317,7 @@ std::string TranslateToSMTLIB::getLoopTranslation(const TaintPtr &regCounterPtr)
 }
 
 // renvoie la traduction de la formule relatif à une boucle Loop (LOOPE/LOOPNE)
-std::string TranslateToSMTLIB::getLoopTranslation(PREDICATE pred, 
+std::string TranslateToC::getLoopTranslation(PREDICATE pred, 
     const ObjectSource &objRegCounter, const ObjectSource &objZF)
 {
     // déclaration de l'objet représentant le registre compteur et Zero Flag, si marqués
@@ -2355,7 +2340,7 @@ std::string TranslateToSMTLIB::getLoopTranslation(PREDICATE pred,
 }
 
 // déclaration du 'final' d'une contrainte sur le résultat d'une division
-std::string TranslateToSMTLIB::getConstraintLoopFooter() const
+std::string TranslateToC::getConstraintLoopFooter() const
 {
     // déclaration de l'assertion en fin de contrainte 
     // pour les boucles, la contrainte est vraie car la branche a été prise
@@ -2365,7 +2350,7 @@ std::string TranslateToSMTLIB::getConstraintLoopFooter() const
 /*** CONTRAINTES : ADRESSES EFFECTIVES ***/
 
 // déclaration de l'entête d'une nouvelle contrainte sur une addresse
-std::string TranslateToSMTLIB::getConstraintAddressHeader(ADDRINT insAddress) const
+std::string TranslateToC::getConstraintAddressHeader(ADDRINT insAddress) const
 {
     // définition de l'entête de la contrainte : insertion d'un commentaire
     // avec le n° de contrainte, l'instruction et son adresse 
@@ -2373,7 +2358,7 @@ std::string TranslateToSMTLIB::getConstraintAddressHeader(ADDRINT insAddress) co
 }
 
 // renvoie la traduction de la formule sur la valeur d'une adresse
-std::string TranslateToSMTLIB::getConstraintAddressTranslation(const TaintPtr &addrPtr, ADDRINT addrValue)
+std::string TranslateToC::getConstraintAddressTranslation(const TaintPtr &addrPtr, ADDRINT addrValue)
 { 
     // déclaration de l'objet te de ses sources
     this->declareObject(addrPtr);
@@ -2393,7 +2378,7 @@ std::string TranslateToSMTLIB::getConstraintAddressTranslation(const TaintPtr &a
 }
 
 // déclaration du 'final' d'une contrainte sur le résultat d'une division
-std::string TranslateToSMTLIB::getConstraintAddressFooter() const
+std::string TranslateToC::getConstraintAddressFooter() const
 { 
     // déclaration de l'assertion en fin de contrainte 
     // à l'exécution la variable marquée vaut l'adresse réelle
@@ -2402,7 +2387,7 @@ std::string TranslateToSMTLIB::getConstraintAddressFooter() const
 
 
 // envoi des denières données : nombre total de contraintes
-void TranslateToSMTLIB::final() 
+void TranslateToC::final() 
 {
     WINDOWS::DWORD cbWritten = 0;
     std::string finalFormula;

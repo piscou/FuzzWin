@@ -1,8 +1,8 @@
 #pragma once
 
-#include "TranslateIR.h"
+#include "translateIR.h"
 
-class TranslateToSMTLIB : public TranslateIR
+class TranslateToC : public TranslateIR
 {
 private:
     // BSR/BSF : booléen pour indiquer que les éléments 'De Bruijn' ont été déclarés
@@ -173,14 +173,8 @@ protected:
     void translate_F_CARRY_DAA_DAS(const TaintPtr &tPtr);
     
 public:
-    TranslateToSMTLIB();
+    TranslateToC();
 
     // fabrication de la formule finale, et envoi dans le pipe
     void final();
 };
-
-// Seule représentation intermédiaire utilisée actuellement : SMTLIB
-typedef TranslateToSMTLIB SolverFormula;
-
-// pointeur global vers classe de gestion de la traduction SMT-LIB
-extern SolverFormula *g_pFormula;

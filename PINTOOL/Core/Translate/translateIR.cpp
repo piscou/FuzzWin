@@ -204,7 +204,6 @@ void TranslateIR::addConstraintLoop(PREDICATE pred, const ObjectSource &objRegCo
     if (_iAssert == g_maxConstraints)  PIN_ExitApplication(EXIT_MAX_CONSTRAINTS);
 }
     
-
 void TranslateIR::addConstraintAddress(const TaintPtr &addrPtr, ADDRINT addrValue, ADDRINT insAddress)
 {
     // contrainte sur la valeur d'une addresse (effective ou de saut)
