@@ -1,11 +1,11 @@
-// SIMULATE
+ï»¿// SIMULATE
 template<UINT32 lengthInBits> void STRINGOP::sMOVS
     (ADDRINT count, ADDRINT flagsValue, ADDRINT readAddress, ADDRINT writeAddress, ADDRINT insAddress) 
 {
     // copie de "count" octets/mot/double mots de [ESI] vers [EDI] (idem MOV mem->mem)
-    ADDRINT nbIterations = count * (lengthInBits >> 3); // nombre d'octets copiés
+    ADDRINT nbIterations = count * (lengthInBits >> 3); // nombre d'octets copiÃ©s
     
-    // direction Flag mis à 1 : les adresses vont décroissantes, sinon ca sera l'inverse
+    // direction Flag mis Ã  1 : les adresses vont dÃ©croissantes, sinon ca sera l'inverse
     UINT32 isDecrease = (flagsValue >> DIRECTION_FLAG) & 1; 
     
     for (UINT32 counter = 0 ; counter < nbIterations; ++counter)
@@ -33,30 +33,30 @@ template<UINT32 lengthInBits> void STRINGOP::sMOVS
 template<UINT32 lengthInBits> void STRINGOP::sLODS
     (THREADID tid, ADDRINT count, ADDRINT flagsValue, ADDRINT readAddress, ADDRINT insAddress) 
 {
-    // déplacement de "count" octets/mot/dble mots de [ESI] vers AL/AX/EAX/RAX
-    // en réalité, seule la dernière itération nous interesse
+    // dÃ©placement de "count" octets/mot/dble mots de [ESI] vers AL/AX/EAX/RAX
+    // en rÃ©alitÃ©, seule la derniÃ¨re itÃ©ration nous interesse
     // ce sera un MOV_MR<lengthInBits> de lastAddress vers AL/AX/EAX/RAX
   
-    // calcul de l'adresse pointée par ESI lors de la dernière opération
-    // DF a 1 => adresses décroissantes, DF a 0 => adresses croissantes
+    // calcul de l'adresse pointÃ©e par ESI lors de la derniÃ¨re opÃ©ration
+    // DF a 1 => adresses dÃ©croissantes, DF a 0 => adresses croissantes
     ADDRINT lastAddress = ((flagsValue >> DIRECTION_FLAG) & 1) 
         ? (readAddress - ((count-1) * (lengthInBits >> 3))) 
         : (readAddress + ((count-1) * (lengthInBits >> 3))); 
     
-    // appel de la procédure MOVMR adéquate selon le registre
-    _LOGTAINT(tid, insAddress, "LODS (si marqué : message movRM suivra)");
-    DATAXFER::sMOV_MR<lengthInBits>(tid, lastAddress, RegisterACC<lengthInBits>::getReg() ,insAddress);
+    // appel de la procÃ©dure MOVMR adÃ©quate selon le registre
+    _LOGTAINT(tid, insAddress, "LODS (si marquÃ© : message movRM suivra)");
+    DATAXFER::sMOV_MR<lengthInBits>(tid, lastAddress, RegisterACC<lengthInBits>::getReg(), insAddress);
 } // sLODS
 
 template<UINT32 lengthInBits> void STRINGOP::sSTOS
     (THREADID tid, ADDRINT count, ADDRINT flagsValue, ADDRINT writeAddress, ADDRINT insAddress) 
 {
-    // déplacement de "count" octets/mot/dble mots de AL/AX/EAX/RAX -> [EDI] 
+    // dÃ©placement de "count" octets/mot/dble mots de AL/AX/EAX/RAX -> [EDI] 
     
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     const UINT32 opSize = lengthInBits >> 3;
 
-    // 1) recupération du marquage de chaque octet du registre
+    // 1) recupÃ©ration du marquage de chaque octet du registre
     // et stockage dans un tableau d'objets (ou nullPtr)
     std::array<TaintBytePtr, opSize> vTaintRegSrc;
 
@@ -69,10 +69,10 @@ template<UINT32 lengthInBits> void STRINGOP::sSTOS
         #endif  
     }
 
-    // si DF = 1 => adresses décroissantes, sinon le contraire
+    // si DF = 1 => adresses dÃ©croissantes, sinon le contraire
     UINT32 isDecrease = (flagsValue >> DIRECTION_FLAG) & 1; 
 
-    for (UINT32 iteration = 0 ; iteration < count ; ++iteration) // répétition "count" fois
+    for (UINT32 iteration = 0 ; iteration < count ; ++iteration) // rÃ©pÃ©tition "count" fois
     {
         // marquage de chaque plage de 'lengthInBits' octets avec le registre source     
         for (auto it = vTaintRegSrc.begin(); it != vTaintRegSrc.end() ; ++it) 
@@ -94,19 +94,19 @@ template<UINT32 lengthInBits> void STRINGOP::sSTOS
 template<UINT32 lengthInBits> void STRINGOP::sFirstRepScas(
     THREADID tid, BOOL isREPZ, ADDRINT regValue, ADDRINT insAddress) 
 { 
-    // procédure appelée lors de la première itération (callback IF/THEN)
-    // sert à stocker dans TaintManager les arguments (marquage, adresse)
+    // procÃ©dure appelÃ©e lors de la premiÃ¨re itÃ©ration (callback IF/THEN)
+    // sert Ã  stocker dans TaintManager les arguments (marquage, adresse)
     
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     StringOpInfo    *pStringOpInfo = static_cast<StringOpInfo*>(PIN_GetThreadData(g_tlsStringOpInfo, tid));
 
     ZeroMemory(pStringOpInfo, sizeof(StringOpInfo));
 
-    // mise en cache de la valeur du préfixe (true = REPZ/E, false = REPNZ/E) et de l'adresse
+    // mise en cache de la valeur du prÃ©fixe (true = REPZ/E, false = REPNZ/E) et de l'adresse
     pStringOpInfo->isREPZ     = isREPZ; 
     pStringOpInfo->insAddress = insAddress;
     
-    // si registre marqué, stockage de l'objet, sinon mise à nullptr 
+    // si registre marquÃ©, stockage de l'objet, sinon mise Ã  nullptr 
     // et stockage de la valeur
     if (pTmgrTls->isRegisterTainted<lengthInBits>(RegisterACC<lengthInBits>::getReg())) 
     {
@@ -124,8 +124,8 @@ template<UINT32 lengthInBits> void STRINGOP::sFirstRepScas(
 template<UINT32 lengthInBits> void STRINGOP::sSCAS(THREADID tid, ADDRINT address) 
 {
     // comparaison de AL/AX/EAX/RAX avec [EDI] 
-    // + ajout d'une contrainte sur ZFLAG, indiquant une répétition ou non
-    // métohde identique à CMP_MR, reprise ici intégralement afin d'insérer la contrainte sur le ZFLAG
+    // + ajout d'une contrainte sur ZFLAG, indiquant une rÃ©pÃ©tition ou non
+    // mÃ©tohde identique Ã  CMP_MR, reprise ici intÃ©gralement afin d'insÃ©rer la contrainte sur le ZFLAG
     
     TaintManager_Thread *pTmgrTls  = getTmgrInTls(tid);
     StringOpInfo    *pStringOpInfo = static_cast<StringOpInfo*>(PIN_GetThreadData(g_tlsStringOpInfo, tid));
@@ -154,8 +154,8 @@ template<UINT32 lengthInBits> void STRINGOP::sSCAS(THREADID tid, ADDRINT address
         /** LA POSITION SUR LE ZFLAG. SEULE SOLUTION POUR INSERER UNE CONTRAINTE : **/
         /** TESTER EN INSTRUMENTANT EN IPOINT_AFTER ET TESTER LES FLAGS **/
 #if 0
-        // déclaration de la contrainte
-        // Le predicat est forcément vrai puisque la fonction d'analyse a été appelée
+        // dÃ©claration de la contrainte
+        // Le predicat est forcÃ©ment vrai puisque la fonction d'analyse a Ã©tÃ© appelÃ©e
         PREDICATE pred = pScasInfo->isREPZ ? PREDICATE_ZERO : PREDICATE_NOT_ZERO;
         g_pFormula->addConstraintJcc(pTmgrTls, pred, true, pStringOpInfo->insAddress);
 #endif
@@ -184,7 +184,7 @@ template<UINT32 lengthInBits> void STRINGOP::sCMPS
             ? ObjectSource(pTmgrGlobal->getMemoryTaint<lengthInBits>(ediAddr))
             : ObjectSource(lengthInBits, getMemoryValue<lengthInBits>(ediAddr));
 
-        // marquage flags (resultat calculé dans la procédure Flags) 
+        // marquage flags (resultat calculÃ© dans la procÃ©dure Flags) 
         BINARY::fTaintCMP<lengthInBits>(pTmgrTls, srcDest, src);	
 
         /** TODO : TRAITER LE CAS DE LA CONTRAINTE **/

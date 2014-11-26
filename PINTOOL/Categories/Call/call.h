@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <TaintEngine\TaintManager.h> 
 #include <TaintUtilities\utils.h>
 #include <Translate\translate.h> // ajout des contraintes sur les adresses de saut

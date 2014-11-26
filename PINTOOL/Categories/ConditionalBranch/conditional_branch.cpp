@@ -1,4 +1,4 @@
-#include "conditional_branch.h"
+ï»¿#include "conditional_branch.h"
 #include <Translate\translate.h>
 
 void CONDITIONAL_BR::cJB(INS &ins) 
@@ -271,11 +271,11 @@ void CONDITIONAL_BR::cJRCXZ(INS &ins)
 /*** LOOP ***/
 /************/
 
-// l'instruction LOOP n'est pas considérée comme "predicated" par PIN
-// en effet, quoi qu'il arrive CX/ECX/RCX sera décrémenté de 1
-// donc l'instruction est TOUJOURS exécutée.
-// traitement à l'identique de Jcc, avec des contraintes sur la valeur de ECX
-// et / ou du zéro flag
+// l'instruction LOOP n'est pas considÃ©rÃ©e comme "predicated" par PIN
+// en effet, quoi qu'il arrive CX/ECX/RCX sera dÃ©crÃ©mentÃ© de 1
+// donc l'instruction est TOUJOURS exÃ©cutÃ©e.
+// traitement Ã  l'identique de Jcc, avec des contraintes sur la valeur de ECX
+// et / ou du zÃ©ro flag
 
 
 void CONDITIONAL_BR::cLOOP(INS &ins) 

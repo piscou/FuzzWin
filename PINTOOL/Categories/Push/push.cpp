@@ -1,4 +1,4 @@
-#include "push.h"
+Ôªø#include "push.h"
 #include <Dataxfer\dataxfer.h>
 
 //////////
@@ -12,7 +12,7 @@ void PUSH::cPUSH(INS &ins)
     {     
         REG reg = INS_OperandReg(ins, 0);
         
-        // cas particulier du PUSH E/RSP traitÈ ‡ part
+        // cas particulier du PUSH E/RSP trait√© √† part
         bool isStackReg = ((REG_SP == reg) | (REG_STACK_PTR == reg));
 
         switch (getRegSize(reg)) 
@@ -28,10 +28,10 @@ void PUSH::cPUSH(INS &ins)
         INS_InsertCall (ins, IPOINT_BEFORE, callback,  
             IARG_THREAD_ID,
             IARG_UINT32,    reg, // registre source
-            IARG_REG_VALUE, REG_STACK_PTR, // valeur d'ESP ‡ ce moment l‡
+            IARG_REG_VALUE, REG_STACK_PTR, // valeur d'ESP √† ce moment l√†
             IARG_INST_PTR, IARG_END);
     }
-    else if (INS_OperandIsImmediate(ins, 0)) // mise sur la pile d'une valeur immÈdiate
+    else if (INS_OperandIsImmediate(ins, 0)) // mise sur la pile d'une valeur imm√©diate
     {  
         switch (INS_MemoryWriteSize(ins)) 
         {
@@ -46,10 +46,10 @@ void PUSH::cPUSH(INS &ins)
         
         INS_InsertCall (ins, IPOINT_BEFORE, callback, 
             IARG_THREAD_ID,
-            IARG_REG_VALUE, REG_STACK_PTR,  // valeur d'ESP ‡ ce moment l‡   
+            IARG_REG_VALUE, REG_STACK_PTR,  // valeur d'ESP √† ce moment l√†   
             IARG_INST_PTR, IARG_END);
     }
-    else // mise d'une valeur en mÈmoire sur la pile
+    else // mise d'une valeur en m√©moire sur la pile
     {      
         switch (INS_MemoryWriteSize(ins)) 
         {
@@ -64,15 +64,15 @@ void PUSH::cPUSH(INS &ins)
         
         INS_InsertCall (ins, IPOINT_BEFORE, callback,  
             IARG_THREAD_ID,
-            IARG_MEMORYREAD_EA,             // adresse rÈelle de lecture
-            IARG_REG_VALUE, REG_STACK_PTR,  // valeur d'ESP ‡ ce moment l‡ 
+            IARG_MEMORYREAD_EA,             // adresse r√©elle de lecture
+            IARG_REG_VALUE, REG_STACK_PTR,  // valeur d'ESP √† ce moment l√† 
             IARG_INST_PTR, IARG_END);
     }
 } // cPUSH
 
 void PUSH::cPUSHF(INS &ins, UINT32 size)
 {  
-    void (*callback)() = nullptr; // pointeur sur la fonction ‡ appeler
+    void (*callback)() = nullptr; // pointeur sur la fonction √† appeler
     switch (size)
     {
         case 2: callback = (AFUNPTR) sPUSHF<16>; break;
@@ -95,7 +95,7 @@ void PUSH::cPUSHA(INS &ins)
 {  
     INS_InsertCall (ins, IPOINT_BEFORE, (AFUNPTR) sPUSHA,  
         IARG_THREAD_ID,
-        IARG_REG_VALUE, REG_STACK_PTR,  // valeur d'ESP ‡ ce moment l‡
+        IARG_REG_VALUE, REG_STACK_PTR,  // valeur d'ESP √† ce moment l√†
         IARG_INST_PTR, IARG_END);
 } // cPUSHA
 
@@ -103,24 +103,24 @@ void PUSH::cPUSHAD(INS &ins)
 { 
     INS_InsertCall (ins, IPOINT_BEFORE, (AFUNPTR) sPUSHAD,  
         IARG_THREAD_ID,
-        IARG_REG_VALUE, REG_STACK_PTR,  // valeur d'ESP ‡ ce moment l‡
+        IARG_REG_VALUE, REG_STACK_PTR,  // valeur d'ESP √† ce moment l√†
         IARG_INST_PTR, IARG_END);
 } // cPUSHAD
 
 void PUSH::sPUSHA(THREADID tid, ADDRINT stackAddressBeforePush, ADDRINT insAddress) 
 { 
     // mise sur la pile des registres dans l'ordre AX, CX, DX, BX, SP (original), BP, SI, et DI
-    // du point de vue marquage, equivalent ‡ un MOVRM [SP-2], reg 
+    // du point de vue marquage, equivalent √† un MOVRM [SP-2], reg 
 
     REG regsToPush[8] = {REG_AX, REG_CX, REG_DX, REG_BX, REG_SP, REG_BP, REG_SI, REG_DI};
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);    
     
-    // sauvegarde du marquage de SP. Sauvegarde par octet pour Èviter de devoir rÈcupÈrer la valeur numÈrique de SP
+    // sauvegarde du marquage de SP. Sauvegarde par octet pour √©viter de devoir r√©cup√©rer la valeur num√©rique de SP
     std::vector<TaintBytePtr> savedSP;  
-    savedSP.push_back(pTmgrTls->getRegisterPartTaint(regIndexESP, 0)); // objet marquÈ ou nullptr;
-    savedSP.push_back(pTmgrTls->getRegisterPartTaint(regIndexESP, 1)); // objet marquÈ ou nullptr;
+    savedSP.push_back(pTmgrTls->getRegisterPartTaint(regIndexESP, 0)); // objet marqu√© ou nullptr;
+    savedSP.push_back(pTmgrTls->getRegisterPartTaint(regIndexESP, 1)); // objet marqu√© ou nullptr;
   
-    ADDRINT spAddress = stackAddressBeforePush - 2; // adresse de dÈpart : SP-2 pour le 1er registre
+    ADDRINT spAddress = stackAddressBeforePush - 2; // adresse de d√©part : SP-2 pour le 1er registre
     
     for (UINT32 tabIndex = 0 ; tabIndex < 8 ; ++tabIndex, spAddress -= 2)
     {
@@ -129,7 +129,7 @@ void PUSH::sPUSHA(THREADID tid, ADDRINT stackAddressBeforePush, ADDRINT insAddre
         // cas particulier du SP : traitement direct
         if (reg == REG_SP)
         {
-            ADDRINT addressForPushingSP = spAddress; // sauvegarde de l'adresse de dÈpart pour SP
+            ADDRINT addressForPushingSP = spAddress; // sauvegarde de l'adresse de d√©part pour SP
             
             auto itEnd = savedSP.end();
             for (auto it = savedSP.begin() ; it != itEnd ; ++it, ++addressForPushingSP)
@@ -139,13 +139,13 @@ void PUSH::sPUSHA(THREADID tid, ADDRINT stackAddressBeforePush, ADDRINT insAddre
             } 
         }
         // Sinon, simulation du PUSH du registre
-        else DATAXFER::sMOV_RM<16>(tid, reg, spAddress ,insAddress); 
+        else DATAXFER::sMOV_RM<16>(tid, reg, spAddress, insAddress); 
     } 
 
-    // mise ‡ jour du marquage du REGISTRE SP, dans le cas o˘ il est marquÈ avant le PUSHA
+    // mise √† jour du marquage du REGISTRE SP, dans le cas o√π il est marqu√© avant le PUSHA
     if (pTmgrTls->isRegisterTainted<16>(REG_SP))
     {
-        // nouvel objet = SP - (longueur pushÈe), soit 8*2 octets pour PUSHA
+        // nouvel objet = SP - (longueur push√©e), soit 8*2 octets pour PUSHA
         pTmgrTls->updateTaintRegister<16>(REG_SP, std::make_shared<TaintWord>(X_SUB, 
             ObjectSource(pTmgrTls->getRegisterTaint<16>(REG_SP, stackAddressBeforePush)),
             ObjectSource(16, 8*2)));
@@ -155,20 +155,20 @@ void PUSH::sPUSHA(THREADID tid, ADDRINT stackAddressBeforePush, ADDRINT insAddre
 void PUSH::sPUSHAD(THREADID tid, ADDRINT stackAddressBeforePush, ADDRINT insAddress) 
 { 
     // mise sur la pile des registres dans l'ordre EAX, ECX, EDX, EBX, ESP (orig.), EBP, ESI, EDI
-    // du point de vue marquage, equivalent ‡ un MOVRM [ESP-4], reg si reg marquÈ, sinon dÈmarquage
+    // du point de vue marquage, equivalent √† un MOVRM [ESP-4], reg si reg marqu√©, sinon d√©marquage
 
     REG regsToPush[8] = {REG_EAX, REG_ECX, REG_EDX, REG_EBX, REG_ESP, REG_EBP, REG_ESI, REG_EDI};
 
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);    
     
-    // sauvegarde du marquage de SP. Sauvegarde par octet pour Èviter de devoir rÈcupÈrer la valeur numÈrique de SP
+    // sauvegarde du marquage de SP. Sauvegarde par octet pour √©viter de devoir r√©cup√©rer la valeur num√©rique de SP
     std::vector<TaintBytePtr> savedESP;  
     for (UINT32 regPart = 0 ; regPart < 4; ++regPart)  
     {
-        savedESP.push_back(pTmgrTls->getRegisterPartTaint(regIndexESP, regPart)); // objet marquÈ ou nullptr;
+        savedESP.push_back(pTmgrTls->getRegisterPartTaint(regIndexESP, regPart)); // objet marqu√© ou nullptr;
     }
 
-    ADDRINT espAddress = stackAddressBeforePush - 4; // adresse de dÈpart : ESP-4 pour le 1er registre
+    ADDRINT espAddress = stackAddressBeforePush - 4; // adresse de d√©part : ESP-4 pour le 1er registre
     
     for (UINT32 tabIndex = 0 ; tabIndex < 8 ; ++tabIndex, espAddress -= 4)
     {
@@ -177,7 +177,7 @@ void PUSH::sPUSHAD(THREADID tid, ADDRINT stackAddressBeforePush, ADDRINT insAddr
         // cas particulier d'ESP : traitement direct
         if (reg == REG_ESP)
         {
-            ADDRINT addressForPushingESP = espAddress; // sauvegarde de l'adresse de dÈpart pour SP
+            ADDRINT addressForPushingESP = espAddress; // sauvegarde de l'adresse de d√©part pour SP
             
             auto itEnd = savedESP.end();
             for (auto it = savedESP.begin() ; it != itEnd ; ++it, ++addressForPushingESP)
@@ -187,13 +187,13 @@ void PUSH::sPUSHAD(THREADID tid, ADDRINT stackAddressBeforePush, ADDRINT insAddr
             }
         }
         // Sinon, simulation du PUSH du registre
-        else DATAXFER::sMOV_RM<32>(tid, reg, espAddress ,insAddress); 
+        else DATAXFER::sMOV_RM<32>(tid, reg, espAddress, insAddress); 
     } 
     
-    // mise ‡ jour du marquage du REGISTRE ESP, dans le cas o˘ il est marquÈ avant le PUSHA
+    // mise √† jour du marquage du REGISTRE ESP, dans le cas o√π il est marqu√© avant le PUSHA
     if (pTmgrTls->isRegisterTainted<32>(REG_ESP))
     {
-        // nouvel objet = ESP - (longueur pushÈe), soit 8*4 octets pour PUSHAD
+        // nouvel objet = ESP - (longueur push√©e), soit 8*4 octets pour PUSHAD
         pTmgrTls->updateTaintRegister<32>(REG_ESP, std::make_shared<TaintDword>(X_SUB, 
             ObjectSource(pTmgrTls->getRegisterTaint<32>(REG_ESP, stackAddressBeforePush)),
             ObjectSource(32, 8*4)));

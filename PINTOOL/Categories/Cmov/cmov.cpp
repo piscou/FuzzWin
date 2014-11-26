@@ -1,16 +1,16 @@
-#include "cmov.h"
+ï»¿#include "cmov.h"
 #include <Translate\translate.h>
 #include <Dataxfer\dataxfer.h>
 
-//! tous les callbacks pour CMOV suivent le même principe
-//! 1- détermination de la source (mémoire ou registre)
-//! la destination étant toujours un registre
+//! tous les callbacks pour CMOV suivent le mÃªme principe
+//! 1- dÃ©termination de la source (mÃ©moire ou registre)
+//! la destination Ã©tant toujours un registre
 //! 
-//! 2- "InsertCall", avec en paramètres IARG_EXECUTING (condition vraie ou fausse) et les flags 
-//! Si flags marqués, enregistrement de la contrainte associé pour inversion
+//! 2- "InsertCall", avec en paramÃ¨tres IARG_EXECUTING (condition vraie ou fausse) et les flags 
+//! Si flags marquÃ©s, enregistrement de la contrainte associÃ© pour inversion
 //! 
-//! 3- appel à la procédure "cIfPredicated_CMOVcc", commune à tous les CMOV
-//! elle insère un "InsertPredicatedCall", appelant un MOVMR ou RR si
+//! 3- appel Ã  la procÃ©dure "cIfPredicated_CMOVcc", commune Ã  tous les CMOV
+//! elle insÃ¨re un "InsertPredicatedCall", appelant un MOVMR ou RR si
 //! le predicat est vrai (simulation exacte du comportement de CMOV)
 //!
 //! Pas la peine de tester le marquage du registre source en amont
@@ -23,7 +23,7 @@ void CMOV::cIfPredicated_CMOVcc(INS &ins)
     UINT32 regDestSize = getRegSize(regDest);
     if (!regDestSize) return; // registre destination non suivi
 
-    else if (INS_IsMemoryRead(ins)) // Mémoire -> Reg (MOVRM) si predicat vrai
+    else if (INS_IsMemoryRead(ins)) // MÃ©moire -> Reg (MOVRM) si predicat vrai
     {   
         switch (regDestSize)
         { 
@@ -75,7 +75,7 @@ void CMOV::cCMOVB(INS &ins)
         IARG_INST_PTR,          // adresse de l'instruction
         IARG_END);
 
-    // simulation du MOV si le predicat s'avère vrai
+    // simulation du MOV si le predicat s'avÃ¨re vrai
     cIfPredicated_CMOVcc(ins); 
 }// cCMOVB
 
@@ -89,7 +89,7 @@ void CMOV::cCMOVNB(INS &ins)
         IARG_INST_PTR,  // adresse de l'instruction
         IARG_END);
 
-    // simulation du MOV si le predicat s'avère vrai
+    // simulation du MOV si le predicat s'avÃ¨re vrai
     cIfPredicated_CMOVcc(ins);
 }// cCMOVNB
 
@@ -103,7 +103,7 @@ void CMOV::cCMOVS(INS &ins)
         IARG_INST_PTR,  // adresse de l'instruction
         IARG_END);
 
-    // simulation du MOV si le predicat s'avère vrai
+    // simulation du MOV si le predicat s'avÃ¨re vrai
     cIfPredicated_CMOVcc(ins);
 }// cCMOVS
 
@@ -117,7 +117,7 @@ void CMOV::cCMOVNS(INS &ins)
         IARG_INST_PTR,  // adresse de l'instruction
         IARG_END);
 
-    // simulation du MOV si le predicat s'avère vrai
+    // simulation du MOV si le predicat s'avÃ¨re vrai
     cIfPredicated_CMOVcc(ins);
 }// cCMOVNS
 
@@ -131,7 +131,7 @@ void CMOV::cCMOVO(INS &ins)
         IARG_INST_PTR,  // adresse de l'instruction
         IARG_END);
 
-    // simulation du MOV si le predicat s'avère vrai
+    // simulation du MOV si le predicat s'avÃ¨re vrai
     cIfPredicated_CMOVcc(ins);
 }// cCMOVO
 
@@ -145,7 +145,7 @@ void CMOV::cCMOVNO(INS &ins)
         IARG_INST_PTR,  // adresse de l'instruction
         IARG_END);
 
-    // simulation du MOV si le predicat s'avère vrai
+    // simulation du MOV si le predicat s'avÃ¨re vrai
     cIfPredicated_CMOVcc(ins);
 }// cCMOVNO
 
@@ -159,7 +159,7 @@ void CMOV::cCMOVP(INS &ins)
         IARG_INST_PTR,  // adresse de l'instruction
         IARG_END);
 
-    // simulation du MOV si le predicat s'avère vrai
+    // simulation du MOV si le predicat s'avÃ¨re vrai
     cIfPredicated_CMOVcc(ins);
 }// cCMOVP
        
@@ -173,7 +173,7 @@ void CMOV::cCMOVNP(INS &ins)
         IARG_INST_PTR,  // adresse de l'instruction
         IARG_END);
 
-    // simulation du MOV si le predicat s'avère vrai
+    // simulation du MOV si le predicat s'avÃ¨re vrai
     cIfPredicated_CMOVcc(ins);
 }// cCMOVNP
 
@@ -187,7 +187,7 @@ void CMOV::cCMOVZ(INS &ins)
         IARG_INST_PTR,  // adresse de l'instruction
         IARG_END);
 
-    // simulation du MOV si le predicat s'avère vrai
+    // simulation du MOV si le predicat s'avÃ¨re vrai
     cIfPredicated_CMOVcc(ins);
 }// cCMOVZ
 
@@ -201,7 +201,7 @@ void CMOV::cCMOVNZ(INS &ins)
         IARG_INST_PTR,  // adresse de l'instruction
         IARG_END);
 
-    // simulation du MOV si le predicat s'avère vrai
+    // simulation du MOV si le predicat s'avÃ¨re vrai
     cIfPredicated_CMOVcc(ins);
 }// cCMOVNZ
 
@@ -216,7 +216,7 @@ void CMOV::cCMOVBE(INS &ins)
         IARG_INST_PTR,      // adresse de l'instruction
         IARG_END);
 
-    // simulation du MOV si le predicat s'avère vrai
+    // simulation du MOV si le predicat s'avÃ¨re vrai
     cIfPredicated_CMOVcc(ins);
 }// cCMOVBE
 
@@ -231,7 +231,7 @@ void CMOV::cCMOVNBE(INS &ins)
         IARG_INST_PTR,      // adresse de l'instruction
         IARG_END);
 
-    // simulation du MOV si le predicat s'avère vrai
+    // simulation du MOV si le predicat s'avÃ¨re vrai
     cIfPredicated_CMOVcc(ins);
 }// cCMOVNBE
 
@@ -246,7 +246,7 @@ void CMOV::cCMOVL(INS &ins)
         IARG_INST_PTR,      // adresse de l'instruction
         IARG_END);
 
-    // simulation du MOV si le predicat s'avère vrai
+    // simulation du MOV si le predicat s'avÃ¨re vrai
     cIfPredicated_CMOVcc(ins);
 }// cCMOVL
 
@@ -261,7 +261,7 @@ void CMOV::cCMOVNL(INS &ins)
         IARG_INST_PTR,      // adresse de l'instruction
         IARG_END);
 
-    // simulation du MOV si le predicat s'avère vrai
+    // simulation du MOV si le predicat s'avÃ¨re vrai
     cIfPredicated_CMOVcc(ins);
 }// cCMOVNL
 
@@ -276,7 +276,7 @@ void CMOV::cCMOVLE(INS &ins)
         IARG_INST_PTR,      // adresse de l'instruction
         IARG_END);
 
-    // simulation du MOV si le predicat s'avère vrai
+    // simulation du MOV si le predicat s'avÃ¨re vrai
     cIfPredicated_CMOVcc(ins);
 }// cCMOVLE
 
@@ -291,7 +291,7 @@ void CMOV::cCMOVNLE(INS &ins)
         IARG_INST_PTR,      // adresse de l'instruction
         IARG_END);
 
-    // simulation du MOV si le predicat s'avère vrai
+    // simulation du MOV si le predicat s'avÃ¨re vrai
     cIfPredicated_CMOVcc(ins);
 }// cCMOVNLE
 

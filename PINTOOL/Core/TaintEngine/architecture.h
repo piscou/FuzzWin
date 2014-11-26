@@ -1,7 +1,7 @@
-#pragma once
+ï»¿#pragma once
 
 /**************************************************/
-/* fichier définissant les variables différentes  */
+/* fichier dÃ©finissant les variables diffÃ©rentes  */
 /* entre les versions 32bits et 64bits du pintool */
 /**************************************************/
 
@@ -12,9 +12,9 @@ namespace ARCHITECTURE
 /*************************/
 #if TARGET_IA32 
 
-// les registres sont découpes en 4 sous registres de 8 bits
+// les registres sont dÃ©coupes en 4 sous registres de 8 bits
 #define BYTEPARTS 4
-// taille des adresses et des registres généraux entiers : 32bits
+// taille des adresses et des registres gÃ©nÃ©raux entiers : 32bits
 #define ADDRLENGTH 32
 
 // liste des registres "entiers" suivis dans le marquage
@@ -28,7 +28,7 @@ enum REGINDEX
 };
 
 // transformation d'un registre au format PIN
-// à un registre utilisé dans le marquage
+// Ã  un registre utilisÃ© dans le marquage
 
 inline REGINDEX getRegIndex(REG r) 
 {
@@ -68,7 +68,7 @@ inline REGINDEX getRegIndex(REG r)
     case REG_SP:
         index = regIndexESP;   break;
     }
-    // si registre n'est pas listé ci dessous, retourner regIndexINVALID (invalide)
+    // si registre n'est pas listÃ© ci dessous, retourner regIndexINVALID (invalide)
     return (index); 
 }
 
@@ -106,7 +106,7 @@ inline UINT32 getRegSize(REG r)
     case REG_ESP:
         size = 4;   break;
     }
-    // si le registre n'est pas référencé, retourner taille nulle
+    // si le registre n'est pas rÃ©fÃ©rencÃ©, retourner taille nulle
     return (size); 
 }
 
@@ -115,9 +115,9 @@ inline UINT32 getRegSize(REG r)
 /*************************/
 #else   
 
-// les registres sont découpes en 8 sous registres de 8 bits
+// les registres sont dÃ©coupes en 8 sous registres de 8 bits
 #define BYTEPARTS 8
-// taille des adresses et des registres généraux entiers : 32bits
+// taille des adresses et des registres gÃ©nÃ©raux entiers : 32bits
 #define ADDRLENGTH 64
 
 // liste des registres "entiers" suivis dans le marquage
@@ -131,11 +131,11 @@ enum REGINDEX
     regIndexINVALID
 };
 
-// en 64bits, on dénombre les registres généraux suivants 
+// en 64bits, on dÃ©nombre les registres gÃ©nÃ©raux suivants 
 // (source : http://asm.developpez.com/faq/?page=fx64_generalites)
-// - 16 registres 8 bits « bas » : AL, BL, CL, DL, SIL, DIL, 
+// - 16 registres 8 bits Â« bas Â» : AL, BL, CL, DL, SIL, DIL, 
 //   BPL, SPL, R8B, R9B, R10B, R11B, R12B, R13B, R14B, R15B. 
-// - 4 registres 8 bits « haut » : AH, BH, CH, DH
+// - 4 registres 8 bits Â« haut Â» : AH, BH, CH, DH
 // - 16 registres 16 bits : AX, BX, CX, DX, DI, SI, BP, SP,
 //   R8W, R9W, R10W, R11W, R12W, R13W, R14W, R15W. 
 // - 16 registres 32 bits : EAX, EBX, ECX, EDX, EDI, ESI, EBP, ESP,
@@ -232,7 +232,7 @@ inline REGINDEX getRegIndex(REG r)
     case REG_R15B:
         index = regIndexR15;   break;
     }
-    // si registre n'est pas listé ci dessous, retourner regIndexINVALID
+    // si registre n'est pas listÃ© ci dessous, retourner regIndexINVALID
     return (index); 
 }
 
@@ -315,7 +315,7 @@ inline UINT32 getRegSize(REG r)
     case REG_R15:
         size = 8;   break;
     }
-    // si le registre n'est pas référencé, retourner 0 (invalide)
+    // si le registre n'est pas rÃ©fÃ©rencÃ©, retourner 0 (invalide)
     return (size);
 }
 #endif

@@ -1,10 +1,10 @@
-#include "ObjectSource.h"
+ï»¿#include "ObjectSource.h"
 
-// OBJECTSOURCE : classe représentant les sources d'un objet
+// OBJECTSOURCE : classe reprÃ©sentant les sources d'un objet
 
 ObjectSource::ObjectSource() : _src(nullptr), _val(0), _lengthInBits(0) {}
 
-// constructeur pour source de type marquée
+// constructeur pour source de type marquÃ©e
 ObjectSource::ObjectSource(const TaintPtr &taintPtr)     
     : _src(taintPtr),  
       _val(0),  

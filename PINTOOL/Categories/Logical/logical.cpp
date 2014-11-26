@@ -1,11 +1,11 @@
-#include "logical.h"
+Ôªø#include "logical.h"
 #include <TaintUtilities\utils.h>
 
-// fonction de marquage des flags commune ‡ toutes les instructions LOGICAL
+// fonction de marquage des flags commune √† toutes les instructions LOGICAL
 void LOGICAL::fTaintLOGICAL(TaintManager_Thread *pTmgrTls, const TaintPtr &resultPtr) 
 {
-    // LOGICAL : O et C mis ‡ 0, marquage S/Z/P
-    // et dÈmarquage AF ("undefined" selon Intel)
+    // LOGICAL : O et C mis √† 0, marquage S/Z/P
+    // et d√©marquage AF ("undefined" selon Intel)
     pTmgrTls->unTaintCarryFlag();
     pTmgrTls->unTaintOverflowFlag();
     pTmgrTls->unTaintAuxiliaryFlag();
@@ -23,14 +23,14 @@ void LOGICAL::fTaintLOGICAL(TaintManager_Thread *pTmgrTls, const TaintPtr &resul
 // CALLBACKS
 void LOGICAL::cAND(INS &ins) 
 {
-    // pointeur sur la fonction ‡ appeler (marquage destination)
+    // pointeur sur la fonction √† appeler (marquage destination)
     void (*callback)() = nullptr;
 
     if (INS_IsMemoryWrite(ins)) // DESTINATION = MEMOIRE
     {
         if (INS_OperandIsImmediate(ins, 1)) // AND_IM
         {
-            switch (INS_MemoryWriteSize(ins)) // taille de l'opÈrande mÈmoire
+            switch (INS_MemoryWriteSize(ins)) // taille de l'op√©rande m√©moire
             {
                 case 1: callback = (AFUNPTR) sAND_IM<8>;  break;
                 case 2: callback = (AFUNPTR) sAND_IM<16>; break;
@@ -38,7 +38,7 @@ void LOGICAL::cAND(INS &ins)
                 #if TARGET_IA32E
                 case 8: callback = (AFUNPTR) sAND_IM<64>; break;
                 #endif
-                default: return; // autres cas non gÈrÈs
+                default: return; // autres cas non g√©r√©s
             }
             INS_InsertCall (ins, IPOINT_BEFORE, callback,
                 IARG_THREAD_ID,
@@ -75,7 +75,7 @@ void LOGICAL::cAND(INS &ins)
         if (!regDestSize) return;       // registre destination non suivi
         else if (INS_IsMemoryRead(ins)) // AND_MR
         {
-            switch (regDestSize) // taille de l'opÈrande mÈmoire
+            switch (regDestSize) // taille de l'op√©rande m√©moire
             {
                 case 1: callback = (AFUNPTR) sAND_MR<8>;  break;
                 case 2: callback = (AFUNPTR) sAND_MR<16>; break;
@@ -136,13 +136,13 @@ void LOGICAL::cAND(INS &ins)
     }
 } // cAND
 
-// SIMULATE (spÈcialisation des templates)
+// SIMULATE (sp√©cialisation des templates)
 template<> void LOGICAL::sAND_IM<8>(THREADID tid, ADDRINT value, ADDRINT writeAddress, ADDRINT insAddress) 
 {
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     
     if (!pTmgrGlobal->isMemoryTainted<8>(writeAddress)) pTmgrTls->unTaintAllFlags();
-    else if (!value) // AND x, 0 = 0, donc dÈmarquage destination et flags
+    else if (!value) // AND x, 0 = 0, donc d√©marquage destination et flags
     { 
         pTmgrTls->unTaintAllFlags();
         pTmgrGlobal->unTaintMemory<8>(writeAddress);
@@ -171,7 +171,7 @@ template<> void LOGICAL::sAND_IR<8>(THREADID tid, ADDRINT value, REG reg, ADDRIN
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     
     if ( !pTmgrTls->isRegisterTainted<8>(reg)) pTmgrTls->unTaintAllFlags();
-    else if (!value)  // AND x, 0 = 0, donc dÈmarquage destination et flags
+    else if (!value)  // AND x, 0 = 0, donc d√©marquage destination et flags
     {
         pTmgrTls->unTaintAllFlags();
         pTmgrTls->unTaintRegister<8>(reg);
@@ -203,20 +203,20 @@ template<> void LOGICAL::sAND_RM<8>
     bool isDestTainted = pTmgrGlobal->isMemoryTainted<8>(writeAddress);
     bool isSrcTainted  = pTmgrTls->isRegisterTainted<8>(regSrc);
 
-    // CAS 1 : destination et sources non marquÈes => dÈmarquage flags et quitter
+    // CAS 1 : destination et sources non marqu√©es => d√©marquage flags et quitter
     if (!(isDestTainted || isSrcTainted)) pTmgrTls->unTaintAllFlags();
     else 
     {
         _LOGTAINT(tid, insAddress, "andRM(8)");
-        // rÈcupÈration de la valeur de la mÈmoire
+        // r√©cup√©ration de la valeur de la m√©moire
         ADDRINT destValue = getMemoryValue<8>(writeAddress);
 
-        // CAS 2 : destination non marquÈe (et donc source marquÈe)
+        // CAS 2 : destination non marqu√©e (et donc source marqu√©e)
         if (!isDestTainted) 
         {
-            // cas 2.1 : destination vaut 0 => dÈmarquage flags (dest deja non marquÈe)
+            // cas 2.1 : destination vaut 0 => d√©marquage flags (dest deja non marqu√©e)
             if (!destValue)  pTmgrTls->unTaintAllFlags();
-            // cas 2.2 : destination vaut 0xff ; (AND 0xff, src) Èquivaut ‡ MOV dest, src
+            // cas 2.2 : destination vaut 0xff ; (AND 0xff, src) √©quivaut √† MOV dest, src
             else if (destValue == 0xff) 
             {
                 TaintBytePtr resultPtr = std::make_shared<TaintByte>(
@@ -238,10 +238,10 @@ template<> void LOGICAL::sAND_RM<8>
                 pTmgrGlobal->updateMemoryTaint<8>(writeAddress, resultPtr); 
             }
         }
-        // CAS 3 : source non marquÈe (et donc destination marquÈe)
+        // CAS 3 : source non marqu√©e (et donc destination marqu√©e)
         else if (!isSrcTainted) 
         {
-            // cas 3.1 : src vaut 0 ; (AND dest, 0) = 0, donc dÈmarquer destination et flags
+            // cas 3.1 : src vaut 0 ; (AND dest, 0) = 0, donc d√©marquer destination et flags
             if (!srcValue) 
             {
                 pTmgrTls->unTaintAllFlags();
@@ -264,7 +264,7 @@ template<> void LOGICAL::sAND_RM<8>
                 pTmgrGlobal->updateMemoryTaint<8>(writeAddress, resultPtr); 
             }                                   
         }
-        // CAS 4 : source et destination marquÈes => marquage via AND
+        // CAS 4 : source et destination marqu√©es => marquage via AND
         else 
         {
             TaintBytePtr resultPtr = std::make_shared<TaintByte>(
@@ -286,20 +286,20 @@ template<> void LOGICAL::sAND_MR<8>
     bool isDestTainted = pTmgrTls->isRegisterTainted<8>(regSrcDest);
     bool isSrcTainted  = pTmgrGlobal->isMemoryTainted<8>(readAddress);  
 
-    // CAS 1 : destination et sources non marquÈes => dÈmarquage flags et quitter
+    // CAS 1 : destination et sources non marqu√©es => d√©marquage flags et quitter
     if (!(isDestTainted || isSrcTainted)) pTmgrTls->unTaintAllFlags();
     else 
     {
         _LOGTAINT(tid, insAddress, "andMR(8)");
-        // rÈcupÈration de la valeur de la mÈmoire
+        // r√©cup√©ration de la valeur de la m√©moire
         ADDRINT srcValue = getMemoryValue<8>(readAddress);
 
-        // CAS 2 : destination non marquÈe (et donc source marquÈe)
+        // CAS 2 : destination non marqu√©e (et donc source marqu√©e)
         if (!isDestTainted) 
         {
-            // cas 2.1 : destination vaut 0 => dÈmarquage flags (dest deja non marquÈe)
+            // cas 2.1 : destination vaut 0 => d√©marquage flags (dest deja non marqu√©e)
             if (!destValue) pTmgrTls->unTaintAllFlags();
-            // cas 2.2 : destination vaut 0xff ; (AND 0xff, src) Èquivaut ‡ MOV dest, src
+            // cas 2.2 : destination vaut 0xff ; (AND 0xff, src) √©quivaut √† MOV dest, src
             else if (destValue == 0xff) 
             {
                 TaintBytePtr resultPtr = std::make_shared<TaintByte>(
@@ -321,10 +321,10 @@ template<> void LOGICAL::sAND_MR<8>
                 pTmgrTls->updateTaintRegister<8>(regSrcDest, resultPtr);
             }
         }
-        // CAS 3 : source non marquÈe (et donc destination marquÈe)
+        // CAS 3 : source non marqu√©e (et donc destination marqu√©e)
         else if (!isSrcTainted) 
         {
-            // cas 3.1 : src vaut 0 ; (AND dest, 0) = 0, donc dÈmarquer destination et flags
+            // cas 3.1 : src vaut 0 ; (AND dest, 0) = 0, donc d√©marquer destination et flags
             if (!srcValue) 
             {
                 pTmgrTls->unTaintAllFlags();
@@ -347,7 +347,7 @@ template<> void LOGICAL::sAND_MR<8>
                 pTmgrTls->updateTaintRegister<8>(regSrcDest, resultPtr); 
             }                                   
         }
-        // CAS 4 : source et destination marquÈes => marquage via AND
+        // CAS 4 : source et destination marqu√©es => marquage via AND
         else 
         {
             TaintBytePtr resultPtr = std::make_shared<TaintByte>(
@@ -369,17 +369,17 @@ template<> void LOGICAL::sAND_RR<8>
     bool isDestTainted = pTmgrTls->isRegisterTainted<8>(regSrcDest);
     bool isSrcTainted  = pTmgrTls->isRegisterTainted<8>(regSrc);  
 
-    // CAS 1 : destination et sources non marquÈes => dÈmarquage flags et quitter
+    // CAS 1 : destination et sources non marqu√©es => d√©marquage flags et quitter
     if (!(isDestTainted || isSrcTainted)) pTmgrTls->unTaintAllFlags();
     else 
     {
         _LOGTAINT(tid, insAddress, "andRR(8)");
-        // CAS 2 : destination non marquÈe (et donc source marquÈe)
+        // CAS 2 : destination non marqu√©e (et donc source marqu√©e)
         if (!isDestTainted) 
         {
-            // cas 2.1 : destination vaut 0 => dÈmarquage flags (dest deja non marquÈe)
+            // cas 2.1 : destination vaut 0 => d√©marquage flags (dest deja non marqu√©e)
             if (!destValue)  pTmgrTls->unTaintAllFlags();
-            // cas 2.2 : destination vaut 0xff => AND 0xff, src Èquivaut ‡ MOV dest, src
+            // cas 2.2 : destination vaut 0xff => AND 0xff, src √©quivaut √† MOV dest, src
             else if (destValue == 0xff) 
             {
                 TaintBytePtr resultPtr = std::make_shared<TaintByte>(
@@ -401,10 +401,10 @@ template<> void LOGICAL::sAND_RR<8>
                 pTmgrTls->updateTaintRegister(regSrcDest, resultPtr); 
             }
         }
-        // CAS 3 : source non marquÈe (et donc destination marquÈe)
+        // CAS 3 : source non marqu√©e (et donc destination marqu√©e)
         else if (!isSrcTainted) 
         {
-            // cas 3.1 : src vaut 0 => AND dest, 0 fera tjs 0, donc dÈmarquer destination et flags
+            // cas 3.1 : src vaut 0 => AND dest, 0 fera tjs 0, donc d√©marquer destination et flags
             if (!srcValue) 
             {
                 pTmgrTls->unTaintAllFlags();
@@ -427,7 +427,7 @@ template<> void LOGICAL::sAND_RR<8>
                 pTmgrTls->updateTaintRegister<8>(regSrcDest, resultPtr); 
             }                                   
         }
-        // CAS 4 : source et destination marquÈes => marquage via AND
+        // CAS 4 : source et destination marqu√©es => marquage via AND
         else 
         {
             TaintBytePtr resultPtr = std::make_shared<TaintByte>(
@@ -448,14 +448,14 @@ template<> void LOGICAL::sAND_RR<8>
 // CALLBACKS
 void LOGICAL::cOR(INS &ins) 
 {
-    // pointeur sur la fonction ‡ appeler (marquage destination)
+    // pointeur sur la fonction √† appeler (marquage destination)
     void (*callback)() = nullptr;
 
     if (INS_IsMemoryWrite(ins)) // DESTINATION = MEMOIRE
     {
         if (INS_OperandIsImmediate(ins, 1)) // OR_IM
         {
-            switch (INS_MemoryWriteSize(ins)) // taille de l'opÈrande mÈmoire
+            switch (INS_MemoryWriteSize(ins)) // taille de l'op√©rande m√©moire
             {
                 case 1: callback = (AFUNPTR) sOR_IM<8>;  break;
                 case 2: callback = (AFUNPTR) sOR_IM<16>; break;
@@ -463,7 +463,7 @@ void LOGICAL::cOR(INS &ins)
                 #if TARGET_IA32E
                 case 8: callback = (AFUNPTR) sOR_IM<64>; break;
                 #endif
-                default: return; // autres cas non gÈrÈs
+                default: return; // autres cas non g√©r√©s
             }
             INS_InsertCall (ins, IPOINT_BEFORE, callback,
                 IARG_THREAD_ID,
@@ -500,7 +500,7 @@ void LOGICAL::cOR(INS &ins)
         if (!regDestSize) return;       // registre destination non suivi
         else if (INS_IsMemoryRead(ins)) // OR_MR
         {
-            switch (regDestSize) // taille de l'opÈrande mÈmoire
+            switch (regDestSize) // taille de l'op√©rande m√©moire
             {
                 case 1: callback = (AFUNPTR) sOR_MR<8>;  break;
                 case 2: callback = (AFUNPTR) sOR_MR<16>; break;
@@ -561,7 +561,7 @@ void LOGICAL::cOR(INS &ins)
     }
 } // cOR
 
-// SIMULATE (spÈcialisation des templates)
+// SIMULATE (sp√©cialisation des templates)
 template<> void LOGICAL::sOR_IM<8>(THREADID tid, ADDRINT value, ADDRINT writeAddress, ADDRINT insAddress) 
 { 
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
@@ -569,7 +569,7 @@ template<> void LOGICAL::sOR_IM<8>(THREADID tid, ADDRINT value, ADDRINT writeAdd
     if ( !pTmgrGlobal->isMemoryTainted<8>(writeAddress)) pTmgrTls->unTaintAllFlags();
     else if (value == 0xff) 
     { 
-        // OR x, 0xff = 0xff, donc dÈmarquage destination et flags
+        // OR x, 0xff = 0xff, donc d√©marquage destination et flags
         pTmgrTls->unTaintAllFlags();
         pTmgrGlobal->unTaintMemory<8>(writeAddress);
     }
@@ -597,7 +597,7 @@ template<> void LOGICAL::sOR_IR<8>(THREADID tid, ADDRINT value, REG reg, ADDRINT
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     
     if ( !pTmgrTls->isRegisterTainted<8>(reg))  pTmgrTls->unTaintAllFlags();
-    else if (value == 0xff)  // OR x, 0xff = 0xff, donc dÈmarquage destination et flags
+    else if (value == 0xff)  // OR x, 0xff = 0xff, donc d√©marquage destination et flags
     {
         pTmgrTls->unTaintAllFlags();
         pTmgrTls->unTaintRegister<8>(reg);
@@ -630,19 +630,19 @@ template<> void LOGICAL::sOR_RM<8>
     bool isDestTainted = pTmgrGlobal->isMemoryTainted<8>(writeAddress);
     bool isSrcTainted  = pTmgrTls->isRegisterTainted<8>(regSrc);
 
-    // CAS 1 : destination et sources non marquÈe => dÈmarquage flags et quitter
+    // CAS 1 : destination et sources non marqu√©e => d√©marquage flags et quitter
     if (!(isDestTainted || isSrcTainted)) pTmgrTls->unTaintAllFlags();
     else 
     {
         _LOGTAINT(tid, insAddress, "orRM(8)");
 
-        // rÈcupÈration de la valeur de la mÈmoire
+        // r√©cup√©ration de la valeur de la m√©moire
         ADDRINT destValue = getMemoryValue<8>(writeAddress);
 
-        // CAS 2 : destination non marquÈe (et donc source marquÈe)
+        // CAS 2 : destination non marqu√©e (et donc source marqu√©e)
         if (!isDestTainted) 
         {
-            // cas 2.1 : destination vaut 0xff => dÈmarquage flags (dest deja non marquÈe)
+            // cas 2.1 : destination vaut 0xff => d√©marquage flags (dest deja non marqu√©e)
             if (destValue == 0xff)  pTmgrTls->unTaintAllFlags();
             else if (!destValue) 
             {
@@ -665,10 +665,10 @@ template<> void LOGICAL::sOR_RM<8>
                 pTmgrGlobal->updateMemoryTaint<8>(writeAddress, resultPtr);  
             }
         }
-        // CAS 3 : source non marquÈe (et donc destination marquÈe)
+        // CAS 3 : source non marqu√©e (et donc destination marqu√©e)
         else if (!isSrcTainted) 
         {
-            // cas 3.1 : src vaut 0xff ; (OR dest, 0xff) = 0xff, donc dÈmarquer dest et flags
+            // cas 3.1 : src vaut 0xff ; (OR dest, 0xff) = 0xff, donc d√©marquer dest et flags
             if (srcValue == 0xff) 
             {
                 pTmgrTls->unTaintAllFlags();
@@ -692,7 +692,7 @@ template<> void LOGICAL::sOR_RM<8>
                 pTmgrGlobal->updateMemoryTaint<8>(writeAddress, resultPtr); 
             }                                   
         }
-        // CAS 4 : source et destination marquÈes => marquage via OR
+        // CAS 4 : source et destination marqu√©es => marquage via OR
         else 
         {
             TaintBytePtr resultPtr = std::make_shared<TaintByte>(
@@ -714,20 +714,20 @@ template<> void LOGICAL::sOR_MR<8>
     bool isDestTainted = pTmgrTls->isRegisterTainted<8>(regSrcDest);
     bool isSrcTainted  = pTmgrGlobal->isMemoryTainted<8>(readAddress);  
 
-    // CAS 1 : destination et sources non marquÈes => dÈmarquage flags et quitter
+    // CAS 1 : destination et sources non marqu√©es => d√©marquage flags et quitter
     if (!(isDestTainted || isSrcTainted)) pTmgrTls->unTaintAllFlags();
     else 
     {
         _LOGTAINT(tid, insAddress, "orMR(8)");
-        // rÈcupÈration de la valeur de la mÈmoire
+        // r√©cup√©ration de la valeur de la m√©moire
         ADDRINT srcValue = getMemoryValue<8>(readAddress);
 
-        // CAS 2 : destination non marquÈe (et donc source marquÈe)
+        // CAS 2 : destination non marqu√©e (et donc source marqu√©e)
         if (!isDestTainted) 
         {
-            // cas 2.1 : destination vaut 0xff => dÈmarquage flags (dest deja non marquÈe)
+            // cas 2.1 : destination vaut 0xff => d√©marquage flags (dest deja non marqu√©e)
             if (destValue == 0xff)  pTmgrTls->unTaintAllFlags();
-            // cas 2.2 : destination vaut 0 ; (OR 0, src) Èquivaut ‡ MOV dest, src
+            // cas 2.2 : destination vaut 0 ; (OR 0, src) √©quivaut √† MOV dest, src
             else if (!destValue) 
             {
                 TaintBytePtr resultPtr = std::make_shared<TaintByte>(
@@ -749,10 +749,10 @@ template<> void LOGICAL::sOR_MR<8>
                 pTmgrTls->updateTaintRegister<8>(regSrcDest, resultPtr);    
             }
         }
-        // CAS 3 : source non marquÈe (et donc destination marquÈe)
+        // CAS 3 : source non marqu√©e (et donc destination marqu√©e)
         else if (!isSrcTainted) 
         {
-            // cas 3.1 : src vaut 0xff ; (OR dest, 0xff) = 0xff, donc dÈmarquer dest et flags
+            // cas 3.1 : src vaut 0xff ; (OR dest, 0xff) = 0xff, donc d√©marquer dest et flags
             if (srcValue == 0xff) 
             {
                 pTmgrTls->unTaintAllFlags();
@@ -775,7 +775,7 @@ template<> void LOGICAL::sOR_MR<8>
                 pTmgrTls->updateTaintRegister<8>(regSrcDest, resultPtr); 
             }                                   
         }
-        // CAS 4 : source et destination marquÈes => marquage via OR
+        // CAS 4 : source et destination marqu√©es => marquage via OR
         else 
         {
             TaintBytePtr resultPtr = std::make_shared<TaintByte>(
@@ -797,17 +797,17 @@ template<> void LOGICAL::sOR_RR<8>
     bool isDestTainted = pTmgrTls->isRegisterTainted<8>(regSrcDest);
     bool isSrcTainted  = pTmgrTls->isRegisterTainted<8>(regSrc);  
 
-    // CAS 1 : destination et sources non marquÈes => dÈmarquage flags et quitter
+    // CAS 1 : destination et sources non marqu√©es => d√©marquage flags et quitter
     if (!(isDestTainted || isSrcTainted)) pTmgrTls->unTaintAllFlags();
     else
     {
         _LOGTAINT(tid, insAddress, "orRR(8)");
-        // CAS 2 : destination non marquÈe (et donc source marquÈe)
+        // CAS 2 : destination non marqu√©e (et donc source marqu√©e)
         if (!isDestTainted) 
         {
-            // cas 2.1 : destination vaut 0xff => dÈmarquage flags (dest deja non marquÈe)
+            // cas 2.1 : destination vaut 0xff => d√©marquage flags (dest deja non marqu√©e)
             if (destValue == 0xff)  pTmgrTls->unTaintAllFlags();
-            // cas 2.2 : destination vaut 0 ; (OR 0, src) Èquivaut ‡ MOV dest, src
+            // cas 2.2 : destination vaut 0 ; (OR 0, src) √©quivaut √† MOV dest, src
             else if (!destValue) 
             {
                 TaintBytePtr resultPtr = std::make_shared<TaintByte>(
@@ -829,10 +829,10 @@ template<> void LOGICAL::sOR_RR<8>
                 pTmgrTls->updateTaintRegister(regSrcDest, resultPtr); 
             }
         }
-        // CAS 3 : source non marquÈe (et donc destination marquÈe)
+        // CAS 3 : source non marqu√©e (et donc destination marqu√©e)
         else if (!isSrcTainted) 
         {
-            // cas 3.1 : src vaut 0xff => (OR dest, 0xff) = 0xff, donc dÈmarquer dest et flags
+            // cas 3.1 : src vaut 0xff => (OR dest, 0xff) = 0xff, donc d√©marquer dest et flags
             if (srcValue == 0xff)  
             {
                 pTmgrTls->unTaintAllFlags();
@@ -855,7 +855,7 @@ template<> void LOGICAL::sOR_RR<8>
                 pTmgrTls->updateTaintRegister<8>(regSrcDest, resultPtr);  
             }                               
         }
-        // CAS 4 : source et destination marquÈes => marquage via OR
+        // CAS 4 : source et destination marqu√©es => marquage via OR
         else 
         {
             TaintBytePtr resultPtr = std::make_shared<TaintByte>(
@@ -876,14 +876,14 @@ template<> void LOGICAL::sOR_RR<8>
 // CALLBACKS
 void LOGICAL::cXOR(INS &ins) 
 {
-    // pointeur sur la fonction ‡ appeler (marquage destination)
+    // pointeur sur la fonction √† appeler (marquage destination)
     void (*callback)() = nullptr;
 
     if (INS_IsMemoryWrite(ins)) // DESTINATION = MEMOIRE
     {
         if (INS_OperandIsImmediate(ins, 1)) // XOR_IM
         {
-            switch (INS_MemoryWriteSize(ins)) // taille de l'opÈrande mÈmoire
+            switch (INS_MemoryWriteSize(ins)) // taille de l'op√©rande m√©moire
             {
                 case 1: callback = (AFUNPTR) sXOR_IM<8>;  break;
                 case 2: callback = (AFUNPTR) sXOR_IM<16>; break;
@@ -891,7 +891,7 @@ void LOGICAL::cXOR(INS &ins)
                 #if TARGET_IA32E
                 case 8: callback = (AFUNPTR) sXOR_IM<64>; break;
                 #endif
-                default: return; // autres cas non gÈrÈs
+                default: return; // autres cas non g√©r√©s
             }
             INS_InsertCall (ins, IPOINT_BEFORE, callback,
                 IARG_THREAD_ID,
@@ -928,7 +928,7 @@ void LOGICAL::cXOR(INS &ins)
         if (!regDestSize) return;       // registre destination non suivi
         else if (INS_IsMemoryRead(ins)) // XOR_MR
         {
-            switch (regDestSize) // taille de l'opÈrande mÈmoire
+            switch (regDestSize) // taille de l'op√©rande m√©moire
             {
                 case 1: callback = (AFUNPTR) sXOR_MR<8>;  break;
                 case 2: callback = (AFUNPTR) sXOR_MR<16>; break;
@@ -967,8 +967,8 @@ void LOGICAL::cXOR(INS &ins)
         else // XOR_RR
         {    
             REG regSrc = INS_OperandReg(ins, 1);
-            // cas particulier du XOR reg, reg (mise ‡ zero du registre) 
-            // => dÈmarquage destination et flags
+            // cas particulier du XOR reg, reg (mise √† zero du registre) 
+            // => d√©marquage destination et flags
             if (regSrc == regDest) 
             {
                 switch (getRegSize(regDest)) 
@@ -1010,7 +1010,7 @@ void LOGICAL::cXOR(INS &ins)
     }
 } // cXOR
     
-// SIMULATE (spÈcialisation des templates)
+// SIMULATE (sp√©cialisation des templates)
 template<> void LOGICAL::sXOR_IM<8>(THREADID tid, ADDRINT value, ADDRINT writeAddress, ADDRINT insAddress) 
 {
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
@@ -1032,7 +1032,7 @@ template<> void LOGICAL::sXOR_IM<8>(THREADID tid, ADDRINT value, ADDRINT writeAd
             fTaintLOGICAL(pTmgrTls, resultPtr);        
             pTmgrGlobal->updateMemoryTaint<8>(writeAddress, resultPtr);
         }
-        // cas gÈnÈral : XOR normal
+        // cas g√©n√©ral : XOR normal
         else 
         {   
             TaintBytePtr resultPtr = std::make_shared<TaintByte>(
@@ -1069,7 +1069,7 @@ template<> void LOGICAL::sXOR_IR<8>(THREADID tid, ADDRINT value, REG reg, ADDRIN
             fTaintLOGICAL(pTmgrTls, resultPtr); 
             pTmgrTls->updateTaintRegister<8>(reg, resultPtr);       
         }
-        else // cas gÈnÈral : XOR normal
+        else // cas g√©n√©ral : XOR normal
         {   
             TaintBytePtr resultPtr = std::make_shared<TaintByte>(
                 X_XOR,
@@ -1091,21 +1091,21 @@ template<> void LOGICAL::sXOR_RM<8>
     bool isDestTainted = pTmgrGlobal->isMemoryTainted<8>(writeAddress);
     bool isSrcTainted  = pTmgrTls->isRegisterTainted<8>(regSrc);
 
-    // CAS 1 : destination et sources non marquÈes => dÈmarquage flags et quitter
+    // CAS 1 : destination et sources non marqu√©es => d√©marquage flags et quitter
     if (!(isDestTainted || isSrcTainted)) pTmgrTls->unTaintAllFlags();
     else 
     {
         _LOGTAINT(tid, insAddress, "xorRM(8)");
 
-        // rÈcupÈration de la valeur de la mÈmoire
+        // r√©cup√©ration de la valeur de la m√©moire
         ADDRINT destValue = getMemoryValue<8>(writeAddress);
 
-        // CAS 2 : destination non marquÈe (et donc source marquÈe)
+        // CAS 2 : destination non marqu√©e (et donc source marqu√©e)
         if (!isDestTainted) 
         {
             ObjectSource srcReg(pTmgrTls->getRegisterTaint(regSrc));
 
-            // cas 2.1 : destination vaut 0 ; XOR 0, src Èquivaut ‡ MOV dest, src
+            // cas 2.1 : destination vaut 0 ; XOR 0, src √©quivaut √† MOV dest, src
             if (!destValue) 
             {
                 TaintBytePtr resultPtr = std::make_shared<TaintByte>(
@@ -1115,7 +1115,7 @@ template<> void LOGICAL::sXOR_RM<8>
                 fTaintLOGICAL(pTmgrTls, resultPtr); // marquage flags
                 pTmgrGlobal->updateMemoryTaint<8>(writeAddress, resultPtr);
             }
-            // cas 2.2 : dest = 0xff ; XOR 0xff, src Èquivaut ‡ NOT src, affectÈ ‡ la dest
+            // cas 2.2 : dest = 0xff ; XOR 0xff, src √©quivaut √† NOT src, affect√© √† la dest
             else if (destValue == 0xff) 
             {
                 TaintBytePtr resultPtr = std::make_shared<TaintByte>(
@@ -1137,12 +1137,12 @@ template<> void LOGICAL::sXOR_RM<8>
                 pTmgrGlobal->updateMemoryTaint<8>(writeAddress, resultPtr);
             }          
         }
-        // CAS 3 : source non marquÈe (et donc destination marquÈe)
+        // CAS 3 : source non marqu√©e (et donc destination marqu√©e)
         else if (!isSrcTainted) 
         {
             // cas 3.1 : src vaut 0 => XOR dest, 0 ne modifie pas dest => marquage flags avec valeur actuelle destination
             if (!srcValue) fTaintLOGICAL(pTmgrTls, pTmgrGlobal->getMemoryTaint<8>(writeAddress));
-            // cas 3.2 : src vaut 0xff ; XOR dest, 0xff Èquivaut ‡ NOT dest
+            // cas 3.2 : src vaut 0xff ; XOR dest, 0xff √©quivaut √† NOT dest
             else if (srcValue == 0xff) 
             {
                 TaintBytePtr resultPtr = std::make_shared<TaintByte>(
@@ -1164,7 +1164,7 @@ template<> void LOGICAL::sXOR_RM<8>
                 pTmgrGlobal->updateMemoryTaint<8>(writeAddress, resultPtr);
             }                                   
         }
-        // CAS 4 : source et destination marquÈes => marquage via XOR
+        // CAS 4 : source et destination marqu√©es => marquage via XOR
         else 
         {
             TaintBytePtr resultPtr = std::make_shared<TaintByte>(
@@ -1186,18 +1186,18 @@ template<> void LOGICAL::sXOR_MR<8>
     bool isDestTainted = pTmgrTls->isRegisterTainted<8>(regSrcDest);
     bool isSrcTainted  = pTmgrGlobal->isMemoryTainted<8>(readAddress);  
 
-    // CAS 1 : destination et sources non marquÈes => dÈmarquage flags et quitter
+    // CAS 1 : destination et sources non marqu√©es => d√©marquage flags et quitter
     if (!(isDestTainted || isSrcTainted)) pTmgrTls->unTaintAllFlags();
     else 
     {
         _LOGTAINT(tid, insAddress, "xorMR(8)");
-        // rÈcupÈration de la valeur de la mÈmoire
+        // r√©cup√©ration de la valeur de la m√©moire
         ADDRINT srcValue = getMemoryValue<8>(readAddress);
 
-        // CAS 2 : destination non marquÈe (et donc source marquÈe)
+        // CAS 2 : destination non marqu√©e (et donc source marqu√©e)
         if (!isDestTainted) 
         {
-            // cas 2.1 : destination vaut 0 ; (XOR 0, src) Èquivaut ‡ MOV dest, src
+            // cas 2.1 : destination vaut 0 ; (XOR 0, src) √©quivaut √† MOV dest, src
             if (!destValue) 
             {
                 TaintBytePtr resultPtr = std::make_shared<TaintByte>(
@@ -1207,7 +1207,7 @@ template<> void LOGICAL::sXOR_MR<8>
                 fTaintLOGICAL(pTmgrTls, resultPtr); // marquage flags
                 pTmgrTls->updateTaintRegister<8>(regSrcDest, resultPtr);
             }
-            // cas 2.2 : dest = 0xff ; (XOR 0xff, src) Èquivaut ‡ NOT src, affectÈ ‡ la dest
+            // cas 2.2 : dest = 0xff ; (XOR 0xff, src) √©quivaut √† NOT src, affect√© √† la dest
             else if (destValue == 0xff) 
             {
                 TaintBytePtr resultPtr = std::make_shared<TaintByte>(
@@ -1229,12 +1229,12 @@ template<> void LOGICAL::sXOR_MR<8>
                 pTmgrTls->updateTaintRegister<8>(regSrcDest, resultPtr);
             }
         }
-        // CAS 3 : source non marquÈe (et donc destination marquÈe)
+        // CAS 3 : source non marqu√©e (et donc destination marqu√©e)
         else if (!isSrcTainted) 
         {
             // cas 3.1 : src vaut 0 ; (XOR dest, 0) ne modifie pas dest => continuer
             if (!srcValue) fTaintLOGICAL(pTmgrTls, pTmgrTls->getRegisterTaint(regSrcDest));
-            // cas 3.2 : src vaut 0xff ; (XOR dest, 0xff) Èquivaut ‡ NOT dest
+            // cas 3.2 : src vaut 0xff ; (XOR dest, 0xff) √©quivaut √† NOT dest
             else if (srcValue == 0xff)  
             {
                 TaintBytePtr resultPtr = std::make_shared<TaintByte>(
@@ -1256,7 +1256,7 @@ template<> void LOGICAL::sXOR_MR<8>
                 pTmgrTls->updateTaintRegister<8>(regSrcDest, resultPtr);
             }                                   
         }
-        // CAS 4 : source et destination marquÈes => marquage via XOR
+        // CAS 4 : source et destination marqu√©es => marquage via XOR
         else 
         {
             TaintBytePtr resultPtr = std::make_shared<TaintByte>(
@@ -1278,15 +1278,15 @@ template<> void LOGICAL::sXOR_RR<8>
     bool isDestTainted = pTmgrTls->isRegisterTainted<8>(regSrcDest);
     bool isSrcTainted  = pTmgrTls->isRegisterTainted<8>(regSrc); 
 
-    // CAS 1 : destination et sources non marquÈes => dÈmarquage flags et quitter
+    // CAS 1 : destination et sources non marqu√©es => d√©marquage flags et quitter
     if (!(isDestTainted || isSrcTainted)) pTmgrTls->unTaintAllFlags();  
     else 
     {
         _LOGTAINT(tid, insAddress, "xorRR(8)");
-        // CAS 2 : destination non marquÈe (et donc source marquÈe)
+        // CAS 2 : destination non marqu√©e (et donc source marqu√©e)
         if (!isDestTainted) 
         {
-            // cas 2.1 : destination vaut 0 ; (XOR 0, src) Èquivaut ‡ MOV dest, src
+            // cas 2.1 : destination vaut 0 ; (XOR 0, src) √©quivaut √† MOV dest, src
             if (!destValue) 
             {
                 TaintBytePtr resultPtr = std::make_shared<TaintByte>(
@@ -1296,7 +1296,7 @@ template<> void LOGICAL::sXOR_RR<8>
                 fTaintLOGICAL(pTmgrTls, resultPtr); // marquage flags
                 pTmgrTls->updateTaintRegister<8>(regSrcDest, resultPtr);
             }  
-            // cas 2.2 : dest vaut 0xff ; (XOR 0xff, src) Èquivaut ‡ NOT src, affectÈ ‡ la dest
+            // cas 2.2 : dest vaut 0xff ; (XOR 0xff, src) √©quivaut √† NOT src, affect√© √† la dest
             if (destValue == 0xff) 
             {
                 TaintBytePtr resultPtr = std::make_shared<TaintByte>(
@@ -1318,13 +1318,13 @@ template<> void LOGICAL::sXOR_RR<8>
                 pTmgrTls->updateTaintRegister<8>(regSrcDest, resultPtr);
             }
         }
-        // CAS 3 : source non marquÈe (et donc destination marquÈe)
+        // CAS 3 : source non marqu√©e (et donc destination marqu√©e)
         else if (!isSrcTainted)
         {
             // cas 3.1 : src vaut 0 => XOR dest, 0 ne modifie pas dest
             // => marquage flags avec valeur actuelle destination
             if (!srcValue) fTaintLOGICAL(pTmgrTls, pTmgrTls->getRegisterTaint(regSrcDest));
-            // cas 3.2 : src vaut 0xff; (XOR dest, 0xff) Èquivaut ‡ NOT dest
+            // cas 3.2 : src vaut 0xff; (XOR dest, 0xff) √©quivaut √† NOT dest
             else if (srcValue == 0xff) 
             {
                 TaintBytePtr resultPtr = std::make_shared<TaintByte>(
@@ -1346,7 +1346,7 @@ template<> void LOGICAL::sXOR_RR<8>
                 pTmgrTls->updateTaintRegister<8>(regSrcDest, resultPtr);
             }                                   
         }
-        // CAS 4 : source et destination marquÈes => marquage via XOR
+        // CAS 4 : source et destination marqu√©es => marquage via XOR
         else 
         {
             TaintBytePtr resultPtr = std::make_shared<TaintByte>(
@@ -1373,7 +1373,7 @@ void LOGICAL::cTEST(INS &ins)
         REG regDest = INS_OperandReg(ins, 0);
         UINT32 regDestSize = getRegSize(regDest);
         
-        if (!regDestSize) return;	// registre non instrumentÈ
+        if (!regDestSize) return;	// registre non instrument√©
         else if (INS_OperandIsImmediate(ins, 1))  // TEST_IR
         {   
             switch (regDestSize) 
@@ -1407,7 +1407,7 @@ void LOGICAL::cTEST(INS &ins)
 
             INS_InsertCall (ins, IPOINT_BEFORE, callback,
                 IARG_THREAD_ID,
-                IARG_MEMORYREAD_EA,		// adresse rÈelle de lecture
+                IARG_MEMORYREAD_EA,		// adresse r√©elle de lecture
                 IARG_UINT32, regDest,	// registre destination
                 IARG_REG_VALUE, regDest,// valeur lors du callback
                 IARG_INST_PTR, IARG_END);
@@ -1415,7 +1415,7 @@ void LOGICAL::cTEST(INS &ins)
         else // TEST_RR
         {    
             REG regSrc  = INS_OperandReg(ins, 1);
-            if (regSrc == regDest) // cas frÈquent : 'test reg, reg' pour tester la nullitÈ 
+            if (regSrc == regDest) // cas fr√©quent : 'test reg, reg' pour tester la nullit√© 
             {
                 switch (regDestSize)
                 {
@@ -1456,12 +1456,12 @@ void LOGICAL::cTEST(INS &ins)
             }
         }  
     }
-    else // 1ere opÈrande = MEMOIRE (IM/RM)
+    else // 1ere op√©rande = MEMOIRE (IM/RM)
     {	
         UINT32 memSize = INS_MemoryReadSize(ins);
         if (INS_OperandIsImmediate(ins, 1)) // TEST_IM
         {	
-            switch (memSize) // taille de l'opÈrande mÈmoire
+            switch (memSize) // taille de l'op√©rande m√©moire
             {	
                 case 1:	callback = (AFUNPTR) sTEST_IM<8>;  break;
                 case 2:	callback = (AFUNPTR) sTEST_IM<16>; break;
@@ -1507,7 +1507,7 @@ void LOGICAL::cTEST(INS &ins)
 // CALLBACKS
 void LOGICAL::cNOT(INS &ins) 
 {
-    void (*callback)() = nullptr; // pointeur sur la fonction ‡ appeler
+    void (*callback)() = nullptr; // pointeur sur la fonction √† appeler
 
     if (INS_IsMemoryWrite(ins)) // DESTINATION = MEMOIRE
     {   
@@ -1545,7 +1545,7 @@ void LOGICAL::cNOT(INS &ins)
     }
 } // cNOT
 
-// SIMULATE (spÈcialisation des templates)
+// SIMULATE (sp√©cialisation des templates)
 template<> void LOGICAL::sNOT_R<8>(THREADID tid, REG reg, ADDRINT insAddress) 
 {
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);

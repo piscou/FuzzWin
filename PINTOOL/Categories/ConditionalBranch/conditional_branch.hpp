@@ -1,4 +1,4 @@
-
+ï»¿
 /***********************/
 /*** JUMP CX/ECX/RCX ***/
 /***********************/
@@ -27,18 +27,18 @@ void CONDITIONAL_BR::sLOOP(THREADID tid, bool isTaken, ADDRINT regValueAfterLoop
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     REG regCounter = RegisterCount<lengthInBits>::getReg();
 
-    // traitement uniquement si le compteur est marqué
+    // traitement uniquement si le compteur est marquÃ©
     if (pTmgrTls->isRegisterTainted<lengthInBits>(regCounter)) 
     {
-        // récupération du marquage du registre compteur
+        // rÃ©cupÃ©ration du marquage du registre compteur
         // ATTENTION ON INSTRUMENTE APRES L'INSTRUCTION DONC LA VALEUR NUMERIQUE 
-        // DU REGISTRE A DEJA ETE DECREMENTEE => sa valeur avant exécution vaut + 1
+        // DU REGISTRE A DEJA ETE DECREMENTEE => sa valeur avant exÃ©cution vaut + 1
         ObjectSource objRegCounter(pTmgrTls->getRegisterTaint<lengthInBits>(regCounter, regValueAfterLoop + 1));
         
-        // décrément du compteur
+        // dÃ©crÃ©ment du compteur
         TAINT_OBJECT_PTR tRegCounterPtr = MK_TAINT_OBJECT_PTR(X_DEC, objRegCounter);
 
-        // mise à jour du marquage du registre
+        // mise Ã  jour du marquage du registre
         pTmgrTls->updateTaintRegister<lengthInBits>(regCounter, tRegCounterPtr);
         
         // insertion d'une contrainte uniquement si la branche est prise
@@ -59,15 +59,15 @@ void CONDITIONAL_BR::sLOOPE(THREADID tid, bool isTaken, ADDRINT regValueAfterLoo
     REG regCounter   = RegisterCount<lengthInBits>::getReg();
     bool isZFTainted = pTmgrTls->isZeroFlagTainted();
 
-    // cas où le compteur est marqué 
+    // cas oÃ¹ le compteur est marquÃ© 
     if (pTmgrTls->isRegisterTainted<lengthInBits>(regCounter)) 
     {
-        // récupération du marquage du registre compteur
+        // rÃ©cupÃ©ration du marquage du registre compteur
         // ATTENTION ON INSTRUMENTE APRES L'INSTRUCTION DONC LA VALEUR NUMERIQUE 
-        // DU REGISTRE A DEJA ETE DECREMENTEE => sa valeur avant exécution vaut + 1
+        // DU REGISTRE A DEJA ETE DECREMENTEE => sa valeur avant exÃ©cution vaut + 1
         ObjectSource objRegCounterBefore(pTmgrTls->getRegisterTaint<lengthInBits>(regCounter, regValueAfterLoop + 1));
        
-        // décrément du compteur
+        // dÃ©crÃ©ment du compteur
         TAINT_OBJECT_PTR regCounterPtr = MK_TAINT_OBJECT_PTR(X_DEC, objRegCounterBefore);
 
         // affectation
@@ -84,20 +84,20 @@ void CONDITIONAL_BR::sLOOPE(THREADID tid, bool isTaken, ADDRINT regValueAfterLoo
                 : ObjectSource(1, EXTRACTBIT(flagsValue, ZERO_FLAG));
             ObjectSource objRegCounterAfter(regCounterPtr);
 
-            // version surchargée de la méthode pour LOOPE/LOOPNE
+            // version surchargÃ©e de la mÃ©thode pour LOOPE/LOOPNE
             g_pFormula->addConstraintLoop(PREDICATE_ZERO, objRegCounterAfter, objZF, insAddress);
         }
     }
-    // si le registre n'est pas marqué, mais ZF oui, et que la branche est prise,
-    // alors une contrainte doit également etre ajoutée 
+    // si le registre n'est pas marquÃ©, mais ZF oui, et que la branche est prise,
+    // alors une contrainte doit Ã©galement etre ajoutÃ©e 
     else if (isZFTainted && isTaken)
     {
-        _LOGTAINT(tid, insAddress, "LOOPE (compteur non marqué)");
+        _LOGTAINT(tid, insAddress, "LOOPE (compteur non marquÃ©)");
 
         ObjectSource objRegCounterAfter(lengthInBits, regValueAfterLoop);
         ObjectSource objZF(pTmgrTls->getTaintZeroFlag());
 
-        // version surchargée de la méthode pour LOOPE/LOOPNE
+        // version surchargÃ©e de la mÃ©thode pour LOOPE/LOOPNE
         g_pFormula->addConstraintLoop(PREDICATE_ZERO, objRegCounterAfter, objZF, insAddress);      
     }
 }
@@ -110,15 +110,15 @@ void CONDITIONAL_BR::sLOOPNE(THREADID tid, bool isTaken, ADDRINT regValueAfterLo
     REG regCounter   = RegisterCount<lengthInBits>::getReg();
     bool isZFTainted = pTmgrTls->isZeroFlagTainted();
 
-    // cas où le compteur est marqué 
+    // cas oÃ¹ le compteur est marquÃ© 
     if (pTmgrTls->isRegisterTainted<lengthInBits>(regCounter)) 
     {
-        // récupération du marquage du registre compteur
+        // rÃ©cupÃ©ration du marquage du registre compteur
         // ATTENTION ON INSTRUMENTE APRES L'INSTRUCTION DONC LA VALEUR NUMERIQUE 
-        // DU REGISTRE A DEJA ETE DECREMENTEE => sa valeur avant exécution vaut + 1
+        // DU REGISTRE A DEJA ETE DECREMENTEE => sa valeur avant exÃ©cution vaut + 1
         ObjectSource objRegCounterBefore(pTmgrTls->getRegisterTaint<lengthInBits>(regCounter, regValueAfterLoop + 1));
        
-        // décrément du compteur
+        // dÃ©crÃ©ment du compteur
         TAINT_OBJECT_PTR regCounterPtr = MK_TAINT_OBJECT_PTR(X_DEC, objRegCounterBefore);
 
         // affectation
@@ -135,20 +135,20 @@ void CONDITIONAL_BR::sLOOPNE(THREADID tid, bool isTaken, ADDRINT regValueAfterLo
                 : ObjectSource(1, EXTRACTBIT(flagsValue, ZERO_FLAG));
             ObjectSource objRegCounterAfter(regCounterPtr);
 
-            // version surchargée de la méthode pour LOOPE/LOOPNE
+            // version surchargÃ©e de la mÃ©thode pour LOOPE/LOOPNE
             g_pFormula->addConstraintLoop(PREDICATE_NOT_ZERO, objRegCounterAfter, objZF, insAddress);
         }
     }
-    // si le registre n'est pas marqué, mais ZF oui, et que la branche est prise,
-    // alors une contrainte doit également etre ajoutée 
+    // si le registre n'est pas marquÃ©, mais ZF oui, et que la branche est prise,
+    // alors une contrainte doit Ã©galement etre ajoutÃ©e 
     else if (isZFTainted && isTaken)
     {
-        _LOGTAINT(tid, insAddress, "LOOPNE (compteur non marqué)");
+        _LOGTAINT(tid, insAddress, "LOOPNE (compteur non marquÃ©)");
 
         ObjectSource objRegCounterAfter(lengthInBits, regValueAfterLoop);
         ObjectSource objZF(pTmgrTls->getTaintZeroFlag());
 
-        // version surchargée de la méthode pour LOOPE/LOOPNE
+        // version surchargÃ©e de la mÃ©thode pour LOOPE/LOOPNE
         g_pFormula->addConstraintLoop(PREDICATE_NOT_ZERO, objRegCounterAfter, objZF, insAddress);      
     }
 }

@@ -1,16 +1,16 @@
-#include "stringop.h"
+ï»¿#include "stringop.h"
 #include <Dataxfer\dataxfer.h>	// pour STOS et LODS 
-#include <Binary\binary.h>		// pour SCAS sans préfixe REP
+#include <Binary\binary.h>		// pour SCAS sans prÃ©fixe REP
 #include <Translate\translate.h>
 
 // pour les instructions MOVS, LODS et STOS, 
 // un seul prefixe possible : REP, avec (e/r)cx comme compteur
 // ASTUCE : faire un insert IF/PredicatedTHEN, avec 
-//	 en IF : fonction "returnArg" retournant si c'est la 1ere itération ou pas
-//	 en PredicatedThen : le callback avec nombre de répétitions en argument
+//	 en IF : fonction "returnArg" retournant si c'est la 1ere itÃ©ration ou pas
+//	 en PredicatedThen : le callback avec nombre de rÃ©pÃ©titions en argument
 //   (NB: le "Predicated" evite d'appeler la fonction si RCX est nul)
-// ainsi, dans le cas d'une boucle de 45 itérations, il y aura 45 "returnArg"
-// et une seule à la fonction de callback => optimisation !! 
+// ainsi, dans le cas d'une boucle de 45 itÃ©rations, il y aura 45 "returnArg"
+// et une seule Ã  la fonction de callback => optimisation !! 
 // (cf /source/tools/ManualExamples/countreps.cpp)
 
 ADDRINT PIN_FAST_ANALYSIS_CALL STRINGOP::returnArg(BOOL arg)
@@ -24,7 +24,7 @@ void STRINGOP::cMOVS(INS &ins, UINT32 size)
 { 
     void (*callback)() = nullptr;
     switch (size) 
-    {	// taille de l'opérande mémoire de destination
+    {	// taille de l'opÃ©rande mÃ©moire de destination
     case 1:	callback = (AFUNPTR) sMOVS<8>;	break;
     case 2:	callback = (AFUNPTR) sMOVS<16>;	break;
     case 4:	callback = (AFUNPTR) sMOVS<32>;	break;
@@ -33,7 +33,7 @@ void STRINGOP::cMOVS(INS &ins, UINT32 size)
     #endif
     }
     
-    if (INS_HasRealRep(ins)) // instruction préfixée par REP
+    if (INS_HasRealRep(ins)) // instruction prÃ©fixÃ©e par REP
     {	
         INS_InsertIfCall(ins, IPOINT_BEFORE, (AFUNPTR) returnArg, 
             IARG_FAST_ANALYSIS_CALL,
@@ -45,7 +45,7 @@ void STRINGOP::cMOVS(INS &ins, UINT32 size)
             IARG_MEMORYWRITE_EA,		// adresse d'ecriture initiale
             IARG_INST_PTR, IARG_END);
     }
-    else 	// pas de préfixe REP : une seule répétition
+    else 	// pas de prÃ©fixe REP : une seule rÃ©pÃ©tition
     {	
         INS_InsertCall(ins, IPOINT_BEFORE, callback,
             IARG_THREAD_ID,
@@ -64,9 +64,9 @@ void STRINGOP::cMOVS(INS &ins, UINT32 size)
 void STRINGOP::cLODS(INS &ins, UINT32 size)
 { 
     void (*callback)() = nullptr;
-    if (INS_HasRealRep(ins)) 	// instruction préfixée par REP
+    if (INS_HasRealRep(ins)) 	// instruction prÃ©fixÃ©e par REP
     {	
-        switch (size) 	// taille de l'opérande mémoire de destination
+        switch (size) 	// taille de l'opÃ©rande mÃ©moire de destination
         {
         case 1:	callback = (AFUNPTR) sLODS<8>;	break;
         case 2:	callback = (AFUNPTR) sLODS<16>;	break;
@@ -87,10 +87,10 @@ void STRINGOP::cLODS(INS &ins, UINT32 size)
             IARG_MEMORYREAD_EA,			// Adresse de lecture initiale
             IARG_INST_PTR, IARG_END);
     }
-    else // pas de préfixe : une seule répét, <=> mov AL/AX/EAX/EAX, [ESI]
+    else // pas de prÃ©fixe : une seule rÃ©pÃ©t, <=> mov AL/AX/EAX/EAX, [ESI]
     {	
         REG regDest = REG_INVALID();	// registre de destination
-        switch (size) 	// taille de l'opérande mémoire source
+        switch (size) 	// taille de l'opÃ©rande mÃ©moire source
         {
         case 1:	callback = (AFUNPTR) DATAXFER::sMOV_MR<8>;	regDest = REG_AL;	break;
         case 2:	callback = (AFUNPTR) DATAXFER::sMOV_MR<16>;	regDest = REG_AX;	break;
@@ -102,7 +102,7 @@ void STRINGOP::cLODS(INS &ins, UINT32 size)
         
         INS_InsertCall (ins, IPOINT_BEFORE, callback,
             IARG_THREAD_ID,
-            IARG_MEMORYREAD_EA,		// adresse réelle de lecture
+            IARG_MEMORYREAD_EA,		// adresse rÃ©elle de lecture
             IARG_UINT32, regDest,   // registre destination
             IARG_INST_PTR, IARG_END);
     }
@@ -115,9 +115,9 @@ void STRINGOP::cLODS(INS &ins, UINT32 size)
 void STRINGOP::cSTOS(INS &ins, UINT32 size)
 { 
     void (*callback)() = nullptr;
-    if (INS_HasRealRep(ins)) 	// instruction préfixée par REP
+    if (INS_HasRealRep(ins)) 	// instruction prÃ©fixÃ©e par REP
     {	
-        switch (size) 	// taille de l'opérande mémoire de destination
+        switch (size) 	// taille de l'opÃ©rande mÃ©moire de destination
         {
         case 1:	callback = (AFUNPTR) sSTOS<8>;	break;
         case 2:	callback = (AFUNPTR) sSTOS<16>;	break;
@@ -135,13 +135,13 @@ void STRINGOP::cSTOS(INS &ins, UINT32 size)
             IARG_THREAD_ID,
             IARG_REG_VALUE, INS_RepCountRegister(ins),	// nombre de repets
             IARG_REG_VALUE,	REG_GFLAGS,	// valeur des flags (DF)
-            IARG_MEMORYWRITE_EA,		// Adresse d'écriture initiale
+            IARG_MEMORYWRITE_EA,		// Adresse d'Ã©criture initiale
             IARG_INST_PTR, IARG_END);
     }
-    else // pas de préfixe REP : équivalent à mov [ESI], AL/AX/EAX/EAX
+    else // pas de prÃ©fixe REP : Ã©quivalent Ã  mov [ESI], AL/AX/EAX/EAX
     {	
         REG regSrc = REG_INVALID();	// registre source
-        switch (size) 	// taille de l'opérande mémoire source
+        switch (size) 	// taille de l'opÃ©rande mÃ©moire source
         {
         case 1:	callback = (AFUNPTR) DATAXFER::sMOV_RM<8>;	regSrc = REG_AL;  break;
         case 2:	callback = (AFUNPTR) DATAXFER::sMOV_RM<16>;	regSrc = REG_AX;  break;
@@ -154,23 +154,23 @@ void STRINGOP::cSTOS(INS &ins, UINT32 size)
         INS_InsertCall (ins, IPOINT_BEFORE, callback,
             IARG_THREAD_ID,
             IARG_UINT32, regSrc,	// registre source
-            IARG_MEMORYWRITE_EA,	// adresse réelle d'ecriture
+            IARG_MEMORYWRITE_EA,	// adresse rÃ©elle d'ecriture
             IARG_INST_PTR, IARG_END);
     }
 } // cSTOS
 
-// pour les instructions CMPS et SCAS, deux préfixes possibles 
+// pour les instructions CMPS et SCAS, deux prÃ©fixes possibles 
 // REPE et REPNE, avec (e/r)cx comme compteur
-// contrairement à MOVS/LODS/STOS, il est impossible de savoir 
-// lors de l'instrumentation si la répétition sera effectuée 
-// (hormis le cas ou le compteur est nul) car la répétition dépend 
+// contrairement Ã  MOVS/LODS/STOS, il est impossible de savoir 
+// lors de l'instrumentation si la rÃ©pÃ©tition sera effectuÃ©e 
+// (hormis le cas ou le compteur est nul) car la rÃ©pÃ©tition dÃ©pend 
 // du resultat de la comparaison
 //
 //      L'instrumentation sera donc faite par un PredicatedCall,
-//      qui appelera la fonction à chaque itération, sauf si count == 0. 
-//      La fonction devra effectuer le marquage pour chaque opération
-//		cela va provoquer une série de marquage/demarquage des flags, 
-//      avec une déclaration de condition SMTLIB à chaque fois
+//      qui appelera la fonction Ã  chaque itÃ©ration, sauf si count == 0. 
+//      La fonction devra effectuer le marquage pour chaque opÃ©ration
+//		cela va provoquer une sÃ©rie de marquage/demarquage des flags, 
+//      avec une dÃ©claration de condition SMTLIB Ã  chaque fois
 //		Mais il est impossible de faire autrement
 //      Seul avantage : pas d'obligation de passer les flags (DF) en argument
 
@@ -179,8 +179,8 @@ void STRINGOP::cSTOS(INS &ins, UINT32 size)
 //////////
 // SCAS fait une comparaison AL/AX/EAX/RAX <-> mem (edi)
 //
-// pour accélerer le traitement, le marquage du registre va être stocké
-// dans une variable globale à la première itération
+// pour accÃ©lerer le traitement, le marquage du registre va Ãªtre stockÃ©
+// dans une variable globale Ã  la premiÃ¨re itÃ©ration
 // Il y aura donc un duo de callback if/then pour stockage du marquage
 // et un predicatedcall pour l'instrumentation de l'instruction
 // (obligatoirement en dernier callback => IARG_ORDER_CALL = last
@@ -191,10 +191,10 @@ void STRINGOP::cSCAS(INS &ins, UINT32 size)
     void (*callback)() = nullptr;
 
     REG regSrc = REG_INVALID();	// registre source (AL si 8b, AX si 16b, etc...)
-    if (INS_HasRealRep(ins))    // instruction préfixée par REPE ou REPNE
+    if (INS_HasRealRep(ins))    // instruction prÃ©fixÃ©e par REPE ou REPNE
     {	
         void (*firstRepScas)() = nullptr;
-        switch (size) 	// taille de l'opérande mémoire de destination
+        switch (size) 	// taille de l'opÃ©rande mÃ©moire de destination
         {
         case 1:	
             callback	= (AFUNPTR) sSCAS<8>;	
@@ -231,18 +231,18 @@ void STRINGOP::cSCAS(INS &ins, UINT32 size)
             IARG_INST_PTR,                  // adresse de l'instruction
             IARG_END);
 
-        // insertion callback d'analyse de CHAQUE itération d'instruction
+        // insertion callback d'analyse de CHAQUE itÃ©ration d'instruction
         // SSI le predicat sur ECX/RCX est vrai
-        // sinon la fonction n'est pas appelée
+        // sinon la fonction n'est pas appelÃ©e
         INS_InsertPredicatedCall(ins, IPOINT_BEFORE, callback, 
             IARG_THREAD_ID,
-            IARG_MEMORYREAD_EA,		// Adresse de lecture (répétition "n")
+            IARG_MEMORYREAD_EA,		// Adresse de lecture (rÃ©pÃ©tition "n")
             IARG_CALL_ORDER, CALL_ORDER_LAST,   // a appeler apres le IF/THEN
             IARG_END);
     }
-    else // pas de préfixe REP : une seule répét = cmp [ESI], AL/AX/EAX/RAX
+    else // pas de prÃ©fixe REP : une seule rÃ©pÃ©t = cmp [ESI], AL/AX/EAX/RAX
     {	
-        switch (size) 	// taille de l'opérande mémoire source
+        switch (size) 	// taille de l'opÃ©rande mÃ©moire source
         {
         case 1:	callback = (AFUNPTR) BINARY::sCMP_RM<8>;  regSrc = REG_AL;  break;
         case 2:	callback = (AFUNPTR) BINARY::sCMP_RM<16>; regSrc = REG_AX;  break;
@@ -255,7 +255,7 @@ void STRINGOP::cSCAS(INS &ins, UINT32 size)
             IARG_THREAD_ID,
             IARG_UINT32, regSrc,	// registre source
             IARG_REG_VALUE, regSrc,	// sa valeur 
-            IARG_MEMORYREAD_EA,		// adresse réelle de lecture
+            IARG_MEMORYREAD_EA,		// adresse rÃ©elle de lecture
             IARG_INST_PTR, IARG_END);
     }
 } // cSCAS
@@ -263,7 +263,7 @@ void STRINGOP::cSCAS(INS &ins, UINT32 size)
 //////////
 // CMPS //
 //////////
-// CMPS : comparaison mem<->mem (opération [ESI] - [EDI])
+// CMPS : comparaison mem<->mem (opÃ©ration [ESI] - [EDI])
 
 // CALLBACKS
 void STRINGOP::cCMPS(INS &ins, UINT32 size)
@@ -280,21 +280,21 @@ void STRINGOP::cCMPS(INS &ins, UINT32 size)
     #endif
     }
 
-    // convention pour le type de prefixe associé à CMPS
+    // convention pour le type de prefixe associÃ© Ã  CMPS
     // 0 : prefixe REPZ / E   |
     // 1 : prefixe REPNZ / NE | 
-    // 2 : aucun préfixe (1 seule répét) => pas de contrainte à déclarer
+    // 2 : aucun prÃ©fixe (1 seule rÃ©pÃ©t) => pas de contrainte Ã  dÃ©clarer
    
-    UINT32 repCode = 2;      // par défaut pas de prefixe
-    if (INS_HasRealRep(ins)) // présence d'un prefixe REP
+    UINT32 repCode = 2;      // par dÃ©faut pas de prefixe
+    if (INS_HasRealRep(ins)) // prÃ©sence d'un prefixe REP
     {
         repCode = INS_RepPrefix(ins) ? 0 : 1; 
     }
 
-    // callback "predicated" (appelée uniquement si ECX/RCX non nul)
+    // callback "predicated" (appelÃ©e uniquement si ECX/RCX non nul)
     INS_InsertPredicatedCall(ins, IPOINT_BEFORE, callback, 
         IARG_THREAD_ID, 
-        IARG_UINT32, repCode,	// code préfixe
+        IARG_UINT32, repCode,	// code prÃ©fixe
         IARG_MEMORYREAD_EA,		// Source 1 (ESI)
         IARG_MEMORYREAD2_EA,	// source 2 (EDI)
         IARG_INST_PTR,

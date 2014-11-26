@@ -1,16 +1,16 @@
-#include "syscalls.h"
+ï»¿#include "syscalls.h"
 
 #include <algorithm> // std::find
 
-// numéros des syscalls instrumentés par le pintool
-// ceux ci sont détermines dynamiquement
-static WINDOWS::DWORD PIN_NtCreateFile; 
-static WINDOWS::DWORD PIN_NtClose;  
-static WINDOWS::DWORD PIN_NtOpenFile;   
-static WINDOWS::DWORD PIN_NtReadFile;   
-static WINDOWS::DWORD PIN_NtSetInformationFile; 
-static WINDOWS::DWORD PIN_NtCreateSection; 
-static WINDOWS::DWORD PIN_NtMapViewOfSection; 
+// numÃ©ros des syscalls instrumentÃ©s par le pintool
+// ceux ci sont dÃ©termines dynamiquement
+static WINDOWS::DWORD PIN_NtCreateFile          = 0;
+static WINDOWS::DWORD PIN_NtClose               = 0;  
+static WINDOWS::DWORD PIN_NtOpenFile            = 0;   
+static WINDOWS::DWORD PIN_NtReadFile            = 0;   
+static WINDOWS::DWORD PIN_NtSetInformationFile  = 0; 
+static WINDOWS::DWORD PIN_NtCreateSection       = 0; 
+static WINDOWS::DWORD PIN_NtMapViewOfSection    = 0; 
 
 // convertit un texte unicode en ascii
 static std::string SYSCALLS::unicodeToAscii(const std::wstring &input)
@@ -24,7 +24,7 @@ static std::string SYSCALLS::unicodeToAscii(const std::wstring &input)
 
     std::string result(ascii);
 
-    // suppression des caractères "\??\" si existant
+    // suppression des caractÃ¨res "\??\" si existant
     if (result.substr(0, 4) == "\\??\\") result = result.substr(4);
 
     delete[] (ascii);
@@ -44,17 +44,17 @@ void SYSCALLS::defineSyscallsNumbers(OSTYPE osVersion)
 
 void SYSCALLS::syscallEntry(THREADID tid, CONTEXT *ctxt, SYSCALL_STANDARD std, void *)
 {
-    // récupération de la structure de gestion des syscalls dans la TLS
+    // rÃ©cupÃ©ration de la structure de gestion des syscalls dans la TLS
     Syscall_Data *pSysData = static_cast<Syscall_Data*>(PIN_GetThreadData(g_tlsKeySyscallData, tid));
     
-    // Si le syscall doit être étudié, le numéro du syscall sera stocké dans la TLS
-    // par défaut, le numéro est mis à zéro
+    // Si le syscall doit Ãªtre Ã©tudiÃ©, le numÃ©ro du syscall sera stockÃ© dans la TLS
+    // par dÃ©faut, le numÃ©ro est mis Ã  zÃ©ro
     pSysData->syscallNumber = 0;
     
-    // stockage du numéro du syscall concerné
+    // stockage du numÃ©ro du syscall concernÃ©
     ADDRINT syscallNumber = PIN_GetSyscallNumber(ctxt, std);
     
-    // traitement selon le numéro du syscall 
+    // traitement selon le numÃ©ro du syscall 
     /******** READFILE ********/
     if (syscallNumber == PIN_NtReadFile)  
     {
@@ -63,20 +63,20 @@ void SYSCALLS::syscallEntry(THREADID tid, CONTEXT *ctxt, SYSCALL_STANDARD std, v
         // (ARG 0:IN) handle du device
         HANDLE hFile = reinterpret_cast<HANDLE>(PIN_GetSyscallArgument(ctxt, std, 0)); 
         
-        // itérateurs sur la liste des descripteurs suivis,
+        // itÃ©rateurs sur la liste des descripteurs suivis,
         auto itFind = pSysData->listOfFileHandles.find(hFile);
         auto itEnd  = pSysData->listOfFileHandles.end();
-        // si ce handle a été trouvé, c'est qu'il correspond 
-        // au fichier cible préalablement ouvert
+        // si ce handle a Ã©tÃ© trouvÃ©, c'est qu'il correspond 
+        // au fichier cible prÃ©alablement ouvert
         if (itFind != itEnd) 
         { 
-            // stockage du numéro du syscall dans la TLS pour traitement au retour du syscall
+            // stockage du numÃ©ro du syscall dans la TLS pour traitement au retour du syscall
             pSysData->syscallNumber = PIN_NtReadFile;
 
-            // (ARG N°4:OUT) structure d'information remplie suite à la lecture
+            // (ARG NÂ°4:OUT) structure d'information remplie suite Ã  la lecture
             pSysData->pInfos = reinterpret_cast<PIO_STATUS_BLOCK>(PIN_GetSyscallArgument(ctxt, std, 4)); 
             
-            // (ARG N°5:OUT) adresse du buffer qui contiendra les données
+            // (ARG NÂ°5:OUT) adresse du buffer qui contiendra les donnÃ©es
             pSysData->pBuffer = reinterpret_cast<void*>(PIN_GetSyscallArgument(ctxt, std, 5)); 
             
             // (7:IN_OPT) (PLARGE_INTEGER) position de l'offset de lecture
@@ -92,7 +92,7 @@ void SYSCALLS::syscallEntry(THREADID tid, CONTEXT *ctxt, SYSCALL_STANDARD std, v
             {
                 pSysData->offset = itFind->second;
             }
-            // dans les autres cas, l'argument n°7 donne l'offset de début de lecture
+            // dans les autres cas, l'argument nÂ°7 donne l'offset de dÃ©but de lecture
             else pSysData->offset = static_cast<UINT32>(pByteOffset->QuadPart);
 
             _LOGSYSCALLS(syscallNumber, "] *** ReadFile Before FICHIER CIBLE");
@@ -101,16 +101,16 @@ void SYSCALLS::syscallEntry(THREADID tid, CONTEXT *ctxt, SYSCALL_STANDARD std, v
     /******** OPENFILE & CREATEFILE ********/
     else if ( (syscallNumber == PIN_NtCreateFile) || (syscallNumber == PIN_NtOpenFile))
     {
-        // NB: les arguments sont les mêmes pour les deux syscalls
+        // NB: les arguments sont les mÃªmes pour les deux syscalls
 
-        // (2:IN) pointeur vers structure d'information fournie en entrée
+        // (2:IN) pointeur vers structure d'information fournie en entrÃ©e
         // cette structure contient notamment le nom du cevice
         POBJECT_ATTRIBUTES pObjAttr = 
             reinterpret_cast<POBJECT_ATTRIBUTES>(PIN_GetSyscallArgument(ctxt, std, 2));   
 
-        // EDIT V1.3.1 20140402 : le nom du device peut s'obtenir de deux manières:
+        // EDIT V1.3.1 20140402 : le nom du device peut s'obtenir de deux maniÃ¨res:
         // H1 : RootDirectory = nullptr, auquel cas ObjectName est un chemin complet
-        // H2 : RootDirectory est un handle valide, auquel cas il faut prendre en compte le chemin identifié par ce handle !!
+        // H2 : RootDirectory est un handle valide, auquel cas il faut prendre en compte le chemin identifiÃ© par ce handle !!
 
         std::string filename;
 
@@ -122,20 +122,20 @@ void SYSCALLS::syscallEntry(THREADID tid, CONTEXT *ctxt, SYSCALL_STANDARD std, v
 
         else
         {
-            /*** récupération du chemin "root" a partir du handle ***/
+            /*** rÃ©cupÃ©ration du chemin "root" a partir du handle ***/
 
-            // vérification que l'adresse de NtQueryObject a été trouvée
+            // vÃ©rification que l'adresse de NtQueryObject a Ã©tÃ© trouvÃ©e
             if (nullptr == g_AddressOfNtQueryObject) return;
 
-            // appel via le pointeur de fonction récupéré dans l'instrumentation des images.
+            // appel via le pointeur de fonction rÃ©cupÃ©rÃ© dans l'instrumentation des images.
             PUBLIC_OBJECT_TYPE_INFORMATION objTypeInfo;
             (*g_AddressOfNtQueryObject)(pObjAttr->RootDirectory, 
                 ObjectTypeInformation, // structure de type "public object Type Information" fournie
                 &objTypeInfo,          
                 sizeof(objTypeInfo),    
-                nullptr);               // pas de récupération de la longueur des données fournies
+                nullptr);               // pas de rÃ©cupÃ©ration de la longueur des donnÃ©es fournies
             
-            // récupération du nom de "rootdiretory"
+            // rÃ©cupÃ©ration du nom de "rootdiretory"
             filename = unicodeToAscii(objTypeInfo.TypeName.Name);  // transformation du nom de fichier en ASCII
             // ajout du nom de fichier, si non vide
             if (pObjAttr->ObjectName != nullptr)
@@ -149,7 +149,7 @@ void SYSCALLS::syscallEntry(THREADID tid, CONTEXT *ctxt, SYSCALL_STANDARD std, v
         // si le nom du fichier est celui de la cible : sauvegarde des arguments
         if (filename == g_inputFile) 
         { 
-            // stockage du numéro du syscall dans la TLS pour traitement au retour du syscall
+            // stockage du numÃ©ro du syscall dans la TLS pour traitement au retour du syscall
             pSysData->syscallNumber = PIN_NtCreateFile;
             
             // (0:OUT) (PHANDLE) pointeur vers handle apres ouverture device 
@@ -163,7 +163,7 @@ void SYSCALLS::syscallEntry(THREADID tid, CONTEXT *ctxt, SYSCALL_STANDARD std, v
     /******** CLOSE ********/
     else if (syscallNumber == PIN_NtClose)
     {
-        // (0:IN) handle du device à fermer
+        // (0:IN) handle du device Ã  fermer
         HANDLE handle = reinterpret_cast<HANDLE>(PIN_GetSyscallArgument(ctxt, std, 0)); 
         
         // recherche dans les handles de fichier et de section
@@ -174,10 +174,10 @@ void SYSCALLS::syscallEntry(THREADID tid, CONTEXT *ctxt, SYSCALL_STANDARD std, v
         auto itSectionEnd   = pSysData->listOfSectionHandles.end();
         auto itSectionFind  = std::find(itSectionBegin, itSectionEnd, handle); 
         
-        // correspondance trouvée au niveau des fichiers
+        // correspondance trouvÃ©e au niveau des fichiers
         if (itFileFind != itFileEnd)
         { 
-            // stockage du numéro du syscall et du handle FICHIER à fermer
+            // stockage du numÃ©ro du syscall et du handle FICHIER Ã  fermer
             // dans la TLS pour traitement au retour du syscall
             pSysData->syscallNumber = PIN_NtClose;
             pSysData->hFile =    handle;
@@ -185,10 +185,10 @@ void SYSCALLS::syscallEntry(THREADID tid, CONTEXT *ctxt, SYSCALL_STANDARD std, v
 
             _LOGSYSCALLS(syscallNumber, "] *** CloseFile Before CIBLE hFILE: " + decstr(reinterpret_cast<UINT32>(handle)));
         }
-        // correspondance trouvée au niveau des sections
+        // correspondance trouvÃ©e au niveau des sections
         else if (itSectionFind != itSectionEnd)
         {
-             // stockage du numéro du syscall et du handle FICHIER à fermer
+             // stockage du numÃ©ro du syscall et du handle FICHIER Ã  fermer
             // dans la TLS pour traitement au retour du syscall
             pSysData->syscallNumber = PIN_NtClose;
             pSysData->hFile =    NULL;
@@ -201,7 +201,7 @@ void SYSCALLS::syscallEntry(THREADID tid, CONTEXT *ctxt, SYSCALL_STANDARD std, v
     /******** SETINFORMATIONFILE ********/
     else if (syscallNumber == PIN_NtSetInformationFile) 
     { 
-        // (4:IN) code de l'opération à effectuer
+        // (4:IN) code de l'opÃ©ration Ã  effectuer
         // s'il vaut 0xe (FilePositionInformation) => c'est un "seek"
         if (FilePositionInformation == static_cast<UINT32>(PIN_GetSyscallArgument(ctxt, std, 4))) 
         {  
@@ -211,16 +211,16 @@ void SYSCALLS::syscallEntry(THREADID tid, CONTEXT *ctxt, SYSCALL_STANDARD std, v
             // si le handle fait partie des descripteurs suivis, alors traiter apres syscalls
             if (pSysData->listOfFileHandles.find(hFile) != pSysData->listOfFileHandles.end()) 
             { 
-                // stockage du numéro du syscall dans la TLS pour traitement au retour du syscall
+                // stockage du numÃ©ro du syscall dans la TLS pour traitement au retour du syscall
                 pSysData->syscallNumber = PIN_NtSetInformationFile;
-                // stockage du handle du fichier concerné
+                // stockage du handle du fichier concernÃ©
                 pSysData->hFile = hFile;
 
                 // (2:IN) structure contenant le nouvel offset
                 PFILE_POSITION_INFORMATION pFileInfo = 
                     reinterpret_cast<PFILE_POSITION_INFORMATION>(PIN_GetSyscallArgument(ctxt, std, 2)); 
 
-                // cast du nouvel offset à 32bits (fichiers de 64bits non gérés) et stockage dans TLS
+                // cast du nouvel offset Ã  32bits (fichiers de 64bits non gÃ©rÃ©s) et stockage dans TLS
                 pSysData->offset = static_cast<UINT32>(pFileInfo->CurrentByteOffset.QuadPart);
 
                 _LOGSYSCALLS(syscallNumber, "] *** SetInformationFile Before nouvel offset : " + decstr(pSysData->offset));
@@ -231,22 +231,22 @@ void SYSCALLS::syscallEntry(THREADID tid, CONTEXT *ctxt, SYSCALL_STANDARD std, v
     /******** CREATESECTION ********/
     else if (syscallNumber == PIN_NtCreateSection)
     {
-        // La création d'un mapping de fichier s'effectue après l'ouverture du fichier
-        // la section est adossée en passant le handle du fichier en parametre 6 (optionnel)
-        // il faut déjà tester si le handle passé est celui du fichier suivi
+        // La crÃ©ation d'un mapping de fichier s'effectue aprÃ¨s l'ouverture du fichier
+        // la section est adossÃ©e en passant le handle du fichier en parametre 6 (optionnel)
+        // il faut dÃ©jÃ  tester si le handle passÃ© est celui du fichier suivi
         
-        // ARG N°6 (IN_OPT) : fileHandle de fichier
+        // ARG NÂ°6 (IN_OPT) : fileHandle de fichier
         HANDLE hFile = reinterpret_cast<HANDLE>(PIN_GetSyscallArgument(ctxt, std, 6));
 
         // si le handle fait partie des descripteurs suivis, alors traiter apres syscalls
         if (pSysData->listOfFileHandles.find(hFile) != pSysData->listOfFileHandles.end()) 
         {
-            // ARG N°0 (OUT) : pointeur vers handle de la section
+            // ARG NÂ°0 (OUT) : pointeur vers handle de la section
             PHANDLE pHandleSection = reinterpret_cast<PHANDLE>(PIN_GetSyscallArgument(ctxt, std, 0)); 
 
-            // stockage du numéro du syscall dans la TLS pour traitement au retour du syscall
+            // stockage du numÃ©ro du syscall dans la TLS pour traitement au retour du syscall
             pSysData->syscallNumber = PIN_NtCreateSection;
-            // stockage de la valeur dans la TLS pour traitement après syscall
+            // stockage de la valeur dans la TLS pour traitement aprÃ¨s syscall
             pSysData->pHandle = pHandleSection;
 
             _LOGSYSCALLS(syscallNumber, "] *** CreateSection Before FICHIER CIBLE");
@@ -256,11 +256,11 @@ void SYSCALLS::syscallEntry(THREADID tid, CONTEXT *ctxt, SYSCALL_STANDARD std, v
     /******** MAPVIEWOFSECTION ********/
     else if (syscallNumber == PIN_NtMapViewOfSection)
     {
-        // si la liste des handles de section est vide : cela ne sera à rien de continuer
+        // si la liste des handles de section est vide : cela ne sera Ã  rien de continuer
         if ( ! pSysData->listOfSectionHandles.empty())
         {
             // Le mapping de fichier s'effectue via le handle de la section (argument IN)
-            // ARG N°0 (IN) : handle de la section
+            // ARG NÂ°0 (IN) : handle de la section
             HANDLE hSection = reinterpret_cast<HANDLE>(PIN_GetSyscallArgument(ctxt, std, 0));
  
             auto itFirst = pSysData->listOfSectionHandles.begin();
@@ -269,17 +269,17 @@ void SYSCALLS::syscallEntry(THREADID tid, CONTEXT *ctxt, SYSCALL_STANDARD std, v
             // si le handle fait partie des descripteurs suivis, alors traiter apres syscalls
             if (std::find(itFirst, itLast, hSection) != itLast)
             {
-                // stockage du numéro du syscall dans la TLS pour traitement au retour du syscall
+                // stockage du numÃ©ro du syscall dans la TLS pour traitement au retour du syscall
                 pSysData->syscallNumber = PIN_NtMapViewOfSection;
 
-                // ARG N°2 (IN & OUT) : pointeur vers pointeur de l'adresse de base ! PVOID *BaseAddress
+                // ARG NÂ°2 (IN & OUT) : pointeur vers pointeur de l'adresse de base ! PVOID *BaseAddress
                 pSysData->ppBaseAddress = reinterpret_cast<WINDOWS::PVOID*>(PIN_GetSyscallArgument(ctxt, std, 2));
 
-                // ARG N°5 (IN_OUT) : pointeur vers l'offset de la vue par rapport au début de la section
-                // Attention : peut être NULL
+                // ARG NÂ°5 (IN_OUT) : pointeur vers l'offset de la vue par rapport au dÃ©but de la section
+                // Attention : peut Ãªtre NULL
                 pSysData->pOffsetFromStart = reinterpret_cast<WINDOWS::PLARGE_INTEGER>(PIN_GetSyscallArgument(ctxt, std, 5));
         
-                // ARG N°6 (IN_OUT) : pointeur vers taille de la vue
+                // ARG NÂ°6 (IN_OUT) : pointeur vers taille de la vue
                 pSysData->pViewSize = reinterpret_cast<WINDOWS::PSIZE_T>(PIN_GetSyscallArgument(ctxt, std, 6));
             }
         }
@@ -287,43 +287,43 @@ void SYSCALLS::syscallEntry(THREADID tid, CONTEXT *ctxt, SYSCALL_STANDARD std, v
     /******** SYSCALL NON GERE ********/
     else
     {    
-        _LOGSYSCALLS(syscallNumber, "] *** Syscall non géré ");
+        _LOGSYSCALLS(syscallNumber, "] *** Syscall non gÃ©rÃ© ");
     }
 } // syscallEntry
 
 void SYSCALLS::syscallExit(THREADID tid, CONTEXT *ctxt, SYSCALL_STANDARD std, void *) 
 {
-    // récupération de la structure de gestion des syscalls dans la TLS
+    // rÃ©cupÃ©ration de la structure de gestion des syscalls dans la TLS
     Syscall_Data *pSysData = static_cast<Syscall_Data*>(PIN_GetThreadData(g_tlsKeySyscallData, tid));
 
-    // récupération du numéro de syscall stocké avant l'appel
+    // rÃ©cupÃ©ration du numÃ©ro de syscall stockÃ© avant l'appel
     ADDRINT syscallNumber = pSysData->syscallNumber;
 
-    // fin si le syscall ne doit pas être étudié (valeur nulle), ou si erreur du syscall
+    // fin si le syscall ne doit pas Ãªtre Ã©tudiÃ© (valeur nulle), ou si erreur du syscall
     if ((syscallNumber == 0) || (PIN_GetSyscallErrno(ctxt, std) != 0))  return;
     /******** READFILE ********/
     else if (syscallNumber == PIN_NtReadFile)
     {
-        // récupération du nombre d'octets réellement lus dans le fichier
+        // rÃ©cupÃ©ration du nombre d'octets rÃ©ellement lus dans le fichier
         UINT32 nbBytesRead = static_cast<UINT32>(pSysData->pInfos->Information); 
                 
-        // récupération du couple (handle, offset) du handle concerné
+        // rÃ©cupÃ©ration du couple (handle, offset) du handle concernÃ©
         auto it = pSysData->listOfFileHandles.find(pSysData->hFile);
 
-        // récupération de l'offset du premier octet lu
+        // rÃ©cupÃ©ration de l'offset du premier octet lu
         UINT32 startOffset = pSysData->offset;
              
-        // marquage de la mémoire : 'nbBytesRead' octets, adresse de départ déterminée par pBuffer
+        // marquage de la mÃ©moire : 'nbBytesRead' octets, adresse de dÃ©part dÃ©terminÃ©e par pBuffer
         ADDRINT startAddress = reinterpret_cast<ADDRINT>(pSysData->pBuffer);
         pTmgrGlobal->createNewSourceTaintBytes(startAddress, nbBytesRead, startOffset);
 
-        // mise à jour de l'offset de lecture
+        // mise Ã  jour de l'offset de lecture
         pSysData->listOfFileHandles[pSysData->hFile] = startOffset + nbBytesRead;
 
         _LOGSYSCALLS(syscallNumber, "] *** ReadFile AFTER offset " + decstr(startOffset) + " nb octets lus " + decstr(nbBytesRead));
 
-        // des données ont été lues dans le fichier, on peut commencer l'instrumentation
-        // obligation d'obtenir le g_lock, la variable étant globale
+        // des donnÃ©es ont Ã©tÃ© lues dans le fichier, on peut commencer l'instrumentation
+        // obligation d'obtenir le g_lock, la variable Ã©tant globale
         PIN_GetLock(&g_lock, tid + 1);
         g_beginInstrumentationOfInstructions = true;
         PIN_ReleaseLock(&g_lock);
@@ -331,8 +331,8 @@ void SYSCALLS::syscallExit(THREADID tid, CONTEXT *ctxt, SYSCALL_STANDARD std, vo
     /******** OPENFILE & CREATEFILE ********/
     else if ( (syscallNumber == PIN_NtCreateFile) || (syscallNumber == PIN_NtOpenFile))
     {
-        // Le syscall nous fournit le handle du fichier étudié tout juste ouvert
-        // on le sauvegarde dans la liste des handles, avec un offset nul (= début du fichier)
+        // Le syscall nous fournit le handle du fichier Ã©tudiÃ© tout juste ouvert
+        // on le sauvegarde dans la liste des handles, avec un offset nul (= dÃ©but du fichier)
         HANDLE hFile = *pSysData->pHandle;
         pSysData->listOfFileHandles[hFile] = 0;
 
@@ -341,26 +341,26 @@ void SYSCALLS::syscallExit(THREADID tid, CONTEXT *ctxt, SYSCALL_STANDARD std, vo
     /******** SETINFORMATIONFILE ********/
     else if (syscallNumber == PIN_NtSetInformationFile) 
     {
-        // modification de l'offset de lecture dans le fichier décrit par le handle
+        // modification de l'offset de lecture dans le fichier dÃ©crit par le handle
         pSysData->listOfFileHandles[pSysData->hFile] = pSysData->offset;
     }
     /******** CREATESECTION ********/
 
     else if (syscallNumber == PIN_NtCreateSection)
     {
-        // récupération du handle de la section nouvellement créée
+        // rÃ©cupÃ©ration du handle de la section nouvellement crÃ©Ã©e
         HANDLE hSection = *(pSysData->pHandle);
 
         // stockage dans le vecteur adhoc dans la TLS
         pSysData->listOfSectionHandles.push_back(hSection);
 
-        _LOGSYSCALLS(syscallNumber, "] *** Section créée, handle = " + decstr(reinterpret_cast<UINT32>(hSection)));
+        _LOGSYSCALLS(syscallNumber, "] *** Section crÃ©Ã©e, handle = " + decstr(reinterpret_cast<UINT32>(hSection)));
     }      
     /******** MAPVIEWOFSECTION ********/
     else if (syscallNumber == PIN_NtMapViewOfSection)
     {
-        // Récupération de l'offset par rapport au début de la vue, par défaut nul
-        // si l'arguemnt est fourni (le pointeur non nul) récupérer la valeur indiquée
+        // RÃ©cupÃ©ration de l'offset par rapport au dÃ©but de la vue, par dÃ©faut nul
+        // si l'arguemnt est fourni (le pointeur non nul) rÃ©cupÃ©rer la valeur indiquÃ©e
         UINT32 offset = 0;
         if (nullptr != pSysData->pOffsetFromStart)
         {
@@ -368,22 +368,22 @@ void SYSCALLS::syscallExit(THREADID tid, CONTEXT *ctxt, SYSCALL_STANDARD std, vo
             offset = static_cast<UINT32>(largeOffset.QuadPart);
         }
 
-        // récupération de la taille de la vue
+        // rÃ©cupÃ©ration de la taille de la vue
         UINT32 viewSize = static_cast<UINT32>(*(pSysData->pViewSize));
 
-        // marquage de la mémoire à partir de (baseAddress + offset) sur 'viewSize' octets
+        // marquage de la mÃ©moire Ã  partir de (baseAddress + offset) sur 'viewSize' octets
         // provoque un surmarquage, car la taille de la vue est arrondie et ne
-        // correspond pas à la taille du fichier
+        // correspond pas Ã  la taille du fichier
         ADDRINT startAddress = reinterpret_cast<ADDRINT>(*pSysData->ppBaseAddress) + offset;
         pTmgrGlobal->createNewSourceTaintBytes(startAddress, viewSize, 0);
 
-        // Les données ud fichier ont été mappées, on peut commencer l'instrumentation
-        // obligation d'obtenir le g_lock, la variable étant globale
+        // Les donnÃ©es ud fichier ont Ã©tÃ© mappÃ©es, on peut commencer l'instrumentation
+        // obligation d'obtenir le g_lock, la variable Ã©tant globale
         PIN_GetLock(&g_lock, tid + 1);
         g_beginInstrumentationOfInstructions = true;
         PIN_ReleaseLock(&g_lock);
 
-        _LOGSYSCALLS(syscallNumber, "] *** MapViewOfSection After adresse départ " + hexstr(startAddress) + " taille " + decstr(viewSize));
+        _LOGSYSCALLS(syscallNumber, "] *** MapViewOfSection After adresse dÃ©part " + hexstr(startAddress) + " taille " + decstr(viewSize));
  } 
     else if (syscallNumber == PIN_NtClose)
     {

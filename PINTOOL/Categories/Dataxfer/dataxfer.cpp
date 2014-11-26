@@ -1,4 +1,4 @@
-#include "dataxfer.h"
+ï»¿#include "dataxfer.h"
 #include <TaintUtilities\utils.h>
 
 /////////
@@ -8,12 +8,12 @@
 // CALLBACKS
 void DATAXFER::cMOV(INS &ins) 
 {
-    void (*callback)() = nullptr;	// pointeur sur la fonction à appeler
+    void (*callback)() = nullptr;	// pointeur sur la fonction Ã  appeler
 
     if (INS_IsMemoryWrite(ins)) // DESTINATION = MEMOIRE
     {	
         UINT32 writeSize = INS_MemoryWriteSize(ins);
-        if (INS_OperandIsImmediate(ins, 1)) // valeur immédiate -> démarquage
+        if (INS_OperandIsImmediate(ins, 1)) // valeur immÃ©diate -> dÃ©marquage
         { 
             INS_InsertCall (ins, IPOINT_BEFORE, (AFUNPTR) UTILS::uMEM,
                 IARG_FAST_ANALYSIS_CALL,  
@@ -21,7 +21,7 @@ void DATAXFER::cMOV(INS &ins)
                 IARG_UINT32, writeSize,
                 IARG_END);
         } 
-        else // registre -> Mémoire
+        else // registre -> MÃ©moire
         { 
             switch (writeSize) 
             {
@@ -46,7 +46,7 @@ void DATAXFER::cMOV(INS &ins)
         UINT32 regSize = getRegSize(regDest);
 
         if (!regSize) return;   // registre destination non suivi
-        else if (INS_IsMemoryRead(ins)) // Mémoire -> Registre
+        else if (INS_IsMemoryRead(ins)) // MÃ©moire -> Registre
         {                     
 
             switch (regSize)
@@ -65,7 +65,7 @@ void DATAXFER::cMOV(INS &ins)
                 IARG_UINT32, regDest,   
                 IARG_INST_PTR, IARG_END);
         }
-        else if (INS_OperandIsImmediate(ins, 1)) // Valeur : démarquage
+        else if (INS_OperandIsImmediate(ins, 1)) // Valeur : dÃ©marquage
         {	
             switch (regSize)
             {
@@ -105,7 +105,7 @@ void DATAXFER::cMOV(INS &ins)
     }
 } // cMOV
 
-// SIMULATE (templates spécialisés)
+// SIMULATE (templates spÃ©cialisÃ©s)
 template<> void DATAXFER::sMOV_RR<8>(THREADID tid, REG regSrc, REG regDest, ADDRINT insAddress) 
 {
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
@@ -157,7 +157,7 @@ void DATAXFER::cXCHG(INS &ins)
 {
     void (*callback)() = nullptr;	
 
-    if (INS_IsMemoryWrite(ins)) // src = reg, dest = mémoire
+    if (INS_IsMemoryWrite(ins)) // src = reg, dest = mÃ©moire
     { 
         switch (INS_MemoryWriteSize(ins)) 
         {	
@@ -168,15 +168,15 @@ void DATAXFER::cXCHG(INS &ins)
         case 8: callback = (AFUNPTR) sXCHG_M<64>; break;
         #endif
         }
-        // le registre peut être soit en opérande 0, soit en 1
+        // le registre peut Ãªtre soit en opÃ©rande 0, soit en 1
         // donc utilisation de regW
         INS_InsertCall (ins, IPOINT_BEFORE, callback,
             IARG_THREAD_ID,
             IARG_UINT32, INS_RegW(ins, 0),	// registre source
-            IARG_MEMORYWRITE_EA,    // adresse réelle d'écriture 
+            IARG_MEMORYWRITE_EA,    // adresse rÃ©elle d'Ã©criture 
             IARG_INST_PTR, IARG_END);
     }
-    else // échange registre / registre
+    else // Ã©change registre / registre
     {                      
         REG regDest = INS_OperandReg(ins, 0);
         REG regSrc  = INS_OperandReg(ins, 1);
@@ -200,7 +200,7 @@ void DATAXFER::cXCHG(INS &ins)
     }
 } // cXCHG
 
-// SIMULATE (templates spécialisés)
+// SIMULATE (templates spÃ©cialisÃ©s)
 template<> void DATAXFER::sXCHG_M<8>(THREADID tid, REG reg, ADDRINT address, ADDRINT insAddress) 
 {
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
@@ -208,10 +208,10 @@ template<> void DATAXFER::sXCHG_M<8>(THREADID tid, REG reg, ADDRINT address, ADD
     TaintBytePtr tbTempPtr; // variable de mise en cache
     REGINDEX regIndex = getRegIndex(reg);
     
-    // récupération du marquage de la mémoire (nullptr si absent)
+    // rÃ©cupÃ©ration du marquage de la mÃ©moire (nullptr si absent)
     tbTempPtr = pTmgrGlobal->getMemoryTaint<8>(address);
 
-    // récupération du marquage du registre et affectation directe à la mémoire
+    // rÃ©cupÃ©ration du marquage du registre et affectation directe Ã  la mÃ©moire
     if (pTmgrTls->isRegisterTainted<8>(reg))
     {
         pTmgrGlobal->updateMemoryTaint<8>(address, pTmgrTls->getRegisterTaint(reg));
@@ -229,10 +229,10 @@ template<> void DATAXFER::sXCHG_R<8>(THREADID tid, REG regSrc, REG regDest, ADDR
     
     TaintBytePtr tbTempPtr; // variable de mise en cache
             
-    // récupération du marquage du registre destination (nullptr si absent)
+    // rÃ©cupÃ©ration du marquage du registre destination (nullptr si absent)
     tbTempPtr = pTmgrTls->getRegisterTaint(regDest); 
 
-    // récupération du marquage du registre src et affectation directe à la destination
+    // rÃ©cupÃ©ration du marquage du registre src et affectation directe Ã  la destination
     if (pTmgrTls->isRegisterTainted<8>(regSrc))
     {
         pTmgrTls->updateTaintRegister<8>(regDest, pTmgrTls->getRegisterTaint(regSrc));
@@ -251,7 +251,7 @@ template<> void DATAXFER::sXCHG_R<8>(THREADID tid, REG regSrc, REG regDest, ADDR
 // CALLBACKS
 void DATAXFER::cBSWAP(INS &ins)
 {
-    REG reg = INS_OperandReg(ins, 0);	// registre à inverser 
+    REG reg = INS_OperandReg(ins, 0);	// registre Ã  inverser 
     
     #if TARGET_IA32 // mode 32bits : une seule instruction possible
     INS_InsertCall (ins, IPOINT_BEFORE, (AFUNPTR) sBSWAP<32>,		 
@@ -282,9 +282,9 @@ void DATAXFER::cMOVSX(INS &ins)
     // taille du registre de destination
     UINT32 regDestSize	= getRegSize(regDest);		
     
-    if (!regDestSize) return;   // registre de destination non supporté
+    if (!regDestSize) return;   // registre de destination non supportÃ©
     
-    else if (INS_IsMemoryRead(ins)) // Source = mémoire 
+    else if (INS_IsMemoryRead(ins)) // Source = mÃ©moire 
     {			
         UINT32 readSize = INS_MemoryReadSize(ins);
         switch (regDestSize) 
@@ -300,7 +300,7 @@ void DATAXFER::cMOVSX(INS &ins)
             {
             case 1: callback = (AFUNPTR) sMOVSX_MR<8, 64>;	break;
             case 2: callback = (AFUNPTR) sMOVSX_MR<16, 64>;	break;
-            // case 4: sMOVSX_MR<32, 64> => traité en MOVSXD	break;
+            // case 4: sMOVSX_MR<32, 64> => traitÃ© en MOVSXD	break;
             }
         #endif
         }
@@ -320,7 +320,7 @@ void DATAXFER::cMOVSX(INS &ins)
 
         switch (readSize) 
         {
-        case 0 : return;    // registre source non supporté
+        case 0 : return;    // registre source non supportÃ©
         case 1: // source sur 8bits
             switch (regDestSize)
             {
@@ -361,7 +361,7 @@ void DATAXFER::cMOVSXD(INS &ins)
 
     // taille du registre de destination nul <=> registre non suivi
     if (! getRegSize(regDest)) return; 
-    else if (INS_IsMemoryRead(ins)) // Source = mémoire 
+    else if (INS_IsMemoryRead(ins)) // Source = mÃ©moire 
     {			
         INS_InsertCall (ins, IPOINT_BEFORE, (AFUNPTR) sMOVSX_MR<32, 64>,
             IARG_THREAD_ID,
@@ -400,7 +400,7 @@ void DATAXFER::cMOVZX(INS &ins)
     void (*callback)() = nullptr;
     
     if (!regDestSize) return; 
-    else if (INS_IsMemoryRead(ins)) // Source = mémoire
+    else if (INS_IsMemoryRead(ins)) // Source = mÃ©moire
     {			 
         UINT32 readSize = INS_MemoryReadSize(ins);
         switch (regDestSize) 
@@ -434,8 +434,8 @@ void DATAXFER::cMOVZX(INS &ins)
         // taille du registre source
         UINT32 readSize = getRegSize(regSrc);
 
-        // si le registre source est sur 8bits, appel du template spécifique sMOVZX_8R
-        if (!readSize) return;  // registre source non supporté
+        // si le registre source est sur 8bits, appel du template spÃ©cifique sMOVZX_8R
+        if (!readSize) return;  // registre source non supportÃ©
         else if (readSize == 1)
         {
             switch (regDestSize) 

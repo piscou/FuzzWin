@@ -1,13 +1,13 @@
-#include "utils.h"
+ï»¿#include "utils.h"
 
 void UTILS::cUNHANDLED(INS &ins) 
 { 
-    // si l'instruction écrit en mémoire : démarquage de la mémoire
+    // si l'instruction Ã©crit en mÃ©moire : dÃ©marquage de la mÃ©moire
     if (INS_IsMemoryWrite(ins)) 
     {   
-        // contrairement à ce qui est fait pour les instructions
+        // contrairement Ã  ce qui est fait pour les instructions
         // il n'est pas possible d'utiliser des templates
-        // car la taille d'écriture peut etre > à 8 octets (cas SSE et AVX...)
+        // car la taille d'Ã©criture peut etre > Ã  8 octets (cas SSE et AVX...)
         // on passe donc la taille en parametre, et la fonction appellera
         // UnTaintMemory<8> dans une boucle avec la taille pour compteur
         
@@ -18,13 +18,13 @@ void UTILS::cUNHANDLED(INS &ins)
             IARG_END);
     } 
     
-    // récupération de tous les registres de destination, y compris Eflags, et démarquage
+    // rÃ©cupÃ©ration de tous les registres de destination, y compris Eflags, et dÃ©marquage
     for (UINT32 index = 0 ; index < INS_MaxNumWRegs(ins) ; ++index)
     {
-        REG reg = INS_RegW(ins, index); // registre accédé en écriture (REG_INVALID si aucun)
-        void (*callbackReg)() = nullptr; // pointeur sur la fonction à appeler
+        REG reg = INS_RegW(ins, index); // registre accÃ©dÃ© en Ã©criture (REG_INVALID si aucun)
+        void (*callbackReg)() = nullptr; // pointeur sur la fonction Ã  appeler
 
-        // procédure spécifique pour les flags
+        // procÃ©dure spÃ©cifique pour les flags
         if (REG_GFLAGS == reg) // GFLAGS = (E/R)FLAGS selon l'architecture
         {
             INS_InsertCall (ins, IPOINT_BEFORE, (AFUNPTR) uFLAGS,
@@ -34,7 +34,7 @@ void UTILS::cUNHANDLED(INS &ins)
         }
         else
         {
-            // si registre suivi en marquage, le démarquer
+            // si registre suivi en marquage, le dÃ©marquer
             switch (getRegSize(reg))        
             {
                 case 1: callbackReg = (AFUNPTR) uREG<8>;  break;
@@ -52,7 +52,7 @@ void UTILS::cUNHANDLED(INS &ins)
     } 
 } // cUNHANDLED
 
-// démarquage rapide mémoire par callback. Pas de template car taille indéfinie 
+// dÃ©marquage rapide mÃ©moire par callback. Pas de template car taille indÃ©finie 
 void PIN_FAST_ANALYSIS_CALL UTILS::uMEM(ADDRINT address, UINT32 sizeInBytes)
 {  
     for (UINT32 i = 0 ; i < sizeInBytes ; ++i, ++address) pTmgrGlobal->unTaintMemory<8>(address);
@@ -69,12 +69,12 @@ void PIN_FAST_ANALYSIS_CALL UTILS::uFLAGS(THREADID tid)
 /** ADRESSAGE INDIRECT **/
 /************************/
 
-// renvoie le type d'adressage indirect utilisé par l'instruction
+// renvoie le type d'adressage indirect utilisÃ© par l'instruction
 void UTILS::cGetKindOfEA(const INS &ins)
 {
     REG baseReg     = INS_MemoryBaseReg(ins);      // Registre de base (ou REG_INVALID)
     REG indexReg    = INS_MemoryIndexReg(ins);     // Registre d'index (ou REG_INVALID)
-    ADDRDELTA displ = INS_MemoryDisplacement(ins); // déplacement (signé)
+    ADDRDELTA displ = INS_MemoryDisplacement(ins); // dÃ©placement (signÃ©)
     UINT32 scale    = INS_MemoryScale(ins);        // scale (multiplie le registre d'index)
     
     UINT32 hasBaseReg  = (baseReg  == REG_INVALID()) ? 0 : 1; 
@@ -82,8 +82,8 @@ void UTILS::cGetKindOfEA(const INS &ins)
     UINT32 hasDispl    = (displ    == 0) ? 0 : 1;          
     UINT32 hasScale    = (scale    == 1) ? 0 : 1;         
 
-    // construction d'un masque : cela évite les multiples IF...ELSE
-    // ici un seul switch/case suffira pour définir le type d'EA
+    // construction d'un masque : cela Ã©vite les multiples IF...ELSE
+    // ici un seul switch/case suffira pour dÃ©finir le type d'EA
     // BASE : INDEX : SCALE : DISPL
     UINT32 mask = (hasBaseReg << 3) + (hasIndexReg << 2) + (hasScale << 1) + hasDispl; 
     
@@ -116,32 +116,32 @@ void UTILS::cGetKindOfEA(const INS &ins)
 /*****************************************************************************/
 
 // elles font partie des fonctions d'analyse 
-// lorsque l'instruction accède à la mémoire, en lecture ou écriture
+// lorsque l'instruction accÃ¨de Ã  la mÃ©moire, en lecture ou Ã©criture
 
-// Chaque fonction va vérifier si la valeur de l'adresse calculée est marquée
-// (NB : on teste la valeur de l'adresse, pas la valeur pointée par l'adresse !!)
+// Chaque fonction va vÃ©rifier si la valeur de l'adresse calculÃ©e est marquÃ©e
+// (NB : on teste la valeur de l'adresse, pas la valeur pointÃ©e par l'adresse !!)
 
-// s'il y a marquage, un objet symbolique représentant le calcul de l'adresse
-// est créé, et stocké dans TaintManager ('storeTaintEffectiveAddress')
+// s'il y a marquage, un objet symbolique reprÃ©sentant le calcul de l'adresse
+// est crÃ©Ã©, et stockÃ© dans TaintManager ('storeTaintEffectiveAddress')
 
-// dans les fonctions d'analyse ayant pour source ou destination la mémoire
+// dans les fonctions d'analyse ayant pour source ou destination la mÃ©moire
 // la fonction testera le marquage dans taintManager ('isEffectiveAddressTainted')
-// si marqué, un objet de type "LOAD" ou "STORE" sera créé avec pour sources 
-// 1) le marquage de la mémoire (ce peut etre une valeur ou un objet marqué)
-// 2) l'adresse réelle de la mémoire accédee (ObjectSource valeur sur 32 ou 64 bits)
+// si marquÃ©, un objet de type "LOAD" ou "STORE" sera crÃ©Ã© avec pour sources 
+// 1) le marquage de la mÃ©moire (ce peut etre une valeur ou un objet marquÃ©)
+// 2) l'adresse rÃ©elle de la mÃ©moire accÃ©dee (ObjectSource valeur sur 32 ou 64 bits)
 // 3) l'objet qui permet de calculer cette addresse
 // 4) EFFACEMENT DE L'OBJET APRES RECUPERATION, pour laisser un objet vide pour le prochain appel
 
 // lors de la construction de la formule, lors de la rencontre d'un objet "LOAD" ou "STORE"
-// une contrainte sera ajoutée du type 'adresse réelle = objet'
-// cette contrainte, lorsqu'elle sera inversée, permettra de trouver une autre valeur pour l'adresse
+// une contrainte sera ajoutÃ©e du type 'adresse rÃ©elle = objet'
+// cette contrainte, lorsqu'elle sera inversÃ©e, permettra de trouver une autre valeur pour l'adresse
 
 /***** MODE 32BITS ******/
 #if TARGET_IA32
 
 void UTILS::computeEA_BISD(FUNCARGS_BISD)
 {
-// pour construire l'EA, on additionne deux entités : la base, et (index*scale+displ)
+// pour construire l'EA, on additionne deux entitÃ©s : la base, et (index*scale+displ)
 //  SI BASE MARQUEE  source1 = marquage base
 //  SINON            source1 = valeur registre de base
 //
@@ -154,7 +154,7 @@ void UTILS::computeEA_BISD(FUNCARGS_BISD)
     bool isIndexRegTainted = pTmgrTls->isRegisterTainted<32>(indexReg);
     bool isBaseRegTainted =  pTmgrTls->isRegisterTainted<32>(baseReg);
 
-    // il faut au moins un des registres base ou index marqués, sinon ne rien faire
+    // il faut au moins un des registres base ou index marquÃ©s, sinon ne rien faire
     if (isIndexRegTainted || isBaseRegTainted) 
     {
         _LOGTAINT(tid, insAddress, "BISD");
@@ -169,11 +169,11 @@ void UTILS::computeEA_BISD(FUNCARGS_BISD)
         // BISD : LE SCALE EST DIFFERENT DE 1, DISPL NON NUL
         if (isIndexRegTainted) 
         {      
-            // valeur du déplacement (avec scale = 2^depl)
+            // valeur du dÃ©placement (avec scale = 2^depl)
             UINT32 shiftValue = (scale == 2) ? 1 : ((scale == 4) ? 2 : 3);
                 
-            // 1) opération index*scale traité comme un SHL car déplacement multiple de 2 
-            // source 1 : le registre d'index (forcément marqué)
+            // 1) opÃ©ration index*scale traitÃ© comme un SHL car dÃ©placement multiple de 2 
+            // source 1 : le registre d'index (forcÃ©ment marquÃ©)
             // source 2 : shiftValue (sur 8 bits, comme tous les shifts)
             TaintDwordPtr tdwISptr = std::make_shared<TaintDword>
                 (X_SHL, 
@@ -181,14 +181,14 @@ void UTILS::computeEA_BISD(FUNCARGS_BISD)
                 ObjectSource(8, shiftValue)
                 );  
             
-            // 2) opération IS +/- displ 
+            // 2) opÃ©ration IS +/- displ 
             Relation rel    = (displ > 0) ? X_ADD : X_SUB;
             UINT32 absDispl = abs(displ);
             TaintDword tdwISD(rel, ObjectSource(tdwISptr), ObjectSource(32, absDispl));
 
             tdwEAValue.addSource(std::make_shared<TaintDword>(tdwISD)); 
         }
-        // ajout de la valeur numérique
+        // ajout de la valeur numÃ©rique
         else tdwEAValue.addConstantAsASource<32>(indexRegValue*scale + displ);
 
         // stockage dans TaintManager
@@ -198,7 +198,7 @@ void UTILS::computeEA_BISD(FUNCARGS_BISD)
 
 void UTILS::computeEA_BIS(FUNCARGS_BIS)
 {
-// pour construire l'EA, on additionne deux entités : la base, et (index*scale)
+// pour construire l'EA, on additionne deux entitÃ©s : la base, et (index*scale)
 //  SI BASE MARQUEE source1 = marquage base
 //  SINON           source1 = valeur registre de base
 //
@@ -211,7 +211,7 @@ void UTILS::computeEA_BIS(FUNCARGS_BIS)
     bool isIndexRegTainted = pTmgrTls->isRegisterTainted<32>(indexReg);
     bool isBaseRegTainted =  pTmgrTls->isRegisterTainted<32>(baseReg);
 
-    // il faut au moins un des registres base ou index marqués, sinon ne rien faire
+    // il faut au moins un des registres base ou index marquÃ©s, sinon ne rien faire
     if (isIndexRegTainted || isBaseRegTainted) 
     {
         _LOGTAINT(tid, insAddress, "BIS");
@@ -226,18 +226,18 @@ void UTILS::computeEA_BIS(FUNCARGS_BIS)
         // BIS : LE SCALE EST DIFFERENT DE 1
         if (isIndexRegTainted) 
         {      
-            // valeur du déplacement (avec scale = 2^depl)
+            // valeur du dÃ©placement (avec scale = 2^depl)
             UINT32 shiftValue = (scale == 2) ? 1 : ((scale == 4) ? 2 : 3);
                 
-            // 1) opération index*scale traité comme un SHL car déplacement multiple de 2 
-            // source 1 : le registre d'index (forcément marqué)
+            // 1) opÃ©ration index*scale traitÃ© comme un SHL car dÃ©placement multiple de 2 
+            // source 1 : le registre d'index (forcÃ©ment marquÃ©)
             // source 2 : shiftValue (sur 8 bits, comme tous les shifts
             tdwEAValue.addSource(std::make_shared<TaintDword>(X_SHL, 
                 ObjectSource(pTmgrTls->getRegisterTaint<32>(indexReg, indexRegValue)),
                 ObjectSource(8, shiftValue)
                 )); 
         }
-        // ajout de la valeur numérique
+        // ajout de la valeur numÃ©rique
         else tdwEAValue.addConstantAsASource<32>(indexRegValue*scale);
 
         // stockage dans TaintManager
@@ -247,11 +247,11 @@ void UTILS::computeEA_BIS(FUNCARGS_BIS)
 
 void UTILS::computeEA_BID(FUNCARGS_BID)
 {
-// pour construire l'EA, on additionne deux entités : la base, et (index*scale+displ)
+// pour construire l'EA, on additionne deux entitÃ©s : la base, et (index*scale+displ)
 //  SI BASE MARQUEE source1 = marquage base
 //  SINON           source1 = valeur registre de base
 //
-//  SI INDEX MARQUE source2 = index marqué +/- displ 
+//  SI INDEX MARQUE source2 = index marquÃ© +/- displ 
 //  SINON           source2 = valeur (index +/- displ)
 //
 // EA = ADD(source1, source2)
@@ -260,7 +260,7 @@ void UTILS::computeEA_BID(FUNCARGS_BID)
     bool isIndexRegTainted = pTmgrTls->isRegisterTainted<32>(indexReg);
     bool isBaseRegTainted =  pTmgrTls->isRegisterTainted<32>(baseReg);
     
-    // il faut au moins un des registres base ou index marqués, sinon ne rien faire
+    // il faut au moins un des registres base ou index marquÃ©s, sinon ne rien faire
     if (isIndexRegTainted || isBaseRegTainted) 
     {
         _LOGTAINT(tid, insAddress, "BID");
@@ -282,7 +282,7 @@ void UTILS::computeEA_BID(FUNCARGS_BID)
                 ObjectSource(pTmgrTls->getRegisterTaint<32>(indexReg, indexRegValue)), 
                 ObjectSource(32, absDispl))); 
         }
-        // ajout de la valeur numérique
+        // ajout de la valeur numÃ©rique
         else tdwEAValue.addConstantAsASource<32>(indexRegValue + displ);
 
         // stockage dans TaintManager
@@ -292,11 +292,11 @@ void UTILS::computeEA_BID(FUNCARGS_BID)
 
 void UTILS::computeEA_BI(FUNCARGS_BI)
 {
-// pour construire l'EA, on additionne deux entités : la base, et (index*scale+displ)
+// pour construire l'EA, on additionne deux entitÃ©s : la base, et (index*scale+displ)
 //  SI BASE MARQUEE source1 = marquage base
 //  SINON           source1 = valeur registre de base
 //
-//  SI INDEX MARQUE source2 = index marqué
+//  SI INDEX MARQUE source2 = index marquÃ©
 //  SINON           source2 = valeur index
 //
 // EA = ADD(source1, source2)
@@ -305,7 +305,7 @@ void UTILS::computeEA_BI(FUNCARGS_BI)
     bool isIndexRegTainted = pTmgrTls->isRegisterTainted<32>(indexReg);
     bool isBaseRegTainted =  pTmgrTls->isRegisterTainted<32>(baseReg);
 
-    // il faut au moins un des registres base ou index marqués, sinon ne rien faire
+    // il faut au moins un des registres base ou index marquÃ©s, sinon ne rien faire
     if (isIndexRegTainted || isBaseRegTainted) 
     {
         _LOGTAINT(tid, insAddress, "BI");
@@ -327,13 +327,13 @@ void UTILS::computeEA_BI(FUNCARGS_BI)
 
 void UTILS::computeEA_BD(FUNCARGS_BD)
 {
-// pour construire l'EA, on additionne deux entités : la base et le displ
+// pour construire l'EA, on additionne deux entitÃ©s : la base et le displ
 //  SI BASE MARQUEE source1 = marquage base
 //  SINON           source1 = valeur registre de base
 // EA = ADD/SUB (selon signe) (source1, displ)
  
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
-    // traitement ssi base marquée
+    // traitement ssi base marquÃ©e
     if (pTmgrTls->isRegisterTainted<32>(baseReg)) 
     {
         _LOGTAINT(tid, insAddress, "BD");
@@ -352,7 +352,7 @@ void UTILS::computeEA_B(FUNCARGS_B)
 // EA = marquage base
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
  
-    // traitement ssi base marquée
+    // traitement ssi base marquÃ©e
     if (pTmgrTls->isRegisterTainted<32>(baseReg)) 
     {
         _LOGTAINT(tid, insAddress, "B");
@@ -363,21 +363,21 @@ void UTILS::computeEA_B(FUNCARGS_B)
 
 void UTILS::computeEA_ISD(FUNCARGS_ISD)
 {
-// pour construire l'EA, on additionne deux entités : index*scale et displ
+// pour construire l'EA, on additionne deux entitÃ©s : index*scale et displ
 //  SI INDEX MARQUE  IS = index*scale (via SHL); 
 //  EA = ADD ou SUB(IS, displ)
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
    
-    // traitement ssi index marqué, sinon ne rien faire
+    // traitement ssi index marquÃ©, sinon ne rien faire
     if (pTmgrTls->isRegisterTainted<32>(indexReg)) 
     {
         _LOGTAINT(tid, insAddress, "ISD");
    
-        // valeur du déplacement (avec scale = 2^depl)
+        // valeur du dÃ©placement (avec scale = 2^depl)
         UINT32 shiftValue = (scale == 2) ? 1 : ((scale == 4) ? 2 : 3);
                 
-        // 1) opération index*scale traité comme un SHL car déplacement multiple de 2 
-        // source 1 : le registre d'index (forcément marqué)
+        // 1) opÃ©ration index*scale traitÃ© comme un SHL car dÃ©placement multiple de 2 
+        // source 1 : le registre d'index (forcÃ©ment marquÃ©)
         // source 2 : shiftValue (sur 8 bits, comme tous les shifts)
         TaintDwordPtr tdwISptr = std::make_shared<TaintDword>
             (X_SHL, 
@@ -385,7 +385,7 @@ void UTILS::computeEA_ISD(FUNCARGS_ISD)
             ObjectSource(8, shiftValue)
             );  
             
-        // 2) opération IS +/- displ et stockage dans TaintManager
+        // 2) opÃ©ration IS +/- displ et stockage dans TaintManager
         Relation rel    = (displ > 0) ? X_ADD : X_SUB;
         UINT32 absDispl = abs(displ);
 
@@ -401,16 +401,16 @@ void UTILS::computeEA_IS(FUNCARGS_IS)
     // SI INDEX MARQUE  EA = index*scale (via SHL)
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
    
-    // traitement ssi index marqué, sinon ne rien faire
+    // traitement ssi index marquÃ©, sinon ne rien faire
     if (pTmgrTls->isRegisterTainted<32>(indexReg)) 
     {
         _LOGTAINT(tid, insAddress, "IS");
    
-        // valeur du déplacement (avec scale = 2^depl)
+        // valeur du dÃ©placement (avec scale = 2^depl)
         UINT32 shiftValue = (scale == 2) ? 1 : ((scale == 4) ? 2 : 3);
                 
-        // opération index*scale traité comme un SHL car déplacement multiple de 2 
-        // source 1 : le registre d'index (forcément marqué)
+        // opÃ©ration index*scale traitÃ© comme un SHL car dÃ©placement multiple de 2 
+        // source 1 : le registre d'index (forcÃ©ment marquÃ©)
         // source 2 : shiftValue (sur 8 bits, comme tous les shifts)
         pTmgrTls->storeTaintEffectiveAddress(std::make_shared<TaintDword>(
             X_SHL, 
@@ -423,7 +423,7 @@ void UTILS::computeEA_IS(FUNCARGS_IS)
 
 void UTILS::computeEA_BISD(FUNCARGS_BISD)
 {
-// pour construire l'EA, on additionne deux entités : la base, et (index*scale+displ)
+// pour construire l'EA, on additionne deux entitÃ©s : la base, et (index*scale+displ)
 //  SI BASE MARQUEE  source1 = marquage base
 //  SINON            source1 = valeur registre de base
 //
@@ -436,7 +436,7 @@ void UTILS::computeEA_BISD(FUNCARGS_BISD)
     bool isIndexRegTainted = pTmgrTls->isRegisterTainted<64>(indexReg);
     bool isBaseRegTainted =  pTmgrTls->isRegisterTainted<64>(baseReg);
 
-    // il faut au moins un des registres base ou index marqués, sinon ne rien faire
+    // il faut au moins un des registres base ou index marquÃ©s, sinon ne rien faire
     if (isIndexRegTainted || isBaseRegTainted) 
     {
         _LOGTAINT(tid, insAddress, "BISD");
@@ -451,11 +451,11 @@ void UTILS::computeEA_BISD(FUNCARGS_BISD)
         // BISD : LE SCALE EST DIFFERENT DE 1, DISPL NON NUL
         if (isIndexRegTainted) 
         {      
-            // valeur du déplacement (avec scale = 2^depl)
+            // valeur du dÃ©placement (avec scale = 2^depl)
             UINT32 shiftValue = (scale == 2) ? 1 : ((scale == 4) ? 2 : 3);
                 
-            // 1) opération index*scale traité comme un SHL car déplacement multiple de 2 
-            // source 1 : le registre d'index (forcément marqué)
+            // 1) opÃ©ration index*scale traitÃ© comme un SHL car dÃ©placement multiple de 2 
+            // source 1 : le registre d'index (forcÃ©ment marquÃ©)
             // source 2 : shiftValue (sur 8 bits, comme tous les shifts)
             TaintQwordPtr tqwISptr = std::make_shared<TaintQword>
                 (X_SHL, 
@@ -463,14 +463,14 @@ void UTILS::computeEA_BISD(FUNCARGS_BISD)
                 ObjectSource(8, shiftValue)
                 );  
             
-            // 2) opération IS +/- displ 
+            // 2) opÃ©ration IS +/- displ 
             Relation rel    = (displ > 0) ? X_ADD : X_SUB;
             UINT32 absDispl = abs(displ);
             TaintQword tqwISD(rel, ObjectSource(tqwISptr), ObjectSource(64, absDispl));
 
             tqwEAValue.addSource(std::make_shared<TaintQword>(tqwISD)); 
         }
-        // ajout de la valeur numérique
+        // ajout de la valeur numÃ©rique
         else tqwEAValue.addConstantAsASource<64>(indexRegValue*scale + displ);
 
         // stockage dans TaintManager
@@ -480,7 +480,7 @@ void UTILS::computeEA_BISD(FUNCARGS_BISD)
 
 void UTILS::computeEA_BIS(FUNCARGS_BIS)
 {
-// pour construire l'EA, on additionne deux entités : la base, et (index*scale)
+// pour construire l'EA, on additionne deux entitÃ©s : la base, et (index*scale)
 //  SI BASE MARQUEE source1 = marquage base
 //  SINON           source1 = valeur registre de base
 //
@@ -493,7 +493,7 @@ void UTILS::computeEA_BIS(FUNCARGS_BIS)
     bool isIndexRegTainted = pTmgrTls->isRegisterTainted<64>(indexReg);
     bool isBaseRegTainted =  pTmgrTls->isRegisterTainted<64>(baseReg);
 
-    // il faut au moins un des registres base ou index marqués, sinon ne rien faire
+    // il faut au moins un des registres base ou index marquÃ©s, sinon ne rien faire
     if (isIndexRegTainted || isBaseRegTainted) 
     {
         _LOGTAINT(tid, insAddress, "BIS");
@@ -508,18 +508,18 @@ void UTILS::computeEA_BIS(FUNCARGS_BIS)
         // BIS : LE SCALE EST DIFFERENT DE 1
         if (isIndexRegTainted) 
         {      
-            // valeur du déplacement (avec scale = 2^depl)
+            // valeur du dÃ©placement (avec scale = 2^depl)
             UINT32 shiftValue = (scale == 2) ? 1 : ((scale == 4) ? 2 : 3);
                 
-            // 1) opération index*scale traité comme un SHL car déplacement multiple de 2 
-            // source 1 : le registre d'index (forcément marqué)
+            // 1) opÃ©ration index*scale traitÃ© comme un SHL car dÃ©placement multiple de 2 
+            // source 1 : le registre d'index (forcÃ©ment marquÃ©)
             // source 2 : shiftValue (sur 8 bits, comme tous les shifts
             tqwEAValue.addSource(std::make_shared<TaintQword>(X_SHL, 
                 ObjectSource(pTmgrTls->getRegisterTaint<64>(indexReg, indexRegValue)),
                 ObjectSource(8, shiftValue)
                 )); 
         }
-        // ajout de la valeur numérique
+        // ajout de la valeur numÃ©rique
         else tqwEAValue.addConstantAsASource<64>(indexRegValue*scale);
 
         // stockage dans TaintManager
@@ -529,11 +529,11 @@ void UTILS::computeEA_BIS(FUNCARGS_BIS)
 
 void UTILS::computeEA_BID(FUNCARGS_BID)
 {
-// pour construire l'EA, on additionne deux entités : la base, et (index*scale+displ)
+// pour construire l'EA, on additionne deux entitÃ©s : la base, et (index*scale+displ)
 //  SI BASE MARQUEE source1 = marquage base
 //  SINON           source1 = valeur registre de base
 //
-//  SI INDEX MARQUE source2 = index marqué +/- displ 
+//  SI INDEX MARQUE source2 = index marquÃ© +/- displ 
 //  SINON           source2 = valeur (index +/- displ)
 //
 // EA = ADD(source1, source2)
@@ -542,7 +542,7 @@ void UTILS::computeEA_BID(FUNCARGS_BID)
     bool isIndexRegTainted = pTmgrTls->isRegisterTainted<64>(indexReg);
     bool isBaseRegTainted =  pTmgrTls->isRegisterTainted<64>(baseReg);
     
-    // il faut au moins un des registres base ou index marqués, sinon ne rien faire
+    // il faut au moins un des registres base ou index marquÃ©s, sinon ne rien faire
     if (isIndexRegTainted || isBaseRegTainted) 
     {
         _LOGTAINT(tid, insAddress, "BID");
@@ -564,7 +564,7 @@ void UTILS::computeEA_BID(FUNCARGS_BID)
                 ObjectSource(pTmgrTls->getRegisterTaint<64>(indexReg, indexRegValue)), 
                 ObjectSource(64, absDispl))); 
         }
-        // ajout de la valeur numérique
+        // ajout de la valeur numÃ©rique
         else tqwEAValue.addConstantAsASource<64>(indexRegValue + displ);
 
         // stockage dans TaintManager
@@ -574,11 +574,11 @@ void UTILS::computeEA_BID(FUNCARGS_BID)
 
 void UTILS::computeEA_BI(FUNCARGS_BI)
 {
-// pour construire l'EA, on additionne deux entités : la base, et (index*scale+displ)
+// pour construire l'EA, on additionne deux entitÃ©s : la base, et (index*scale+displ)
 //  SI BASE MARQUEE source1 = marquage base
 //  SINON           source1 = valeur registre de base
 //
-//  SI INDEX MARQUE source2 = index marqué
+//  SI INDEX MARQUE source2 = index marquÃ©
 //  SINON           source2 = valeur index
 //
 // EA = ADD(source1, source2)
@@ -587,7 +587,7 @@ void UTILS::computeEA_BI(FUNCARGS_BI)
     bool isIndexRegTainted = pTmgrTls->isRegisterTainted<64>(indexReg);
     bool isBaseRegTainted =  pTmgrTls->isRegisterTainted<64>(baseReg);
 
-    // il faut au moins un des registres base ou index marqués, sinon ne rien faire
+    // il faut au moins un des registres base ou index marquÃ©s, sinon ne rien faire
     if (isIndexRegTainted || isBaseRegTainted) 
     {
         _LOGTAINT(tid, insAddress, "BI");
@@ -609,15 +609,15 @@ void UTILS::computeEA_BI(FUNCARGS_BI)
 
 void UTILS::computeEA_BD(FUNCARGS_BD)
 {
-// pour construire l'EA, on additionne deux entités : la base et le displ
+// pour construire l'EA, on additionne deux entitÃ©s : la base et le displ
 //  SI BASE MARQUEE source1 = marquage base
 //  SINON           source1 = valeur registre de base
 // EA = ADD/SUB (selon signe) (source1, displ)
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
  
-    // ATTENTION : en 64BITS, possibilité d'adressage RIP-RELATIVE, non suivi en marquage
+    // ATTENTION : en 64BITS, possibilitÃ© d'adressage RIP-RELATIVE, non suivi en marquage
     // DONC NE PAS INSTRUMENTER SI C'EST LE CAS
-    // traitement ssi base marquée
+    // traitement ssi base marquÃ©e
     if (pTmgrTls->isRegisterTainted<64>(baseReg) && (baseReg != REG_RIP)) 
     {
         _LOGTAINT(tid, insAddress, "BD");
@@ -635,7 +635,7 @@ void UTILS::computeEA_B(FUNCARGS_B)
 {
 // EA = marquage base
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
-    // traitement ssi base marquée
+    // traitement ssi base marquÃ©e
     if (pTmgrTls->isRegisterTainted<64>(baseReg)) 
     {
         _LOGTAINT(tid, insAddress, "B");
@@ -646,21 +646,21 @@ void UTILS::computeEA_B(FUNCARGS_B)
 
 void UTILS::computeEA_ISD(FUNCARGS_ISD)
 {
-// pour construire l'EA, on additionne deux entités : index*scale et displ
+// pour construire l'EA, on additionne deux entitÃ©s : index*scale et displ
 //  SI INDEX MARQUE  IS = index*scale (via SHL); 
 //  EA = ADD ou SUB(IS, displ)
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
    
-    // traitement ssi index marqué, sinon ne rien faire
+    // traitement ssi index marquÃ©, sinon ne rien faire
     if (pTmgrTls->isRegisterTainted<64>(indexReg)) 
     {
         _LOGTAINT(tid, insAddress, "ISD");
    
-        // valeur du déplacement (avec scale = 2^depl)
+        // valeur du dÃ©placement (avec scale = 2^depl)
         UINT32 shiftValue = (scale == 2) ? 1 : ((scale == 4) ? 2 : 3);
                 
-        // 1) opération index*scale traité comme un SHL car déplacement multiple de 2 
-        // source 1 : le registre d'index (forcément marqué)
+        // 1) opÃ©ration index*scale traitÃ© comme un SHL car dÃ©placement multiple de 2 
+        // source 1 : le registre d'index (forcÃ©ment marquÃ©)
         // source 2 : shiftValue (sur 8 bits, comme tous les shifts)
         TaintQwordPtr tqwISptr = std::make_shared<TaintQword>
             (X_SHL, 
@@ -668,7 +668,7 @@ void UTILS::computeEA_ISD(FUNCARGS_ISD)
             ObjectSource(8, shiftValue)
             );  
             
-        // 2) opération IS +/- displ et stockage dans TaintManager
+        // 2) opÃ©ration IS +/- displ et stockage dans TaintManager
         Relation rel    = (displ > 0) ? X_ADD : X_SUB;
         UINT32 absDispl = abs(displ);
 
@@ -684,16 +684,16 @@ void UTILS::computeEA_IS(FUNCARGS_IS)
     // SI INDEX MARQUE  EA = index*scale (via SHL)
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
    
-    // traitement ssi index marqué, sinon ne rien faire
+    // traitement ssi index marquÃ©, sinon ne rien faire
     if (pTmgrTls->isRegisterTainted<64>(indexReg)) 
     {
         _LOGTAINT(tid, insAddress, "IS");
    
-        // valeur du déplacement (avec scale = 2^depl)
+        // valeur du dÃ©placement (avec scale = 2^depl)
         UINT32 shiftValue = (scale == 2) ? 1 : ((scale == 4) ? 2 : 3);
                 
-        // opération index*scale traité comme un SHL car déplacement multiple de 2 
-        // source 1 : le registre d'index (forcément marqué)
+        // opÃ©ration index*scale traitÃ© comme un SHL car dÃ©placement multiple de 2 
+        // source 1 : le registre d'index (forcÃ©ment marquÃ©)
         // source 2 : shiftValue (sur 8 bits, comme tous les shifts)
         pTmgrTls->storeTaintEffectiveAddress(std::make_shared<TaintQword>(
             X_SHL, 

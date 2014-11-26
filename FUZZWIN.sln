@@ -1,6 +1,8 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2012
+# Visual Studio 2013
+VisualStudioVersion = 12.0.31101.0
+MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PINTOOL", "PINTOOL\PINTOOL.vcxproj", "{E535A52C-8237-4B5A-8A50-5CE162AB679C}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "FUZZWIN_CMDLINE", "LIGNE DE COMMANDE\fuzzwin.vcxproj", "{016C7F1E-D4F9-4811-A61F-57B34284592F}"
@@ -10,6 +12,11 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SUIVI DES VERSIONS", "SUIVI DES VERSIONS", "{32BDFF28-B379-48C1-877C-5E23CB8A81F4}"
 	ProjectSection(SolutionItems) = preProject
 		CHANGELOG.txt = CHANGELOG.txt
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{17A2C477-B1C7-41AB-B56D-A4B26CCDB693}"
+	ProjectSection(SolutionItems) = preProject
+		README.md = README.md
 	EndProjectSection
 EndProject
 Global
@@ -77,7 +84,7 @@ Global
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
-		Qt5Version = 5.2.1_32bits
 		VisualSVNWorkingCopyRoot = .
+		Qt5Version = 5.2.1_32bits
 	EndGlobalSection
 EndGlobal

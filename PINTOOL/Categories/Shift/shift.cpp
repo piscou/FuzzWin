@@ -1,11 +1,11 @@
-#include "shift.h"
+Ôªø#include "shift.h"
 
 // FLAGS
 // cas particuliers par rapport au manuel Intel : 
-// pour AF : "undefined" selon Intel => dÈmarquage dans FuzzWin
-// pour OF : "undefined" si dÈplacement != 1 => dÈmarquage dans FuzzWin
+// pour AF : "undefined" selon Intel => d√©marquage dans FuzzWin
+// pour OF : "undefined" si d√©placement != 1 => d√©marquage dans FuzzWin
 
-// dÈmarquage OZSAP
+// d√©marquage OZSAP
 void SHIFT::fUnTaintOZSAP(TaintManager_Thread *pTmgrTls)
 {
     pTmgrTls->unTaintParityFlag(); 
@@ -15,28 +15,28 @@ void SHIFT::fUnTaintOZSAP(TaintManager_Thread *pTmgrTls)
     pTmgrTls->unTaintAuxiliaryFlag();
 }
 
-// Les instructions SHIFT sont traitÈes de maniËre trËs prÈcise, afin
+// Les instructions SHIFT sont trait√©es de mani√®re tr√®s pr√©cise, afin
 // de limiter les faux-positifs en marquage.
-// deux cas sont distinguÈs : dÈplacement par valeur ou par registre (CL)
-// si CL n'est pas marquÈ, l'instruction sera traitÈe comme un dÈplacement par valeur
+// deux cas sont distingu√©s : d√©placement par valeur ou par registre (CL)
+// si CL n'est pas marqu√©, l'instruction sera trait√©e comme un d√©placement par valeur
 
-// plusieurs cas sont envisagÈs
-// dÈplacement numÈrique nul => aucune action
-// deplacement numÈrique = 1 => cas spÈcifique marquage OF en plus
-// dÈplacement numÈrique multiple de 8 => traitement par MOV octet par octet
-// dÈplacement numÈrique supÈrieur ‡ la taille destination => dÈmarquage
+// plusieurs cas sont envisag√©s
+// d√©placement num√©rique nul => aucune action
+// deplacement num√©rique = 1 => cas sp√©cifique marquage OF en plus
+// d√©placement num√©rique multiple de 8 => traitement par MOV octet par octet
+// d√©placement num√©rique sup√©rieur √† la taille destination => d√©marquage
 // 
-// si dÈplacement avec CL marquÈ, on ne pourra pas faire d'optimisations
-// il y aura possibilitÈ de surmarquage selon la valeur rÈelle de CL
+// si d√©placement avec CL marqu√©, on ne pourra pas faire d'optimisations
+// il y aura possibilit√© de surmarquage selon la valeur r√©elle de CL
 
-// chaque procÈdure d'analyse SHIFT sera dÈcoupÈe en plusieurs parties
-// 0) (instrumentation) masquage du dÈplacement ‡ 0x1f ou 0x3f selon archi
-// 1) (analyse) test du marquage des opÈrandes (registre ET dÈcalage)
+// chaque proc√©dure d'analyse SHIFT sera d√©coup√©e en plusieurs parties
+// 0) (instrumentation) masquage du d√©placement √† 0x1f ou 0x3f selon archi
+// 1) (analyse) test du marquage des op√©randes (registre ET d√©calage)
 // 2) Marquage destination avec SHL/SHR/SAR
-// 3) ProcÈdure marquage flags selon instruction SHL/SHR/SAR
-// 4) dÈmarquage de certaines parties de la destination, en fonction de 
-//    la valeur du dÈplacement et de la taille du registre (uniquement pour
-//    les dÈplacements numÈriques)
+// 3) Proc√©dure marquage flags selon instruction SHL/SHR/SAR
+// 4) d√©marquage de certaines parties de la destination, en fonction de 
+//    la valeur du d√©placement et de la taille du registre (uniquement pour
+//    les d√©placements num√©riques)
 
 /*********/
 /** SHL **/
@@ -50,7 +50,7 @@ void SHIFT::cSHL(INS &ins)
     // DECALAGE PAR VALEUR : SHL_IM ou SHL_IR
     if (INS_OperandIsImmediate(ins, 1)) 
     {    
-        // masquage du dÈplacement ‡ 0x1f (meme en x64), sauf si opÈrande 64bits (masquage ‡ 0x3f) 
+        // masquage du d√©placement √† 0x1f (meme en x64), sauf si op√©rande 64bits (masquage √† 0x3f) 
         UINT32 depl = static_cast<UINT32>(INS_OperandImmediate(ins, 1));
         UINT32 maskedDepl = depl & 0x1f;   
         
@@ -64,12 +64,12 @@ void SHIFT::cSHL(INS &ins)
                 #if TARGET_IA32E
                 case 8: 
                     callback = (AFUNPTR) sSHL_IM<64>; 
-                    maskedDepl = depl & 0x3f;   // masquage ‡ 0x3f en 64bits
+                    maskedDepl = depl & 0x3f;   // masquage √† 0x3f en 64bits
                     break;
                 #endif
                 default: return;
             } 
-            // dÈplacement non nul : instrumentation (sinon aucun chgt)
+            // d√©placement non nul : instrumentation (sinon aucun chgt)
             if (maskedDepl) INS_InsertCall (ins, IPOINT_BEFORE, callback,
                 IARG_THREAD_ID,
                 IARG_UINT32, maskedDepl,
@@ -78,7 +78,7 @@ void SHIFT::cSHL(INS &ins)
         }
         else // DESTINATION = REGISTRE (SHL_IR)
         {         
-            REG reg = INS_OperandReg(ins, 0); // registre qui sera dÈcalÈ 
+            REG reg = INS_OperandReg(ins, 0); // registre qui sera d√©cal√© 
             switch (getRegSize(reg)) 
             {
                 case 1: callback = (AFUNPTR) sSHL_IR<8>;  break;
@@ -87,17 +87,17 @@ void SHIFT::cSHL(INS &ins)
                 #if TARGET_IA32E
                 case 8: 
                     callback = (AFUNPTR) sSHL_IR<64>; 
-                    maskedDepl = depl & 0x3f;   // masquage ‡ 0x3f en 64bits
+                    maskedDepl = depl & 0x3f;   // masquage √† 0x3f en 64bits
                     break;
                 #endif
                 default: return;
             } 
             
-            // dÈplacement non nul : instrumentation (sinon aucun chgt)
+            // d√©placement non nul : instrumentation (sinon aucun chgt)
             if (maskedDepl) INS_InsertCall (ins, IPOINT_BEFORE, callback,
                 IARG_THREAD_ID,
                 IARG_UINT32, maskedDepl,
-                IARG_UINT32,    reg,    // registre dÈcalÈ
+                IARG_UINT32,    reg,    // registre d√©cal√©
                 IARG_REG_VALUE, reg,    // sa valeur lors du callback
                 IARG_INST_PTR, IARG_END);
         }
@@ -105,7 +105,7 @@ void SHIFT::cSHL(INS &ins)
     // DECALAGE PAR REGISTRE : SHL_RM ou SHL_RR
     else 
     {  
-        // le masquage ‡ 0x1f ou 0x3f du registre sera fait dans le callback
+        // le masquage √† 0x1f ou 0x3f du registre sera fait dans le callback
         if (INS_IsMemoryWrite(ins)) // DESTINATION = MEMOIRE (SHL_RM)
         {   
             switch (INS_MemoryWriteSize(ins)) 
@@ -120,13 +120,13 @@ void SHIFT::cSHL(INS &ins)
             } 
             INS_InsertCall (ins, IPOINT_BEFORE, callback,
                 IARG_THREAD_ID,
-                IARG_REG_VALUE, REG_CL, // valeur numÈrique du dÈplacement
+                IARG_REG_VALUE, REG_CL, // valeur num√©rique du d√©placement
                 IARG_MEMORYWRITE_EA,   
                 IARG_INST_PTR, IARG_END);
         }
         else // DESTINATION = REGISTRE (SHL_RR)
         {         
-            REG reg = INS_OperandReg(ins, 0); // registre qui sera dÈcalÈ 
+            REG reg = INS_OperandReg(ins, 0); // registre qui sera d√©cal√© 
             switch (getRegSize(reg)) 
             {
                 case 1: callback = (AFUNPTR) sSHL_RR<8>;  break;
@@ -140,8 +140,8 @@ void SHIFT::cSHL(INS &ins)
             
             INS_InsertCall (ins, IPOINT_BEFORE, callback,
                 IARG_THREAD_ID,
-                IARG_REG_VALUE, REG_CL, // valeur numÈrique du dÈplacement
-                IARG_UINT32,    reg,    // registre dÈcalÈ
+                IARG_REG_VALUE, REG_CL, // valeur num√©rique du d√©placement
+                IARG_UINT32,    reg,    // registre d√©cal√©
                 IARG_REG_VALUE, reg,    // sa valeur lors du callback
                 IARG_INST_PTR, IARG_END);
         }
@@ -149,27 +149,27 @@ void SHIFT::cSHL(INS &ins)
 } // cSHL
 
 /** FLAGS **/
-// marquage flags spÈcifique pour SHL, dÈplacement non marquÈ
+// marquage flags sp√©cifique pour SHL, d√©placement non marqu√©
 void SHIFT::fSHL(TaintManager_Thread *pTmgrTls, const TaintPtr &resultPtr, const ObjectSource &objSrcShiftedSrc,
           UINT32 maskedDepl)
 {
     ObjectSource objResult(resultPtr);
     
-    // dÈmarquage AF (undefined selon Intel)
+    // d√©marquage AF (undefined selon Intel)
     pTmgrTls->unTaintAuxiliaryFlag();
     // marquage ZF et SF
     pTmgrTls->updateTaintZeroFlag(std::make_shared<TaintBit>(F_IS_NULL, objResult));
     pTmgrTls->updateTaintSignFlag(std::make_shared<TaintBit>(F_MSB,     objResult));
 
     // marquage Carry : bit (lengthInBits - depl) de la source
-    // peut quand meme provoquer un surmarquage si l'octet concernÈ n'est pas marquÈ
+    // peut quand meme provoquer un surmarquage si l'octet concern√© n'est pas marqu√©
     // mais le test de marquage serait trop gourmand en temps d'execution
     pTmgrTls->updateTaintCarryFlag(std::make_shared<TaintBit>(
         EXTRACT,
         objSrcShiftedSrc,
         ObjectSource(8, resultPtr->getLength() - maskedDepl)));
 
-    // marquage PF ssi deplacement infÈrieur ‡ 8 (sinon que des 0)
+    // marquage PF ssi deplacement inf√©rieur √† 8 (sinon que des 0)
     if (maskedDepl < 8)  pTmgrTls->updateTaintParityFlag(std::make_shared<TaintBit>(F_PARITY, objResult));
     else pTmgrTls->unTaintParityFlag();
 
@@ -181,13 +181,13 @@ void SHIFT::fSHL(TaintManager_Thread *pTmgrTls, const TaintPtr &resultPtr, const
     else pTmgrTls->unTaintOverflowFlag();
 } // fSHL
 
-// marquage flags spÈcifique pour SHL, dÈplacement marquÈ
+// marquage flags sp√©cifique pour SHL, d√©placement marqu√©
 void SHIFT::fSHL(TaintManager_Thread *pTmgrTls, const TaintPtr &resultPtr, const ObjectSource &objSrcShiftedSrc,
           const ObjectSource &objTbCount)
 {
     ObjectSource objResult(resultPtr);
     
-    // dÈmarquage AF (undefined selon Intel)
+    // d√©marquage AF (undefined selon Intel)
     pTmgrTls->unTaintAuxiliaryFlag();
     // marquage ZF et SF
     pTmgrTls->updateTaintZeroFlag(std::make_shared<TaintBit>(F_IS_NULL, objResult));
@@ -196,13 +196,13 @@ void SHIFT::fSHL(TaintManager_Thread *pTmgrTls, const TaintPtr &resultPtr, const
     // marquage PF 
     pTmgrTls->updateTaintParityFlag(std::make_shared<TaintBit>(F_PARITY,  objResult));
         
-    // marquage Carry : dernier bit de la source ÈjectÈ suite au shift       
+    // marquage Carry : dernier bit de la source √©ject√© suite au shift       
     pTmgrTls->updateTaintCarryFlag(std::make_shared<TaintBit>(
         F_CARRY_SHL,
         objSrcShiftedSrc,
         objTbCount));
 
-    // dÈmarquage Overflow (tant pis si le dÈplacement vaut 1...il y aura sous marquage)
+    // d√©marquage Overflow (tant pis si le d√©placement vaut 1...il y aura sous marquage)
     pTmgrTls->unTaintOverflowFlag();
 } // fSHL
 
@@ -218,8 +218,8 @@ void SHIFT::cSHR(INS &ins)
     // DECALAGE PAR VALEUR : SHR_IM ou SHR_IR
     if (INS_OperandIsImmediate(ins, 1)) 
     {    
-        // masquage du dÈplacement par dÈfaut ‡ 0x1f
-        // sera modifiÈ par la suite si opÈrande 64bits 
+        // masquage du d√©placement par d√©faut √† 0x1f
+        // sera modifi√© par la suite si op√©rande 64bits 
         UINT32 depl = static_cast<UINT32>(INS_OperandImmediate(ins, 1));
         UINT32 maskedDepl = depl & 0x1f;   
         
@@ -233,12 +233,12 @@ void SHIFT::cSHR(INS &ins)
                 #if TARGET_IA32E
                 case 8: 
                     callback = (AFUNPTR) sSHR_IM<64>; 
-                    maskedDepl = depl & 0x3f;   // masquage ‡ 0x3f en 64bits
+                    maskedDepl = depl & 0x3f;   // masquage √† 0x3f en 64bits
                     break;
                 #endif
                 default: return;
             } 
-            // dÈplacement non nul : instrumentation (sinon aucun chgt)
+            // d√©placement non nul : instrumentation (sinon aucun chgt)
             if (maskedDepl) INS_InsertCall (ins, IPOINT_BEFORE, callback,
                 IARG_THREAD_ID,
                 IARG_UINT32, maskedDepl,
@@ -247,7 +247,7 @@ void SHIFT::cSHR(INS &ins)
         }
         else // DESTINATION = REGISTRE (SHR_IR)
         {         
-            REG reg = INS_OperandReg(ins, 0); // registre qui sera dÈcalÈ 
+            REG reg = INS_OperandReg(ins, 0); // registre qui sera d√©cal√© 
             switch (getRegSize(reg)) 
             {
                 case 1: callback = (AFUNPTR) sSHR_IR<8>;  break;
@@ -256,16 +256,16 @@ void SHIFT::cSHR(INS &ins)
                 #if TARGET_IA32E
                 case 8: 
                     callback = (AFUNPTR) sSHR_IR<64>; 
-                    maskedDepl = depl & 0x3f;   // masquage ‡ 0x3f en 64bits
+                    maskedDepl = depl & 0x3f;   // masquage √† 0x3f en 64bits
                     break;
                 #endif
                 default: return;
             }          
-            // dÈplacement non nul : instrumentation (sinon aucun chgt)
+            // d√©placement non nul : instrumentation (sinon aucun chgt)
             if (maskedDepl) INS_InsertCall (ins, IPOINT_BEFORE, callback,
                 IARG_THREAD_ID,
                 IARG_UINT32, maskedDepl,
-                IARG_UINT32,    reg,    // registre dÈcalÈ
+                IARG_UINT32,    reg,    // registre d√©cal√©
                 IARG_REG_VALUE, reg,    // sa valeur lors du callback
                 IARG_INST_PTR, IARG_END);
         }
@@ -273,7 +273,7 @@ void SHIFT::cSHR(INS &ins)
     // DECALAGE PAR REGISTRE : SHR_RM ou SHR_RR
     else 
     {  
-        // le masquage ‡ 0x1f ou 0x3f du registre sera fait dans le callback
+        // le masquage √† 0x1f ou 0x3f du registre sera fait dans le callback
         if (INS_IsMemoryWrite(ins)) // DESTINATION = MEMOIRE (SHR_RM)
         {   
             switch (INS_MemoryWriteSize(ins)) 
@@ -288,13 +288,13 @@ void SHIFT::cSHR(INS &ins)
             } 
             INS_InsertCall (ins, IPOINT_BEFORE, callback,
                 IARG_THREAD_ID,
-                IARG_REG_VALUE, REG_CL, // valeur numÈrique du dÈplacement
+                IARG_REG_VALUE, REG_CL, // valeur num√©rique du d√©placement
                 IARG_MEMORYWRITE_EA,   
                 IARG_INST_PTR, IARG_END);
         }
         else // DESTINATION = REGISTRE (SHR_RR)
         {         
-            REG reg = INS_OperandReg(ins, 0); // registre qui sera dÈcalÈ 
+            REG reg = INS_OperandReg(ins, 0); // registre qui sera d√©cal√© 
             switch (getRegSize(reg)) 
             {
                 case 1: callback = (AFUNPTR) sSHR_RR<8>;  break;
@@ -308,8 +308,8 @@ void SHIFT::cSHR(INS &ins)
             
             INS_InsertCall (ins, IPOINT_BEFORE, callback,
                 IARG_THREAD_ID,
-                IARG_REG_VALUE, REG_CL, // valeur numÈrique du dÈplacement
-                IARG_UINT32,    reg,    // registre dÈcalÈ
+                IARG_REG_VALUE, REG_CL, // valeur num√©rique du d√©placement
+                IARG_UINT32,    reg,    // registre d√©cal√©
                 IARG_REG_VALUE, reg,    // sa valeur lors du callback
                 IARG_INST_PTR, IARG_END);
         }
@@ -317,13 +317,13 @@ void SHIFT::cSHR(INS &ins)
 } // cSHR
 
 /** FLAGS **/
-// marquage flags spÈcifique pour SHR, dÈplacement non marquÈ
+// marquage flags sp√©cifique pour SHR, d√©placement non marqu√©
 void SHIFT::fSHR(TaintManager_Thread *pTmgrTls, const TaintPtr &resultPtr, const ObjectSource &objSrcShiftedSrc,
           UINT32 maskedDepl)
 {
     ObjectSource objResult(resultPtr);
     
-    // dÈmarquage AF (undefined selon Intel) et SF (puisque insertion zÈros)
+    // d√©marquage AF (undefined selon Intel) et SF (puisque insertion z√©ros)
     pTmgrTls->unTaintAuxiliaryFlag();
     pTmgrTls->unTaintSignFlag();
 
@@ -332,7 +332,7 @@ void SHIFT::fSHR(TaintManager_Thread *pTmgrTls, const TaintPtr &resultPtr, const
     pTmgrTls->updateTaintParityFlag(std::make_shared<TaintBit>(F_PARITY,  objResult));
     
     // marquage Carry : bit (depl - 1) de la source
-    // peut provoquer un surmarquage si l'octet concernÈ n'est pas marquÈ
+    // peut provoquer un surmarquage si l'octet concern√© n'est pas marqu√©
     // mais le test de marquage serait trop gourmand en temps d'execution
     pTmgrTls->updateTaintCarryFlag(std::make_shared<TaintBit>(
         EXTRACT,
@@ -346,13 +346,13 @@ void SHIFT::fSHR(TaintManager_Thread *pTmgrTls, const TaintPtr &resultPtr, const
     else pTmgrTls->unTaintOverflowFlag();
 } // fSHR
 
-// marquage flags spÈcifique pour SHR, dÈplacement marquÈ
+// marquage flags sp√©cifique pour SHR, d√©placement marqu√©
 void SHIFT::fSHR(TaintManager_Thread *pTmgrTls, const TaintPtr &resultPtr, const ObjectSource &objSrcShiftedSrc,
           const ObjectSource &objTbCount)
 {
     ObjectSource objResult(resultPtr);
     
-    // dÈmarquage AF (undefined selon Intel) et SF (puisque insertion zÈros)
+    // d√©marquage AF (undefined selon Intel) et SF (puisque insertion z√©ros)
     pTmgrTls->unTaintAuxiliaryFlag();
     pTmgrTls->unTaintSignFlag();
 
@@ -360,13 +360,13 @@ void SHIFT::fSHR(TaintManager_Thread *pTmgrTls, const TaintPtr &resultPtr, const
     pTmgrTls->updateTaintZeroFlag  (std::make_shared<TaintBit>(F_IS_NULL, objResult));
     pTmgrTls->updateTaintParityFlag(std::make_shared<TaintBit>(F_PARITY,  objResult));
     
-    // marquage Carry : dernier bit de la source ÈjectÈ suite au shift       
+    // marquage Carry : dernier bit de la source √©ject√© suite au shift       
     pTmgrTls->updateTaintCarryFlag(std::make_shared<TaintBit>(
         F_CARRY_SHR,
         objSrcShiftedSrc,
         objTbCount));
 
-    // dÈmarquage Overflow (tant pis si le dÈplacement vaut 1...il y aura sous marquage)
+    // d√©marquage Overflow (tant pis si le d√©placement vaut 1...il y aura sous marquage)
     pTmgrTls->unTaintOverflowFlag();
 } // fSHR
 
@@ -382,8 +382,8 @@ void SHIFT::cSAR(INS &ins)
     // DECALAGE PAR VALEUR : SAR_IM ou SAR_IR
     if (INS_OperandIsImmediate(ins, 1)) 
     {    
-        // masquage du dÈplacement par dÈfaut ‡ 0x1f
-        // sera modifiÈ par la suite si opÈrande 64bits 
+        // masquage du d√©placement par d√©faut √† 0x1f
+        // sera modifi√© par la suite si op√©rande 64bits 
         UINT32 depl = static_cast<UINT32>(INS_OperandImmediate(ins, 1));
         UINT32 maskedDepl = depl & 0x1f;   
         
@@ -397,12 +397,12 @@ void SHIFT::cSAR(INS &ins)
                 #if TARGET_IA32E
                 case 8: 
                     callback = (AFUNPTR) sSAR_IM<64>; 
-                    maskedDepl = depl & 0x3f;   // masquage ‡ 0x3f en 64bits
+                    maskedDepl = depl & 0x3f;   // masquage √† 0x3f en 64bits
                     break;
                 #endif
                 default: return;
             } 
-            // dÈplacement non nul : instrumentation (sinon aucun chgt)
+            // d√©placement non nul : instrumentation (sinon aucun chgt)
             if (maskedDepl) INS_InsertCall (ins, IPOINT_BEFORE, callback,
                 IARG_THREAD_ID,
                 IARG_UINT32, maskedDepl,
@@ -411,7 +411,7 @@ void SHIFT::cSAR(INS &ins)
         }
         else // DESTINATION = REGISTRE (SAR_IR)
         {         
-            REG reg = INS_OperandReg(ins, 0); // registre qui sera dÈcalÈ 
+            REG reg = INS_OperandReg(ins, 0); // registre qui sera d√©cal√© 
             switch (getRegSize(reg)) 
             {
                 case 1: callback = (AFUNPTR) sSAR_IR<8>;  break;
@@ -420,16 +420,16 @@ void SHIFT::cSAR(INS &ins)
                 #if TARGET_IA32E
                 case 8: 
                     callback = (AFUNPTR) sSAR_IR<64>; 
-                    maskedDepl = depl & 0x3f;   // masquage ‡ 0x3f en 64bits
+                    maskedDepl = depl & 0x3f;   // masquage √† 0x3f en 64bits
                     break;
                 #endif
                 default: return;
             } 
-            // dÈplacement non nul : instrumentation (sinon aucun chgt)
+            // d√©placement non nul : instrumentation (sinon aucun chgt)
             if (maskedDepl) INS_InsertCall (ins, IPOINT_BEFORE, callback,
                 IARG_THREAD_ID,
                 IARG_UINT32, maskedDepl,
-                IARG_UINT32,    reg,    // registre dÈcalÈ
+                IARG_UINT32,    reg,    // registre d√©cal√©
                 IARG_REG_VALUE, reg,    // sa valeur lors du callback
                 IARG_INST_PTR, IARG_END);
         }
@@ -437,7 +437,7 @@ void SHIFT::cSAR(INS &ins)
     // DECALAGE PAR REGISTRE : SAR_RM ou SAR_RR
     else 
     {  
-        // le masquage ‡ 0x1f ou 0x3f sera fait dans le callback
+        // le masquage √† 0x1f ou 0x3f sera fait dans le callback
         if (INS_IsMemoryWrite(ins)) // DESTINATION = MEMOIRE (SAR_RM)
         {   
             switch (INS_MemoryWriteSize(ins)) 
@@ -452,13 +452,13 @@ void SHIFT::cSAR(INS &ins)
             } 
             INS_InsertCall (ins, IPOINT_BEFORE, callback,
                 IARG_THREAD_ID,
-                IARG_REG_VALUE, REG_CL, // valeur numÈrique du dÈplacement
+                IARG_REG_VALUE, REG_CL, // valeur num√©rique du d√©placement
                 IARG_MEMORYWRITE_EA,   
                 IARG_INST_PTR, IARG_END);
         }
         else // DESTINATION = REGISTRE (SAR_RR)
         {         
-            REG reg = INS_OperandReg(ins, 0); // registre qui sera dÈcalÈ 
+            REG reg = INS_OperandReg(ins, 0); // registre qui sera d√©cal√© 
             switch (getRegSize(reg)) 
             {
                 case 1: callback = (AFUNPTR) sSAR_RR<8>;  break;
@@ -471,8 +471,8 @@ void SHIFT::cSAR(INS &ins)
             } 
             INS_InsertCall (ins, IPOINT_BEFORE, callback,
                 IARG_THREAD_ID,
-                IARG_REG_VALUE, REG_CL, // valeur numÈrique du dÈplacement
-                IARG_UINT32,    reg,    // registre dÈcalÈ
+                IARG_REG_VALUE, REG_CL, // valeur num√©rique du d√©placement
+                IARG_UINT32,    reg,    // registre d√©cal√©
                 IARG_REG_VALUE, reg,    // sa valeur lors du callback
                 IARG_INST_PTR, IARG_END);
         }
@@ -480,13 +480,13 @@ void SHIFT::cSAR(INS &ins)
 } // cSAR
 
 /** FLAGS **/
-// marquage flags spÈcifique pour SAR, dÈplacement non marquÈ
+// marquage flags sp√©cifique pour SAR, d√©placement non marqu√©
 void SHIFT::fSAR(TaintManager_Thread *pTmgrTls, const TaintPtr &resultPtr, const ObjectSource &objSrcShiftedSrc,
           UINT32 maskedDepl) 
 {
     ObjectSource objResult(resultPtr);
     
-    // dÈmarquage AF (undefined selon Intel) et OF (spÈcifique SAR) 
+    // d√©marquage AF (undefined selon Intel) et OF (sp√©cifique SAR) 
     pTmgrTls->unTaintAuxiliaryFlag();
     pTmgrTls->unTaintOverflowFlag();
 
@@ -498,7 +498,7 @@ void SHIFT::fSAR(TaintManager_Thread *pTmgrTls, const TaintPtr &resultPtr, const
     pTmgrTls->updateTaintParityFlag(std::make_shared<TaintBit>(F_PARITY,  objResult));
     
     // marquage Carry : bit (depl - 1) de la source
-    // peut provoquer un surmarquage si l'octet concernÈ n'est pas marquÈ
+    // peut provoquer un surmarquage si l'octet concern√© n'est pas marqu√©
     // mais le test de marquage serait trop gourmand en temps d'execution
     pTmgrTls->updateTaintCarryFlag(std::make_shared<TaintBit>(
         EXTRACT,
@@ -506,13 +506,13 @@ void SHIFT::fSAR(TaintManager_Thread *pTmgrTls, const TaintPtr &resultPtr, const
         ObjectSource(8, maskedDepl - 1))); 
 } // fSAR 
 
-// marquage flags spÈcifique pour SAR, dÈplacement marquÈ
+// marquage flags sp√©cifique pour SAR, d√©placement marqu√©
 void SHIFT::fSAR(TaintManager_Thread *pTmgrTls, const TaintPtr &resultPtr, const ObjectSource &objSrcShiftedSrc,
           const ObjectSource &objTbCount) 
 {
     ObjectSource objResult(resultPtr);
     
-    // dÈmarquage AF (undefined selon Intel) et OF (spÈcifique SAR) 
+    // d√©marquage AF (undefined selon Intel) et OF (sp√©cifique SAR) 
     pTmgrTls->unTaintAuxiliaryFlag();
     pTmgrTls->unTaintOverflowFlag();
 
@@ -523,7 +523,7 @@ void SHIFT::fSAR(TaintManager_Thread *pTmgrTls, const TaintPtr &resultPtr, const
     pTmgrTls->updateTaintZeroFlag  (std::make_shared<TaintBit>(F_IS_NULL, objResult));
     pTmgrTls->updateTaintParityFlag(std::make_shared<TaintBit>(F_PARITY,  objResult));
     
-    // marquage Carry : dernier bit de la source ÈjectÈ suite au shift       
+    // marquage Carry : dernier bit de la source √©ject√© suite au shift       
     pTmgrTls->updateTaintCarryFlag(std::make_shared<TaintBit>(
         F_CARRY_SAR,
         objSrcShiftedSrc,
@@ -538,14 +538,14 @@ void SHIFT::fSAR(TaintManager_Thread *pTmgrTls, const TaintPtr &resultPtr, const
 void SHIFT::cSHLD(INS &ins) 
 {
     void (*callback)() = nullptr;     // pointeur sur la fonction a appeler
-    REG regSrc = INS_OperandReg(ins, 1); // registre "source" (2eme opÈrande, tjs registre)
+    REG regSrc = INS_OperandReg(ins, 1); // registre "source" (2eme op√©rande, tjs registre)
     UINT32 regSrcSize = getRegSize(regSrc);
-    if (!regSrc) return;    // registre non supportÈ
+    if (!regSrc) return;    // registre non support√©
 
     // DECALAGE PAR VALEUR : SHLD_IM ou SHLD_IR
     if (INS_OperandIsImmediate(ins, 1)) 
     {    
-        // masquage du dÈplacement ‡ 0x1f (meme en x64), sauf si opÈrande 64bits (masquage ‡ 0x3f) 
+        // masquage du d√©placement √† 0x1f (meme en x64), sauf si op√©rande 64bits (masquage √† 0x3f) 
         UINT32 depl = static_cast<UINT32>(INS_OperandImmediate(ins, 1));
         UINT32 maskedDepl = depl & 0x1f;   
         
@@ -559,12 +559,12 @@ void SHIFT::cSHLD(INS &ins)
                 #if TARGET_IA32E
                 case 8: 
                     callback = (AFUNPTR) sSHLD_IM<64>; 
-                    maskedDepl = depl & 0x3f;   // masquage ‡ 0x3f en 64bits
+                    maskedDepl = depl & 0x3f;   // masquage √† 0x3f en 64bits
                     break;
                 #endif
                 default: return;
             } 
-            // dÈplacement non nul : instrumentation (sinon aucun chgt)
+            // d√©placement non nul : instrumentation (sinon aucun chgt)
             if (maskedDepl) INS_InsertCall (ins, IPOINT_BEFORE, callback,
                 IARG_THREAD_ID,
                 IARG_UINT32, maskedDepl,
@@ -575,7 +575,7 @@ void SHIFT::cSHLD(INS &ins)
         }
         else // DESTINATION = REGISTRE (SHLD_IR)
         {         
-            REG regDest = INS_OperandReg(ins, 0); // registre qui sera dÈcalÈ 
+            REG regDest = INS_OperandReg(ins, 0); // registre qui sera d√©cal√© 
             switch (getRegSize(regDest)) 
             {
                 // case 1: impossible
@@ -584,19 +584,19 @@ void SHIFT::cSHLD(INS &ins)
                 #if TARGET_IA32E
                 case 8: 
                     callback = (AFUNPTR) sSHLD_IR<64>; 
-                    maskedDepl = depl & 0x3f;   // masquage ‡ 0x3f en 64bits
+                    maskedDepl = depl & 0x3f;   // masquage √† 0x3f en 64bits
                     break;
                 #endif
                 default: return;
             } 
             
-            // dÈplacement non nul : instrumentation (sinon aucun chgt)
+            // d√©placement non nul : instrumentation (sinon aucun chgt)
             if (maskedDepl) INS_InsertCall (ins, IPOINT_BEFORE, callback,
                 IARG_THREAD_ID,
                 IARG_UINT32, maskedDepl,
                 IARG_UINT32, regSrc,
                 IARG_REG_VALUE, regSrc,
-                IARG_UINT32,    regDest,    // registre dÈcalÈ
+                IARG_UINT32,    regDest,    // registre d√©cal√©
                 IARG_REG_VALUE, regDest,    // sa valeur lors du callback
                 IARG_INST_PTR, IARG_END);
         }
@@ -604,7 +604,7 @@ void SHIFT::cSHLD(INS &ins)
     // DECALAGE PAR REGISTRE : SHLD_RM ou SHLD_RR
     else 
     {  
-        // le masquage ‡ 0x1f ou 0x3f sera fait dans le callback
+        // le masquage √† 0x1f ou 0x3f sera fait dans le callback
         if (INS_IsMemoryWrite(ins)) // DESTINATION = MEMOIRE (SHLD_RM)
         {   
             switch (regSrcSize) 
@@ -619,7 +619,7 @@ void SHIFT::cSHLD(INS &ins)
             } 
             INS_InsertCall (ins, IPOINT_BEFORE, callback,
                 IARG_THREAD_ID,
-                IARG_REG_VALUE, REG_CL, // valeur numÈrique du dÈplacement
+                IARG_REG_VALUE, REG_CL, // valeur num√©rique du d√©placement
                 IARG_UINT32, regSrc,
                 IARG_REG_VALUE, regSrc,
                 IARG_MEMORYWRITE_EA,   
@@ -627,7 +627,7 @@ void SHIFT::cSHLD(INS &ins)
         }
         else // DESTINATION = REGISTRE (SHLD_RR)
         {         
-            REG regDest = INS_OperandReg(ins, 0); // registre qui sera dÈcalÈ 
+            REG regDest = INS_OperandReg(ins, 0); // registre qui sera d√©cal√© 
             switch (getRegSize(regDest)) 
             {
                 // case 1: impossible
@@ -640,10 +640,10 @@ void SHIFT::cSHLD(INS &ins)
             }   
             INS_InsertCall (ins, IPOINT_BEFORE, callback,
                 IARG_THREAD_ID,
-                IARG_REG_VALUE, REG_CL, // valeur numÈrique du dÈplacement
+                IARG_REG_VALUE, REG_CL, // valeur num√©rique du d√©placement
                 IARG_UINT32, regSrc,
                 IARG_REG_VALUE, regSrc,
-                IARG_UINT32,    regDest,    // registre dÈcalÈ
+                IARG_UINT32,    regDest,    // registre d√©cal√©
                 IARG_REG_VALUE, regDest,    // sa valeur lors du callback
                 IARG_INST_PTR, IARG_END);
         }
@@ -651,22 +651,22 @@ void SHIFT::cSHLD(INS &ins)
 } // cSHLD
 
 /** FLAGS **/
-// marquage flags spÈcifique pour SHLD, dÈplacement non marquÈ
+// marquage flags sp√©cifique pour SHLD, d√©placement non marqu√©
 void SHIFT::fSHLD(TaintManager_Thread *pTmgrTls, const TaintPtr &resultPtr, const ObjectSource &objSrcShiftedSrc,
           UINT32 maskedDepl)
 {
     ObjectSource objResult(resultPtr);
     
-    // dÈmarquage AF (undefined selon Intel)
+    // d√©marquage AF (undefined selon Intel)
     pTmgrTls->unTaintAuxiliaryFlag();
     // marquage ZF et SF
     pTmgrTls->updateTaintZeroFlag(std::make_shared<TaintBit>(F_IS_NULL, objResult));
     pTmgrTls->updateTaintSignFlag(std::make_shared<TaintBit>(F_MSB,     objResult));
-    // marquage PF dans tous les cas (contrairement ‡ SHL ou on le faisait si depl < 8)
+    // marquage PF dans tous les cas (contrairement √† SHL ou on le faisait si depl < 8)
     pTmgrTls->updateTaintParityFlag(std::make_shared<TaintBit>(F_PARITY, objResult));
 
     // marquage Carry : bit (lengthInBits - depl) de la source
-    // peut quand meme provoquer un surmarquage si l'octet concernÈ n'est pas marquÈ
+    // peut quand meme provoquer un surmarquage si l'octet concern√© n'est pas marqu√©
     // mais le test de marquage serait trop gourmand en temps d'execution
     pTmgrTls->updateTaintCarryFlag(std::make_shared<TaintBit>(
         EXTRACT,
@@ -681,11 +681,11 @@ void SHIFT::fSHLD(TaintManager_Thread *pTmgrTls, const TaintPtr &resultPtr, cons
     else pTmgrTls->unTaintOverflowFlag();
 } // fSHLD
 
-// marquage flags spÈcifique pour SHLD, dÈplacement marquÈ
+// marquage flags sp√©cifique pour SHLD, d√©placement marqu√©
 void SHIFT::fSHLD(TaintManager_Thread *pTmgrTls, const TaintPtr &resultPtr, const ObjectSource &objSrcShiftedSrc,
           const ObjectSource &objTbCount)
 {
-    // pour le cas 'deplacement marquÈ', flags identiques ‡ SHL
+    // pour le cas 'deplacement marqu√©', flags identiques √† SHL
     fSHL(pTmgrTls, resultPtr, objSrcShiftedSrc, objTbCount);
 } // fSHLD
 
@@ -696,14 +696,14 @@ void SHIFT::fSHLD(TaintManager_Thread *pTmgrTls, const TaintPtr &resultPtr, cons
 void SHIFT::cSHRD(INS &ins) 
 {
     void (*callback)() = nullptr;     // pointeur sur la fonction a appeler
-    REG regSrc = INS_OperandReg(ins, 1); // registre "source" (2eme opÈrande, tjs registre)
+    REG regSrc = INS_OperandReg(ins, 1); // registre "source" (2eme op√©rande, tjs registre)
     UINT32 regSrcSize = getRegSize(regSrc);
-    if (!regSrc) return;    // registre non supportÈ
+    if (!regSrc) return;    // registre non support√©
 
     // DECALAGE PAR VALEUR : SHRD_IM ou SHRD_IR
     if (INS_OperandIsImmediate(ins, 1)) 
     {    
-        // masquage du dÈplacement ‡ 0x1f (meme en x64), sauf si opÈrande 64bits (masquage ‡ 0x3f) 
+        // masquage du d√©placement √† 0x1f (meme en x64), sauf si op√©rande 64bits (masquage √† 0x3f) 
         UINT32 depl = static_cast<UINT32>(INS_OperandImmediate(ins, 1));
         UINT32 maskedDepl = depl & 0x1f;   
         
@@ -717,12 +717,12 @@ void SHIFT::cSHRD(INS &ins)
                 #if TARGET_IA32E
                 case 8: 
                     callback = (AFUNPTR) sSHRD_IM<64>; 
-                    maskedDepl = depl & 0x3f;   // masquage ‡ 0x3f en 64bits
+                    maskedDepl = depl & 0x3f;   // masquage √† 0x3f en 64bits
                     break;
                 #endif
                 default: return;
             } 
-            // dÈplacement non nul : instrumentation (sinon aucun chgt)
+            // d√©placement non nul : instrumentation (sinon aucun chgt)
             if (maskedDepl) INS_InsertCall (ins, IPOINT_BEFORE, callback,
                 IARG_THREAD_ID,
                 IARG_UINT32, maskedDepl,
@@ -733,7 +733,7 @@ void SHIFT::cSHRD(INS &ins)
         }
         else // DESTINATION = REGISTRE (SHRD_IR)
         {         
-            REG regDest = INS_OperandReg(ins, 0); // registre qui sera dÈcalÈ 
+            REG regDest = INS_OperandReg(ins, 0); // registre qui sera d√©cal√© 
             switch (getRegSize(regDest)) 
             {
                 // case 1: impossible
@@ -742,19 +742,19 @@ void SHIFT::cSHRD(INS &ins)
                 #if TARGET_IA32E
                 case 8: 
                     callback = (AFUNPTR) sSHRD_IR<64>; 
-                    maskedDepl = depl & 0x3f;   // masquage ‡ 0x3f en 64bits
+                    maskedDepl = depl & 0x3f;   // masquage √† 0x3f en 64bits
                     break;
                 #endif
                 default: return;
             } 
             
-            // dÈplacement non nul : instrumentation (sinon aucun chgt)
+            // d√©placement non nul : instrumentation (sinon aucun chgt)
             if (maskedDepl) INS_InsertCall (ins, IPOINT_BEFORE, callback,
                 IARG_THREAD_ID,
                 IARG_UINT32, maskedDepl,
                 IARG_UINT32, regSrc,
                 IARG_REG_VALUE, regSrc,
-                IARG_UINT32,    regDest,    // registre dÈcalÈ
+                IARG_UINT32,    regDest,    // registre d√©cal√©
                 IARG_REG_VALUE, regDest,    // sa valeur lors du callback
                 IARG_INST_PTR, IARG_END);
         }
@@ -762,7 +762,7 @@ void SHIFT::cSHRD(INS &ins)
     // DECALAGE PAR REGISTRE : SHRD_RM ou SHRD_RR
     else 
     {  
-        // le masquage ‡ 0x1f ou 0x3f sera fait dans le callback
+        // le masquage √† 0x1f ou 0x3f sera fait dans le callback
         if (INS_IsMemoryWrite(ins)) // DESTINATION = MEMOIRE (SHRD_RM)
         {   
             switch (regSrcSize) 
@@ -777,7 +777,7 @@ void SHIFT::cSHRD(INS &ins)
             } 
             INS_InsertCall (ins, IPOINT_BEFORE, callback,
                 IARG_THREAD_ID,
-                IARG_REG_VALUE, REG_CL, // valeur numÈrique du dÈplacement
+                IARG_REG_VALUE, REG_CL, // valeur num√©rique du d√©placement
                 IARG_UINT32, regSrc,
                 IARG_REG_VALUE, regSrc,
                 IARG_MEMORYWRITE_EA,   
@@ -785,7 +785,7 @@ void SHIFT::cSHRD(INS &ins)
         }
         else // DESTINATION = REGISTRE (SHRD_RR)
         {         
-            REG regDest = INS_OperandReg(ins, 0); // registre qui sera dÈcalÈ 
+            REG regDest = INS_OperandReg(ins, 0); // registre qui sera d√©cal√© 
             switch (getRegSize(regDest)) 
             {
                 // case 1: impossible
@@ -798,10 +798,10 @@ void SHIFT::cSHRD(INS &ins)
             }   
             INS_InsertCall (ins, IPOINT_BEFORE, callback,
                 IARG_THREAD_ID,
-                IARG_REG_VALUE, REG_CL, // valeur numÈrique du dÈplacement
+                IARG_REG_VALUE, REG_CL, // valeur num√©rique du d√©placement
                 IARG_UINT32, regSrc,
                 IARG_REG_VALUE, regSrc,
-                IARG_UINT32,    regDest,    // registre dÈcalÈ
+                IARG_UINT32,    regDest,    // registre d√©cal√©
                 IARG_REG_VALUE, regDest,    // sa valeur lors du callback
                 IARG_INST_PTR, IARG_END);
         }
@@ -809,13 +809,13 @@ void SHIFT::cSHRD(INS &ins)
 } // cSHRD
 
 /** FLAGS **/
-// marquage flags spÈcifique pour SHRD, dÈplacement non marquÈ
+// marquage flags sp√©cifique pour SHRD, d√©placement non marqu√©
 void SHIFT::fSHRD(TaintManager_Thread *pTmgrTls, const TaintPtr &resultPtr, const ObjectSource &objConcatenatedSrc,
           UINT32 maskedDepl)
 {
     ObjectSource objResult(resultPtr);
     
-    // dÈmarquage AF (undefined selon Intel) et SF (puisque insertion zÈros)
+    // d√©marquage AF (undefined selon Intel) et SF (puisque insertion z√©ros)
     pTmgrTls->unTaintAuxiliaryFlag();
     pTmgrTls->unTaintSignFlag();
 
@@ -824,7 +824,7 @@ void SHIFT::fSHRD(TaintManager_Thread *pTmgrTls, const TaintPtr &resultPtr, cons
     pTmgrTls->updateTaintParityFlag(std::make_shared<TaintBit>(F_PARITY,  objResult));
     
     // marquage Carry : bit (depl - 1) de la source, (PEU IMPORTE QU'ELLE SOIT ICI CONCATENEE)
-    // peut provoquer un surmarquage si l'octet concernÈ n'est pas marquÈ
+    // peut provoquer un surmarquage si l'octet concern√© n'est pas marqu√©
     // mais le test de marquage serait trop gourmand en temps d'execution
     pTmgrTls->updateTaintCarryFlag(std::make_shared<TaintBit>(
         EXTRACT,
@@ -839,13 +839,13 @@ void SHIFT::fSHRD(TaintManager_Thread *pTmgrTls, const TaintPtr &resultPtr, cons
     else pTmgrTls->unTaintOverflowFlag();
 } // fSHRD
 
-// marquage flags spÈcifique pour SHRD, dÈplacement marquÈ
+// marquage flags sp√©cifique pour SHRD, d√©placement marqu√©
 void SHIFT::fSHRD(TaintManager_Thread *pTmgrTls, const TaintPtr &resultPtr, const ObjectSource &objConcatenatedSrc,
           const ObjectSource &objTbCount)
 {
     ObjectSource objResult(resultPtr);
     
-    // dÈmarquage AF (undefined selon Intel) et SF (puisque insertion zÈros)
+    // d√©marquage AF (undefined selon Intel) et SF (puisque insertion z√©ros)
     pTmgrTls->unTaintAuxiliaryFlag();
     pTmgrTls->unTaintSignFlag();
 
@@ -853,14 +853,14 @@ void SHIFT::fSHRD(TaintManager_Thread *pTmgrTls, const TaintPtr &resultPtr, cons
     pTmgrTls->updateTaintZeroFlag  (std::make_shared<TaintBit>(F_IS_NULL, objResult));
     pTmgrTls->updateTaintParityFlag(std::make_shared<TaintBit>(F_PARITY,  objResult));
     
-    // marquage Carry : dernier bit de la source ÈjectÈ suite au shift       
+    // marquage Carry : dernier bit de la source √©ject√© suite au shift       
     pTmgrTls->updateTaintCarryFlag(std::make_shared<TaintBit>(
         F_CARRY_SHR,
         objConcatenatedSrc,
         objTbCount));
 
     // POUR SHRD, OF vaut 1 si changement de signe, donc si MSB srcDest != LSB BitPattern
-    // probable surmarquage car OF marquÈ ssi depl == 1; seule solution : dÈmarquer !!!
+    // probable surmarquage car OF marqu√© ssi depl == 1; seule solution : d√©marquer !!!
     pTmgrTls->unTaintOverflowFlag();
 } // fSHRD
 

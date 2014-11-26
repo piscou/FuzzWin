@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <TaintEngine\TaintManager.h>
 
 namespace INSTRUMENTATION 
@@ -8,9 +8,9 @@ namespace INSTRUMENTATION
     void FiniTaint(INT32 code, void *);
     void FiniCheckScore(INT32 code, void *);
 
-    void threadStart          (THREADID tid, CONTEXT *, INT32 , void *);
-    void threadFini           (THREADID tid, const CONTEXT *, INT32 , void *);
-    void ThreadStartCheckScore(THREADID tid, CONTEXT *, INT32 , void *);
+    void threadStart          (THREADID tid, CONTEXT *, INT32 , VOID *);
+    void threadFini           (THREADID tid, const CONTEXT *, INT32 , VOID *);
+    void ThreadStartCheckScore(THREADID tid, CONTEXT *, INT32 , VOID *);
 
     void changeCtx(THREADID tid, CONTEXT_CHANGE_REASON reason,
                         const CONTEXT *, CONTEXT *, INT32 sig, VOID *);

@@ -1,30 +1,30 @@
-#include "unconditional_branch.h"
+ï»¿#include "unconditional_branch.h"
 
 // CALLBACKS
 void UNCONDITIONAL_BR::cJMP(INS &ins) 
 {
     void (*callback)() = nullptr;
     
-    /* JMP est étudié lorsqu'il est possible d'influer sur l'adresse du saut
-    donc les cas "JMP relative" (adresse immédiate ou relative à EIP) sont non traités */
+    /* JMP est Ã©tudiÃ© lorsqu'il est possible d'influer sur l'adresse du saut
+    donc les cas "JMP relative" (adresse immÃ©diate ou relative Ã  EIP) sont non traitÃ©s */
 
     if (INS_IsDirectBranch(ins)) return;
 
-    /* dans le cas contraire il reste à traiter deux cas:
-      1) JMP [EFFECTIVE ADRESS] : il faut tester à la fois si le calcul de l'adresse
-         effective est marqué (appel à cGetKindOfEA) et si l'adresse du saut, figurant
-         à l'adresse effective, est marquée
-         qui va vérifier si le calcul de l'EA est marqué ou non
-      2) JMP REG : il faut tester le marquage du registre concerné. si c'est le cas
+    /* dans le cas contraire il reste Ã  traiter deux cas:
+      1) JMP [EFFECTIVE ADRESS] : il faut tester Ã  la fois si le calcul de l'adresse
+         effective est marquÃ© (appel Ã  cGetKindOfEA) et si l'adresse du saut, figurant
+         Ã  l'adresse effective, est marquÃ©e
+         qui va vÃ©rifier si le calcul de l'EA est marquÃ© ou non
+      2) JMP REG : il faut tester le marquage du registre concernÃ©. si c'est le cas
          il faudra essayer de changer sa valeur pour sauter autre part */
 
-    // cas n°1 : JMP [EFFECTIVE ADDRESS] 
+    // cas nÂ°1 : JMP [EFFECTIVE ADDRESS] 
     if (INS_OperandIsMemory(ins, 0)) 
     {
-        // test du marquage de l'adresse effective par insertion de callbacks spécifiques
+        // test du marquage de l'adresse effective par insertion de callbacks spÃ©cifiques
         UTILS::cGetKindOfEA(ins);
 
-        // taille de lecture de la mémoire (16, 32 ou 64 bits)
+        // taille de lecture de la mÃ©moire (16, 32 ou 64 bits)
         switch (INS_MemoryReadSize(ins))
         {
         // case 1:	impossible
@@ -35,14 +35,14 @@ void UNCONDITIONAL_BR::cJMP(INS &ins)
         #endif
         }
 
-        // insertion du callback pour le test du marquage de l'adresse pointée par l'EA
+        // insertion du callback pour le test du marquage de l'adresse pointÃ©e par l'EA
         INS_InsertCall(ins, IPOINT_BEFORE, callback, 
             IARG_THREAD_ID,
             IARG_MEMORYREAD_EA,    // adresse ou se trouve l'adresse de saut
             IARG_BRANCH_TARGET_ADDR,    // adresse de saut     
             IARG_INST_PTR, IARG_END);
     } 
-    // cas n°2 : JMP 'REG'
+    // cas nÂ°2 : JMP 'REG'
     else
     {
         REG reg = INS_OperandReg(ins, 0);
@@ -59,7 +59,7 @@ void UNCONDITIONAL_BR::cJMP(INS &ins)
       
         INS_InsertCall(ins, IPOINT_BEFORE, callback, 
             IARG_THREAD_ID,   
-            IARG_UINT32,    reg,     // registre définissant l'adresse de saut
+            IARG_UINT32,    reg,     // registre dÃ©finissant l'adresse de saut
             IARG_BRANCH_TARGET_ADDR, // adresse de saut   
             IARG_INST_PTR, IARG_END);
     }

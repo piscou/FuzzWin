@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 #include <TaintEngine\TaintManager.h>
 
 namespace SHIFT 
@@ -57,42 +57,42 @@ template<UINT32 lengthInBits>
 void sSHRD_RR(THREADID tid, ADDRINT regCLValue, REG regSrc, ADDRINT regSrcValue, REG regSrcDest, ADDRINT regSrcDestValue, ADDRINT insAddress);
 
 //  FLAGS 
-// marquage flags spécifique pour SHL, déplacement non marqué
+// marquage flags spÃ©cifique pour SHL, dÃ©placement non marquÃ©
 void fSHL(TaintManager_Thread *pTmgrTls, const TaintPtr &resultPtr, const ObjectSource &objSrcShiftedSrc,
           UINT32 maskedDepl);
-// marquage flags spécifique pour SHL, déplacement marqué
+// marquage flags spÃ©cifique pour SHL, dÃ©placement marquÃ©
 void fSHL(TaintManager_Thread *pTmgrTls, const TaintPtr &resultPtr, const ObjectSource &objSrcShiftedSrc,
           const ObjectSource &objTbCount);
 
-// marquage flags spécifique pour SHR, déplacement non marqué
+// marquage flags spÃ©cifique pour SHR, dÃ©placement non marquÃ©
 void fSHR(TaintManager_Thread *pTmgrTls, const TaintPtr &resultPtr, const ObjectSource &objSrcShiftedSrc,
           UINT32 maskedDepl);
-// marquage flags spécifique pour SHR, déplacement marqué
+// marquage flags spÃ©cifique pour SHR, dÃ©placement marquÃ©
 void fSHR(TaintManager_Thread *pTmgrTls, const TaintPtr &resultPtr, const ObjectSource &objSrcShiftedSrc,
           const ObjectSource &objTbCount);
 
-// marquage flags spécifique pour SAR, déplacement non marqué
+// marquage flags spÃ©cifique pour SAR, dÃ©placement non marquÃ©
 void fSAR(TaintManager_Thread *pTmgrTls, const TaintPtr &resultPtr, const ObjectSource &objSrcShiftedSrc,
           UINT32 maskedDepl);
-// marquage flags spécifique pour SAR, déplacement marqué
+// marquage flags spÃ©cifique pour SAR, dÃ©placement marquÃ©
 void fSAR(TaintManager_Thread *pTmgrTls, const TaintPtr &resultPtr, const ObjectSource &objSrcShiftedSrc,
           const ObjectSource &objTbCount);
 
-// marquage flags spécifique pour SHLD, déplacement non marqué
+// marquage flags spÃ©cifique pour SHLD, dÃ©placement non marquÃ©
 void fSHLD(TaintManager_Thread *pTmgrTls, const TaintPtr &resultPtr, const ObjectSource &objSrcShiftedSrc,
           UINT32 maskedDepl);
-// marquage flags spécifique pour SHLD, déplacement marqué
+// marquage flags spÃ©cifique pour SHLD, dÃ©placement marquÃ©
 void fSHLD(TaintManager_Thread *pTmgrTls, const TaintPtr &resultPtr, const ObjectSource &objSrcShiftedSrc,
           const ObjectSource &objTbCount);
 
-// marquage flags spécifique pour SHRD, déplacement non marqué
+// marquage flags spÃ©cifique pour SHRD, dÃ©placement non marquÃ©
 void fSHRD(TaintManager_Thread *pTmgrTls, const TaintPtr &resultPtr, const ObjectSource &objConcatenatedSrc,
           UINT32 maskedDepl);
-// marquage flags spécifique pour SHRD, déplacement marqué
+// marquage flags spÃ©cifique pour SHRD, dÃ©placement marquÃ©
 void fSHRD(TaintManager_Thread *pTmgrTls, const TaintPtr &resultPtr, const ObjectSource &objConcatenatedSrc,
           const ObjectSource &objTbCount);
 
-// démarquage OZSAP
+// dÃ©marquage OZSAP
 void fUnTaintOZSAP(TaintManager_Thread *pTmgrTls);
 } // namespace SHIFT
 

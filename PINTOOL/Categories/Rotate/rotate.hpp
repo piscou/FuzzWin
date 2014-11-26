@@ -166,7 +166,7 @@ void ROTATE::sROL_RM(THREADID tid, ADDRINT regCLValue, ADDRINT writeAddress, ADD
         pTmgrTls->unTaintOverflowFlag();
     }
     // déplacement non marqué (mais mémoire oui) => cas ROL_IM
-    else if (!isCountTainted) sROL_IM<lengthInBits>(tid, (UINT32) regCLValue, writeAddress ,insAddress); 
+    else if (!isCountTainted) sROL_IM<lengthInBits>(tid, (UINT32) regCLValue, writeAddress, insAddress); 
     else // déplacement marqué  
     {
         _LOGTAINT(tid, insAddress, "ROL_RM" + decstr(lengthInBits));
@@ -207,7 +207,7 @@ void ROTATE::sROL_RR(THREADID tid, ADDRINT regCLValue, REG reg, ADDRINT regValue
         pTmgrTls->unTaintOverflowFlag();
     }
     // déplacement non marqué (mais registre oui) => cas ROL_IR
-    else if (!isCountTainted) sROL_IR<lengthInBits>(tid, (UINT32) regCLValue, reg, regValue ,insAddress); 
+    else if (!isCountTainted) sROL_IR<lengthInBits>(tid, (UINT32) regCLValue, reg, regValue, insAddress); 
     else // déplacement marqué 
     {
         _LOGTAINT(tid, insAddress, "ROL_RR" + decstr(lengthInBits));
@@ -400,7 +400,7 @@ void ROTATE::sROR_RM(THREADID tid, ADDRINT regCLValue, ADDRINT writeAddress, ADD
         pTmgrTls->unTaintOverflowFlag();
     }
     // déplacement non marqué (mais mémoire oui) => cas ROR_IM
-    else if (!isCountTainted)  sROR_IM<lengthInBits>(tid, (UINT32) regCLValue, writeAddress ,insAddress);
+    else if (!isCountTainted)  sROR_IM<lengthInBits>(tid, (UINT32) regCLValue, writeAddress, insAddress);
     else // déplacement marqué  
     {
         _LOGTAINT(tid, insAddress, "ROR_RM" + decstr(lengthInBits));
@@ -441,7 +441,7 @@ void ROTATE::sROR_RR(THREADID tid, ADDRINT regCLValue, REG reg, ADDRINT regValue
         pTmgrTls->unTaintOverflowFlag();
     }
     // déplacement non marqué (mais registre oui) => cas ROR_IR
-    else if (!isCountTainted) sROR_IR<lengthInBits>(tid, (UINT32) regCLValue, reg, regValue ,insAddress);  
+    else if (!isCountTainted) sROR_IR<lengthInBits>(tid, (UINT32) regCLValue, reg, regValue, insAddress);  
     else // déplacement marqué 
     {
         _LOGTAINT(tid, insAddress, "ROR_RR" + decstr(lengthInBits));
@@ -632,7 +632,7 @@ template<UINT32 lengthInBits> void ROTATE::sRCL_RM
         pTmgrTls->unTaintOverflowFlag();
     }
     // déplacement non marqué (mais mémoire et/ou carry oui) => cas RCL_IM
-    else if (!isCountTainted)  sRCL_IM<lengthInBits>(tid, (UINT32) regCLValue, writeAddress, regGflagsValue ,insAddress); 
+    else if (!isCountTainted)  sRCL_IM<lengthInBits>(tid, (UINT32) regCLValue, writeAddress, regGflagsValue, insAddress); 
     else // déplacement marqué  
     {
         _LOGTAINT(tid, insAddress, "RCL_RM" + decstr(lengthInBits));
@@ -680,7 +680,7 @@ template<UINT32 lengthInBits> void ROTATE::sRCL_RR
         pTmgrTls->unTaintOverflowFlag();
     }
     // déplacement non marqué (mais registre oui) => cas RCL_IR
-    else if (!isCountTainted) sRCL_IR<lengthInBits>(tid, (UINT32) regCLValue, reg, regValue, regGflagsValue ,insAddress); 
+    else if (!isCountTainted) sRCL_IR<lengthInBits>(tid, (UINT32) regCLValue, reg, regValue, regGflagsValue, insAddress); 
     else // déplacement marqué 
     {
         _LOGTAINT(tid, insAddress, "RCL_RR" + decstr(lengthInBits));
@@ -874,7 +874,7 @@ template<UINT32 lengthInBits> void ROTATE::sRCR_RM
         pTmgrTls->unTaintOverflowFlag();
     }
     // déplacement non marqué (mais mémoire et/ou carry oui) => cas RCR_IM
-    else if (!isCountTainted) sRCR_IM<lengthInBits>(tid, (UINT32) regCLValue, writeAddress, regGflagsValue ,insAddress); 
+    else if (!isCountTainted) sRCR_IM<lengthInBits>(tid, (UINT32) regCLValue, writeAddress, regGflagsValue, insAddress); 
     else // déplacement marqué  
     {
         _LOGTAINT(tid, insAddress, "RCR_RM" + decstr(lengthInBits));
@@ -922,7 +922,7 @@ template<UINT32 lengthInBits> void ROTATE::sRCR_RR
         pTmgrTls->unTaintOverflowFlag();
     }
     // déplacement non marqué (mais registre oui) => cas RCL_IR
-    else if (!isCountTainted) sRCR_IR<lengthInBits>(tid, (UINT32) regCLValue, reg, regValue, regGflagsValue ,insAddress); 
+    else if (!isCountTainted) sRCR_IR<lengthInBits>(tid, (UINT32) regCLValue, reg, regValue, regGflagsValue, insAddress); 
     else // déplacement marqué 
     {
         _LOGTAINT(tid, insAddress, "RCR_RR" + decstr(lengthInBits));

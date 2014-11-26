@@ -1,3 +1,5 @@
++ encodage de tous les fichiers en UTF-8
+
 *********************************
 Version 1.5 (beta) - 22 mai 2014
 *********************************

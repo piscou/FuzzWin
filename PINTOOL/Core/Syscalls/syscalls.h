@@ -1,14 +1,14 @@
-#pragma once
+ï»¿#pragma once
 #include <TaintEngine\TaintManager.h>
 #include <map>
 
-// les types d'OS supportés sont dans un fichier commun pintool / algo SAGE
+// les types d'OS supportÃ©s sont dans un fichier commun pintool / algo SAGE
 #include "../ALGORITHME/osType.h"
 
-// valeur utilisée pour faire un fseek avec le syscall SetInformationFile
+// valeur utilisÃ©e pour faire un fseek avec le syscall SetInformationFile
 #define FilePositionInformation         0xe     
-// valeur utilisée par ReadFile pour spécifier de lire 
-// à partir de l'offset actuel (source : Windows Driver Kit, wdm.h)
+// valeur utilisÃ©e par ReadFile pour spÃ©cifier de lire 
+// Ã  partir de l'offset actuel (source : Windows Driver Kit, wdm.h)
 #define FILE_USE_FILE_POINTER_POSITION  0xfffffffe  
 
 // typedefs "C-style" utiles pour la partie syscalls
@@ -51,7 +51,7 @@ extern "C"
         WINDOWS::LARGE_INTEGER  CurrentByteOffset;
     } FILE_POSITION_INFORMATION, *PFILE_POSITION_INFORMATION;
 
-    /** Partie spécigfique NtQueryObject **/
+    /** Partie spÃ©cigfique NtQueryObject **/
     enum OBJECT_INFORMATION_CLASS
     { 
         ObjectBasicInformation  = 0,
@@ -64,7 +64,7 @@ extern "C"
         WINDOWS::ULONG Reserved[22];
     };
 
-    // permet de récupérer l'adresse de la fonction NtQueryObject (NtDll.dll)
+    // permet de rÃ©cupÃ©rer l'adresse de la fonction NtQueryObject (NtDll.dll)
     typedef WINDOWS::NTSTATUS (NTAPI* t_NtQueryObject)(
         HANDLE Handle, 
         OBJECT_INFORMATION_CLASS Info, 
@@ -79,33 +79,33 @@ class Syscall_Data
 public:
     /***** COMMUN A TOUS LES SYSCALLS *****/
     ADDRINT syscallNumber;
-    // listes des handles de fichier  du fichier cible et offset associé (32bits )
+    // listes des handles de fichier  du fichier cible et offset associÃ© (32bits )
     std::map<HANDLE, UINT32> listOfFileHandles;
-    // listes des handles de section du fichier cible et offset associé (32bits )
+    // listes des handles de section du fichier cible et offset associÃ© (32bits )
     std::vector<HANDLE>      listOfSectionHandles;
 
     /***** ReadFile *****/
     // pointeur vers structure d'informations remplie par le syscall
     PIO_STATUS_BLOCK pInfos; 
-    // adresse du buffer qui recevra les données après lecture
+    // adresse du buffer qui recevra les donnÃ©es aprÃ¨s lecture
     void *pBuffer; 
     // offset de lecture AVANT le syscall; vaut normalement l'offset actuel
-    // sauf si l'argument 7 de ReadFile en spécifie un autre
-    // dans le cas *** SetInformationFile *** = l'offset à fixer
+    // sauf si l'argument 7 de ReadFile en spÃ©cifie un autre
+    // dans le cas *** SetInformationFile *** = l'offset Ã  fixer
     UINT32 offset; 
 
     /**** OpenFile & CreateFile & CreateSection *****/
-    // pointeur vers handle du fichier après ouverture, ou de la section après création
+    // pointeur vers handle du fichier aprÃ¨s ouverture, ou de la section aprÃ¨s crÃ©ation
     PHANDLE pHandle;
 
     /***** Close & SetInformationFile ***/
-    // handle du fichier à traiter, ou de la section (pour Close)
+    // handle du fichier Ã  traiter, ou de la section (pour Close)
     HANDLE hFile, hSection;
 
     /**** MapViewOfSection *****/
     // pointeur vers pointeur de l'adresse de base de la section
     void** ppBaseAddress;
-    // pointeur vers l'offset de la vue par rapport au début de la section
+    // pointeur vers l'offset de la vue par rapport au dÃ©but de la section
     WINDOWS::PLARGE_INTEGER pOffsetFromStart;
     // pointeur vers taille de la vue
     WINDOWS::PSIZE_T pViewSize;
@@ -124,7 +124,7 @@ enum INDEX_SYSCALL
     INDEX_SYSCALLS_END
 };
 
-// définition des numéros des appels systèmes selon l'OS
+// dÃ©finition des numÃ©ros des appels systÃ¨mes selon l'OS
 static const UINT32 syscallTable[HOST_END][INDEX_SYSCALLS_END] = 
 {
     // dans l'ordre : 
@@ -154,7 +154,7 @@ namespace SYSCALLS
     void syscallExit (THREADID tid, CONTEXT *ctxt, SYSCALL_STANDARD std, void *v);
 }
 
-// variable globale type d'OS hote. Sert à déterminer les numéros de syscalls
+// variable globale type d'OS hote. Sert Ã  dÃ©terminer les numÃ©ros de syscalls
 extern OSTYPE           g_osType;
 // adresse de la fonction NtQueryObject (NtDll.dll)
 extern t_NtQueryObject  g_AddressOfNtQueryObject;

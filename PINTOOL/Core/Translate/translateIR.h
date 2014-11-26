@@ -1,12 +1,12 @@
-#pragma once
+ï»¿#pragma once
 
 #include <TaintEngine\TaintManager.h>
 #include <sstream>
 #include <iostream> // cout (mode nopipe)
 
-// entete de déclaration d'une relation
+// entete de dÃ©claration d'une relation
 #define BEGIN_RELATION_DECLARATION  this->declareRelationHeader(tPtr)
-// fin de déclaration d'une relation
+// fin de dÃ©claration d'une relation
 #define END_RELATION_DECLARATION    this->declareRelationFooter(tPtr)
 
 /**** conversion LEVEL_BASE::predicate -> string ****/
@@ -54,7 +54,7 @@ static const int index64[64] =
    13, 18,  8, 12,  7,  6,  5, 63
 }; 
 
-/**** constante associée à cette table ****/
+/**** constante associÃ©e Ã  cette table ****/
 static const UINT64 debruijn64 = 0x03f79d71b4cb0a89;
 
 
@@ -73,67 +73,67 @@ protected:
     /** METHODE COMMUNE **/
     /*********************/
 
-    // déclaration d'un objet (récursif)
+    // dÃ©claration d'un objet (rÃ©cursif)
     void declareObject(const TaintPtr &tPtr);  
 
     /*******************************/
     /** METHODES VIRTUELLES PURES **/
     /*******************************/
 
-    // affectation d'un nom de variable à un objet (retourné également)
+    // affectation d'un nom de variable Ã  un objet (retournÃ© Ã©galement)
     virtual std::string setObjectName(const TaintPtr &tPtr) = 0;
 
-    // récupère le nom de l'objet source 'objSrc'
-    // => soit le numéro de variable, soit une valeur numérique
+    // rÃ©cupÃ¨re le nom de l'objet source 'objSrc'
+    // => soit le numÃ©ro de variable, soit une valeur numÃ©rique
     virtual std::string getSourceName(const ObjectSource &objSrc) const = 0;
 
     /*** CONTRAINTES : PREDICAT ***/
 
-    // déclaration de l'entête d'une nouvelle contrainte sur un predicat
+    // dÃ©claration de l'entÃªte d'une nouvelle contrainte sur un predicat
     virtual std::string getConstraintPredicateHeader(ADDRINT insAddress, PREDICATE p) const = 0;
-    // renvoie la traduction du prédicat fourni en argument
+    // renvoie la traduction du prÃ©dicat fourni en argument
     virtual std::string getPredicateTranslation
         (TaintManager_Thread *pTmgrTls, PREDICATE pred, ADDRINT flagsOrRegValue) = 0;
-    // déclaration du 'final' d'une contrainte sur un predicat
+    // dÃ©claration du 'final' d'une contrainte sur un predicat
     virtual std::string getConstraintPredicateFooter(bool taken) const = 0;
 
     /*** CONTRAINTES : DIVISEUR NUL ***/
 
-    // déclaration de l'entête d'une nouvelle contrainte pour un diviseur nul
+    // dÃ©claration de l'entÃªte d'une nouvelle contrainte pour un diviseur nul
     virtual std::string getConstraintNullDivisorHeader(ADDRINT insAddress) const = 0;
     // renvoie la traduction de la formule imposant un diviseur nul
     virtual std::string getNullDivisorTranslation(const TaintPtr &divisorPtr) = 0;
-    // déclaration du 'final' d'une contrainte pour un diviseur nul
+    // dÃ©claration du 'final' d'une contrainte pour un diviseur nul
     virtual std::string getConstraintNullDivisorFooter() const = 0;
 
     /*** CONTRAINTES : QUOTIENT DIVISION HORS BORNES ***/
 
-    // déclaration de l'entête d'une nouvelle contrainte sur le résultat d'une division
+    // dÃ©claration de l'entÃªte d'une nouvelle contrainte sur le rÃ©sultat d'une division
     virtual std::string getConstraintDivOverflowHeader(bool isSignedDivision, ADDRINT insAddress) const = 0;
-    // renvoie la traduction de la formule sur le résultat d'une division
+    // renvoie la traduction de la formule sur le rÃ©sultat d'une division
     virtual std::string getDivOverflowTranslation(bool isSignedDivision, const TaintPtr &quotientPtr) = 0;
-    // déclaration du 'final' d'une contrainte sur le résultat d'une division
+    // dÃ©claration du 'final' d'une contrainte sur le rÃ©sultat d'une division
     virtual std::string getConstraintDivOverflowFooter() const = 0;
 
     /*** CONTRAINTES : BOUCLES (LOOP/LOOPE/LOOPNE) ***/
 
-    // déclaration de l'entête d'une nouvelle contrainte pour un diviseur nul
+    // dÃ©claration de l'entÃªte d'une nouvelle contrainte pour un diviseur nul
     virtual std::string getConstraintLoopHeader(ADDRINT insAddress) const = 0;
-    // renvoie la traduction de la formule relatif à une boucle Loop (LOOP)
+    // renvoie la traduction de la formule relatif Ã  une boucle Loop (LOOP)
     virtual std::string getLoopTranslation(const TaintPtr &regCounterPtr) = 0; 
-    // renvoie la traduction de la formule relatif à une boucle Loop (LOOPE/LOOPNE)
+    // renvoie la traduction de la formule relatif Ã  une boucle Loop (LOOPE/LOOPNE)
     virtual std::string getLoopTranslation(PREDICATE pred, 
         const ObjectSource &objRegCounter, const ObjectSource &objZF) = 0;
-    // déclaration du 'final' d'une contrainte sur le résultat d'une division
+    // dÃ©claration du 'final' d'une contrainte sur le rÃ©sultat d'une division
     virtual std::string getConstraintLoopFooter() const = 0;
 
     /*** CONTRAINTES : ADRESSES EFFECTIVES ***/
 
-    // déclaration de l'entête d'une nouvelle contrainte sur une addresse
+    // dÃ©claration de l'entÃªte d'une nouvelle contrainte sur une addresse
     virtual std::string getConstraintAddressHeader(ADDRINT insAddress) const = 0;
     // renvoie la traduction de la formule sur la valeur d'une adresse
     virtual std::string getConstraintAddressTranslation(const TaintPtr &addrPtr, ADDRINT addrValue) = 0; 
-    // déclaration du 'final' d'une contrainte sur une adresse
+    // dÃ©claration du 'final' d'une contrainte sur une adresse
     virtual std::string getConstraintAddressFooter() const = 0;
 
     /***********************************/
@@ -235,11 +235,11 @@ protected:
 public:
     TranslateIR();
     
-    // ajoute une contrainte sur un saut conditionnel (Jcc) marqué
+    // ajoute une contrainte sur un saut conditionnel (Jcc) marquÃ©
     void addConstraintJcc(TaintManager_Thread *pTmgrTls, PREDICATE pred, 
         bool isTaken, ADDRINT insAddress, ADDRINT flagsOrRegValue = 0); 
 
-    // ajoute une contrainte sur une division marquée
+    // ajoute une contrainte sur une division marquÃ©e
     void addConstraintDivision(bool isSignedDivision, const TaintPtr &quotient, ADDRINT insAddress);
 
     // ajoute une contrainte sur une boucle simple (LOOP)

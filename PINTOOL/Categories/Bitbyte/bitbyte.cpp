@@ -1,23 +1,23 @@
-#include "bitbyte.h"
+ï»¿#include "bitbyte.h"
 #include <Translate\translate.h>
 
 /*************/
 /*** SETcc ***/
 /*************/
 
-//! tous les callbacks pour SETcc suivent le même principe 
-//! SETcc ne fait pas partie des instructions avec prédicats 
-//! qui utilisent le paramètre IARG_EXECUTING (comme CMOVcc et Jcc)
-//! Dans la conception de PIN, l'instruction est en effet toujours exécutée : elle
-//! fixe la destination (registre ou mémoire, 8 bits) à 0 ou 1 selon la valeur du prédicat
+//! tous les callbacks pour SETcc suivent le mÃªme principe 
+//! SETcc ne fait pas partie des instructions avec prÃ©dicats 
+//! qui utilisent le paramÃ¨tre IARG_EXECUTING (comme CMOVcc et Jcc)
+//! Dans la conception de PIN, l'instruction est en effet toujours exÃ©cutÃ©e : elle
+//! fixe la destination (registre ou mÃ©moire, 8 bits) Ã  0 ou 1 selon la valeur du prÃ©dicat
 //! 
-//! SETcc fonctionne à l'identique d'un opérateur ternaire en C
-//! selon la valeur des flags, la destination vaudra 1 (prédicat vrai) ou 0 (prédicat faux
-//! bien que la destination soit une valeur numérique, celle-ci dépend des flags s'ils sont marqués !!
+//! SETcc fonctionne Ã  l'identique d'un opÃ©rateur ternaire en C
+//! selon la valeur des flags, la destination vaudra 1 (prÃ©dicat vrai) ou 0 (prÃ©dicat faux
+//! bien que la destination soit une valeur numÃ©rique, celle-ci dÃ©pend des flags s'ils sont marquÃ©s !!
 //!
 //! la relation corespondante est X_SETCC avec pour parametres:
 //!   1- le type de predicat (enum PREDICATE)
-//!   2- le premier flag concerné (valeur ou variable)
+//!   2- le premier flag concernÃ© (valeur ou variable)
 //!   3- les autres flags, si besoin
 
 void BITBYTE::cSETB(INS &ins) 
@@ -356,16 +356,16 @@ void BITBYTE::cSETNLE(INS &ins)
 /*******************/
 
 // --------------------
-// destination mémoire 
+// destination mÃ©moire 
 // ---------------------
 
 void BITBYTE::sSETB_M(THREADID tid, ADDRINT writeAddress, ADDRINT insAddress)
 {
     TaintManager_Thread* pTmgrTls = getTmgrInTls(tid);
 
-    // si flag non marqué, démarquage destination
+    // si flag non marquÃ©, dÃ©marquage destination
     if (!pTmgrTls->isCarryFlagTainted())   pTmgrGlobal->unTaintMemory<8>(writeAddress);
-    // sinon, création de l'objet et marquage destination
+    // sinon, crÃ©ation de l'objet et marquage destination
     else
     {    
         pTmgrGlobal->updateMemoryTaint<8>(writeAddress, std::make_shared<TaintByte>(
@@ -379,9 +379,9 @@ void BITBYTE::sSETNB_M(THREADID tid, ADDRINT writeAddress, ADDRINT insAddress)
 {
     TaintManager_Thread* pTmgrTls = getTmgrInTls(tid);
 
-    // si flag non marqué, démarquage destination
+    // si flag non marquÃ©, dÃ©marquage destination
     if (!pTmgrTls->isCarryFlagTainted())   pTmgrGlobal->unTaintMemory<8>(writeAddress);
-    // sinon, création de l'objet et marquage destination
+    // sinon, crÃ©ation de l'objet et marquage destination
     else
     {    
         pTmgrGlobal->updateMemoryTaint<8>(writeAddress, std::make_shared<TaintByte>(
@@ -395,9 +395,9 @@ void BITBYTE::sSETS_M(THREADID tid, ADDRINT writeAddress, ADDRINT insAddress)
 {
     TaintManager_Thread* pTmgrTls = getTmgrInTls(tid);
 
-    // si flag non marqué, démarquage destination
+    // si flag non marquÃ©, dÃ©marquage destination
     if (!pTmgrTls->isSignFlagTainted())   pTmgrGlobal->unTaintMemory<8>(writeAddress);
-    // sinon, création de l'objet et marquage destination
+    // sinon, crÃ©ation de l'objet et marquage destination
     else
     {    
         pTmgrGlobal->updateMemoryTaint<8>(writeAddress, std::make_shared<TaintByte>(
@@ -411,9 +411,9 @@ void BITBYTE::sSETNS_M(THREADID tid, ADDRINT writeAddress, ADDRINT insAddress)
 {
     TaintManager_Thread* pTmgrTls = getTmgrInTls(tid);
 
-    // si flag non marqué, démarquage destination
+    // si flag non marquÃ©, dÃ©marquage destination
     if (!pTmgrTls->isSignFlagTainted())   pTmgrGlobal->unTaintMemory<8>(writeAddress);
-    // sinon, création de l'objet et marquage destination
+    // sinon, crÃ©ation de l'objet et marquage destination
     else
     {    
         pTmgrGlobal->updateMemoryTaint<8>(writeAddress, std::make_shared<TaintByte>(
@@ -427,9 +427,9 @@ void BITBYTE::sSETO_M(THREADID tid, ADDRINT writeAddress, ADDRINT insAddress)
 {
     TaintManager_Thread* pTmgrTls = getTmgrInTls(tid);
 
-    // si flag non marqué, démarquage destination
+    // si flag non marquÃ©, dÃ©marquage destination
     if (!pTmgrTls->isOverflowFlagTainted())   pTmgrGlobal->unTaintMemory<8>(writeAddress);
-    // sinon, création de l'objet et marquage destination
+    // sinon, crÃ©ation de l'objet et marquage destination
     else
     {    
         pTmgrGlobal->updateMemoryTaint<8>(writeAddress, std::make_shared<TaintByte>(
@@ -443,9 +443,9 @@ void BITBYTE::sSETNO_M(THREADID tid, ADDRINT writeAddress, ADDRINT insAddress)
 {
     TaintManager_Thread* pTmgrTls = getTmgrInTls(tid);
 
-    // si flag non marqué, démarquage destination
+    // si flag non marquÃ©, dÃ©marquage destination
     if (!pTmgrTls->isOverflowFlagTainted())   pTmgrGlobal->unTaintMemory<8>(writeAddress);
-    // sinon, création de l'objet et marquage destination
+    // sinon, crÃ©ation de l'objet et marquage destination
     else
     {    
         pTmgrGlobal->updateMemoryTaint<8>(writeAddress, std::make_shared<TaintByte>(
@@ -459,9 +459,9 @@ void BITBYTE::sSETP_M(THREADID tid, ADDRINT writeAddress, ADDRINT insAddress)
 {
     TaintManager_Thread* pTmgrTls = getTmgrInTls(tid);
 
-    // si flag non marqué, démarquage destination
+    // si flag non marquÃ©, dÃ©marquage destination
     if (!pTmgrTls->isParityFlagTainted())   pTmgrGlobal->unTaintMemory<8>(writeAddress);
-    // sinon, création de l'objet et marquage destination
+    // sinon, crÃ©ation de l'objet et marquage destination
     else
     {    
         pTmgrGlobal->updateMemoryTaint<8>(writeAddress, std::make_shared<TaintByte>(
@@ -475,9 +475,9 @@ void BITBYTE::sSETNP_M(THREADID tid, ADDRINT writeAddress, ADDRINT insAddress)
 {
     TaintManager_Thread* pTmgrTls = getTmgrInTls(tid);
 
-    // si flag non marqué, démarquage destination
+    // si flag non marquÃ©, dÃ©marquage destination
     if (!pTmgrTls->isParityFlagTainted())   pTmgrGlobal->unTaintMemory<8>(writeAddress);
-    // sinon, création de l'objet et marquage destination
+    // sinon, crÃ©ation de l'objet et marquage destination
     else
     {    
         pTmgrGlobal->updateMemoryTaint<8>(writeAddress, std::make_shared<TaintByte>(
@@ -491,9 +491,9 @@ void BITBYTE::sSETZ_M(THREADID tid, ADDRINT writeAddress, ADDRINT insAddress)
 {
     TaintManager_Thread* pTmgrTls = getTmgrInTls(tid);
 
-    // si flag non marqué, démarquage destination
+    // si flag non marquÃ©, dÃ©marquage destination
     if (!pTmgrTls->isZeroFlagTainted())   pTmgrGlobal->unTaintMemory<8>(writeAddress);
-    // sinon, création de l'objet et marquage destination
+    // sinon, crÃ©ation de l'objet et marquage destination
     else
     {    
         pTmgrGlobal->updateMemoryTaint<8>(writeAddress, std::make_shared<TaintByte>(
@@ -507,9 +507,9 @@ void BITBYTE::sSETNZ_M(THREADID tid, ADDRINT writeAddress, ADDRINT insAddress)
 {
     TaintManager_Thread* pTmgrTls = getTmgrInTls(tid);
 
-    // si flag non marqué, démarquage destination
+    // si flag non marquÃ©, dÃ©marquage destination
     if (!pTmgrTls->isParityFlagTainted())   pTmgrGlobal->unTaintMemory<8>(writeAddress);
-    // sinon, création de l'objet et marquage destination
+    // sinon, crÃ©ation de l'objet et marquage destination
     else
     {    
         pTmgrGlobal->updateMemoryTaint<8>(writeAddress, std::make_shared<TaintByte>(
@@ -523,7 +523,7 @@ void BITBYTE::sSETBE_M(THREADID tid, ADDRINT writeAddress, ADDRINT flagsValue, A
 {
     TaintManager_Thread* pTmgrTls = getTmgrInTls(tid);
 
-    // récupération du marquage des flags avant l'exécution
+    // rÃ©cupÃ©ration du marquage des flags avant l'exÃ©cution
     TaintBitPtr cfPtr = (pTmgrTls->isCarryFlagTainted()) 
         ? pTmgrTls->getTaintCarryFlag() 
         : nullptr;
@@ -531,9 +531,9 @@ void BITBYTE::sSETBE_M(THREADID tid, ADDRINT writeAddress, ADDRINT flagsValue, A
         ? pTmgrTls->getTaintZeroFlag() 
         : nullptr;
 
-    // si flags non marqués, démarquage destination
+    // si flags non marquÃ©s, dÃ©marquage destination
     if (!cfPtr && !zfPtr)   pTmgrGlobal->unTaintMemory<8>(writeAddress);
-    // sinon, création de l'objet et marquage destination
+    // sinon, crÃ©ation de l'objet et marquage destination
     else
     {    
         ObjectSource objCarryFlag = ((bool) cfPtr) 
@@ -555,7 +555,7 @@ void BITBYTE::sSETNBE_M(THREADID tid, ADDRINT writeAddress, ADDRINT flagsValue, 
 {
     TaintManager_Thread* pTmgrTls = getTmgrInTls(tid);
 
-    // récupération du marquage des flags avant l'exécution
+    // rÃ©cupÃ©ration du marquage des flags avant l'exÃ©cution
     TaintBitPtr cfPtr = (pTmgrTls->isCarryFlagTainted()) 
         ? pTmgrTls->getTaintCarryFlag() 
         : nullptr;
@@ -563,9 +563,9 @@ void BITBYTE::sSETNBE_M(THREADID tid, ADDRINT writeAddress, ADDRINT flagsValue, 
         ? pTmgrTls->getTaintZeroFlag() 
         : nullptr;
 
-    // si flags non marqués, démarquage destination
+    // si flags non marquÃ©s, dÃ©marquage destination
     if (!cfPtr && !zfPtr)   pTmgrGlobal->unTaintMemory<8>(writeAddress);
-    // sinon, création de l'objet et marquage destination
+    // sinon, crÃ©ation de l'objet et marquage destination
     else
     {    
         ObjectSource objCarryFlag = ((bool) cfPtr) 
@@ -587,7 +587,7 @@ void BITBYTE::sSETL_M(THREADID tid, ADDRINT writeAddress, ADDRINT flagsValue, AD
 {
     TaintManager_Thread* pTmgrTls = getTmgrInTls(tid);
 
-    // récupération du marquage des flags avant l'exécution
+    // rÃ©cupÃ©ration du marquage des flags avant l'exÃ©cution
     TaintBitPtr sfPtr = (pTmgrTls->isSignFlagTainted()) 
         ? pTmgrTls->getTaintSignFlag() 
         : nullptr;
@@ -595,9 +595,9 @@ void BITBYTE::sSETL_M(THREADID tid, ADDRINT writeAddress, ADDRINT flagsValue, AD
         ? pTmgrTls->getTaintOverflowFlag() 
         : nullptr;
 
-    // si flags non marqués, démarquage destination
+    // si flags non marquÃ©s, dÃ©marquage destination
     if (!sfPtr && !ofPtr)   pTmgrGlobal->unTaintMemory<8>(writeAddress);
-    // sinon, création de l'objet et marquage destination
+    // sinon, crÃ©ation de l'objet et marquage destination
     else
     {    
         ObjectSource objSignFlag = ((bool) sfPtr) 
@@ -619,7 +619,7 @@ void BITBYTE::sSETNL_M(THREADID tid, ADDRINT writeAddress, ADDRINT flagsValue, A
 {
     TaintManager_Thread* pTmgrTls = getTmgrInTls(tid);
 
-    // récupération du marquage des flags avant l'exécution
+    // rÃ©cupÃ©ration du marquage des flags avant l'exÃ©cution
     TaintBitPtr sfPtr = (pTmgrTls->isSignFlagTainted()) 
         ? pTmgrTls->getTaintSignFlag() 
         : nullptr;
@@ -627,9 +627,9 @@ void BITBYTE::sSETNL_M(THREADID tid, ADDRINT writeAddress, ADDRINT flagsValue, A
         ? pTmgrTls->getTaintOverflowFlag() 
         : nullptr;
 
-    // si flags non marqués, démarquage destination
+    // si flags non marquÃ©s, dÃ©marquage destination
     if (!sfPtr && !ofPtr)   pTmgrGlobal->unTaintMemory<8>(writeAddress);
-    // sinon, création de l'objet et marquage destination
+    // sinon, crÃ©ation de l'objet et marquage destination
     else
     {    
         ObjectSource objSignFlag = ((bool) sfPtr) 
@@ -651,7 +651,7 @@ void BITBYTE::sSETLE_M(THREADID tid, ADDRINT writeAddress, ADDRINT flagsValue, A
 {
     TaintManager_Thread* pTmgrTls = getTmgrInTls(tid);
 
-    // récupération du marquage des flags avant l'exécution
+    // rÃ©cupÃ©ration du marquage des flags avant l'exÃ©cution
     TaintBitPtr sfPtr = (pTmgrTls->isSignFlagTainted()) 
         ? pTmgrTls->getTaintSignFlag() 
         : nullptr;
@@ -662,9 +662,9 @@ void BITBYTE::sSETLE_M(THREADID tid, ADDRINT writeAddress, ADDRINT flagsValue, A
         ? pTmgrTls->getTaintZeroFlag() 
         : nullptr;
     
-    // si flags non marqués, démarquage destination
+    // si flags non marquÃ©s, dÃ©marquage destination
     if (!sfPtr && !ofPtr && !zfPtr)   pTmgrGlobal->unTaintMemory<8>(writeAddress);
-    // sinon, création de l'objet et marquage destination
+    // sinon, crÃ©ation de l'objet et marquage destination
     else
     {    
         ObjectSource objSignFlag = ((bool) sfPtr) 
@@ -690,7 +690,7 @@ void BITBYTE::sSETNLE_M(THREADID tid, ADDRINT writeAddress, ADDRINT flagsValue, 
 {
     TaintManager_Thread* pTmgrTls = getTmgrInTls(tid);
 
-    // récupération du marquage des flags avant l'exécution
+    // rÃ©cupÃ©ration du marquage des flags avant l'exÃ©cution
     TaintBitPtr sfPtr = (pTmgrTls->isSignFlagTainted()) 
         ? pTmgrTls->getTaintSignFlag() 
         : nullptr;
@@ -701,9 +701,9 @@ void BITBYTE::sSETNLE_M(THREADID tid, ADDRINT writeAddress, ADDRINT flagsValue, 
         ? pTmgrTls->getTaintZeroFlag() 
         : nullptr;
     
-    // si flags non marqués, démarquage destination
+    // si flags non marquÃ©s, dÃ©marquage destination
     if (!sfPtr && !ofPtr && !zfPtr)   pTmgrGlobal->unTaintMemory<8>(writeAddress);
-    // sinon, création de l'objet et marquage destination
+    // sinon, crÃ©ation de l'objet et marquage destination
     else
     {    
         ObjectSource objSignFlag = ((bool) sfPtr) 
@@ -735,9 +735,9 @@ void BITBYTE::sSETB_R(THREADID tid, REG regDest, ADDRINT insAddress)
 {
     TaintManager_Thread* pTmgrTls = getTmgrInTls(tid);
 
-    // si flag non marqué, démarquage destination
+    // si flag non marquÃ©, dÃ©marquage destination
     if (!pTmgrTls->isCarryFlagTainted())   pTmgrTls->unTaintRegister<8>(regDest);
-    // sinon, création de l'objet et marquage destination
+    // sinon, crÃ©ation de l'objet et marquage destination
     else
     {    
         pTmgrTls->updateTaintRegister<8>(regDest, std::make_shared<TaintByte>(
@@ -751,9 +751,9 @@ void BITBYTE::sSETNB_R(THREADID tid, REG regDest, ADDRINT insAddress)
 {
     TaintManager_Thread* pTmgrTls = getTmgrInTls(tid);
 
-    // si flag non marqué, démarquage destination
+    // si flag non marquÃ©, dÃ©marquage destination
     if (!pTmgrTls->isCarryFlagTainted())   pTmgrTls->unTaintRegister<8>(regDest);
-    // sinon, création de l'objet et marquage destination
+    // sinon, crÃ©ation de l'objet et marquage destination
     else
     {    
         pTmgrTls->updateTaintRegister<8>(regDest, std::make_shared<TaintByte>(
@@ -767,9 +767,9 @@ void BITBYTE::sSETS_R(THREADID tid, REG regDest, ADDRINT insAddress)
 {
     TaintManager_Thread* pTmgrTls = getTmgrInTls(tid);
 
-    // si flag non marqué, démarquage destination
+    // si flag non marquÃ©, dÃ©marquage destination
     if (!pTmgrTls->isSignFlagTainted())   pTmgrTls->unTaintRegister<8>(regDest);
-    // sinon, création de l'objet et marquage destination
+    // sinon, crÃ©ation de l'objet et marquage destination
     else
     {    
         pTmgrTls->updateTaintRegister<8>(regDest, std::make_shared<TaintByte>(
@@ -783,9 +783,9 @@ void BITBYTE::sSETNS_R(THREADID tid, REG regDest, ADDRINT insAddress)
 {
     TaintManager_Thread* pTmgrTls = getTmgrInTls(tid);
 
-    // si flag non marqué, démarquage destination
+    // si flag non marquÃ©, dÃ©marquage destination
     if (!pTmgrTls->isSignFlagTainted())   pTmgrTls->unTaintRegister<8>(regDest);
-    // sinon, création de l'objet et marquage destination
+    // sinon, crÃ©ation de l'objet et marquage destination
     else
     {    
         pTmgrTls->updateTaintRegister<8>(regDest, std::make_shared<TaintByte>(
@@ -799,9 +799,9 @@ void BITBYTE::sSETO_R(THREADID tid, REG regDest, ADDRINT insAddress)
 {
     TaintManager_Thread* pTmgrTls = getTmgrInTls(tid);
 
-    // si flag non marqué, démarquage destination
+    // si flag non marquÃ©, dÃ©marquage destination
     if (!pTmgrTls->isOverflowFlagTainted())   pTmgrTls->unTaintRegister<8>(regDest);
-    // sinon, création de l'objet et marquage destination
+    // sinon, crÃ©ation de l'objet et marquage destination
     else
     {    
         pTmgrTls->updateTaintRegister<8>(regDest, std::make_shared<TaintByte>(
@@ -815,9 +815,9 @@ void BITBYTE::sSETNO_R(THREADID tid, REG regDest, ADDRINT insAddress)
 {
     TaintManager_Thread* pTmgrTls = getTmgrInTls(tid);
 
-    // si flag non marqué, démarquage destination
+    // si flag non marquÃ©, dÃ©marquage destination
     if (!pTmgrTls->isOverflowFlagTainted())   pTmgrTls->unTaintRegister<8>(regDest);
-    // sinon, création de l'objet et marquage destination
+    // sinon, crÃ©ation de l'objet et marquage destination
     else
     {    
         pTmgrTls->updateTaintRegister<8>(regDest, std::make_shared<TaintByte>(
@@ -831,9 +831,9 @@ void BITBYTE::sSETP_R(THREADID tid, REG regDest, ADDRINT insAddress)
 {
     TaintManager_Thread* pTmgrTls = getTmgrInTls(tid);
 
-    // si flag non marqué, démarquage destination
+    // si flag non marquÃ©, dÃ©marquage destination
     if (!pTmgrTls->isParityFlagTainted())   pTmgrTls->unTaintRegister<8>(regDest);
-    // sinon, création de l'objet et marquage destination
+    // sinon, crÃ©ation de l'objet et marquage destination
     else
     {    
         pTmgrTls->updateTaintRegister<8>(regDest, std::make_shared<TaintByte>(
@@ -847,9 +847,9 @@ void BITBYTE::sSETNP_R(THREADID tid, REG regDest, ADDRINT insAddress)
 {
     TaintManager_Thread* pTmgrTls = getTmgrInTls(tid);
 
-    // si flag non marqué, démarquage destination
+    // si flag non marquÃ©, dÃ©marquage destination
     if (!pTmgrTls->isParityFlagTainted())   pTmgrTls->unTaintRegister<8>(regDest);
-    // sinon, création de l'objet et marquage destination
+    // sinon, crÃ©ation de l'objet et marquage destination
     else
     {    
         pTmgrTls->updateTaintRegister<8>(regDest, std::make_shared<TaintByte>(
@@ -863,9 +863,9 @@ void BITBYTE::sSETZ_R(THREADID tid, REG regDest, ADDRINT insAddress)
 {
     TaintManager_Thread* pTmgrTls = getTmgrInTls(tid);
 
-    // si flag non marqué, démarquage destination
+    // si flag non marquÃ©, dÃ©marquage destination
     if (!pTmgrTls->isZeroFlagTainted())   pTmgrTls->unTaintRegister<8>(regDest);
-    // sinon, création de l'objet et marquage destination
+    // sinon, crÃ©ation de l'objet et marquage destination
     else
     {    
         pTmgrTls->updateTaintRegister<8>(regDest, std::make_shared<TaintByte>(
@@ -879,9 +879,9 @@ void BITBYTE::sSETNZ_R(THREADID tid, REG regDest, ADDRINT insAddress)
 {
     TaintManager_Thread* pTmgrTls = getTmgrInTls(tid);
 
-    // si flag non marqué, démarquage destination
+    // si flag non marquÃ©, dÃ©marquage destination
     if (!pTmgrTls->isParityFlagTainted())   pTmgrTls->unTaintRegister<8>(regDest);
-    // sinon, création de l'objet et marquage destination
+    // sinon, crÃ©ation de l'objet et marquage destination
     else
     {    
         pTmgrTls->updateTaintRegister<8>(regDest, std::make_shared<TaintByte>(
@@ -895,7 +895,7 @@ void BITBYTE::sSETBE_R(THREADID tid, REG regDest, ADDRINT flagsValue, ADDRINT in
 {
     TaintManager_Thread* pTmgrTls = getTmgrInTls(tid);
 
-    // récupération du marquage des flags avant l'exécution
+    // rÃ©cupÃ©ration du marquage des flags avant l'exÃ©cution
     TaintBitPtr cfPtr = (pTmgrTls->isCarryFlagTainted()) 
         ? pTmgrTls->getTaintCarryFlag() 
         : nullptr;
@@ -903,9 +903,9 @@ void BITBYTE::sSETBE_R(THREADID tid, REG regDest, ADDRINT flagsValue, ADDRINT in
         ? pTmgrTls->getTaintZeroFlag() 
         : nullptr;
 
-    // si flags non marqués, démarquage destination
+    // si flags non marquÃ©s, dÃ©marquage destination
     if (!cfPtr && !zfPtr)   pTmgrTls->unTaintRegister<8>(regDest);
-    // sinon, création de l'objet et marquage destination
+    // sinon, crÃ©ation de l'objet et marquage destination
     else
     {    
         ObjectSource objCarryFlag = ((bool) cfPtr) 
@@ -927,7 +927,7 @@ void BITBYTE::sSETNBE_R(THREADID tid, REG regDest, ADDRINT flagsValue, ADDRINT i
 {
     TaintManager_Thread* pTmgrTls = getTmgrInTls(tid);
 
-    // récupération du marquage des flags avant l'exécution
+    // rÃ©cupÃ©ration du marquage des flags avant l'exÃ©cution
     TaintBitPtr cfPtr = (pTmgrTls->isCarryFlagTainted()) 
         ? pTmgrTls->getTaintCarryFlag() 
         : nullptr;
@@ -935,9 +935,9 @@ void BITBYTE::sSETNBE_R(THREADID tid, REG regDest, ADDRINT flagsValue, ADDRINT i
         ? pTmgrTls->getTaintZeroFlag() 
         : nullptr;
 
-    // si flags non marqués, démarquage destination
+    // si flags non marquÃ©s, dÃ©marquage destination
     if (!cfPtr && !zfPtr)   pTmgrTls->unTaintRegister<8>(regDest);
-    // sinon, création de l'objet et marquage destination
+    // sinon, crÃ©ation de l'objet et marquage destination
     else
     {    
         ObjectSource objCarryFlag = ((bool) cfPtr) 
@@ -959,7 +959,7 @@ void BITBYTE::sSETL_R(THREADID tid, REG regDest, ADDRINT flagsValue, ADDRINT ins
 {
     TaintManager_Thread* pTmgrTls = getTmgrInTls(tid);
 
-    // récupération du marquage des flags avant l'exécution
+    // rÃ©cupÃ©ration du marquage des flags avant l'exÃ©cution
     TaintBitPtr sfPtr = (pTmgrTls->isSignFlagTainted()) 
         ? pTmgrTls->getTaintSignFlag() 
         : nullptr;
@@ -967,9 +967,9 @@ void BITBYTE::sSETL_R(THREADID tid, REG regDest, ADDRINT flagsValue, ADDRINT ins
         ? pTmgrTls->getTaintOverflowFlag() 
         : nullptr;
 
-    // si flags non marqués, démarquage destination
+    // si flags non marquÃ©s, dÃ©marquage destination
     if (!sfPtr && !ofPtr)   pTmgrTls->unTaintRegister<8>(regDest);
-    // sinon, création de l'objet et marquage destination
+    // sinon, crÃ©ation de l'objet et marquage destination
     else
     {    
         ObjectSource objSignFlag = ((bool) sfPtr) 
@@ -991,7 +991,7 @@ void BITBYTE::sSETNL_R(THREADID tid, REG regDest, ADDRINT flagsValue, ADDRINT in
 {
     TaintManager_Thread* pTmgrTls = getTmgrInTls(tid);
 
-    // récupération du marquage des flags avant l'exécution
+    // rÃ©cupÃ©ration du marquage des flags avant l'exÃ©cution
     TaintBitPtr sfPtr = (pTmgrTls->isSignFlagTainted()) 
         ? pTmgrTls->getTaintSignFlag() 
         : nullptr;
@@ -999,9 +999,9 @@ void BITBYTE::sSETNL_R(THREADID tid, REG regDest, ADDRINT flagsValue, ADDRINT in
         ? pTmgrTls->getTaintOverflowFlag() 
         : nullptr;
 
-    // si flags non marqués, démarquage destination
+    // si flags non marquÃ©s, dÃ©marquage destination
     if (!sfPtr && !ofPtr)   pTmgrTls->unTaintRegister<8>(regDest);
-    // sinon, création de l'objet et marquage destination
+    // sinon, crÃ©ation de l'objet et marquage destination
     else
     {    
         ObjectSource objSignFlag = ((bool) sfPtr) 
@@ -1023,7 +1023,7 @@ void BITBYTE::sSETLE_R(THREADID tid, REG regDest, ADDRINT flagsValue, ADDRINT in
 {
     TaintManager_Thread* pTmgrTls = getTmgrInTls(tid);
 
-    // récupération du marquage des flags avant l'exécution
+    // rÃ©cupÃ©ration du marquage des flags avant l'exÃ©cution
     TaintBitPtr sfPtr = (pTmgrTls->isSignFlagTainted()) 
         ? pTmgrTls->getTaintSignFlag() 
         : nullptr;
@@ -1034,9 +1034,9 @@ void BITBYTE::sSETLE_R(THREADID tid, REG regDest, ADDRINT flagsValue, ADDRINT in
         ? pTmgrTls->getTaintZeroFlag() 
         : nullptr;
     
-    // si flags non marqués, démarquage destination
+    // si flags non marquÃ©s, dÃ©marquage destination
     if (!sfPtr && !ofPtr && !zfPtr)   pTmgrTls->unTaintRegister<8>(regDest);
-    // sinon, création de l'objet et marquage destination
+    // sinon, crÃ©ation de l'objet et marquage destination
     else
     {    
         _LOGTAINT(tid, insAddress, "SETLE_R");
@@ -1064,7 +1064,7 @@ void BITBYTE::sSETNLE_R(THREADID tid, REG regDest, ADDRINT flagsValue, ADDRINT i
 {
     TaintManager_Thread* pTmgrTls = getTmgrInTls(tid);
 
-    // récupération du marquage des flags avant l'exécution
+    // rÃ©cupÃ©ration du marquage des flags avant l'exÃ©cution
     TaintBitPtr sfPtr = (pTmgrTls->isSignFlagTainted()) 
         ? pTmgrTls->getTaintSignFlag() 
         : nullptr;
@@ -1075,9 +1075,9 @@ void BITBYTE::sSETNLE_R(THREADID tid, REG regDest, ADDRINT flagsValue, ADDRINT i
         ? pTmgrTls->getTaintZeroFlag() 
         : nullptr;
     
-    // si flags non marqués, démarquage destination
+    // si flags non marquÃ©s, dÃ©marquage destination
     if (!sfPtr && !ofPtr && !zfPtr)   pTmgrTls->unTaintRegister<8>(regDest);
-    // sinon, création de l'objet et marquage destination
+    // sinon, crÃ©ation de l'objet et marquage destination
     else
     {    
         ObjectSource objSignFlag = ((bool) sfPtr) 
@@ -1109,12 +1109,12 @@ void BITBYTE::sSETNLE_R(THREADID tid, REG regDest, ADDRINT flagsValue, ADDRINT i
 
 void BITBYTE::cBT(INS &ins)
 {
-    void (*callback)() = nullptr;	// pointeur sur la fonction à appeler
+    void (*callback)() = nullptr;	// pointeur sur la fonction Ã  appeler
     REG bitIndexReg = INS_OperandReg(ins, 1); // registre servant d'index (ou REG_INVALID())
     
-    if (bitIndexReg == REG_INVALID()) // L'index est alors défini par valeur immédiate
+    if (bitIndexReg == REG_INVALID()) // L'index est alors dÃ©fini par valeur immÃ©diate
     {	
-        if (INS_OperandIsMemory(ins, 0)) // test de la mémoire : BT_IM
+        if (INS_OperandIsMemory(ins, 0)) // test de la mÃ©moire : BT_IM
         {
             switch (INS_MemoryOperandSize(ins, 0)) 
             {			
@@ -1129,7 +1129,7 @@ void BITBYTE::cBT(INS &ins)
             INS_InsertCall (ins, IPOINT_BEFORE, callback,
                 IARG_THREAD_ID,
                 IARG_MEMORYREAD_EA,  
-                IARG_ADDRINT, (ADDRINT) INS_OperandImmediate(ins, 1), // Si non casté, plante en 32bit!!
+                IARG_ADDRINT, (ADDRINT) INS_OperandImmediate(ins, 1), // Si non castÃ©, plante en 32bit!!
                 IARG_INST_PTR, IARG_END);
         } 
         else // test d'un registre : BT_IR
@@ -1148,15 +1148,15 @@ void BITBYTE::cBT(INS &ins)
             INS_InsertCall (ins, IPOINT_BEFORE, callback,
                 IARG_THREAD_ID,
                 IARG_UINT32, testedReg,   
-                IARG_ADDRINT, (ADDRINT) INS_OperandImmediate(ins, 1), // Si non casté, plante en 32bit!!
+                IARG_ADDRINT, (ADDRINT) INS_OperandImmediate(ins, 1), // Si non castÃ©, plante en 32bit!!
                 IARG_INST_PTR, IARG_END);
         }
     }
-    else     // index défini par registre
+    else     // index dÃ©fini par registre
     {	
         UINT32 bitIndexRegSize = getRegSize(bitIndexReg);
-        if (!bitIndexRegSize) return; // registre d'index non supporté
-        else if (INS_OperandIsMemory(ins, 0)) // test de la mémoire : BT_RM
+        if (!bitIndexRegSize) return; // registre d'index non supportÃ©
+        else if (INS_OperandIsMemory(ins, 0)) // test de la mÃ©moire : BT_RM
         {
             switch (bitIndexRegSize) 
             {			
@@ -1185,7 +1185,7 @@ void BITBYTE::cBT(INS &ins)
                 #if TARGET_IA32E
                 case 8: callback = (AFUNPTR) BITBYTE::sBT_RR<64>; break;
                 #endif 
-                default: return; // registre testé non supporté
+                default: return; // registre testÃ© non supportÃ©
             }
             INS_InsertCall (ins, IPOINT_BEFORE, callback,
                 IARG_THREAD_ID,
@@ -1200,12 +1200,12 @@ void BITBYTE::cBT(INS &ins)
 
 void BITBYTE::cBTC(INS &ins)
 {
-    void (*callback)() = nullptr;	// pointeur sur la fonction à appeler
+    void (*callback)() = nullptr;	// pointeur sur la fonction Ã  appeler
     REG bitIndexReg = INS_OperandReg(ins, 1); // registre servant d'index (ou REG_INVALID())
     
-    if (bitIndexReg == REG_INVALID()) // L'index est alors défini par valeur immédiate
+    if (bitIndexReg == REG_INVALID()) // L'index est alors dÃ©fini par valeur immÃ©diate
     {	
-        if (INS_OperandIsMemory(ins, 0)) // test de la mémoire : BTC_IM
+        if (INS_OperandIsMemory(ins, 0)) // test de la mÃ©moire : BTC_IM
         {
             switch (INS_MemoryOperandSize(ins, 0)) 
             {			
@@ -1220,7 +1220,7 @@ void BITBYTE::cBTC(INS &ins)
             INS_InsertCall (ins, IPOINT_BEFORE, callback,
                 IARG_THREAD_ID,
                 IARG_MEMORYREAD_EA,  
-                IARG_ADDRINT, (ADDRINT) INS_OperandImmediate(ins, 1), // Si non casté, plante en 32bit!!
+                IARG_ADDRINT, (ADDRINT) INS_OperandImmediate(ins, 1), // Si non castÃ©, plante en 32bit!!
                 IARG_INST_PTR, IARG_END);
         } 
         else // test d'un registre : BTC_IR
@@ -1239,15 +1239,15 @@ void BITBYTE::cBTC(INS &ins)
             INS_InsertCall (ins, IPOINT_BEFORE, callback,
                 IARG_THREAD_ID,
                 IARG_UINT32, testedReg,   
-                IARG_ADDRINT, (ADDRINT) INS_OperandImmediate(ins, 1), // Si non casté, plante en 32bit!!
+                IARG_ADDRINT, (ADDRINT) INS_OperandImmediate(ins, 1), // Si non castÃ©, plante en 32bit!!
                 IARG_INST_PTR, IARG_END);
         }
     }
-    else     // index défini par registre
+    else     // index dÃ©fini par registre
     {	
         UINT32 bitIndexRegSize = getRegSize(bitIndexReg);
-        if (!bitIndexRegSize) return; // registre d'index non supporté
-        else if (INS_OperandIsMemory(ins, 0)) // test de la mémoire : BTC_RM
+        if (!bitIndexRegSize) return; // registre d'index non supportÃ©
+        else if (INS_OperandIsMemory(ins, 0)) // test de la mÃ©moire : BTC_RM
         {
             switch (bitIndexRegSize) 
             {			
@@ -1270,7 +1270,7 @@ void BITBYTE::cBTC(INS &ins)
             REG testedReg = INS_OperandReg(ins, 0); // registre a tester
             switch (getRegSize(testedReg))
             {
-            case 0: return; // registre testé non supporté
+            case 0: return; // registre testÃ© non supportÃ©
             // case 1:	impossible
             case 2:	callback = (AFUNPTR) BITBYTE::sBTC_RR<16>; break;
             case 4:	callback = (AFUNPTR) BITBYTE::sBTC_RR<32>; break;
@@ -1291,12 +1291,12 @@ void BITBYTE::cBTC(INS &ins)
 
 void BITBYTE::cBTR(INS &ins)
 {
-    void (*callback)() = nullptr;	// pointeur sur la fonction à appeler
+    void (*callback)() = nullptr;	// pointeur sur la fonction Ã  appeler
     REG bitIndexReg = INS_OperandReg(ins, 1); // registre servant d'index (ou REG_INVALID())
     
-    if (bitIndexReg == REG_INVALID()) // L'index est alors défini par valeur immédiate
+    if (bitIndexReg == REG_INVALID()) // L'index est alors dÃ©fini par valeur immÃ©diate
     {	
-        if (INS_OperandIsMemory(ins, 0)) // test de la mémoire : BTR_IM
+        if (INS_OperandIsMemory(ins, 0)) // test de la mÃ©moire : BTR_IM
         {
             switch (INS_MemoryOperandSize(ins, 0)) 
             {			
@@ -1310,7 +1310,7 @@ void BITBYTE::cBTR(INS &ins)
             INS_InsertCall (ins, IPOINT_BEFORE, callback,
                 IARG_THREAD_ID,
                 IARG_MEMORYREAD_EA,  
-                IARG_ADDRINT, (ADDRINT) INS_OperandImmediate(ins, 1), // Si non casté, plante en 32bit!!
+                IARG_ADDRINT, (ADDRINT) INS_OperandImmediate(ins, 1), // Si non castÃ©, plante en 32bit!!
                 IARG_INST_PTR, IARG_END);
         } 
         else // test d'un registre : BTR_IR
@@ -1328,15 +1328,15 @@ void BITBYTE::cBTR(INS &ins)
             INS_InsertCall (ins, IPOINT_BEFORE, callback,
                 IARG_THREAD_ID,
                 IARG_UINT32, testedReg,   
-                IARG_ADDRINT, (ADDRINT) INS_OperandImmediate(ins, 1), // Si non casté, plante en 32bit!!
+                IARG_ADDRINT, (ADDRINT) INS_OperandImmediate(ins, 1), // Si non castÃ©, plante en 32bit!!
                 IARG_INST_PTR, IARG_END);
         }
     }
-    else     // index défini par registre
+    else     // index dÃ©fini par registre
     {	
         UINT32 bitIndexRegSize = getRegSize(bitIndexReg);
-        if (!bitIndexRegSize) return; // registre d'index non supporté
-        else if (INS_OperandIsMemory(ins, 0)) // test de la mémoire : BTR_RM
+        if (!bitIndexRegSize) return; // registre d'index non supportÃ©
+        else if (INS_OperandIsMemory(ins, 0)) // test de la mÃ©moire : BTR_RM
         {
             switch (bitIndexRegSize) 
             {			
@@ -1359,7 +1359,7 @@ void BITBYTE::cBTR(INS &ins)
             REG testedReg = INS_OperandReg(ins, 0); // registre a tester
             switch (getRegSize(testedReg))
             {
-            case 0: return; // registre testé non supporté
+            case 0: return; // registre testÃ© non supportÃ©
             // case 1:	impossible
             case 2:	callback = (AFUNPTR) BITBYTE::sBTR_RR<16>; break;
             case 4:	callback = (AFUNPTR) BITBYTE::sBTR_RR<32>; break;
@@ -1380,12 +1380,12 @@ void BITBYTE::cBTR(INS &ins)
 
 void BITBYTE::cBTS(INS &ins)
 {
-    void (*callback)() = nullptr;	// pointeur sur la fonction à appeler
+    void (*callback)() = nullptr;	// pointeur sur la fonction Ã  appeler
     REG bitIndexReg = INS_OperandReg(ins, 1); // registre servant d'index (ou REG_INVALID())
     
-    if (bitIndexReg == REG_INVALID()) // L'index est alors défini par valeur immédiate
+    if (bitIndexReg == REG_INVALID()) // L'index est alors dÃ©fini par valeur immÃ©diate
     {	
-        if (INS_OperandIsMemory(ins, 0)) // test de la mémoire : BTS_IM
+        if (INS_OperandIsMemory(ins, 0)) // test de la mÃ©moire : BTS_IM
         {
             switch (INS_MemoryOperandSize(ins, 0)) 
             {			
@@ -1399,7 +1399,7 @@ void BITBYTE::cBTS(INS &ins)
             INS_InsertCall (ins, IPOINT_BEFORE, callback,
                 IARG_THREAD_ID,
                 IARG_MEMORYREAD_EA,  
-                IARG_ADDRINT, (ADDRINT) INS_OperandImmediate(ins, 1), // Si non casté, plante en 32bit!!
+                IARG_ADDRINT, (ADDRINT) INS_OperandImmediate(ins, 1), // Si non castÃ©, plante en 32bit!!
                 IARG_INST_PTR, IARG_END);
         } 
         else // test d'un registre : BTS_IR
@@ -1417,15 +1417,15 @@ void BITBYTE::cBTS(INS &ins)
             INS_InsertCall (ins, IPOINT_BEFORE, callback,
                 IARG_THREAD_ID,
                 IARG_UINT32, testedReg,   
-                IARG_ADDRINT, (ADDRINT) INS_OperandImmediate(ins, 1), // Si non casté, plante en 32bit!!
+                IARG_ADDRINT, (ADDRINT) INS_OperandImmediate(ins, 1), // Si non castÃ©, plante en 32bit!!
                 IARG_INST_PTR, IARG_END);
         }
     }
-    else     // index défini par registre
+    else     // index dÃ©fini par registre
     {	
         UINT32 bitIndexRegSize = getRegSize(bitIndexReg);
-        if (!bitIndexRegSize) return; // registre d'index non supporté
-        else if (INS_OperandIsMemory(ins, 0)) // test de la mémoire : BTS_RM
+        if (!bitIndexRegSize) return; // registre d'index non supportÃ©
+        else if (INS_OperandIsMemory(ins, 0)) // test de la mÃ©moire : BTS_RM
         {
             switch (bitIndexRegSize) 
             {			
@@ -1448,7 +1448,7 @@ void BITBYTE::cBTS(INS &ins)
             REG testedReg = INS_OperandReg(ins, 0); // registre a tester
             switch (getRegSize(testedReg))
             {
-                case 0: return; // registre testé non supporté
+                case 0: return; // registre testÃ© non supportÃ©
                 // case 1:	impossible
                 case 2:	callback = (AFUNPTR) BITBYTE::sBTS_RR<16>; break;
                 case 4:	callback = (AFUNPTR) BITBYTE::sBTS_RR<32>; break;
@@ -1469,12 +1469,12 @@ void BITBYTE::cBTS(INS &ins)
 
 void BITBYTE::cBSR(INS &ins)
 {
-    void (*callback)() = nullptr;	// pointeur sur la fonction à appeler
-    REG resultReg = INS_OperandReg(ins, 0); // registre contenant la position du bit trouvé
+    void (*callback)() = nullptr;	// pointeur sur la fonction Ã  appeler
+    REG resultReg = INS_OperandReg(ins, 0); // registre contenant la position du bit trouvÃ©
     UINT32 resultRegSize = getRegSize(resultReg);
 
     if (!resultRegSize) return; // registre non suivi
-    else if (INS_IsMemoryRead(ins)) // test de la mémoire : BSR_M
+    else if (INS_IsMemoryRead(ins)) // test de la mÃ©moire : BSR_M
     {
         switch (resultRegSize) 
         {			
@@ -1514,12 +1514,12 @@ void BITBYTE::cBSR(INS &ins)
 
 void BITBYTE::cBSF(INS &ins)
 {
-    void (*callback)() = nullptr;	// pointeur sur la fonction à appeler
-    REG resultReg = INS_OperandReg(ins, 0); // registre contenant la position du bit trouvé
+    void (*callback)() = nullptr;	// pointeur sur la fonction Ã  appeler
+    REG resultReg = INS_OperandReg(ins, 0); // registre contenant la position du bit trouvÃ©
     UINT32 resultRegSize = getRegSize(resultReg);
 
     if (!resultRegSize) return; // registre non suivi
-    else if (INS_IsMemoryRead(ins)) // test de la mémoire : BSF_M
+    else if (INS_IsMemoryRead(ins)) // test de la mÃ©moire : BSF_M
     {
         switch (resultRegSize) 
         {			

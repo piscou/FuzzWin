@@ -1,4 +1,4 @@
-#include "instrumentation.h"
+ï»¿#include "instrumentation.h"
 #include <Translate\translate.h>
 #include <Syscalls\syscalls.h>
 #include <TaintUtilities\utils.h>
@@ -29,14 +29,14 @@
 
 // Fonction d'instrumentation des instructions
 // premier tri en fonction du nom de l'instruction, qui orientera vers les
-// procédures spécifiques à chaque instruction
-// les instructions sont regroupées en CATEGORIES (fichiers .cpp, .hpp et .h)
-// ces catégories sont celles définies par PIN
+// procÃ©dures spÃ©cifiques Ã  chaque instruction
+// les instructions sont regroupÃ©es en CATEGORIES (fichiers .cpp, .hpp et .h)
+// ces catÃ©gories sont celles dÃ©finies par PIN
 void INSTRUMENTATION::Instruction(INS ins, void* )
 {
     if (!g_beginInstrumentationOfInstructions) return;
 
-    // mode VERBOSE : désassemblage 
+    // mode VERBOSE : dÃ©sassemblage 
     _LOGINS(ins); 
 
     switch (INS_Opcode(ins)) // BIG BIG SWITCH :)
@@ -152,17 +152,17 @@ void INSTRUMENTATION::Instruction(INS ins, void* )
 #endif
 
     // FLAGOP
-    case XED_ICLASS_CLC: // CLC et STC ont le même effet : démarquage CF uniquement
+    case XED_ICLASS_CLC: // CLC et STC ont le mÃªme effet : dÃ©marquage CF uniquement
     case XED_ICLASS_STC:    FLAGOP::cCLC_STC(ins); break;
 
     case XED_ICLASS_CMC:    FLAGOP::cCMC(ins);  break;
     case XED_ICLASS_LAHF:   FLAGOP::cLAHF(ins); break;
     case XED_ICLASS_SAHF:   FLAGOP::cSAHF(ins); break;
     case XED_ICLASS_SALC:   FLAGOP::cSALC(ins); break;
-    case XED_ICLASS_CLD:    break;  // Direction Flag mis à 0, sans objet pour le marquage
-    case XED_ICLASS_CLI:    break;  // Interrupt Flag mis à 0, sans objet pour le marquage
-    case XED_ICLASS_STD:    break;  // Direction Flag mis à 1, sans objet pour le marquage
-    case XED_ICLASS_STI:    break;  // Interrupt Flag mis à 1, sans objet pour le marquage
+    case XED_ICLASS_CLD:    break;  // Direction Flag mis Ã  0, sans objet pour le marquage
+    case XED_ICLASS_CLI:    break;  // Interrupt Flag mis Ã  0, sans objet pour le marquage
+    case XED_ICLASS_STD:    break;  // Direction Flag mis Ã  1, sans objet pour le marquage
+    case XED_ICLASS_STI:    break;  // Interrupt Flag mis Ã  1, sans objet pour le marquage
 
     // SHIFT: SHL, SHR, SAR, SHRD, SHLD
     case XED_ICLASS_SHL:  SHIFT::cSHL(ins);  break;
@@ -206,14 +206,14 @@ void INSTRUMENTATION::Instruction(INS ins, void* )
     case XED_ICLASS_LEA:    MISC::cLEA(ins);    break;
     case XED_ICLASS_LEAVE:  MISC::cLEAVE(ins);  break;
     case XED_ICLASS_XLAT:   MISC::cXLAT(ins);   break;
-    case XED_ICLASS_PAUSE:  break;      // identique à NOP
+    case XED_ICLASS_PAUSE:  break;      // identique Ã  NOP
     case XED_ICLASS_CPUID:  MISC::cCPUID(ins);  break;
     
     // RET
     case XED_ICLASS_RET_FAR:    RET::cRET(ins, true); break;  // true  <=> FAR RET
     case XED_ICLASS_RET_NEAR:   RET::cRET(ins, false); break;  // false  <=> NEAR RET
 
-    // STRINGOP: le second argument est la taille des opérandes, en octets
+    // STRINGOP: le second argument est la taille des opÃ©randes, en octets
     //case XED_ICLASS_CMPSB:  STRINGOP::cCMPS(ins, 1);  break;
     case XED_ICLASS_CMPSW:  STRINGOP::cCMPS(ins, 2);  break;
     case XED_ICLASS_CMPSD:  STRINGOP::cCMPS(ins, 4);  break;
@@ -248,7 +248,7 @@ void INSTRUMENTATION::Instruction(INS ins, void* )
 
     // UNCONDITIONAL_BR
     case XED_ICLASS_JMP: UNCONDITIONAL_BR::cJMP(ins); break;
-    // les JMP_FAR ne sont pas traités pour l'instant
+    // les JMP_FAR ne sont pas traitÃ©s pour l'instant
     case XED_ICLASS_JMP_FAR: _LOGDEBUG(" *** JMP_FAR ***"); break;
 
     
@@ -275,7 +275,7 @@ void INSTRUMENTATION::Instruction(INS ins, void* )
         if (g_verbose)
         {
             PIN_GetLock(&g_lock, PIN_ThreadId()); 
-            g_debug << " *** non instrumenté ***"; 
+            g_debug << " *** non instrumentÃ© ***"; 
             PIN_ReleaseLock(&g_lock); 
         }
         break;
@@ -283,12 +283,12 @@ void INSTRUMENTATION::Instruction(INS ins, void* )
     _LOGDEBUG(""); // juste un retour chariot
 }
 
-// Fonction de notification lors de la fin de l'exécution
+// Fonction de notification lors de la fin de l'exÃ©cution
 void INSTRUMENTATION::FiniTaint(INT32 code, void* ) 
 {
     PIN_GetLock(&g_lock, 0);
     
-    // envoi des dernieres données récoltées
+    // envoi des dernieres donnÃ©es rÃ©coltÃ©es
     g_pFormula->final();
 
     // fermeture fichier de logs 
@@ -307,32 +307,32 @@ void INSTRUMENTATION::FiniTaint(INT32 code, void* )
     }
 
 
-    // flush puis déconnexion du pipe, si pipe présent
+    // flush puis dÃ©connexion du pipe, si pipe prÃ©sent
     if (!g_nopipe)
     {
         WINDOWS::FlushFileBuffers(g_hPipe);
         WINDOWS::CloseHandle(g_hPipe);     
     } 
 
-    // libération des classes globales
+    // libÃ©ration des classes globales
     delete (pTmgrGlobal);
     delete (g_pFormula);
 
-    // libération des slots de la TLS
+    // libÃ©ration des slots de la TLS
     PIN_DeleteThreadDataKey(g_tlsKeyTaint);
     PIN_DeleteThreadDataKey(g_tlsKeySyscallData);
 
-    // Libération du verrou
+    // LibÃ©ration du verrou
     PIN_ReleaseLock(&g_lock);
 
-    // fin forcée (sans attendre le thread "maxtime" s'il s'exécute encore)
+    // fin forcÃ©e (sans attendre le thread "maxtime" s'il s'exÃ©cute encore)
     PIN_ExitProcess(code);
 }
 
 // Fonction de notification lors du lancement d'un thread
 void INSTRUMENTATION::threadStart(THREADID tid, CONTEXT *, INT32 , VOID *)
 {
-    _LOGDEBUG("Création du thread n° " + decstr(tid) + " et TLS associée");
+    _LOGDEBUG("CrÃ©ation du thread nÂ° " + decstr(tid) + " et TLS associÃ©e");
 
     TaintManager_Thread *pTmgrTls = new TaintManager_Thread;
     Syscall_Data *pSyscallData    = new Syscall_Data;
@@ -346,7 +346,7 @@ void INSTRUMENTATION::threadStart(THREADID tid, CONTEXT *, INT32 , VOID *)
 // Fonction de notification lors de la fin d'un thread
 void INSTRUMENTATION::threadFini(THREADID tid, const CONTEXT *, INT32 , VOID *)
 {
-    _LOGDEBUG("destruction du thread n° " + decstr(tid) + " et TLS associée");
+    _LOGDEBUG("destruction du thread nÂ° " + decstr(tid) + " et TLS associÃ©e");
 
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     delete (pTmgrTls);
@@ -394,14 +394,14 @@ void INSTRUMENTATION::changeCtx
     }
 }
 
-// Fonction de notification lors de la fin de l'exécution
+// Fonction de notification lors de la fin de l'exÃ©cution
 void INSTRUMENTATION::FiniCheckScore(INT32 code, void* ) 
 {
     WINDOWS::DWORD cbWritten;
-    std::string message; // par défaut, aucun score (= faute trouvée)
+    std::string message; // par dÃ©faut, aucun score (= faute trouvÃ©e)
 
     // si exception, le message sera '0'
-    // sinon ce sera le nombre d'instructions exécutées
+    // sinon ce sera le nombre d'instructions exÃ©cutÃ©es
     if (g_faultFound) message = "0";
     else
     {
@@ -421,7 +421,7 @@ void INSTRUMENTATION::FiniCheckScore(INT32 code, void* )
         NULL);
     WINDOWS::FlushFileBuffers(g_hPipe);
 
-    // fin forcée (sans attendre le thread "maxtime" s'il s'exécute encore)
+    // fin forcÃ©e (sans attendre le thread "maxtime" s'il s'exÃ©cute encore)
     PIN_ExitProcess(code);
 }
 

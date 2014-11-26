@@ -1,29 +1,32 @@
-// type de relation entre TaintObjects
+ï»¿
+/** @file */ 
+
+//! type de relation entre TaintObjects
 enum Relation 
 {
     /******************************************************/
-    /**** Relations de construction des objets marqués ****/
+    /**** Relations de construction des objets marquÃ©s ****/
     /******************************************************/
     
     //! BYTESOURCE : TaintObject issu de la source suivie
-    //! Source1 : offset dans l'entrée (variable 32bits)
+    //! Source1 : offset dans l'entrÃ©e (variable 32bits)
     BYTESOURCE = 0, 
     //! EXTRACT : Source 1 = source, Source 2 = index d'extraction (valeur 8bits)
     EXTRACT,
-    //! CONCAT : concaténation des sources (longueurs différentes acceptées)
-    // 1ere source = poids faible, dernière source : poids fort
+    //! CONCAT : concatÃ©nation des sources (longueurs diffÃ©rentes acceptÃ©es)
+    //! 1ere source = poids faible, derniÃ¨re source : poids fort
     CONCAT,
 
     /********************************************************/
-    /**** Relations de modélisation des instructions x86 ****/
+    /**** Relations de modÃ©lisation des instructions x86 ****/
     /********************************************************/
     
     /** DATAXFER **/
-    //! ASSIGN : Source 1 = source, même longueur que destination
+    //! ASSIGN : Source 1 = source, mÃªme longueur que destination
     X_ASSIGN, 
-    //! SIGN_EXTEND : Source 1 = source (longueur < à destination)
+    //! SIGN_EXTEND : Source 1 = source (longueur < Ã  destination)
     X_SIGNEXTEND,
-    //! ZERO_EXTEND : Source 1 = source (longueur < à destination)
+    //! ZERO_EXTEND : Source 1 = source (longueur < Ã  destination)
     X_ZEROEXTEND,
     
     /**  BINARY **/   
@@ -41,17 +44,17 @@ enum Relation
     X_MUL, 
     //! X_IMUL : source 1 = source, source 2 = src/dest.
     X_IMUL,
-    // X_DIV_QUO : quotient d'une division non signée (src 0, 1 et 2 de meme taille)
-    // Src 0 : partie haute du dividende, Src 1 : partie basse du dividende, Src 2 : totalité du diviseur
+    // X_DIV_QUO : quotient d'une division non signÃ©e (src 0, 1 et 2 de meme taille)
+    // Src 0 : partie haute du dividende, Src 1 : partie basse du dividende, Src 2 : totalitÃ© du diviseur
     X_DIV_QUO, 
-    // X_DIV_REM : reste d'une division non signée (src 0, 1 et 2 de meme taille)
-    // Src 0 : partie haute du dividende, Src 1 : partie basse du dividende, Src 2 : totalité du diviseur
+    // X_DIV_REM : reste d'une division non signÃ©e (src 0, 1 et 2 de meme taille)
+    // Src 0 : partie haute du dividende, Src 1 : partie basse du dividende, Src 2 : totalitÃ© du diviseur
     X_DIV_REM, 
-    // X_IDIV_QUO : quotient d'une division signée (src 0, 1 et 2 de meme taille)
-    // Src 0 : partie haute du dividende, Src 1 : partie basse du dividende, Src 2 : totalité du diviseur
+    // X_IDIV_QUO : quotient d'une division signÃ©e (src 0, 1 et 2 de meme taille)
+    // Src 0 : partie haute du dividende, Src 1 : partie basse du dividende, Src 2 : totalitÃ© du diviseur
     X_IDIV_QUO, 
-    // X_IDIV_REM : reste d'une division signée (src 0, 1 et 2 de meme taille)
-    // Src 0 : partie haute du dividende, Src 1 : partie basse du dividende, Src 2 : totalité du diviseur
+    // X_IDIV_REM : reste d'une division signÃ©e (src 0, 1 et 2 de meme taille)
+    // Src 0 : partie haute du dividende, Src 1 : partie basse du dividende, Src 2 : totalitÃ© du diviseur
     X_IDIV_REM,
 
     /** LOGICAL **/
@@ -65,82 +68,82 @@ enum Relation
     X_NOT,
 
     /** SHIFT **/
-    //! SHL : source 1 = emplacement déplacé, source 2 = déplacement (8bits, valeur ou objet)
-    // si déplacement non marqué, il est déjà masqué à 0x1f ou 0x3f
-    // si déplacement marqué, le marquage sera fait dans la formule
+    //! SHL : source 1 = emplacement dÃ©placÃ©, source 2 = dÃ©placement (8bits, valeur ou objet)
+    // si dÃ©placement non marquÃ©, il est dÃ©jÃ  masquÃ© Ã  0x1f ou 0x3f
+    // si dÃ©placement marquÃ©, le marquage sera fait dans la formule
     X_SHL, 
-    //! SHR : source 1 = emplacement déplacé, source 2 = déplacement (8bits, valeur ou objet)
-    // si déplacement non marqué, il est déjà masqué à 0x1f ou 0x3f
-    // si déplacement marqué, le marquage sera fait dans la formule
+    //! SHR : source 1 = emplacement dÃ©placÃ©, source 2 = dÃ©placement (8bits, valeur ou objet)
+    // si dÃ©placement non marquÃ©, il est dÃ©jÃ  masquÃ© Ã  0x1f ou 0x3f
+    // si dÃ©placement marquÃ©, le marquage sera fait dans la formule
     X_SHR, 
-    //! SAR : source 1 = emplacement déplacé, source 2 = déplacement (8bits, valeur ou objet)
-    // si déplacement non marqué, il est déjà masqué à 0x1f ou 0x3f
-    // si déplacement marqué, le marquage sera fait dans la formule
+    //! SAR : source 1 = emplacement dÃ©placÃ©, source 2 = dÃ©placement (8bits, valeur ou objet)
+    // si dÃ©placement non marquÃ©, il est dÃ©jÃ  masquÃ© Ã  0x1f ou 0x3f
+    // si dÃ©placement marquÃ©, le marquage sera fait dans la formule
     X_SAR,
 
     /** ROTATE **/
-    //! ROR : source 1 = emplacement déplacé, source 2 = déplacement (8bits, valeur ou objet)
+    //! ROR : source 1 = emplacement dÃ©placÃ©, source 2 = dÃ©placement (8bits, valeur ou objet)
     X_ROR,
-    //! ROL : source 1 = emplacement déplacé, source 2 = déplacement (8bits, valeur ou objet)
+    //! ROL : source 1 = emplacement dÃ©placÃ©, source 2 = dÃ©placement (8bits, valeur ou objet)
     X_ROL, 
-    //! RCR : source 1 = emplacement déplacé, source 2 = CF (1 bit) marqué ou valeur,
-    // source 3 = déplacement (8bits, valeur ou objet)
+    //! RCR : source 1 = emplacement dÃ©placÃ©, source 2 = CF (1 bit) marquÃ© ou valeur,
+    // source 3 = dÃ©placement (8bits, valeur ou objet)
     X_RCR, 
-    //! RCL : source 1 = emplacement déplacé, source 2 = CF (1 bit) marqué ou valeur,
-    // source 3 = déplacement (8bits, valeur ou objet)
+    //! RCL : source 1 = emplacement dÃ©placÃ©, source 2 = CF (1 bit) marquÃ© ou valeur,
+    // source 3 = dÃ©placement (8bits, valeur ou objet)
     X_RCL,
 
     /** BITBYTE **/
     // SETCC : donne 0 ou 1 selon que le predicat est faux ou vrai
-    // src0 : predicat concerné (valeur, 32bits)
+    // src0 : predicat concernÃ© (valeur, 32bits)
     // src1 : valeur ou marquage du flag (1 bit)
     // src2 et src3 : autres flags, si besoin
     X_SETCC,
-    // COMPLEMENT_BIT : inverse le bit concerné dans la source (eq. BTC)
-    // src0 : src, src1 : numéro du bit (obj marqué de longueur = à la source)
-    // src1 est sur 16/32/64bits, 8 bits impossible. position bit marqué sinon ce serait un EXTRACT
+    // COMPLEMENT_BIT : inverse le bit concernÃ© dans la source (eq. BTC)
+    // src0 : src, src1 : numÃ©ro du bit (obj marquÃ© de longueur = Ã  la source)
+    // src1 est sur 16/32/64bits, 8 bits impossible. position bit marquÃ© sinon ce serait un EXTRACT
     X_COMPLEMENT_BIT,
-    // SET_BIT : met à 1 le bit concerné dans la source (eq. BTS)
-    // src0 : src, src1 : numéro du bit (obj marqué de longueur = à la source)
-    // src1 est sur 16/32/64bits, 8 bits impossible. position bit marqué sinon ce serait un EXTRACT
+    // SET_BIT : met Ã  1 le bit concernÃ© dans la source (eq. BTS)
+    // src0 : src, src1 : numÃ©ro du bit (obj marquÃ© de longueur = Ã  la source)
+    // src1 est sur 16/32/64bits, 8 bits impossible. position bit marquÃ© sinon ce serait un EXTRACT
     X_SET_BIT,
-    // CLEAR_BIT : met à 0 le bit concerné dans la source (eq. BTR)
-    // src0 : src, src1 : numéro du bit (obj marqué de longueur = à la source)
-    // src1 est sur 16/32/64bits, 8 bits impossible. position bit marqué sinon ce serait un EXTRACT
+    // CLEAR_BIT : met Ã  0 le bit concernÃ© dans la source (eq. BTR)
+    // src0 : src, src1 : numÃ©ro du bit (obj marquÃ© de longueur = Ã  la source)
+    // src1 est sur 16/32/64bits, 8 bits impossible. position bit marquÃ© sinon ce serait un EXTRACT
     X_CLEAR_BIT,
-    // BSF : Bit Scan Forward = index du LSB de la source. Source 0 = source testée
+    // BSF : Bit Scan Forward = index du LSB de la source. Source 0 = source testÃ©e
     X_BSF,
-    // BSR : Bit Scan Reverse = index du MSB de la source. Source 0 = source testée
+    // BSR : Bit Scan Reverse = index du MSB de la source. Source 0 = source testÃ©e
     X_BSR,
 
     /** DECIMAL **/
-    // AAA/AL : marquage de AL suite à AAA. Src0 = AL (8bits), src1 = AF (1bit)
+    // AAA/AL : marquage de AL suite Ã  AAA. Src0 = AL (8bits), src1 = AF (1bit)
     X_AAA_AL,
-    // AAA/AH : marquage de AH suite à AAA. Src0 = AL (8bits), src1 = AF (1bit)
+    // AAA/AH : marquage de AH suite Ã  AAA. Src0 = AL (8bits), src1 = AF (1bit)
     X_AAA_AH,
-    // AAD : marquage de AL suite à AAD. Src0 = AL (8bits), src1 = AH (8bits), src2 = base utilisée (valeur - 8bits)
+    // AAD : marquage de AL suite Ã  AAD. Src0 = AL (8bits), src1 = AH (8bits), src2 = base utilisÃ©e (valeur - 8bits)
     X_AAD,
-    // AAM/AL : marquage de AL suite à AAM. Src0 = marquage AL (8bits), src1 = base utilisée (8bits)
+    // AAM/AL : marquage de AL suite Ã  AAM. Src0 = marquage AL (8bits), src1 = base utilisÃ©e (8bits)
     X_AAM_AL,
-    // AAM/AH : marquage de AH suite à AAM. Src0 = marquage AH (8bits), src1 = base utilisée (8bits)
+    // AAM/AH : marquage de AH suite Ã  AAM. Src0 = marquage AH (8bits), src1 = base utilisÃ©e (8bits)
     X_AAM_AH,
-    // AAS/AL : marquage de AL suite à AAS. Src0 = AH (8bits), src1 = AL (8bits), src2 = AF (1bit)
+    // AAS/AL : marquage de AL suite Ã  AAS. Src0 = AH (8bits), src1 = AL (8bits), src2 = AF (1bit)
     X_AAS_AL,
-    // AAS/AH : marquage de AH suite à AAS. Src0 = AH (8bits), src1 = AL (8bits), src2 = AF (1bit)
+    // AAS/AH : marquage de AH suite Ã  AAS. Src0 = AH (8bits), src1 = AL (8bits), src2 = AF (1bit)
     X_AAS_AH,
-    // DAA_1ST : relation calculant AL en fonction de la première condition de DAA. Src0 = AL (8bits), Src1 = AF (1bit)
+    // DAA_1ST : relation calculant AL en fonction de la premiÃ¨re condition de DAA. Src0 = AL (8bits), Src1 = AF (1bit)
     X_DAA_1ST,
     // DAA_2ND : relation calculant AL en fonction de la seconde condition de DAA
     // Src0 = AL avant DAA (8 bits), Src1 = CF (1bit), src2 = AL apres 1ere condition de DAA (8bits)
     X_DAA_2ND,
-    // DAS_1ST : relation calculant AL en fonction de la première condition de DAS. Src0 = AL (8bits), Src1 = AF (1bit)
+    // DAS_1ST : relation calculant AL en fonction de la premiÃ¨re condition de DAS. Src0 = AL (8bits), Src1 = AF (1bit)
     X_DAS_1ST,
     // DAS_2ND : relation calculant AL en fonction de la seconde condition de DAS
     // Src0 = AL avant DAS (8 bits), Src1 = CF (1bit), src2 = AL apres 1ere condition de DAS (8bits)
     X_DAS_2ND,
 
     /** FLAGOP  **/
-    // SALC : source0 : carryFlag (1bit), resultat sur 8 bits (affecté à AL)
+    // SALC : source0 : carryFlag (1bit), resultat sur 8 bits (affectÃ© Ã  AL)
     X_SALC,
 
     /*******************************************************************/
@@ -159,43 +162,43 @@ enum Relation
     F_CARRY_SUB,
     // CARRY_NEG : Source0 : src (vrai ssi source non nulle)
     F_CARRY_NEG,
-    // CARRY_MUL : Source0 : resultat. Si partie haute du resultat nulle, CF mis à 0 
+    // CARRY_MUL : Source0 : resultat. Si partie haute du resultat nulle, CF mis Ã  0 
     F_CARRY_MUL, 
-    // CARRY_IMUL : Source0 : resultat; si resultat = sign_extend partie basse, alors CF mis à 0
+    // CARRY_IMUL : Source0 : resultat; si resultat = sign_extend partie basse, alors CF mis Ã  0
     F_CARRY_IMUL,  
-    // CARRY_SHL : denier bit ejecté (cas ou la source est marqué sinon traitement direct par extract)
-    // Source0 : source, source1 : depl (marqué - 8bits, sera masqué à 0x1f ou 0x3f dans la formule)
+    // CARRY_SHL : denier bit ejectÃ© (cas ou la source est marquÃ© sinon traitement direct par extract)
+    // Source0 : source, source1 : depl (marquÃ© - 8bits, sera masquÃ© Ã  0x1f ou 0x3f dans la formule)
     F_CARRY_SHL,
-    // CARRY_SHR : denier bit ejecté (cas ou la source est marqué sinon traitement direct par extract)
-    // Source0 : source, source1 : depl (marqué - 8bits, sera masqué à 0x1f ou 0x3f dans la formule)
+    // CARRY_SHR : denier bit ejectÃ© (cas ou la source est marquÃ© sinon traitement direct par extract)
+    // Source0 : source, source1 : depl (marquÃ© - 8bits, sera masquÃ© Ã  0x1f ou 0x3f dans la formule)
     F_CARRY_SHR,
-    // CARRY_SAR : denier bit ejecté (cas ou la source est marqué sinon traitement direct par extract)
-    // Source0 : source, source1 : depl (marqué - 8bits, sera masqué à 0x1f ou 0x3f dans la formule)
-    // IDENTIQUE A CARRY_SHR car le deplacement est masqué, donc au maximal ce sera le MSB de la source
-    // qui sera éjecté
+    // CARRY_SAR : denier bit ejectÃ© (cas ou la source est marquÃ© sinon traitement direct par extract)
+    // Source0 : source, source1 : depl (marquÃ© - 8bits, sera masquÃ© Ã  0x1f ou 0x3f dans la formule)
+    // IDENTIQUE A CARRY_SHR car le deplacement est masquÃ©, donc au maximal ce sera le MSB de la source
+    // qui sera Ã©jectÃ©
     F_CARRY_SAR = F_CARRY_SHR, 
-    // CARRY_RCL : denier bit ejecté (cas ou la source est marqué sinon traitement direct par extract)
-    // Source0 : source, source1: depl (marqué - 8bits, sera masqué à 0x1f ou 0x3f dans la formule)
+    // CARRY_RCL : denier bit ejectÃ© (cas ou la source est marquÃ© sinon traitement direct par extract)
+    // Source0 : source, source1: depl (marquÃ© - 8bits, sera masquÃ© Ã  0x1f ou 0x3f dans la formule)
     F_CARRY_RCL,
-    // CARRY_RCR : denier bit ejecté (cas ou la source est marqué sinon traitement direct par extract)
-    // Source0 : source, source1: depl (marqué - 8bits, sera masqué à 0x1f ou 0x3f dans la formule)
+    // CARRY_RCR : denier bit ejectÃ© (cas ou la source est marquÃ© sinon traitement direct par extract)
+    // Source0 : source, source1: depl (marquÃ© - 8bits, sera masquÃ© Ã  0x1f ou 0x3f dans la formule)
     F_CARRY_RCR, 
     // CARRY_BITBYTE : extraction du bit 'b' de la source, lorsque la position
-    // du bit est marqué. !! source0 et source1 sont de la meme taille
-    // Source0 : source, source1 : n° bit (marqué). Sera ajusté modulo 16/32/64
+    // du bit est marquÃ©. !! source0 et source1 sont de la meme taille
+    // Source0 : source, source1 : nÂ° bit (marquÃ©). Sera ajustÃ© modulo 16/32/64
     F_CARRY_BITBYTE,
 
     /** PARITY_FLAG **/
-    // PARITY. source 0 = resultat. seuls les 8 bits faibles seront considérés
+    // PARITY. source 0 = resultat. seuls les 8 bits faibles seront considÃ©rÃ©s
     F_PARITY,
 
     /** ZERO_FLAG **/
     // F_IS_NULL : 1 si source0 est nulle, 0 sinon
     F_IS_NULL,
-    // F_ARE_EQUAL : 1 si source0 et source1 sont égales, 0 sinon
+    // F_ARE_EQUAL : 1 si source0 et source1 sont Ã©gales, 0 sinon
     F_ARE_EQUAL,
-    // CMPXCHG 8B et 16B : ZF à 1 si les deux opérandes sont égales
-    // Srcs 0 et 1 = mémoire  (partie haute et partie basse), objets de 32 ou 64bits
+    // CMPXCHG 8B et 16B : ZF Ã  1 si les deux opÃ©randes sont Ã©gales
+    // Srcs 0 et 1 = mÃ©moire  (partie haute et partie basse), objets de 32 ou 64bits
     // Srcs 2 et 3 = registre (partie haute et partie basse), objets de 32 ou 64bits
     F_CMPXCHG_8B16B,
 
@@ -215,10 +218,10 @@ enum Relation
     F_OVERFLOW_SHL, 
     // OF_SHRD (ssi depl == 1). 1 si signe avant et apres change 
     // donc si MSB src != LSB Bit Pattern.
-    // Source0 = concatenation bitPattern(partie haute) et source shiftée
+    // Source0 = concatenation bitPattern(partie haute) et source shiftÃ©e
     F_OVERFLOW_SHRD,
     // OF_ROL (ssi depl == 1). MSB(DEST) XOR CF : cf manuel Intel
-    // Source0 = resultat, source1 = CF apres rotation (marqué, 1bit)
+    // Source0 = resultat, source1 = CF apres rotation (marquÃ©, 1bit)
     F_OVERFLOW_ROL,
     // OF_ROR (ssi depl == 1). MSB(DEST) XOR ((MSB-1) DEST) : cf manuel Intel
     // Source0 = resultat
@@ -237,7 +240,7 @@ enum Relation
     F_AUXILIARY_DEC,
 
     /** DECIMAL **/
-    // AAA : marquage Carry/auxiliary suite à AAA . Identique pour AAS et DAA (pour AF)
+    // AAA : marquage Carry/auxiliary suite Ã  AAA . Identique pour AAS et DAA (pour AF)
     // src0 = AL (8bits), src1 = AF (1 bit)
     F_AAA,
     // DAA et DAS (pour CF) : src0 = AL avant DAA (8 bits), src1 = CF (1bit)
@@ -252,7 +255,7 @@ const static std::string relationStrings[RELATION_LAST] =
     "BYTESOURCE", 
 
     // construction d'objets par extraction 
-    // ou concaténation d'autres objets
+    // ou concatÃ©nation d'autres objets
     "EXTRACT",
     "CONCAT",
 
@@ -264,9 +267,9 @@ const static std::string relationStrings[RELATION_LAST] =
     // BINARY
     "X_ADD", "X_INC", "X_SUB", "X_DEC", "X_NEG",
     "X_MUL", "X_IMUL",
-    // division non signée avec quotient et reste
+    // division non signÃ©e avec quotient et reste
     "X_DIV_QUO", "X_DIV_REM", 
-    // division signée avec quotient et reste
+    // division signÃ©e avec quotient et reste
     "X_IDIV_QUO", "X_IDIV_REM",
 
     // LOGICAL

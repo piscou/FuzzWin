@@ -1,4 +1,4 @@
-// SIMULATE
+Ôªø// SIMULATE
 
 #if TARGET_IA32
 template<UINT32 lenDest, UINT32 lenEA> 
@@ -6,8 +6,8 @@ void MISC::sLEA(THREADID tid, REG regDest, ADDRINT insAddress)
 {
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     
-    // rÈcupÈration de l'objet prÈalablement calculÈ et stockÈ par cGetKindOfEA, si existant
-    // sinon dÈmarquer la destination
+    // r√©cup√©ration de l'objet pr√©alablement calcul√© et stock√© par cGetKindOfEA, si existant
+    // sinon d√©marquer la destination
     if (!pTmgrTls->isEffectiveAddressTainted()) pTmgrTls->unTaintRegister<32>(regDest);
     else
     {
@@ -15,13 +15,13 @@ void MISC::sLEA(THREADID tid, REG regDest, ADDRINT insAddress)
 
         TaintDwordPtr eaPtr = pTmgrTls->getTaintEffectiveAddress();
     
-        // Boucle de 0 ‡ (lenEA >> 3)  : extraction octet i de l'objet marquÈ
-        // et affectation ‡ octet i du registre de destination (sauf si lenDest < leaEA : on arrete avant)
-        // octets de (lenEA >> 3) ‡ (lenDest >> 3) mis ‡ zÈro si besoin
+        // Boucle de 0 √† (lenEA >> 3)  : extraction octet i de l'objet marqu√©
+        // et affectation √† octet i du registre de destination (sauf si lenDest < leaEA : on arrete avant)
+        // octets de (lenEA >> 3) √† (lenDest >> 3) mis √† z√©ro si besoin
     
         REGINDEX regDestIndex    = getRegIndex(regDest);
         UINT32   regPart         = 0;
-        // dernier octet qui sera marquÈ dans le registre de destination
+        // dernier octet qui sera marqu√© dans le registre de destination
         UINT32   lastTaintedByte = (lenEA < lenDest) ? (lenEA >> 3) : (lenDest >> 3); 
 
         // marquage destination
@@ -34,7 +34,7 @@ void MISC::sLEA(THREADID tid, REG regDest, ADDRINT insAddress)
             ++regPart;
         } while (regPart < lastTaintedByte);
 
-        // dÈmarquage octets forts (si lenDest > lenEA car zeroextend de l'EA)
+        // d√©marquage octets forts (si lenDest > lenEA car zeroextend de l'EA)
         while (regPart < (lenDest >> 3))
         {
             pTmgrTls->unTaintRegisterPart(regDestIndex, regPart);
@@ -51,8 +51,8 @@ void MISC::sLEA(THREADID tid, REG regDest, ADDRINT insAddress)
 {
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);
     
-    // rÈcupÈration de l'objet prÈalablement calculÈ et stockÈ par cGetKindOfEA, si existant
-    // sinon dÈmarquer la destination
+    // r√©cup√©ration de l'objet pr√©alablement calcul√© et stock√© par cGetKindOfEA, si existant
+    // sinon d√©marquer la destination
     if (!pTmgrTls->isEffectiveAddressTainted()) pTmgrTls->unTaintRegister<64>(regDest);
     else
     {
@@ -60,13 +60,13 @@ void MISC::sLEA(THREADID tid, REG regDest, ADDRINT insAddress)
     
         _LOGTAINT(tid, insAddress, "LEA");
 
-        // Boucle de 0 ‡ (lenEA >> 3)  : extraction octet i de l'objet marquÈ
-        // et affectation ‡ octet i du registre de destination (sauf si lenDest < leaEA : on arrete avant)
-        // octets de (lenEA >> 3) ‡ (lenDest >> 3) mis ‡ zÈro si besoin
+        // Boucle de 0 √† (lenEA >> 3)  : extraction octet i de l'objet marqu√©
+        // et affectation √† octet i du registre de destination (sauf si lenDest < leaEA : on arrete avant)
+        // octets de (lenEA >> 3) √† (lenDest >> 3) mis √† z√©ro si besoin
     
         REGINDEX regDestIndex    = getRegIndex(regDest);
         UINT32   regPart         = 0;
-        // dernier octet qui sera marquÈ dans le registre de destination
+        // dernier octet qui sera marqu√© dans le registre de destination
         UINT32   lastTaintedByte = (lenEA < lenDest) ? (lenEA >> 3) : (lenDest >> 3); 
 
         // marquage destination
@@ -79,7 +79,7 @@ void MISC::sLEA(THREADID tid, REG regDest, ADDRINT insAddress)
             ++regPart;
         } while (regPart < lastTaintedByte);
 
-        // dÈmarquage octets forts (si lenDest > lenEA car zeroextend de l'EA)
+        // d√©marquage octets forts (si lenDest > lenEA car zeroextend de l'EA)
         while (regPart < (lenDest >> 3))
         {
             pTmgrTls->unTaintRegisterPart(regDestIndex, regPart);

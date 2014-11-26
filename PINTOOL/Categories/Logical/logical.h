@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 #include <TaintEngine\TaintManager.h>
 
 namespace LOGICAL 
@@ -11,7 +11,7 @@ void cTEST(INS &ins);
 void cNOT(INS &ins);
 
 // FLAGS 
-// marquage identique pour toutes les opérations LOGICAL, basé sur le résultat
+// marquage identique pour toutes les opÃ©rations LOGICAL, basÃ© sur le rÃ©sultat
 void fTaintLOGICAL(TaintManager_Thread *pTmgr, const TaintPtr &resultPtr);
 
 // SIMULATE 

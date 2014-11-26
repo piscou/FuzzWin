@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <TaintEngine\TaintManager.h>
 
 namespace BITBYTE
@@ -31,7 +31,7 @@ void cSETLE (INS &ins);
 void cSETNLE(INS &ins);
 
 // Simulate : SETcc
-// destination m�moire 
+// destination mémoire 
 void sSETB_M  (THREADID tid, ADDRINT writeAddress, ADDRINT insAddress);
 void sSETNB_M (THREADID tid, ADDRINT writeAddress, ADDRINT insAddress);
 void sSETS_M  (THREADID tid, ADDRINT writeAddress, ADDRINT insAddress);

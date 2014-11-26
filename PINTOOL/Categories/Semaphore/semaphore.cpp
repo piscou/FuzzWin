@@ -1,4 +1,4 @@
-#include "semaphore.h"
+ï»¿#include "semaphore.h"
 #include <Binary\binary.h>     // CMP (pour CMPXCHG)
 #include <Dataxfer\dataxfer.h> // MOV (pour CMPXCHG)
 
@@ -7,15 +7,15 @@ void SEMAPHORE::cCMPXCHG(INS &ins)
 {
     // CMPXCHG : d'abord une comparaison destination (R ou M) avec 
     // puis 1 MOV selon le resultat de la comparaison
-    // Opérande 0 : ModRM:r/m (si reg : regDest)
-    // Opérande 1 : reg (dénommé regSrc)
-    // CMPXCHG compare opérande 0 avec AL/AX/EAX/RAX
-    // Si égal,       ZF = 1 (comme une vraie comparaison) et opérande 1 -> opérande 0 
-    // Si différent : ZF = 0 (comme une vraie comparaison) et opérande 0 -> AL/AX/EAX/RAX
+    // OpÃ©rande 0 : ModRM:r/m (si reg : regDest)
+    // OpÃ©rande 1 : reg (dÃ©nommÃ© regSrc)
+    // CMPXCHG compare opÃ©rande 0 avec AL/AX/EAX/RAX
+    // Si Ã©gal,       ZF = 1 (comme une vraie comparaison) et opÃ©rande 1 -> opÃ©rande 0 
+    // Si diffÃ©rent : ZF = 0 (comme une vraie comparaison) et opÃ©rande 0 -> AL/AX/EAX/RAX
     // Dans les arguments des callbacks, il vaut ajouter la valeur de AL/AX/EAX/RAX
     // Et celle du registre dest (cas RR) pour faire la comparaison.
     
-    // opérande 1 : regSrc
+    // opÃ©rande 1 : regSrc
     REG regSrc = INS_OperandReg(ins, 1);
     UINT32 regSrcSize = getRegSize(regSrc);
     if (!regSrcSize) return;	// registre non suivi
@@ -23,9 +23,9 @@ void SEMAPHORE::cCMPXCHG(INS &ins)
     // registre de comparasion avec la destination
     REG cmpReg = REG_INVALID(); // selon la taille, AL/AX/EAX/RAX
 
-    // pointeur vers fonction à appeler
+    // pointeur vers fonction Ã  appeler
     void (*callback)() = nullptr;
-    if (INS_IsMemoryRead(ins)) // CMPXCHG_RM (source 0 = mémoire)
+    if (INS_IsMemoryRead(ins)) // CMPXCHG_RM (source 0 = mÃ©moire)
     {
         switch (regSrcSize) 
         {	
@@ -38,7 +38,7 @@ void SEMAPHORE::cCMPXCHG(INS &ins)
         }
         INS_InsertCall (ins, IPOINT_BEFORE, callback,
             IARG_THREAD_ID,
-            IARG_UINT32, regSrc, // pas besoin de la valeur du registre, le déplacement se fera octet par octet
+            IARG_UINT32, regSrc, // pas besoin de la valeur du registre, le dÃ©placement se fera octet par octet
             IARG_MEMORYREAD_EA, 
             IARG_UINT32,    cmpReg,
             IARG_REG_VALUE, cmpReg,
@@ -46,7 +46,7 @@ void SEMAPHORE::cCMPXCHG(INS &ins)
     }
     else // CMPXCHG_RR (source 0 = registre)
     {
-        REG regDest = INS_OperandReg(ins, 0); // registre de destination (comparé à AL/AX/EAX/RAX)
+        REG regDest = INS_OperandReg(ins, 0); // registre de destination (comparÃ© Ã  AL/AX/EAX/RAX)
         switch (getRegSize(regDest)) 
         {	
         case 0: return; // non suivi en instrumentation
@@ -61,7 +61,7 @@ void SEMAPHORE::cCMPXCHG(INS &ins)
             IARG_THREAD_ID,
             IARG_UINT32, regSrc, 
             IARG_UINT32, regDest, 
-            IARG_REG_VALUE, regDest,// valeur indispendable pour comparaison à RAX
+            IARG_REG_VALUE, regDest,// valeur indispendable pour comparaison Ã  RAX
             IARG_UINT32,    cmpReg,
             IARG_REG_VALUE, cmpReg,
             IARG_INST_PTR, IARG_END);     
@@ -72,7 +72,7 @@ void SEMAPHORE::cCMPXCHG8B(INS &ins)
 {
     // CMPXCHG8B (mode x86): d'abord une comparaison EDX:EAX avec m64
     // puis 1 MOV ECX:EBX->m64 ou m64->EDX:EAX selon le resultat de la comparaison 
-    // Opérande 0 : Mémoire
+    // OpÃ©rande 0 : MÃ©moire
     // Dans les arguments des callbacks, il vaut ajouter la valeur de EAX et EDX
 
     INS_InsertCall (ins, IPOINT_BEFORE, (AFUNPTR) sCMPXCHG8B,
@@ -89,7 +89,7 @@ void SEMAPHORE::cCMPXCHG16B(INS &ins)
 {
     // CMPXCHG16B (mode x64): d'abord une comparaison RDX:RAX avec m128
     // puis 1 MOV RCX:RBX->m128 ou m128->RDX:RAX selon le resultat de la comparaison 
-    // Opérande 0 : Mémoire
+    // OpÃ©rande 0 : MÃ©moire
     // Dans les arguments des callbacks, il vaut ajouter la valeur de RAX et RDX
 
     INS_InsertCall (ins, IPOINT_BEFORE, (AFUNPTR) sCMPXCHG16B,
@@ -104,15 +104,15 @@ void SEMAPHORE::cCMPXCHG16B(INS &ins)
 
 void SEMAPHORE::cXADD(INS &ins)
 {
-    // pointeur vers fonction à appeler
+    // pointeur vers fonction Ã  appeler
     void (*callback)() = nullptr;
 
-    // XADD : opérande 0 est soit mémoire, soit registre, opérande 1 tjs registre
+    // XADD : opÃ©rande 0 est soit mÃ©moire, soit registre, opÃ©rande 1 tjs registre
     REG regSrc = INS_OperandReg(ins, 1);
     UINT32 regSrcSize = getRegSize(regSrc);
 
-    if (!regSrcSize) return;    // registre non géré en marquage
-    else if (INS_OperandIsMemory(ins, 0)) // XADD_M (opérande 0 = mémoire)
+    if (!regSrcSize) return;    // registre non gÃ©rÃ© en marquage
+    else if (INS_OperandIsMemory(ins, 0)) // XADD_M (opÃ©rande 0 = mÃ©moire)
     {
         switch (regSrcSize) 
         {	
@@ -130,7 +130,7 @@ void SEMAPHORE::cXADD(INS &ins)
             IARG_MEMORYWRITE_EA, 
             IARG_INST_PTR, IARG_END); 
     }
-    else  // XADD_R (opérande 0 = registre)
+    else  // XADD_R (opÃ©rande 0 = registre)
     {
         REG regDest = INS_OperandReg(ins, 0);
         switch (getRegSize(regDest)) 
@@ -159,7 +159,7 @@ void SEMAPHORE::sCMPXCHG8B(THREADID tid, ADDRINT address, ADDRINT regEAXValue, A
     
     // 1ere partie de CMPXCHG8B :
     // CMP_RM entre EDX:EAX et m64. 
-    // Procédure spécifique (impossible de faire appel à BINARY::sCMP_RM)
+    // ProcÃ©dure spÃ©cifique (impossible de faire appel Ã  BINARY::sCMP_RM)
     
     bool isMemTainted       = pTmgrGlobal->isMemoryTainted<64>(address); 
     ADDRINT srcMemLowValue  = getMemoryValue<32>(address);
@@ -168,16 +168,16 @@ void SEMAPHORE::sCMPXCHG8B(THREADID tid, ADDRINT address, ADDRINT regEAXValue, A
     bool isEAXTainted =	pTmgrTls->isRegisterTainted<32>(REG_EAX);
     bool isEDXTainted =	pTmgrTls->isRegisterTainted<32>(REG_EDX);
     
-    // marquage flags : seul ZF est affecté, les autres (O/S/A/P/C) sont inchangés
+    // marquage flags : seul ZF est affectÃ©, les autres (O/S/A/P/C) sont inchangÃ©s
     if ( !(isMemTainted || isEAXTainted || isEDXTainted))  pTmgrTls->unTaintZeroFlag();
     else 
     {
         _LOGTAINT(tid, insAddress, "CMPXCHG8B - FLAG MARQUE"); 
-        // pour représenter EDX:EAX et la mémoire il n'est pas possible de faire une concaténation
-        // car cela ne pourra pas traiter le cas ou les deux registres sont démarqués
+        // pour reprÃ©senter EDX:EAX et la mÃ©moire il n'est pas possible de faire une concatÃ©nation
+        // car cela ne pourra pas traiter le cas ou les deux registres sont dÃ©marquÃ©s
         // on pourrait envisager de faire un ObjectSource d'1 valeur de 64bits
-        // mais afin d'uniformiser la procédure avec CMPXCHG16B (128bits)
-        // on utilisera donc une relation spécifique pour CMPXCHG 8B et 16B
+        // mais afin d'uniformiser la procÃ©dure avec CMPXCHG16B (128bits)
+        // on utilisera donc une relation spÃ©cifique pour CMPXCHG 8B et 16B
         // on prendra 4 arguments : memLow, memHigh, EAX, EDX. 
 
         ObjectSource srcMemLow = (pTmgrGlobal->isMemoryTainted<32>(address))
@@ -209,16 +209,16 @@ void SEMAPHORE::sCMPXCHG8B(THREADID tid, ADDRINT address, ADDRINT regEAXValue, A
     // puis        un MOVRM de ECX dans addr + 3 (tr.    partie haute)
     if ((srcMemLowValue == regEAXValue) && (srcMemHighValue == regEDXValue))
     {
-        DATAXFER::sMOV_RM<32>(tid, REG_EBX, address       ,insAddress);
-        DATAXFER::sMOV_RM<32>(tid, REG_ECX, (address + 4) ,insAddress);
+        DATAXFER::sMOV_RM<32>(tid, REG_EBX, address      , insAddress);
+        DATAXFER::sMOV_RM<32>(tid, REG_ECX, (address + 4), insAddress);
     }
     // sinon EDX:EAX <- mem
     // on fera un MOVMR de addr     dans EAX (partie basse)
     // puis    un MOVMR de addr + 3 dans EDX (partie haute)
     else
     {
-        DATAXFER::sMOV_MR<32>(tid, address,       REG_EAX ,insAddress);
-        DATAXFER::sMOV_MR<32>(tid, (address + 4), REG_ECX ,insAddress);
+        DATAXFER::sMOV_MR<32>(tid, address,       REG_EAX, insAddress);
+        DATAXFER::sMOV_MR<32>(tid, (address + 4), REG_ECX, insAddress);
     }
 }// sCMPXCHG8B
 
@@ -230,7 +230,7 @@ void SEMAPHORE::sCMPXCHG16B(THREADID tid, ADDRINT address, ADDRINT regRAXValue, 
     
     // 1ere partie de CMPXCHG16B :
     // CMP_RM entre RDX:RAX et m128. 
-    // Procédure spécifique (impossible de faire appel à BINARY::sCMP_RM)
+    // ProcÃ©dure spÃ©cifique (impossible de faire appel Ã  BINARY::sCMP_RM)
     
     bool isMemTainted       = pTmgrGlobal->isMemoryTainted<128>(address); 
     ADDRINT srcMemLowValue  = getMemoryValue<64>(address);
@@ -239,13 +239,13 @@ void SEMAPHORE::sCMPXCHG16B(THREADID tid, ADDRINT address, ADDRINT regRAXValue, 
     bool isRAXTainted =	pTmgrTls->isRegisterTainted<64>(REG_EAX);
     bool isRDXTainted =	pTmgrTls->isRegisterTainted<64>(REG_EDX);
     
-    // marquage flags : seul ZF est affecté, les autres (O/S/A/P/C) sont inchangés
+    // marquage flags : seul ZF est affectÃ©, les autres (O/S/A/P/C) sont inchangÃ©s
     if ( !(isMemTainted || isRAXTainted || isRDXTainted))  pTmgrTls->unTaintAllFlags();
     else 
     {
         _LOGTAINT(tid, insAddress, "CMPXCHG16B - FLAG MARQUE"); 
-        // pour représenter RDX:RAX et la mémoire il n'est pas possible de faire une concaténation
-        // car cela ne pourra pas traiter le cas ou les deux registres sont démarqués
+        // pour reprÃ©senter RDX:RAX et la mÃ©moire il n'est pas possible de faire une concatÃ©nation
+        // car cela ne pourra pas traiter le cas ou les deux registres sont dÃ©marquÃ©s
         // cf CMPXCHG16B
 
         ObjectSource srcMemLow = (pTmgrGlobal->isMemoryTainted<64>(address))
@@ -264,7 +264,7 @@ void SEMAPHORE::sCMPXCHG16B(THREADID tid, ADDRINT address, ADDRINT regRAXValue, 
             ? ObjectSource(pTmgrTls->getRegisterTaint<64>(REG_RDX, regRDXValue))
             : ObjectSource(64, regRDXValue);
 
-        // marquage flags : seul ZF est affecté, les autres (O/S/A/P/C) sont inchangés
+        // marquage flags : seul ZF est affectÃ©, les autres (O/S/A/P/C) sont inchangÃ©s
         pTmgrTls->updateTaintCarryFlag(std::make_shared<TaintBit>(
             F_CMPXCHG_8B16B, 
             srcMemHigh, srcMemLow,
@@ -277,16 +277,16 @@ void SEMAPHORE::sCMPXCHG16B(THREADID tid, ADDRINT address, ADDRINT regRAXValue, 
     // puis        un MOVRM de RCX dans addr + 8 (tr.    partie haute)
     if ((srcMemLowValue == regRAXValue) && (srcMemHighValue == regRDXValue))
     {
-        DATAXFER::sMOV_RM<64>(tid, REG_RBX, address       ,insAddress);
-        DATAXFER::sMOV_RM<64>(tid, REG_RCX, (address + 8) ,insAddress);
+        DATAXFER::sMOV_RM<64>(tid, REG_RBX, address      , insAddress);
+        DATAXFER::sMOV_RM<64>(tid, REG_RCX, (address + 8), insAddress);
     }
     // sinon RDX:RAX <- mem
     // on fera un MOVMR de addr     dans RAX (partie basse)
     // puis    un MOVMR de addr + 3 dans RDX (partie haute)
     else
     {
-        DATAXFER::sMOV_MR<64>(tid, address,       REG_RAX ,insAddress);
-        DATAXFER::sMOV_MR<64>(tid, (address + 8), REG_RCX ,insAddress);
+        DATAXFER::sMOV_MR<64>(tid, address,       REG_RAX, insAddress);
+        DATAXFER::sMOV_MR<64>(tid, (address + 8), REG_RCX, insAddress);
     }
 } // sCMPXCHG16B
 #endif

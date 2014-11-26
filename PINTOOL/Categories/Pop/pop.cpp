@@ -1,4 +1,4 @@
-#include "pop.h"
+Ôªø#include "pop.h"
 #include <Dataxfer\dataxfer.h> // POP_R
 
 /////////
@@ -11,7 +11,7 @@ void POP::cPOP(INS &ins)
     void (*callback)() = nullptr;
     if (INS_OperandIsReg(ins, 0)) 
     {     
-        // dÈsempilement vers registre, ÈquivalengthInBitst ‡ MOVMR
+        // d√©sempilement vers registre, √©quivalengthInBitst √† MOVMR
         REG reg = INS_OperandReg(ins, 0);
         switch (getRegSize(reg)) 
         {
@@ -26,10 +26,10 @@ void POP::cPOP(INS &ins)
         INS_InsertCall (ins, IPOINT_BEFORE, callback,
             IARG_THREAD_ID,
             IARG_UINT32,    reg,            // registre destination
-            IARG_REG_VALUE, REG_STACK_PTR,  // valeur d'(E/RS)P ‡ ce moment l‡
+            IARG_REG_VALUE, REG_STACK_PTR,  // valeur d'(E/RS)P √† ce moment l√†
             IARG_INST_PTR, IARG_END);
     }
-    else // dÈsempilement vers mÈmoire
+    else // d√©sempilement vers m√©moire
     {
         // taille de la partie de la pile lue
         switch (INS_MemoryReadSize(ins)) 
@@ -45,15 +45,15 @@ void POP::cPOP(INS &ins)
 
         INS_InsertCall (ins, IPOINT_BEFORE, callback,
             IARG_THREAD_ID,
-            IARG_MEMORYWRITE_EA,            // adresse rÈelle de lecture
-            IARG_REG_VALUE, REG_STACK_PTR,  // valeur d'(E/R)SP ‡ ce moment l‡  
+            IARG_MEMORYWRITE_EA,            // adresse r√©elle de lecture
+            IARG_REG_VALUE, REG_STACK_PTR,  // valeur d'(E/R)SP √† ce moment l√†  
             IARG_INST_PTR, IARG_END);
     }
 } // cPOP
 
 void POP::cPOPF(INS &ins, UINT32 size)
 {  
-    void (*callback)() = nullptr; // pointeur sur la fonction ‡ appeler
+    void (*callback)() = nullptr; // pointeur sur la fonction √† appeler
     switch (size)
     {
         case 2: callback = (AFUNPTR) sPOPF<16>; break;
@@ -74,7 +74,7 @@ void POP::cPOPA(INS &ins)
 {  
     INS_InsertCall (ins, IPOINT_BEFORE, (AFUNPTR) sPOPA,  
         IARG_THREAD_ID,
-        IARG_REG_VALUE, REG_STACK_PTR,          // valeur d'ESP ‡ ce moment l‡
+        IARG_REG_VALUE, REG_STACK_PTR,          // valeur d'ESP √† ce moment l√†
         IARG_INST_PTR, IARG_END);
 }
 
@@ -82,43 +82,43 @@ void POP::cPOPAD(INS &ins)
 { 
     INS_InsertCall (ins, IPOINT_BEFORE, (AFUNPTR) sPOPAD,  
         IARG_THREAD_ID,
-        IARG_REG_VALUE, REG_STACK_PTR,          // valeur d'ESP ‡ ce moment l‡
+        IARG_REG_VALUE, REG_STACK_PTR,          // valeur d'ESP √† ce moment l√†
         IARG_INST_PTR, IARG_END);
 }
 
 void POP::sPOPA(THREADID tid, ADDRINT spAddress, ADDRINT insAddress) 
 {
-    // dÈsempilage dans l'ordre DI, SI, BP, SP (ignorÈ donc SP += 2), BX, DX, CX, et AX
-    // du point de vue marquage, equivalent ‡ un MOVMR sp, reg
+    // d√©sempilage dans l'ordre DI, SI, BP, SP (ignor√© donc SP += 2), BX, DX, CX, et AX
+    // du point de vue marquage, equivalent √† un MOVMR sp, reg
     REG regsToPop[8] = {REG_DI, REG_SI, REG_BP, REG_SP, REG_BX, REG_DX, REG_CX, REG_AX};
 
     for (UINT32 tabIndex = 0; tabIndex < 8 ; ++tabIndex, spAddress += 2)
     {
         REG reg = regsToPop[tabIndex];
         
-        // SP est ignorÈ
+        // SP est ignor√©
         if (REG_SP == reg) continue;
 
         // simulation du POP vers le registre
-        DATAXFER::sMOV_MR<16>(tid, spAddress, reg ,insAddress); 
+        DATAXFER::sMOV_MR<16>(tid, spAddress, reg, insAddress); 
     }
 } // sPOPA
 
 void POP::sPOPAD(THREADID tid, ADDRINT espAddress, ADDRINT insAddress) 
 {
-    // dÈsempilage dans l'ordre EDI, ESI, EBP, ESP (ignorÈ donc SP += 4), EBX, EDX, ECX, et EAX
-    // du point de vue marquage, equivalent ‡ un MOVMR esp, reg
+    // d√©sempilage dans l'ordre EDI, ESI, EBP, ESP (ignor√© donc SP += 4), EBX, EDX, ECX, et EAX
+    // du point de vue marquage, equivalent √† un MOVMR esp, reg
     REG regsToPop[8] = {REG_EDI, REG_ESI, REG_EBP, REG_ESP, REG_EBX, REG_EDX, REG_ECX, REG_EAX};
 
     for (UINT32 tabIndex = 0; tabIndex < 8 ; ++tabIndex, espAddress += 4)
     {
         REG reg = regsToPop[tabIndex];
         
-        // ESP est ignorÈ
+        // ESP est ignor√©
         if (REG_ESP == reg) continue;
 
         // simulation du POP vers le registre
-        DATAXFER::sMOV_MR<32>(tid, espAddress, reg ,insAddress); 
+        DATAXFER::sMOV_MR<32>(tid, espAddress, reg, insAddress); 
     }
 } // sPOPAD
 #endif

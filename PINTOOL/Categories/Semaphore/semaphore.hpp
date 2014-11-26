@@ -1,32 +1,32 @@
-template<UINT32 lengthInBits> void SEMAPHORE::sCMPXCHG_RM
+ï»¿template<UINT32 lengthInBits> void SEMAPHORE::sCMPXCHG_RM
     (THREADID tid, REG regSrc, ADDRINT address, REG cmpReg, ADDRINT cmpRegValue, ADDRINT insAddress)
 {
     // 1ere partie de CMPXCHG : il s'agit en fait d'un CMP_RM
-    // donc appeler la fonction correspondante implémentée dans BINARY
-    // qui marquera les flags en conséquence
-    BINARY::sCMP_RM<lengthInBits>(tid, cmpReg, cmpRegValue, address ,insAddress);
+    // donc appeler la fonction correspondante implÃ©mentÃ©e dans BINARY
+    // qui marquera les flags en consÃ©quence
+    BINARY::sCMP_RM<lengthInBits>(tid, cmpReg, cmpRegValue, address, insAddress);
 
-    // 2ème partie de CMPXCHG
-    // si opérandes sont égales : MOV regSrc->Memoire
-    // sinon                      MOV Mémoire -> cmpReg (AL..RAX)
+    // 2Ã¨me partie de CMPXCHG
+    // si opÃ©randes sont Ã©gales : MOV regSrc->Memoire
+    // sinon                      MOV MÃ©moire -> cmpReg (AL..RAX)
     ADDRINT addressValue = getMemoryValue<lengthInBits>(address);
-    if (addressValue == cmpRegValue)   DATAXFER::sMOV_RM<lengthInBits>(tid, regSrc, address ,insAddress);
-    else                               DATAXFER::sMOV_MR<lengthInBits>(tid, address, cmpReg ,insAddress);
+    if (addressValue == cmpRegValue)   DATAXFER::sMOV_RM<lengthInBits>(tid, regSrc, address, insAddress);
+    else                               DATAXFER::sMOV_MR<lengthInBits>(tid, address, cmpReg, insAddress);
 } // sCMPXCHG_RM
 
 template<UINT32 lengthInBits> void SEMAPHORE::sCMPXCHG_RR
     (THREADID tid, REG regSrc, REG regDest, ADDRINT regDestValue, REG cmpReg, ADDRINT cmpRegValue, ADDRINT insAddress)
 {
     // 1ere partie de CMPXCHG : il s'agit en fait d'un CMP_RR
-    // donc appeler la fonction correspondante implémentée dans BINARY
-    // qui marquera les flags en conséquence
-    BINARY::sCMP_RR<lengthInBits>(tid, cmpReg, cmpRegValue, regDest, regDestValue ,insAddress);
+    // donc appeler la fonction correspondante implÃ©mentÃ©e dans BINARY
+    // qui marquera les flags en consÃ©quence
+    BINARY::sCMP_RR<lengthInBits>(tid, cmpReg, cmpRegValue, regDest, regDestValue, insAddress);
 
-    // 2ème partie de CMPXCHG
-    // si opérandes sont égales : MOV regSrc->Memoire
+    // 2Ã¨me partie de CMPXCHG
+    // si opÃ©randes sont Ã©gales : MOV regSrc->Memoire
     // sinon                      MOV RegDest -> cmpReg (AL..RAX)
-    if (regDestValue == cmpRegValue)   DATAXFER::sMOV_RR<lengthInBits>(tid, regSrc, regDest ,insAddress);
-    else                               DATAXFER::sMOV_RR<lengthInBits>(tid, regDest, cmpReg ,insAddress);
+    if (regDestValue == cmpRegValue)   DATAXFER::sMOV_RR<lengthInBits>(tid, regSrc, regDest, insAddress);
+    else                               DATAXFER::sMOV_RR<lengthInBits>(tid, regDest, cmpReg, insAddress);
 } // sCMPXCHG_RR
 
 template<UINT32 lengthInBits>
@@ -54,7 +54,7 @@ void SEMAPHORE::sXADD_R(THREADID tid, REG regSrc, ADDRINT regSrcValue,
     
         TAINT_OBJECT_PTR resultPtr = MK_TAINT_OBJECT_PTR(X_ADD, objSrcDest, objSrc);
 
-        // déplacement destination -> source
+        // dÃ©placement destination -> source
         REGINDEX regIndexSrc  = getRegIndex(regSrc);
         REGINDEX regIndexDest = getRegIndex(regDest);
         for (UINT32 regPart = 0 ; regPart < (lengthInBits >> 3) ; ++regPart) 
@@ -68,7 +68,7 @@ void SEMAPHORE::sXADD_R(THREADID tid, REG regSrc, ADDRINT regSrcValue,
             else pTmgrTls->unTaintRegisterPart(regIndexSrc, regPart);
         }
 
-        // affectation du resultat de l'addition à la destination, et marquage flags
+        // affectation du resultat de l'addition Ã  la destination, et marquage flags
         BINARY::fTaintADD(pTmgrTls, objSrcDest, objSrc, resultPtr);   
         pTmgrTls->updateTaintRegister<lengthInBits>(regDest, resultPtr);
     }
@@ -99,7 +99,7 @@ void SEMAPHORE::sXADD_M(THREADID tid, REG regSrc, ADDRINT regSrcValue,
     
         TAINT_OBJECT_PTR resultPtr = MK_TAINT_OBJECT_PTR(X_ADD, objSrcDest, objSrc);
 
-        // déplacement destination -> source
+        // dÃ©placement destination -> source
         REGINDEX regIndexSrc  = getRegIndex(regSrc);
         for (UINT32 regPart = 0 ; regPart < (lengthInBits >> 3) ; ++regPart, ++writeAddress) 
         {	
@@ -112,7 +112,7 @@ void SEMAPHORE::sXADD_M(THREADID tid, REG regSrc, ADDRINT regSrcValue,
             else pTmgrTls->unTaintRegisterPart(regIndexSrc, regPart);
         }
 
-        // affectation du resultat de l'addition à la destination, et marquage flags
+        // affectation du resultat de l'addition Ã  la destination, et marquage flags
         BINARY::fTaintADD(pTmgrTls, objSrcDest, objSrc, resultPtr);   
         pTmgrTls->updateTaintRegister<lengthInBits>(regSrc, resultPtr);
     }

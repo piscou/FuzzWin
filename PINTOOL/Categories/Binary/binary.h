@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include <TaintEngine\TaintManager.h>
 #include <Dataxfer\dataxfer.h> // pour addition et soustraction avec valeurs nulles
 
@@ -132,5 +132,5 @@ template<UINT32 lengthInBits>
 void sDIVISION_R(THREADID tid, REG regSrc, ADDRINT regSrcValue, bool isSignedDivision, ADDRINT lowDividendValue, ADDRINT highDividendValue, ADDRINT insAddress);
 } // namespace BINARY
 
-// d�finition des templates
+// définition des templates
 #include "BINARY.hpp"

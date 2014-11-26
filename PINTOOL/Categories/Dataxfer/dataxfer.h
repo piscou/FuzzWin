@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 #include <TaintEngine\TaintManager.h>
 
 namespace DATAXFER 
@@ -43,5 +43,5 @@ void sMOVZX_MR(THREADID tid, ADDRINT readAddress, REG regDest, ADDRINT insAddres
 template<UINT32 lengthInBits> void sBSWAP(THREADID tid, REG reg, ADDRINT insAddress); 
 } // namespace DATAXFER
 
-// définition des templates (hors templates spécialisés définis dans DATAXFER.cpp)
+// dÃ©finition des templates (hors templates spÃ©cialisÃ©s dÃ©finis dans DATAXFER.cpp)
 #include "DATAXFER.hpp"

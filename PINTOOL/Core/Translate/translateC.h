@@ -1,15 +1,15 @@
-#pragma once
+ï»¿#pragma once
 
 #include "translateIR.h"
 
 class TranslateToC : public TranslateIR
 {
 private:
-    // BSR/BSF : booléen pour indiquer que les éléments 'De Bruijn' ont été déclarés
+    // BSR/BSF : boolÃ©en pour indiquer que les Ã©lÃ©ments 'De Bruijn' ont Ã©tÃ© dÃ©clarÃ©s
     bool _isDeBruijnDeclared;
  
-    // renvoie la déclaration SMTLIB du tableau De Bruijn (utilisé pour BSR/BSF)
-    // et met le booléen "isDeBruijnDeclared" à true
+    // renvoie la dÃ©claration SMTLIB du tableau De Bruijn (utilisÃ© pour BSR/BSF)
+    // et met le boolÃ©en "isDeBruijnDeclared" Ã  true
     std::string getDeBruijnArray();
 
     /****************************************/
@@ -17,68 +17,68 @@ private:
     /****************************************/
 
 protected:
-    // affectation d'un nom de variable à un objet
+    // affectation d'un nom de variable Ã  un objet
     std::string setObjectName(const TaintPtr &tPtr);
     
-    // récupère le nom de l'objet source 'objSrc'
-    // => soit le numéro de variable, soit une valeur numérique
+    // rÃ©cupÃ¨re le nom de l'objet source 'objSrc'
+    // => soit le numÃ©ro de variable, soit une valeur numÃ©rique
     std::string getSourceName(const ObjectSource &objSrc) const;
 
     /*** CONTRAINTES : PREDICAT ***/
 
-    // déclaration de l'entête d'une nouvelle contrainte sur un predicat
+    // dÃ©claration de l'entÃªte d'une nouvelle contrainte sur un predicat
     std::string getConstraintPredicateHeader(ADDRINT insAddress, PREDICATE p) const;
-    // renvoie la traduction du prédicat fourni en argument
+    // renvoie la traduction du prÃ©dicat fourni en argument
     std::string getPredicateTranslation
         (TaintManager_Thread *pTmgrTls, PREDICATE pred, ADDRINT flagsOrRegValue);
-    // déclaration du 'final' d'une contrainte sur un predicat
+    // dÃ©claration du 'final' d'une contrainte sur un predicat
     std::string getConstraintPredicateFooter(bool taken) const;
 
     /*** CONTRAINTES : DIVISEUR NUL ***/
 
-    // déclaration de l'entête d'une nouvelle contrainte pour un diviseur nul
+    // dÃ©claration de l'entÃªte d'une nouvelle contrainte pour un diviseur nul
     std::string getConstraintNullDivisorHeader(ADDRINT insAddress) const;
     // renvoie la traduction de la formule imposant un diviseur nul
     std::string getNullDivisorTranslation(const TaintPtr &divisorPtr);
-    // déclaration du 'final' d'une contrainte pour un diviseur nul
+    // dÃ©claration du 'final' d'une contrainte pour un diviseur nul
     std::string getConstraintNullDivisorFooter() const;
 
     /*** CONTRAINTES : QUOTIENT DIVISION HORS BORNES ***/
 
-    // déclaration de l'entête d'une nouvelle contrainte sur le résultat d'une division
+    // dÃ©claration de l'entÃªte d'une nouvelle contrainte sur le rÃ©sultat d'une division
     std::string getConstraintDivOverflowHeader(bool isSignedDivision, ADDRINT insAddress) const;
-    // renvoie la traduction de la formule sur le résultat d'une division
+    // renvoie la traduction de la formule sur le rÃ©sultat d'une division
     std::string getDivOverflowTranslation(bool isSignedDivision, const TaintPtr &quotientPtr);
-    // déclaration du 'final' d'une contrainte sur le résultat d'une division
+    // dÃ©claration du 'final' d'une contrainte sur le rÃ©sultat d'une division
     std::string getConstraintDivOverflowFooter() const;
 
     /*** CONTRAINTES : BOUCLES (LOOP/LOOPE/LOOPNE) ***/
 
-    // déclaration de l'entête d'une nouvelle contrainte pour un diviseur nul
+    // dÃ©claration de l'entÃªte d'une nouvelle contrainte pour un diviseur nul
     std::string getConstraintLoopHeader(ADDRINT insAddress) const;
-    // renvoie la traduction de la formule relatif à une boucle Loop (LOOP)
+    // renvoie la traduction de la formule relatif Ã  une boucle Loop (LOOP)
     std::string getLoopTranslation(const TaintPtr &regCounterPtr); 
-    // renvoie la traduction de la formule relatif à une boucle Loop (LOOPE/LOOPNE)
+    // renvoie la traduction de la formule relatif Ã  une boucle Loop (LOOPE/LOOPNE)
     std::string getLoopTranslation(PREDICATE pred, const ObjectSource &objRegCounter, const ObjectSource &objZF);
-    // déclaration du 'final' d'une contrainte sur le résultat d'une division
+    // dÃ©claration du 'final' d'une contrainte sur le rÃ©sultat d'une division
     std::string getConstraintLoopFooter() const;
 
     /*** CONTRAINTES : ADRESSES EFFECTIVES ***/
 
-    // déclaration de l'entête d'une nouvelle contrainte sur une addresse
+    // dÃ©claration de l'entÃªte d'une nouvelle contrainte sur une addresse
     std::string getConstraintAddressHeader(ADDRINT insAddress) const;
     // renvoie la traduction de la formule sur la valeur d'une adresse
     std::string getConstraintAddressTranslation(const TaintPtr &addrPtr, ADDRINT addrValue); 
-    // déclaration du 'final' d'une contrainte sur une adresse
+    // dÃ©claration du 'final' d'une contrainte sur une adresse
     std::string getConstraintAddressFooter() const;
 
     /***********************************/
     /** TRADUCTION DE CHAQUE RELATION **/
     /***********************************/
 
-    // entete de la déclaration pour une instruction : "(define-fun XX () (BitVec nb) ("
+    // entete de la dÃ©claration pour une instruction : "(define-fun XX () (BitVec nb) ("
     void declareRelationHeader(const TaintPtr &tPtr);
-    // fin de la déclaration : "));" + infos du mode verbeux si présent
+    // fin de la dÃ©claration : "));" + infos du mode verbeux si prÃ©sent
     void declareRelationFooter(const TaintPtr &tPtr);
 
     void translate_BYTESOURCE(const TaintPtr &tPtr);

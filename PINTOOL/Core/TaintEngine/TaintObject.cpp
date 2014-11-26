@@ -1,9 +1,9 @@
-#pragma once
+ï»¿#pragma once
 
 #include "TaintObject.h"
 #include "ObjectSource.h"
 
-/** TAINT : classe représentant un objet marqué **/
+/** TAINT : classe reprÃ©sentant un objet marquÃ© **/
 
 // constructeur sans sources
 Taint::Taint(Relation rel, UINT32 lengthInBits, std::string VerboseDetails) :
@@ -65,13 +65,13 @@ Taint::Taint(Relation rel, UINT32 lengthInBits, const ObjectSource &os1, const O
 
 UINT32 Taint::getLength() const { return (_lengthInBits); }
 
-// renvoie le type de relation qui lie cet objet à ses sources
+// renvoie le type de relation qui lie cet objet Ã  ses sources
 Relation Taint::getSourceRelation() const { return (_sourceRelation); } 
 
 // renvoie le nombre de sources de l'objet
 UINT32 Taint::getNumberOfSources() const { return (static_cast<UINT32>(_sources.size())); }
 
-// retourne VRAI si l'objet a été déclaré dans la formule à destination du solveur
+// retourne VRAI si l'objet a Ã©tÃ© dÃ©clarÃ© dans la formule Ã  destination du solveur
 bool Taint::isDeclared() const  { return (_isDeclaredFlag); }
 
 void Taint::setDeclared() { _isDeclaredFlag = true; }
@@ -88,10 +88,10 @@ void Taint::addSource(const TaintPtr &taintPtr) { _sources.push_back(ObjectSourc
 
 void Taint::addSource(ObjectSource src) { _sources.push_back(std::move(src)); }  // Passage par RVALUE
 
-// retourne les détails supplémentaires de cet objet (mode verbose)
+// retourne les dÃ©tails supplÃ©mentaires de cet objet (mode verbose)
 std::string Taint::getVerboseDetails() const { return _verboseData; }
 
-/** TAINTOBJECT : classe dérivée **/
+/** TAINTOBJECT : classe dÃ©rivÃ©e **/
 
 template<UINT32 lengthInBits> 
 TaintObject<lengthInBits>::TaintObject(Relation rel, std::string VerboseDetails) : 
@@ -118,7 +118,7 @@ TaintObject<lengthInBits>::TaintObject(Relation rel, const ObjectSource &os1,
     std::string VerboseDetails) : 
     Taint(rel, lengthInBits, os1, os2, os3, os4, VerboseDetails) {}
 
-// instanciation des templates utilisés (ici car références croisées)
+// instanciation des templates utilisÃ©s (ici car rÃ©fÃ©rences croisÃ©es)
 class Taint;
 template class TaintObject<1>;
 template class TaintObject<8>;

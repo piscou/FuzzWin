@@ -1,4 +1,4 @@
-#include "translateIR.h"
+Ôªø#include "translateIR.h"
 
 // CONSTRUCTEUR
 TranslateIR::TranslateIR(): 
@@ -8,21 +8,21 @@ TranslateIR::TranslateIR():
 
 void TranslateIR::declareObject(const TaintPtr &tPtr) 
 {
-    // traitement uniquement si la variable n'a jamais ÈtÈ dÈclarÈe 
+    // traitement uniquement si la variable n'a jamais √©t√© d√©clar√©e 
     if ( !tPtr->isDeclared()) 
     {
-        // dÈclaration de la variable
+        // d√©claration de la variable
         tPtr->setDeclared();
 
-        // rÈcupÈration des sources, et dÈclarations rÈcursives de celles ci
-        // jusqu'a arriver ‡ un objet "source"
+        // r√©cup√©ration des sources, et d√©clarations r√©cursives de celles ci
+        // jusqu'a arriver √† un objet "source"
         const std::vector<ObjectSource> sources = tPtr->getSources();
         for (auto it = sources.begin() ; it != sources.end() ; ++it) 
         {
             if ((*it).isSrcTainted()) this->declareObject((*it).getTaintedSource());
         }
 
-        // traduction en reprÈsentation intermÈdiaire de cet objet en fonction de sa relation
+        // traduction en repr√©sentation interm√©diaire de cet objet en fonction de sa relation
         switch (tPtr->getSourceRelation())
         {
         case BYTESOURCE:    this->translate_BYTESOURCE(tPtr); break;
@@ -115,18 +115,18 @@ void TranslateIR::declareObject(const TaintPtr &tPtr)
 void TranslateIR::addConstraintJcc(TaintManager_Thread *pTmgrTls, PREDICATE pred, 
         bool isTaken, ADDRINT insAddress, ADDRINT flagsOrRegValue)
 {
-    // nouvelle contrainte => ajustement de son numÈro
+    // nouvelle contrainte => ajustement de son num√©ro
     ++_iAssert;
     // entete (informations sur la contrainte)
     _formula << getConstraintPredicateHeader(insAddress, pred);
-    // contrainte en elle-meme qui dÈclare rÈcursivement les objets impliquÈs
+    // contrainte en elle-meme qui d√©clare r√©cursivement les objets impliqu√©s
     _formula << getPredicateTranslation(pTmgrTls, pred, flagsOrRegValue);
-    // final = valeur de la contrainte ‡ l'exÈcution
+    // final = valeur de la contrainte √† l'ex√©cution
     _formula << getConstraintPredicateFooter(isTaken);
 
     // Si le nombre maximal de contraintes est atteint : quitter le pintool 
     // via la fonction "Fini" avec le code EXIT_MAX_CONSTRAINTS
-    // si g_maxConstraints est nul, ce cas n'arrive jamais (la premiËre contrainte est la n∞1)
+    // si g_maxConstraints est nul, ce cas n'arrive jamais (la premi√®re contrainte est la n¬∞1)
     if (_iAssert == g_maxConstraints)  PIN_ExitApplication(EXIT_MAX_CONSTRAINTS);
 }
 
@@ -135,18 +135,18 @@ void TranslateIR::addConstraintDivision( bool isSignedDivision,
 {
     /** CONTRAINTE SUR LES BORNES DU QUOTIENT **/
 
-    // nouvelle contrainte => ajustement de son numÈro
+    // nouvelle contrainte => ajustement de son num√©ro
     ++_iAssert;
     // entete (informations sur la contrainte)
     _formula << getConstraintDivOverflowHeader(isSignedDivision, insAddress);
-    // contrainte en elle-meme qui dÈclare rÈcursivement les objets impliquÈs
+    // contrainte en elle-meme qui d√©clare r√©cursivement les objets impliqu√©s
     _formula << getDivOverflowTranslation(isSignedDivision, quotientPtr);
-    // final = contrainte forcÈment respectÈe (sinon il y aurait eu crash)
+    // final = contrainte forc√©ment respect√©e (sinon il y aurait eu crash)
     _formula << getConstraintDivOverflowFooter();
 
     // Si le nombre maximal de contraintes est atteint : quitter le pintool 
     // via la fonction "Fini" avec le code EXIT_MAX_CONSTRAINTS
-    // si g_maxConstraints est nul, ce cas n'arrive jamais (la premiËre contrainte est la n∞1)
+    // si g_maxConstraints est nul, ce cas n'arrive jamais (la premi√®re contrainte est la n¬∞1)
     if (_iAssert == g_maxConstraints)  PIN_ExitApplication(EXIT_MAX_CONSTRAINTS);
 
     /** CONTRAINTE SUR LE DIVISEUR NON NUL **/
@@ -154,13 +154,13 @@ void TranslateIR::addConstraintDivision( bool isSignedDivision,
     ObjectSource objDivisor = quotientPtr->getSource(2);
     if (objDivisor.isSrcTainted())
     {
-        // nouvelle contrainte => ajustement de son numÈro
+        // nouvelle contrainte => ajustement de son num√©ro
         ++_iAssert;
         // entete (informations sur la contrainte)
         _formula << getConstraintNullDivisorHeader(insAddress);
-        // contrainte en elle-meme qui dÈclare rÈcursivement les objets impliquÈs
+        // contrainte en elle-meme qui d√©clare r√©cursivement les objets impliqu√©s
         _formula << getNullDivisorTranslation(objDivisor.getTaintedSource());
-        // final = valeur de la contrainte ‡ l'exÈcution = diviseur forcÈment non nul :)
+        // final = valeur de la contrainte √† l'ex√©cution = diviseur forc√©ment non nul :)
         _formula << getConstraintNullDivisorFooter();
 
         if (_iAssert == g_maxConstraints)  PIN_ExitApplication(EXIT_MAX_CONSTRAINTS);
@@ -170,18 +170,18 @@ void TranslateIR::addConstraintDivision( bool isSignedDivision,
 void TranslateIR::addConstraintLoop(const TaintPtr &regCounterPtr, ADDRINT insAddress)
 {
     // contrainte sur un LOOP "SIMPLE" (sans test du Zero Flag)
-    // nouvelle contrainte => ajustement de son numÈro
+    // nouvelle contrainte => ajustement de son num√©ro
     ++_iAssert;
     // entete (informations sur la contrainte)
     _formula << getConstraintLoopHeader(insAddress);
-    // contrainte en elle-meme qui dÈclare rÈcursivement les objets impliquÈs
+    // contrainte en elle-meme qui d√©clare r√©cursivement les objets impliqu√©s
     _formula << getLoopTranslation(regCounterPtr);
-    // final = valeur de la contrainte ‡ l'exÈcution
+    // final = valeur de la contrainte √† l'ex√©cution
     _formula << getConstraintLoopFooter();
 
     // Si le nombre maximal de contraintes est atteint : quitter le pintool 
     // via la fonction "Fini" avec le code EXIT_MAX_CONSTRAINTS
-    // si g_maxConstraints est nul, ce cas n'arrive jamais (la premiËre contrainte est la n∞1)
+    // si g_maxConstraints est nul, ce cas n'arrive jamais (la premi√®re contrainte est la n¬∞1)
     if (_iAssert == g_maxConstraints)  PIN_ExitApplication(EXIT_MAX_CONSTRAINTS);
 }
 
@@ -189,35 +189,35 @@ void TranslateIR::addConstraintLoop(PREDICATE pred, const ObjectSource &objRegCo
         const ObjectSource &objZF, ADDRINT insAddress)
 {
     // contrainte sur un LOOP avec test du Zero Flag
-    // nouvelle contrainte => ajustement de son numÈro
+    // nouvelle contrainte => ajustement de son num√©ro
     ++_iAssert;
     // entete (informations sur la contrainte)
     _formula << getConstraintLoopHeader(insAddress);
-    // contrainte en elle-meme qui dÈclare rÈcursivement les objets impliquÈs
+    // contrainte en elle-meme qui d√©clare r√©cursivement les objets impliqu√©s
     _formula << getLoopTranslation(pred, objRegCounter, objZF);
-    // final = valeur de la contrainte ‡ l'exÈcution
+    // final = valeur de la contrainte √† l'ex√©cution
     _formula << getConstraintLoopFooter();
 
     // Si le nombre maximal de contraintes est atteint : quitter le pintool 
     // via la fonction "Fini" avec le code EXIT_MAX_CONSTRAINTS
-    // si g_maxConstraints est nul, ce cas n'arrive jamais (la premiËre contrainte est la n∞1)
+    // si g_maxConstraints est nul, ce cas n'arrive jamais (la premi√®re contrainte est la n¬∞1)
     if (_iAssert == g_maxConstraints)  PIN_ExitApplication(EXIT_MAX_CONSTRAINTS);
 }
     
 void TranslateIR::addConstraintAddress(const TaintPtr &addrPtr, ADDRINT addrValue, ADDRINT insAddress)
 {
     // contrainte sur la valeur d'une addresse (effective ou de saut)
-    // nouvelle contrainte => ajustement de son numÈro
+    // nouvelle contrainte => ajustement de son num√©ro
     ++_iAssert;
     // entete (informations sur la contrainte)
     _formula << getConstraintAddressHeader(insAddress);
-    // contrainte en elle-meme qui dÈclare rÈcursivement les objets impliquÈs
+    // contrainte en elle-meme qui d√©clare r√©cursivement les objets impliqu√©s
     _formula << getConstraintAddressTranslation(addrPtr, addrValue);
-    // final = valeur de la contrainte ‡ l'exÈcution
+    // final = valeur de la contrainte √† l'ex√©cution
     _formula << getConstraintAddressFooter();
 
     // Si le nombre maximal de contraintes est atteint : quitter le pintool 
     // via la fonction "Fini" avec le code EXIT_MAX_CONSTRAINTS
-    // si g_maxConstraints est nul, ce cas n'arrive jamais (la premiËre contrainte est la n∞1)
+    // si g_maxConstraints est nul, ce cas n'arrive jamais (la premi√®re contrainte est la n¬∞1)
     if (_iAssert == g_maxConstraints)  PIN_ExitApplication(EXIT_MAX_CONSTRAINTS);
 }

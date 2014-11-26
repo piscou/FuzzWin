@@ -1,12 +1,12 @@
-// dÈclaration des templates du namespace PUSH
+Ôªø// d√©claration des templates du namespace PUSH
 
 template<UINT32 lengthInBits> void PUSH::sUpdateEspTaint(TaintManager_Thread *pTmgrTls, ADDRINT stackAddressBeforePush)
 {
-    // le PUSH dÈcrÈmente ESP/RSP de 'lengthInBits >> 3'
+    // le PUSH d√©cr√©mente ESP/RSP de 'lengthInBits >> 3'
 #if TARGET_IA32
     if (pTmgrTls->isRegisterTainted<32>(REG_ESP))
     {
-        // nouvel objet = ESP - (longueur pushÈe)
+        // nouvel objet = ESP - (longueur push√©e)
         pTmgrTls->updateTaintRegister<32>(REG_ESP, std::make_shared<TaintDword>(X_SUB, 
             ObjectSource(pTmgrTls->getRegisterTaint<32>(REG_ESP, stackAddressBeforePush)),
             ObjectSource(32, lengthInBits >> 3)));
@@ -14,7 +14,7 @@ template<UINT32 lengthInBits> void PUSH::sUpdateEspTaint(TaintManager_Thread *pT
 #else
     if (pTmgrTls->isRegisterTainted<64>(REG_RSP))
     {
-        // nouvel objet = RSP - (longueur pushÈe)
+        // nouvel objet = RSP - (longueur push√©e)
         pTmgrTls->updateTaintRegister<64>(REG_RSP, std::make_shared<TaintQword>(X_SUB, 
             ObjectSource(pTmgrTls->getRegisterTaint<64>(REG_ESP, stackAddressBeforePush)),
             ObjectSource(64, lengthInBits >> 3)));
@@ -30,7 +30,7 @@ void PUSH::sPUSH_M(THREADID tid, ADDRINT readAddress, ADDRINT stackAddressBefore
     // ajustement du marquage d'ESP si besoin
     PUSH::sUpdateEspTaint<lengthInBits>(pTmgrTls, stackAddressBeforePush);
 
-    // adresse d'Ècriture sur la pile (on dÈcrÈmente avant de "pusher")
+    // adresse d'√©criture sur la pile (on d√©cr√©mente avant de "pusher")
     ADDRINT espAddress = stackAddressBeforePush - (lengthInBits >> 3); 
     
     if ( !pTmgrGlobal->isMemoryTainted<lengthInBits>(readAddress))  pTmgrGlobal->unTaintMemory<lengthInBits>(espAddress);
@@ -38,15 +38,15 @@ void PUSH::sPUSH_M(THREADID tid, ADDRINT readAddress, ADDRINT stackAddressBefore
     {
         do
         {
-            if (pTmgrGlobal->isMemoryTainted<8>(readAddress)) // octet source marquÈ ?
+            if (pTmgrGlobal->isMemoryTainted<8>(readAddress)) // octet source marqu√© ?
             {    
                 _LOGTAINT(tid, insAddress, "PUSHM" + decstr(lengthInBits));
-                // marquage de l'octet de la pile avec l'octet de la mÈmoire
+                // marquage de l'octet de la pile avec l'octet de la m√©moire
                 pTmgrGlobal->updateMemoryTaint<8>(espAddress, std::make_shared<TaintByte>(
                     X_ASSIGN,
                     ObjectSource(pTmgrGlobal->getMemoryTaint<8>(readAddress))));    
             }
-            else  pTmgrGlobal->unTaintMemory<8>(espAddress);    // sinon dÈmarquage
+            else  pTmgrGlobal->unTaintMemory<8>(espAddress);    // sinon d√©marquage
             ++readAddress;
             ++espAddress;
         } while (espAddress < stackAddressBeforePush); 
@@ -60,7 +60,7 @@ template<UINT32 lengthInBits> void PUSH::sPUSH_R(THREADID tid, REG reg, ADDRINT 
     // ajustement du marquage d'ESP si besoin
     PUSH::sUpdateEspTaint<lengthInBits>(pTmgrTls, stackAddressBeforePush);
     
-    // adresse d'Ècriture sur la pile (on dÈcrÈmente avant de "pusher")
+    // adresse d'√©criture sur la pile (on d√©cr√©mente avant de "pusher")
     ADDRINT espAddress = stackAddressBeforePush - (lengthInBits >> 3); 
 
     if ( !pTmgrTls->isRegisterTainted<lengthInBits>(reg))   pTmgrGlobal->unTaintMemory<lengthInBits>(espAddress);
@@ -69,14 +69,14 @@ template<UINT32 lengthInBits> void PUSH::sPUSH_R(THREADID tid, REG reg, ADDRINT 
         REGINDEX regIndex = getRegIndex(reg);   
         for (UINT32 regPart = 0 ; regPart < (lengthInBits >> 3) ; ++regPart, ++espAddress) 
         {
-            if (pTmgrTls->isRegisterPartTainted(regIndex, regPart)) // octet marquÈ ?
+            if (pTmgrTls->isRegisterPartTainted(regIndex, regPart)) // octet marqu√© ?
             {    
                 _LOGTAINT(tid, insAddress, "PUSHR" + decstr(lengthInBits) + " octet " + decstr(regPart));
                 pTmgrGlobal->updateMemoryTaint<8>(espAddress, std::make_shared<TaintByte>(
                     X_ASSIGN,
                     ObjectSource(pTmgrTls->getRegisterPartTaint(regIndex, regPart))));    
             }   
-            else pTmgrGlobal->unTaintMemory<8>(espAddress);    // sinon dÈmarquage
+            else pTmgrGlobal->unTaintMemory<8>(espAddress);    // sinon d√©marquage
         }
     }
 } // sPUSH_R
@@ -85,32 +85,32 @@ template<UINT32 lengthInBits> void PUSH::sPUSH_R_STACK(THREADID tid, REG reg, AD
 {
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);    
    
-    // adresse d'Ècriture sur la pile (on dÈcrÈmente avant de "pusher")
+    // adresse d'√©criture sur la pile (on d√©cr√©mente avant de "pusher")
     ADDRINT stackAddressForPush = stackAddressBeforePush - (lengthInBits >> 3); 
 
-    // le cas ou reg vaut SP/ESP/RSP impose un traitement plus compliquÈ...sauf si non marquÈ
+    // le cas ou reg vaut SP/ESP/RSP impose un traitement plus compliqu√©...sauf si non marqu√©
     if (! pTmgrTls->isRegisterTainted<lengthInBits>(reg)) 
     {
         pTmgrGlobal->unTaintMemory<lengthInBits>(stackAddressForPush);
     }
     else
     {
-        // rÈcupÈration du marquage du registre de pile
+        // r√©cup√©ration du marquage du registre de pile
         TAINT_OBJECT_PTR tPtr = 
             pTmgrTls->getRegisterTaint<lengthInBits>(reg, stackAddressBeforePush);
         
-        // PUSH : stockage de ce marquage ‡ l'adresse de push
+        // PUSH : stockage de ce marquage √† l'adresse de push
         pTmgrGlobal->updateMemoryTaint<lengthInBits>(stackAddressForPush, MK_TAINT_OBJECT_PTR(
             X_ASSIGN,
             ObjectSource(tPtr)));
         
-        // crÈation du nouveau marquage du registre de pile : soustraction de 'lengthInBits >> 3' octets
+        // cr√©ation du nouveau marquage du registre de pile : soustraction de 'lengthInBits >> 3' octets
         TAINT_OBJECT_PTR tPtrAfterPush = MK_TAINT_OBJECT_PTR(
             X_SUB,
             ObjectSource(tPtr),
             ObjectSource(lengthInBits, lengthInBits >> 3));
 
-        // mise ‡ jour du marquage du registre avec ce nouvel objet
+        // mise √† jour du marquage du registre avec ce nouvel objet
         pTmgrTls->updateTaintRegister<lengthInBits>(reg, tPtrAfterPush);
     }
 } // sPUSH_R_STACK
@@ -119,10 +119,10 @@ template<UINT32 lengthInBits> void PUSH::sPUSH_I(THREADID tid, ADDRINT stackAddr
 { 
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);    
    
-    // ajustement du marquage du REGISTRE ESP/RSP, dans le cas o˘ il est marquÈ
+    // ajustement du marquage du REGISTRE ESP/RSP, dans le cas o√π il est marqu√©
     PUSH::sUpdateEspTaint<lengthInBits>(pTmgrTls, stackAddressBeforePush);
 
-    // PUSH valeur => dÈmarquage
+    // PUSH valeur => d√©marquage
     pTmgrGlobal->unTaintMemory<lengthInBits>(stackAddressBeforePush - (lengthInBits >> 3));
 } // sPUSH_I
 
@@ -132,7 +132,7 @@ void PUSH::sPUSHF(THREADID tid, ADDRINT regFlagsValue, ADDRINT stackAddressBefor
     // lengthInBits == 16 <-> PUSHF, lengthInBits == 32 <-> PUSHFD, lengthInBits == 64 <-> PUSHFQ
     TaintManager_Thread *pTmgrTls = getTmgrInTls(tid);    
 
-    // ajustement du marquage du REGISTRE ESP/RSP, dans le cas o˘ il est marquÈ
+    // ajustement du marquage du REGISTRE ESP/RSP, dans le cas o√π il est marqu√©
     PUSH::sUpdateEspTaint<lengthInBits>(pTmgrTls, stackAddressBeforePush);
 
     // adresse de push des octets
@@ -147,7 +147,7 @@ void PUSH::sPUSHF(THREADID tid, ADDRINT regFlagsValue, ADDRINT stackAddressBefor
 
     if (! (isCfTainted || isPfTainted || isAfTainted || isZfTainted || isSfTainted))
     {
-        pTmgrGlobal->unTaintMemory<8>(workingAddress);  // dÈmarquer le premier octet
+        pTmgrGlobal->unTaintMemory<8>(workingAddress);  // d√©marquer le premier octet
     }
     else    // 1er octet = SF:ZF:??:AF:??:PF:??:CF
     {
@@ -188,7 +188,7 @@ void PUSH::sPUSHF(THREADID tid, ADDRINT regFlagsValue, ADDRINT stackAddressBefor
     ++workingAddress;
     if ( ! pTmgrTls->isOverflowFlagTainted())
     {
-        pTmgrGlobal->unTaintMemory<8>(workingAddress);  // dÈmarquer le second octet
+        pTmgrGlobal->unTaintMemory<8>(workingAddress);  // d√©marquer le second octet
     }
     else  // 2eme octet = ??:??:??:??:OF:??:??:??
     {
@@ -197,7 +197,7 @@ void PUSH::sPUSHF(THREADID tid, ADDRINT regFlagsValue, ADDRINT stackAddressBefor
         secondTaintedByte.addConstantAsASource<1>(EXTRACTBIT(regFlagsValue, 8));
         secondTaintedByte.addConstantAsASource<1>(EXTRACTBIT(regFlagsValue, 9));
         secondTaintedByte.addConstantAsASource<1>(EXTRACTBIT(regFlagsValue, 10));
-        // 11 : OF forcÈment marquÈ
+        // 11 : OF forc√©ment marqu√©
         secondTaintedByte.addSource(pTmgrTls->getTaintOverflowFlag());
         // 12, 13, 14, 15 : N/A
         secondTaintedByte.addConstantAsASource<1>(EXTRACTBIT(regFlagsValue, 12));
@@ -209,7 +209,7 @@ void PUSH::sPUSHF(THREADID tid, ADDRINT regFlagsValue, ADDRINT stackAddressBefor
             std::make_shared<TaintByte>(secondTaintedByte));
     }
 
-    // dÈmarquage des octets reprÈsentant les octets forts des flags
+    // d√©marquage des octets repr√©sentant les octets forts des flags
     // PUSHF : AUCUN,  PUSHFD : 2 octets,  PUSHFQ : 6 octets
     ++workingAddress;  // adresse du 3eme octet
     while (workingAddress < stackAddressBeforePush)   pTmgrGlobal->unTaintMemory<8>(workingAddress++);

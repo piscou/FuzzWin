@@ -1,4 +1,4 @@
-#include "binary.h"
+ï»¿#include "binary.h"
 #include <Translate\translate.h> // pour ajout des contraintes sur DIV/IDIV
 
 /////////
@@ -8,11 +8,11 @@
 // CALLBACKS
 void BINARY::cNEG(INS &ins) 
 { 
-    void (*callback)() = nullptr;	// pointeur sur la fonction à appeler
+    void (*callback)() = nullptr;	// pointeur sur la fonction Ã  appeler
 
     if (INS_IsMemoryWrite(ins)) // DESTINATION = MEMOIRE => NEGM
     {	
-        switch (INS_MemoryWriteSize(ins)) // taille de l'opérande mémoire
+        switch (INS_MemoryWriteSize(ins)) // taille de l'opÃ©rande mÃ©moire
         {	
             case 1:	callback = (AFUNPTR) sNEG_M<8>;	break;
             case 2:	callback = (AFUNPTR) sNEG_M<16>;break;
@@ -69,11 +69,11 @@ void BINARY::fTaintNEG(TaintManager_Thread *pTmgrTls, const ObjectSource &objSrc
 // CALLBACKS
 void BINARY::cINC(INS &ins) 
 {
-    void (*callback)() = nullptr;	// pointeur sur la fonction à appeler
+    void (*callback)() = nullptr;	// pointeur sur la fonction Ã  appeler
 
     if (INS_IsMemoryWrite(ins)) // DESTINATION = MEMOIRE
     {	
-        switch (INS_MemoryWriteSize(ins)) // taille de l'opérande mémoire
+        switch (INS_MemoryWriteSize(ins)) // taille de l'opÃ©rande mÃ©moire
         {	
             case 1:	callback = (AFUNPTR) sINC_M<8>;	 break;
             case 2:	callback = (AFUNPTR) sINC_M<16>; break;
@@ -124,10 +124,10 @@ void BINARY::fTaintINC
 
 } // fTaintINC
 
-// procédure commune INC/DEC
+// procÃ©dure commune INC/DEC
 void BINARY::fUnTaintINCDEC(TaintManager_Thread *pTmgrTls)
 {
-    // le CF n'est pas affecté par INC ni DEC
+    // le CF n'est pas affectÃ© par INC ni DEC
     pTmgrTls->unTaintParityFlag();
     pTmgrTls->unTaintAuxiliaryFlag();
     pTmgrTls->unTaintZeroFlag();
@@ -142,11 +142,11 @@ void BINARY::fUnTaintINCDEC(TaintManager_Thread *pTmgrTls)
 // CALLBACKS
 void BINARY::cDEC(INS &ins) 
 { 
-    void (*callback)() = nullptr;	// pointeur sur la fonction générique à appeler
+    void (*callback)() = nullptr;	// pointeur sur la fonction gÃ©nÃ©rique Ã  appeler
 
     if (INS_IsMemoryWrite(ins)) // DESTINATION = MEMOIRE
     {	
-        switch (INS_MemoryWriteSize(ins)) // taille de l'opérande mémoire
+        switch (INS_MemoryWriteSize(ins)) // taille de l'opÃ©rande mÃ©moire
         {	
             case 1:	callback = (AFUNPTR) sDEC_M<8>;  break;
             case 2:	callback = (AFUNPTR) sDEC_M<16>; break;
@@ -208,7 +208,7 @@ void BINARY::cADC(INS &ins)
         UINT32 writeSize = INS_MemoryWriteSize(ins);
         if (INS_OperandIsImmediate(ins, 1)) // ADC_IM
         {	
-            switch (writeSize) // taille de l'opérande mémoire
+            switch (writeSize) // taille de l'opÃ©rande mÃ©moire
             {	
                 case 1:	callback = (AFUNPTR) sADC_IM<8>;  break;
                 case 2:	callback = (AFUNPTR) sADC_IM<16>; break;
@@ -236,7 +236,7 @@ void BINARY::cADC(INS &ins)
                 #if TARGET_IA32E
                 case 8: callback = (AFUNPTR) sADC_RM<64>; break;
                 #endif
-                default: return; // normalement il faudrait démarquer la mémoire...
+                default: return; // normalement il faudrait dÃ©marquer la mÃ©moire...
             }
             INS_InsertCall (ins, IPOINT_BEFORE, callback,
                 IARG_THREAD_ID,
@@ -251,7 +251,7 @@ void BINARY::cADC(INS &ins)
     {    
         REG regDest  = INS_OperandReg(ins, 0);
         UINT32 regSize = getRegSize(regDest);
-        if (!regSize) return;	        // registre non géré
+        if (!regSize) return;	        // registre non gÃ©rÃ©
         else if (INS_IsMemoryRead(ins)) // ADC_MR
         {			
             switch (regSize) 
@@ -266,7 +266,7 @@ void BINARY::cADC(INS &ins)
 
             INS_InsertCall (ins, IPOINT_BEFORE, callback,
                 IARG_THREAD_ID,
-                IARG_MEMORYREAD_EA,		    // adresse réelle de lecture
+                IARG_MEMORYREAD_EA,		    // adresse rÃ©elle de lecture
                 IARG_UINT32, regDest,	    // registre destination
                 IARG_REG_VALUE, regDest,    // valeur lors du callback
                 IARG_REG_VALUE, REG_GFLAGS, // valeur des flags (pour CF)
@@ -331,7 +331,7 @@ void BINARY::cADD(INS &ins)
         UINT32 writeSize = INS_MemoryWriteSize(ins);
         if (INS_OperandIsImmediate(ins, 1)) // ADDIM
         {	
-            switch (writeSize) // taille de l'opérande mémoire
+            switch (writeSize) // taille de l'opÃ©rande mÃ©moire
             {	
                 case 1:	callback = (AFUNPTR) sADD_IM<8>;  break;
                 case 2:	callback = (AFUNPTR) sADD_IM<16>; break;
@@ -358,7 +358,7 @@ void BINARY::cADD(INS &ins)
                 #if TARGET_IA32E
                 case 8: callback = (AFUNPTR) sADD_RM<64>; break;
                 #endif
-                default: return;    // normalement il faudrait démarquer la mémoire...
+                default: return;    // normalement il faudrait dÃ©marquer la mÃ©moire...
             }
             INS_InsertCall (ins, IPOINT_BEFORE, callback,
                 IARG_THREAD_ID,
@@ -372,7 +372,7 @@ void BINARY::cADD(INS &ins)
     {    
         REG regDest  = INS_OperandReg(ins, 0);
         UINT32 regSize = getRegSize(regDest);
-        if (!regSize) return;	   // registre non géré
+        if (!regSize) return;	   // registre non gÃ©rÃ©
         else if (INS_IsMemoryRead(ins)) // ADDMR
         {			
             switch (regSize) 
@@ -388,7 +388,7 @@ void BINARY::cADD(INS &ins)
 
             INS_InsertCall (ins, IPOINT_BEFORE, callback,
                 IARG_THREAD_ID,
-                IARG_MEMORYREAD_EA,		// adresse réelle de lecture
+                IARG_MEMORYREAD_EA,		// adresse rÃ©elle de lecture
                 IARG_UINT32, regDest,	// registre destination
                 IARG_REG_VALUE, regDest,// valeur lors du callback
                 IARG_INST_PTR, IARG_END);
@@ -466,7 +466,7 @@ void BINARY::cSBB(INS &ins)
         UINT32 writeSize = INS_MemoryWriteSize(ins);
         if (INS_OperandIsImmediate(ins, 1)) // SBB_IM
         {	
-            switch (writeSize) // taille de l'opérande mémoire
+            switch (writeSize) // taille de l'opÃ©rande mÃ©moire
             {	
                 case 1:	callback = (AFUNPTR) sSBB_IM<8>;  break;
                 case 2:	callback = (AFUNPTR) sSBB_IM<16>; break;
@@ -494,7 +494,7 @@ void BINARY::cSBB(INS &ins)
                 #if TARGET_IA32E
                 case 8: callback = (AFUNPTR) sSBB_RM<64>; break;
                 #endif
-                default: return; // normalement il faudrait démarquer la mémoire...
+                default: return; // normalement il faudrait dÃ©marquer la mÃ©moire...
             }
             INS_InsertCall (ins, IPOINT_BEFORE, callback,
                 IARG_THREAD_ID,
@@ -509,7 +509,7 @@ void BINARY::cSBB(INS &ins)
     {    
         REG regDest  = INS_OperandReg(ins, 0);
         UINT32 regSize = getRegSize(regDest);
-        if (!regSize) return;	        // registre non géré
+        if (!regSize) return;	        // registre non gÃ©rÃ©
         else if (INS_IsMemoryRead(ins)) // SBB_MR
         {			
             switch (regSize) 
@@ -524,7 +524,7 @@ void BINARY::cSBB(INS &ins)
 
             INS_InsertCall (ins, IPOINT_BEFORE, callback,
                 IARG_THREAD_ID,
-                IARG_MEMORYREAD_EA,		    // adresse réelle de lecture
+                IARG_MEMORYREAD_EA,		    // adresse rÃ©elle de lecture
                 IARG_UINT32, regDest,	    // registre destination
                 IARG_REG_VALUE, regDest,    // valeur lors du callback
                 IARG_REG_VALUE, REG_GFLAGS, // valeur des flags (pour CF)
@@ -590,7 +590,7 @@ void BINARY::cSUB(INS &ins)
         UINT32 writeSize = INS_MemoryWriteSize(ins);
         if (INS_OperandIsImmediate(ins, 1)) // SUBIM
         {	
-            switch (writeSize) // taille de l'opérande mémoire
+            switch (writeSize) // taille de l'opÃ©rande mÃ©moire
             {	
                 case 1:	callback = (AFUNPTR) sSUB_IM<8>;  break;
                 case 2:	callback = (AFUNPTR) sSUB_IM<16>; break;
@@ -617,7 +617,7 @@ void BINARY::cSUB(INS &ins)
                 #if TARGET_IA32E
                 case 8: callback = (AFUNPTR) sSUB_RM<64>; break;
                 #endif
-                default: return;    // normalement il faudrait démarquer la mémoire...
+                default: return;    // normalement il faudrait dÃ©marquer la mÃ©moire...
             }
             INS_InsertCall (ins, IPOINT_BEFORE, callback,
                 IARG_THREAD_ID,
@@ -631,7 +631,7 @@ void BINARY::cSUB(INS &ins)
     {    
         REG regDest  = INS_OperandReg(ins, 0);
         UINT32 regSize = getRegSize(regDest);
-        if (!regSize) return;	   // registre non géré
+        if (!regSize) return;	   // registre non gÃ©rÃ©
         else if (INS_IsMemoryRead(ins)) // SUBMR
         {			
             switch (regSize) 
@@ -647,7 +647,7 @@ void BINARY::cSUB(INS &ins)
 
             INS_InsertCall (ins, IPOINT_BEFORE, callback,
                 IARG_THREAD_ID,
-                IARG_MEMORYREAD_EA,		// adresse réelle de lecture
+                IARG_MEMORYREAD_EA,		// adresse rÃ©elle de lecture
                 IARG_UINT32, regDest,	// registre destination
                 IARG_REG_VALUE, regDest,// valeur lors du callback
                 IARG_INST_PTR, IARG_END);
@@ -724,7 +724,7 @@ void BINARY::cCMP(INS &ins)
         REG regDest  = INS_OperandReg(ins, 0);
         UINT32 regDestSize = getRegSize(regDest);
         
-        if (!regDestSize) return;	// registre non instrumenté
+        if (!regDestSize) return;	// registre non instrumentÃ©
         else if (INS_OperandIsImmediate(ins, 1))  // CMPIR
         {   
             switch (regDestSize) 
@@ -758,7 +758,7 @@ void BINARY::cCMP(INS &ins)
 
             INS_InsertCall (ins, IPOINT_BEFORE, callback,
                 IARG_THREAD_ID,
-                IARG_MEMORYREAD_EA,		// adresse réelle de lecture
+                IARG_MEMORYREAD_EA,		// adresse rÃ©elle de lecture
                 IARG_UINT32, regDest,	// registre destination
                 IARG_REG_VALUE, regDest,// valeur lors du callback
                 IARG_INST_PTR, IARG_END);
@@ -786,12 +786,12 @@ void BINARY::cCMP(INS &ins)
                 IARG_INST_PTR, IARG_END);
         }  
     }
-    else // 1ere opérande = MEMOIRE (IM/RM)
+    else // 1ere opÃ©rande = MEMOIRE (IM/RM)
     {	
         UINT32 memSize = INS_MemoryReadSize(ins);
         if (INS_OperandIsImmediate(ins, 1)) // CMPIM
         {	
-            switch (memSize) // taille de l'opérande mémoire
+            switch (memSize) // taille de l'opÃ©rande mÃ©moire
             {	
                 case 1:	callback = (AFUNPTR) sCMP_IM<8>;  break;
                 case 2:	callback = (AFUNPTR) sCMP_IM<16>; break;
@@ -840,12 +840,12 @@ void BINARY::cCMP(INS &ins)
 void BINARY::cMUL(INS &ins) 
 { 
     
-    void (*callback)() = nullptr;       // pointeur sur la fonction à appeler
+    void (*callback)() = nullptr;       // pointeur sur la fonction Ã  appeler
     REG implicitReg    = REG_INVALID(); // registre implicite : AL, AX, EAX ou RAX
         
     if (INS_IsMemoryRead(ins)) 
     { 
-        // source = mémoire, donc type MUL M
+        // source = mÃ©moire, donc type MUL M
         switch (INS_MemoryReadSize(ins)) 
         {
         case 1:	 callback = (AFUNPTR) sMUL_1M<8>;	implicitReg = REG_AL;  break;
@@ -859,13 +859,13 @@ void BINARY::cMUL(INS &ins)
             
         INS_InsertCall (ins, IPOINT_BEFORE, callback,
             IARG_THREAD_ID,
-            IARG_MEMORYREAD_EA,		     // adresse réelle de lecture 
+            IARG_MEMORYREAD_EA,		     // adresse rÃ©elle de lecture 
             IARG_REG_VALUE, implicitReg, // valeur du registre implicite
             IARG_INST_PTR, IARG_END);
     }
     else // source = registre, donc type IMUL 1R.
     {			
-        REG regSrc = INS_OperandReg(ins, 0);// registre src en opérande 0
+        REG regSrc = INS_OperandReg(ins, 0);// registre src en opÃ©rande 0
            
         switch (getRegSize(regSrc)) 
         {
@@ -915,27 +915,27 @@ void BINARY::cIMUL(INS &ins)
     // op1(explicite) : source1 et destination (registre 16 ou 32 bits)
     //                  (OPERANDE LECTURE/ECRITURE)
     // op2(explicite) : source2 (16 ou 32bits, Reg/mem/imm)
-    //                  même si Imm est plutot codé en cas 3
+    //                  mÃªme si Imm est plutot codÃ© en cas 3
     // op3(implicite) : Eflags 
 
     // CAS 3 (3 OPERANDES INTEL) : SOUS PIN 4 OPERANDES SONT DONNEES 
     // op1(explicite) : destination (registre 16 ou 32 bits) (ECRITURE SEULE)
     // op2(explicite) : source1 (16 ou 32bits, Reg/mem)
-    // op3(explicite) : source2 (immédiate, 8, 16 ou 32bits) 
+    // op3(explicite) : source2 (immÃ©diate, 8, 16 ou 32bits) 
     // op4(implicite) : Eflags 
 
-    // pointeur sur la fonction à appeler
+    // pointeur sur la fonction Ã  appeler
     void (*callback)() = nullptr;			
 
     if (INS_OperandReadAndWritten(ins, 0)) 
     {	
-        // Opérande 0 en lecture/ecriture => cas 2 (2 opérandes x86)
+        // OpÃ©rande 0 en lecture/ecriture => cas 2 (2 opÃ©randes x86)
         REG regSrcDest = INS_OperandReg(ins, 0); // registre src et dest
         UINT32 regSize = getRegSize(regSrcDest); // taille destination
         
         if (INS_IsMemoryRead(ins)) 
         {			
-            // 2eme source = mémoire, donc type reg = mem*reg
+            // 2eme source = mÃ©moire, donc type reg = mem*reg
             switch (regSize) 
             {
             // case 1:	impossible
@@ -949,15 +949,15 @@ void BINARY::cIMUL(INS &ins)
             
             INS_InsertCall (ins, IPOINT_BEFORE, callback,
                 IARG_THREAD_ID,
-                IARG_MEMORYREAD_EA,			// adresse réelle de lecture
+                IARG_MEMORYREAD_EA,			// adresse rÃ©elle de lecture
                 IARG_UINT32,    regSrcDest, // registre source et destination
                 IARG_REG_VALUE, regSrcDest, // sa valeur lors du callback
                 IARG_INST_PTR, IARG_END);
         }
         else if (INS_OperandIsImmediate(ins, 1)) 
         {	
-            // 2eme source = immédiate, donc type IMUL2 IR
-            // NB: sera codé en cas IMUL3IR, avec regSrc = regSrcDest
+            // 2eme source = immÃ©diate, donc type IMUL2 IR
+            // NB: sera codÃ© en cas IMUL3IR, avec regSrc = regSrcDest
             switch (regSize) 
             {
             // case 1:	impossible
@@ -977,7 +977,7 @@ void BINARY::cIMUL(INS &ins)
                 IARG_UINT32,    regSrcDest,	// registre destination
                 IARG_INST_PTR, IARG_END);
         }
-        else // 2ème source = registre
+        else // 2Ã¨me source = registre
         {	
             switch (regSize) 
             {
@@ -1000,13 +1000,13 @@ void BINARY::cIMUL(INS &ins)
                 IARG_INST_PTR, IARG_END);
         }
     }
-    // 1ere opérande en écriture seule => cas 3
+    // 1ere opÃ©rande en Ã©criture seule => cas 3
     else if (INS_OperandWrittenOnly(ins, 0)) 
     {		
         REG regDest		= INS_OperandReg(ins, 0);	// registre destination
         UINT32 regSize	= getRegSize(regDest);		// taille destination 
     
-        if (INS_IsMemoryRead(ins))  // 2eme source = mémoire, type IMUL3 IM
+        if (INS_IsMemoryRead(ins))  // 2eme source = mÃ©moire, type IMUL3 IM
         {
             switch (regSize) 
             {
@@ -1022,7 +1022,7 @@ void BINARY::cIMUL(INS &ins)
             INS_InsertCall (ins, IPOINT_BEFORE, callback,
                 IARG_THREAD_ID,
                 IARG_ADDRINT, (ADDRINT) INS_OperandImmediate(ins, 2), 
-                IARG_MEMORYREAD_EA,		// adresse réelle de lecture (source1)
+                IARG_MEMORYREAD_EA,		// adresse rÃ©elle de lecture (source1)
                 IARG_UINT32, regDest,	// registre destination
                 IARG_INST_PTR, IARG_END);
         }
@@ -1050,12 +1050,12 @@ void BINARY::cIMUL(INS &ins)
                 IARG_INST_PTR,	IARG_END);
         }
     }										  
-    else // sinon on se trouve dans le cas 1 (une seule opérande explicite)
+    else // sinon on se trouve dans le cas 1 (une seule opÃ©rande explicite)
     {	 
         REG implicitReg; // registre implicite : AL, AX, EAX ou RAX
         if (INS_IsMemoryRead(ins)) 
         { 
-            // source = mémoire, donc type IMUL M
+            // source = mÃ©moire, donc type IMUL M
             switch (INS_MemoryReadSize(ins)) 
             {
             case 1:	
@@ -1081,7 +1081,7 @@ void BINARY::cIMUL(INS &ins)
             
             INS_InsertCall (ins, IPOINT_BEFORE, callback,
                 IARG_THREAD_ID,
-                IARG_MEMORYREAD_EA,		     // adresse réelle de lecture 
+                IARG_MEMORYREAD_EA,		     // adresse rÃ©elle de lecture 
                 IARG_REG_VALUE, implicitReg, // valeur du registre implicite
                 IARG_INST_PTR, IARG_END);
         }
@@ -1125,7 +1125,7 @@ void BINARY::cIMUL(INS &ins)
 // FLAGS
 void BINARY::fTaintIMUL(TaintManager_Thread *pTmgrTls, const TaintPtr &resultPtr)
 {
-    // IMUL = OF / CF, marquage identique, autres flags inchangés
+    // IMUL = OF / CF, marquage identique, autres flags inchangÃ©s
     TaintBitPtr flagPtr = std::make_shared<TaintBit>(F_CARRY_IMUL, ObjectSource(resultPtr));
 
     pTmgrTls->updateTaintOverflowFlag(flagPtr);
@@ -1139,13 +1139,13 @@ void BINARY::fTaintIMUL(TaintManager_Thread *pTmgrTls, const TaintPtr &resultPtr
 // CALLBACKS
 void BINARY::cDIVISION(INS &ins, bool isSignedDivision)
 {
-    // division : le dividende sera réparti sur deux variables marquées
+    // division : le dividende sera rÃ©parti sur deux variables marquÃ©es
     // exemple sur 16 bits : 
-    // - DX:AX est divisé par r/m16, quotient dans AX, reste dans DX
-    // - AX sera marqué avec IDIV_QUO/DIV_QUO 
-    // - DX sera marqué avec IDIV_REM/DIV_REM 
-    // les procédures DIV/IDIV sont strictement les mêmes, seule la relation change
-    // etant donné qu'il y a peu de chances de rencontrer ce type d'instruction
+    // - DX:AX est divisÃ© par r/m16, quotient dans AX, reste dans DX
+    // - AX sera marquÃ© avec IDIV_QUO/DIV_QUO 
+    // - DX sera marquÃ© avec IDIV_REM/DIV_REM 
+    // les procÃ©dures DIV/IDIV sont strictement les mÃªmes, seule la relation change
+    // etant donnÃ© qu'il y a peu de chances de rencontrer ce type d'instruction
     // on se permet de passer le type signed/unsigned par parametre (pas par template)
     void (*callback)()  = nullptr;
     REG lowDividendReg  = REG_INVALID(); // AL/AX/EAX/RAX 
@@ -1153,8 +1153,8 @@ void BINARY::cDIVISION(INS &ins, bool isSignedDivision)
 
     if (INS_IsMemoryRead(ins)) 
     {	
-        // source = mémoire, donc type IDIV M. 
-        // Dividende = AX, DX:AX, EDX:EAX ou RDX::RAX selon la taille de la mémoire
+        // source = mÃ©moire, donc type IDIV M. 
+        // Dividende = AX, DX:AX, EDX:EAX ou RDX::RAX selon la taille de la mÃ©moire
 
         switch (INS_MemoryReadSize(ins)) 
         {
@@ -1184,8 +1184,8 @@ void BINARY::cDIVISION(INS &ins, bool isSignedDivision)
 
         INS_InsertCall (ins, IPOINT_BEFORE, callback,
             IARG_THREAD_ID,
-            IARG_MEMORYREAD_EA,			// adresse réelle de lecture 
-            IARG_BOOL, isSignedDivision,    // true = division signée
+            IARG_MEMORYREAD_EA,			// adresse rÃ©elle de lecture 
+            IARG_BOOL, isSignedDivision,    // true = division signÃ©e
             IARG_REG_VALUE, lowDividendReg,	// valeur de AL/AX/EAX/RAX lors du callback  
             IARG_REG_VALUE, highDividendReg,	// valeur de AH/DX/EDX/RDX lors du callback
             IARG_INST_PTR, IARG_END);
@@ -1223,7 +1223,7 @@ void BINARY::cDIVISION(INS &ins, bool isSignedDivision)
             IARG_THREAD_ID,
             IARG_UINT32,    regSrc, // registre source 1
             IARG_REG_VALUE, regSrc, // sa valeur lors du callback
-            IARG_BOOL, isSignedDivision,    // true = division signée
+            IARG_BOOL, isSignedDivision,    // true = division signÃ©e
             IARG_REG_VALUE, lowDividendReg,	// valeur de AL/AX/EAX/RAX lors du callback  
             IARG_REG_VALUE, highDividendReg,// valeur de AH/DX/EDX/RDX lors du callback
             IARG_INST_PTR, IARG_END);

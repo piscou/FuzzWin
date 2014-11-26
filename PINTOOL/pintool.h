@@ -1,6 +1,6 @@
-#pragma once
+ï»¿#pragma once
 
-// le kit 62376 de PIN provoque un warning de cast (C4244) à la compilation
+// le kit 62376 de PIN provoque un warning de cast (C4244) Ã  la compilation
 #pragma warning( push )
 #pragma warning( disable : 4244 )
 #include "pin.h"
@@ -17,10 +17,10 @@ namespace WINDOWS
 #include <windows.h>
 }
 
-// définitions des types de registres et des macros selon l'architecture 32/64 bits
+// dÃ©finitions des types de registres et des macros selon l'architecture 32/64 bits
 #include <TaintEngine\architecture.h>
 
-/* les types DWORD et HANDLE ne sont pas définis par PIN */
+/* les types DWORD et HANDLE ne sont pas dÃ©finis par PIN */
 typedef unsigned long DWORD; 
 typedef WINDOWS::HANDLE HANDLE;
 
@@ -30,22 +30,22 @@ typedef WINDOWS::HANDLE HANDLE;
 
 #define FUZZWIN_VERSION     "V0.5 26 avril 2014"
 
-#define EXIT_EXCEPTION      -1 // exception trouvée (option checkscore)
+#define EXIT_EXCEPTION      -1 // exception trouvÃ©e (option checkscore)
 #define EXIT_MAX_CONSTRAINTS 2 // fin du pintool pour cause de contrainte max
-#define EXIT_TIMEOUT         3 // fin du pintool pour temps max dépassé
+#define EXIT_TIMEOUT         3 // fin du pintool pour temps max dÃ©passÃ©
 
 #define INIT_ERROR           0 // erreur d'initialisation
-#define OPTION_TAINT         1 // pintool "fuzzwin"  : extraction contraintes marquées
-#define OPTION_CHECKSCORE    2 // pintool checkscore : test et score de l'entrée
+#define OPTION_TAINT         1 // pintool "fuzzwin"  : extraction contraintes marquÃ©es
+#define OPTION_CHECKSCORE    2 // pintool checkscore : test et score de l'entrÃ©e
 
 /*********************************************************/
-/* Variables globales du programme (déclarations extern) */
+/* Variables globales du programme (dÃ©clarations extern) */
 /*********************************************************/
 
-// handle du pipe de communication des resultats (tube nommé ou STDOUT avec l'option -nopipe)
+// handle du pipe de communication des resultats (tube nommÃ© ou STDOUT avec l'option -nopipe)
 extern HANDLE       g_hPipe;
 
-// fichier d'entrée du programme fuzzé (passé via pipe ou ligne de commande)
+// fichier d'entrÃ©e du programme fuzzÃ© (passÃ© via pipe ou ligne de commande)
 extern std::string  g_inputFile; 
 // option du pintool : taint ou ckeckscore
 extern std::string  g_option;
@@ -54,38 +54,38 @@ extern UINT32       g_maxTime;
 // nombre maximal de contraintes
 extern UINT32       g_maxConstraints;
 
-// mode verbeux : logs de désassemblage et de marquage
+// mode verbeux : logs de dÃ©sassemblage et de marquage
 extern bool          g_verbose;
 extern std::ofstream g_debug;     // fichier de log du desassemblage
 extern std::ofstream g_taint;     // fichier de log du marquage
-extern clock_t       g_timeBegin; // chrono départ de l'instrumentation
+extern clock_t       g_timeBegin; // chrono dÃ©part de l'instrumentation
 
-// option pipe ou non pour l'échange du fichier initial  et de la formule finale
+// option pipe ou non pour l'Ã©change du fichier initial  et de la formule finale
 extern bool         g_nopipe;
 
-// vrai dès que les premières données seront lues dans la source
+// vrai dÃ¨s que les premiÃ¨res donnÃ©es seront lues dans la source
 extern bool         g_beginInstrumentationOfInstructions;
 
 // clefs de stockage locales pour chaque thread
 
 extern TLS_KEY      g_tlsKeyTaint;          // classe de marquage des registres
-extern TLS_KEY      g_tlsKeySyscallData;    // stockage des données avant/apres syscall
-extern TLS_KEY      g_tlsStringOpInfo;      // données statiques pour les instructions CMPS / SCAS
+extern TLS_KEY      g_tlsKeySyscallData;    // stockage des donnÃ©es avant/apres syscall
+extern TLS_KEY      g_tlsStringOpInfo;      // donnÃ©es statiques pour les instructions CMPS / SCAS
 
 // structure de blocage inter-thread    
 extern PIN_LOCK     g_lock;  
 
 /** OPTION CHECKSCORE **/
 
-// nombre de threads démarrés, et nombre de threads maxi supportés (10000)
+// nombre de threads dÃ©marrÃ©s, et nombre de threads maxi supportÃ©s (10000)
 extern UINT32         g_numThreads;
 #define MaxNumThreads 10000
 
-// vrai si erreur trouvée
+// vrai si erreur trouvÃ©e
 extern bool        g_faultFound;
 
-// nombre d'instructions exécutées par thread
-// padding à 256 bits pour optimisation (cache)
+// nombre d'instructions exÃ©cutÃ©es par thread
+// padding Ã  256 bits pour optimisation (cache)
 class ThreadCount
 {
 public:
@@ -107,7 +107,7 @@ extern KNOB<BOOL>        KVerbose;
 extern KNOB<BOOL>        KNoPipe;
 
 /*******************************************************************/
-/* procedure d'initialisation des variables globales et paramètres */
+/* procedure d'initialisation des variables globales et paramÃ¨tres */
 /*******************************************************************/
 int pintoolInit(); // fichier initialize.cpp
 
@@ -126,7 +126,7 @@ inline void _LOGINSPROC(INS ins)
 
 #define _LOGINS(i)    if (g_verbose) _LOGINSPROC(i);
 
-// log désassemblage, partie analyse
+// log dÃ©sassemblage, partie analyse
 inline void _LOGDEBUGPROC(const std::string &s)
 {
     PIN_GetLock(&g_lock, PIN_ThreadId()); 
@@ -136,7 +136,7 @@ inline void _LOGDEBUGPROC(const std::string &s)
 
 #define _LOGDEBUG(s)  if (g_verbose) _LOGDEBUGPROC(s);
 
-// log désassemblage, partie Syscalls uniquement 
+// log dÃ©sassemblage, partie Syscalls uniquement 
 inline void  _LOGSYSCALLSPROC(ADDRINT syscallNumber, const std::string &s)
 {
     PIN_GetLock(&g_lock, PIN_ThreadId());      
@@ -164,7 +164,7 @@ inline void _LOGTAINTPROC(THREADID tid, ADDRINT insAddress, const std::string &s
 /* classes globales de metaprogrammation */
 /*****************************************/
 
-// Renvoie le registre d'accumulation utilisé par certaines instructions
+// Renvoie le registre d'accumulation utilisÃ© par certaines instructions
 template<UINT32 lengthInBits> class RegisterACC 
 { public:  static inline REG getReg() { return REG_INVALID_ ; }};
 template<> class RegisterACC<8> 
@@ -178,7 +178,7 @@ template<> class RegisterACC<64>
 { public:  static inline REG getReg() { return REG_RAX; }};
 #endif
 
-// Renvoie le registre I/O (AH/DX/EDX/RDX) utilisé par certaines instructions
+// Renvoie le registre I/O (AH/DX/EDX/RDX) utilisÃ© par certaines instructions
 template<UINT32 lengthInBits> class RegisterIO 
 { public:  static inline REG getReg() { return REG_INVALID_ ; }};
 template<> class RegisterIO<8> 
@@ -192,7 +192,7 @@ template<> class RegisterIO<64>
 { public:  static inline REG getReg() { return REG_RDX; }};
 #endif
 
-// Renvoie le registre compteur (CX/ECX/RCX) utilisé pour JRCXZ
+// Renvoie le registre compteur (CX/ECX/RCX) utilisÃ© pour JRCXZ
 template<UINT32 lengthInBits> class RegisterCount 
 { 
 public:  
@@ -223,9 +223,9 @@ public:
 };
 #endif
 
-// détermination de la valeur "ff" en fonction de la taille fournie (en bits)
-// utilisé par les fonctions d'analyse traitant les instructions LOGICAL::OR et STRINGOP::SCAS
-// constantes définies dans <limits.h>
+// dÃ©termination de la valeur "ff" en fonction de la taille fournie (en bits)
+// utilisÃ© par les fonctions d'analyse traitant les instructions LOGICAL::OR et STRINGOP::SCAS
+// constantes dÃ©finies dans <limits.h>
 template<UINT32 lengthInBits> class ValueFF
 { public:  static inline const ADDRINT get() { return NULL; }};
 template<> class ValueFF<8>

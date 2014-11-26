@@ -1,6 +1,6 @@
-#include "rotate.h"
+ï»¿#include "rotate.h"
 
-// ROTATE : traitement similaire à SHIFT
+// ROTATE : traitement similaire Ã  SHIFT
 // Insertion de la valeur des flags dans les callbacks pour RCL/RCR
 
 /** ROL **/
@@ -25,7 +25,7 @@ void ROTATE::cROL(INS &ins)
                 #endif
                 default : return;
             } 
-            // instrumentation meme si déplacement null (CF impacté)
+            // instrumentation meme si dÃ©placement null (CF impactÃ©)
             INS_InsertCall (ins, IPOINT_BEFORE, callback,
                 IARG_THREAD_ID, 
                 IARG_UINT32, depl,
@@ -34,7 +34,7 @@ void ROTATE::cROL(INS &ins)
         }
         else // DESTINATION = REGISTRE (ROL_IR)
         {         
-            REG reg = INS_OperandReg(ins, 0); // registre qui sera décalé 
+            REG reg = INS_OperandReg(ins, 0); // registre qui sera dÃ©calÃ© 
             switch (getRegSize(reg)) 
             {
                 case 1: callback = (AFUNPTR) sROL_IR<8>;  break;
@@ -46,11 +46,11 @@ void ROTATE::cROL(INS &ins)
                 default : return;
             } 
             
-            // déplacement non nul : instrumentation (sinon aucun chgt)
+            // dÃ©placement non nul : instrumentation (sinon aucun chgt)
             INS_InsertCall (ins, IPOINT_BEFORE, callback,
                 IARG_THREAD_ID, 
                 IARG_UINT32,    depl,
-                IARG_UINT32,    reg,    // registre décalé
+                IARG_UINT32,    reg,    // registre dÃ©calÃ©
                 IARG_REG_VALUE, reg,    // sa valeur lors du callback
                 IARG_INST_PTR, IARG_END);
         }
@@ -58,7 +58,7 @@ void ROTATE::cROL(INS &ins)
     // DECALAGE PAR REGISTRE : ROL_RM ou ROL_RR
     else 
     {  
-        // le masquage à 0x1f ou 0x3f sera fait dans le callback
+        // le masquage Ã  0x1f ou 0x3f sera fait dans le callback
         if (INS_IsMemoryWrite(ins)) // DESTINATION = MEMOIRE (ROL_RM)
         {   
             switch (INS_MemoryWriteSize(ins)) 
@@ -73,13 +73,13 @@ void ROTATE::cROL(INS &ins)
             } 
             INS_InsertCall (ins, IPOINT_BEFORE, callback,
                 IARG_THREAD_ID, 
-                IARG_REG_VALUE, REG_CL, // valeur numérique du déplacement
+                IARG_REG_VALUE, REG_CL, // valeur numÃ©rique du dÃ©placement
                 IARG_MEMORYWRITE_EA,   
                 IARG_INST_PTR, IARG_END);
         }
         else // DESTINATION = REGISTRE (ROL_RR)
         {         
-            REG reg = INS_OperandReg(ins, 0); // registre qui sera décalé 
+            REG reg = INS_OperandReg(ins, 0); // registre qui sera dÃ©calÃ© 
             switch (getRegSize(reg)) 
             {
                 case 1: callback = (AFUNPTR) sROL_RR<8>;  break;
@@ -93,8 +93,8 @@ void ROTATE::cROL(INS &ins)
             
             INS_InsertCall (ins, IPOINT_BEFORE, callback,
                 IARG_THREAD_ID, 
-                IARG_REG_VALUE, REG_CL, // valeur numérique du déplacement
-                IARG_UINT32,    reg,    // registre décalé
+                IARG_REG_VALUE, REG_CL, // valeur numÃ©rique du dÃ©placement
+                IARG_UINT32,    reg,    // registre dÃ©calÃ©
                 IARG_REG_VALUE, reg,    // sa valeur lors du callback
                 IARG_INST_PTR, IARG_END);
         }
@@ -132,7 +132,7 @@ void ROTATE::cROR(INS &ins)
         }
         else // DESTINATION = REGISTRE (ROR_IR)
         {         
-            REG reg = INS_OperandReg(ins, 0); // registre qui sera décalé 
+            REG reg = INS_OperandReg(ins, 0); // registre qui sera dÃ©calÃ© 
             switch (getRegSize(reg)) 
             {
                 case 1: callback = (AFUNPTR) sROR_IR<8>;  break;
@@ -144,11 +144,11 @@ void ROTATE::cROR(INS &ins)
                 default: return;
             } 
             
-            // déplacement non nul : instrumentation (sinon aucun chgt)
+            // dÃ©placement non nul : instrumentation (sinon aucun chgt)
             INS_InsertCall (ins, IPOINT_BEFORE, callback,
                 IARG_THREAD_ID, 
                 IARG_UINT32,    depl,
-                IARG_UINT32,    reg,    // registre décalé
+                IARG_UINT32,    reg,    // registre dÃ©calÃ©
                 IARG_REG_VALUE, reg,    // sa valeur lors du callback
                 IARG_INST_PTR, IARG_END);
         }
@@ -156,7 +156,7 @@ void ROTATE::cROR(INS &ins)
     // DECALAGE PAR REGISTRE : ROR_RM ou ROR_RR
     else 
     {  
-        // le masquage à 0x1f ou 0x3f sera fait dans le callback
+        // le masquage Ã  0x1f ou 0x3f sera fait dans le callback
         if (INS_IsMemoryWrite(ins)) // DESTINATION = MEMOIRE (ROR_RM)
         {   
             switch (INS_MemoryWriteSize(ins)) 
@@ -171,13 +171,13 @@ void ROTATE::cROR(INS &ins)
             } 
             INS_InsertCall (ins, IPOINT_BEFORE, callback,
                 IARG_THREAD_ID, 
-                IARG_REG_VALUE, REG_CL, // valeur numérique du déplacement
+                IARG_REG_VALUE, REG_CL, // valeur numÃ©rique du dÃ©placement
                 IARG_MEMORYWRITE_EA,   
                 IARG_INST_PTR, IARG_END);
         }
         else // DESTINATION = REGISTRE (ROR_RR)
         {         
-            REG reg = INS_OperandReg(ins, 0); // registre qui sera décalé 
+            REG reg = INS_OperandReg(ins, 0); // registre qui sera dÃ©calÃ© 
             switch (getRegSize(reg)) 
             {
                 case 1: callback = (AFUNPTR) sROR_RR<8>;  break;
@@ -191,8 +191,8 @@ void ROTATE::cROR(INS &ins)
             
             INS_InsertCall (ins, IPOINT_BEFORE, callback,
                 IARG_THREAD_ID, 
-                IARG_REG_VALUE, REG_CL, // valeur numérique du déplacement
-                IARG_UINT32,    reg,    // registre décalé
+                IARG_REG_VALUE, REG_CL, // valeur numÃ©rique du dÃ©placement
+                IARG_UINT32,    reg,    // registre dÃ©calÃ©
                 IARG_REG_VALUE, reg,    // sa valeur lors du callback
                 IARG_INST_PTR, IARG_END);
         }
@@ -231,7 +231,7 @@ void ROTATE::cRCL(INS &ins)
         }
         else // DESTINATION = REGISTRE (RCL_IR)
         {         
-            REG reg = INS_OperandReg(ins, 0); // registre qui sera décalé 
+            REG reg = INS_OperandReg(ins, 0); // registre qui sera dÃ©calÃ© 
             switch (getRegSize(reg)) 
             {
                 case 1: callback = (AFUNPTR) sRCL_IR<8>;  break;
@@ -243,11 +243,11 @@ void ROTATE::cRCL(INS &ins)
                 default: return;
             } 
             
-            // déplacement non nul : instrumentation (sinon aucun chgt)
+            // dÃ©placement non nul : instrumentation (sinon aucun chgt)
             INS_InsertCall (ins, IPOINT_BEFORE, callback,
                 IARG_THREAD_ID, 
                 IARG_UINT32,    depl,
-                IARG_UINT32,    reg,    // registre décalé
+                IARG_UINT32,    reg,    // registre dÃ©calÃ©
                 IARG_REG_VALUE, reg,    // sa valeur lors du callback
                 IARG_REG_VALUE, REG_GFLAGS, // pour valeur du Carry Flag
                 IARG_INST_PTR, IARG_END);
@@ -256,7 +256,7 @@ void ROTATE::cRCL(INS &ins)
     // DECALAGE PAR REGISTRE : RCL_RM ou RCL_RR
     else 
     {  
-        // le masquage à 0x1f ou 0x3f sera fait dans le callback
+        // le masquage Ã  0x1f ou 0x3f sera fait dans le callback
         if (INS_IsMemoryWrite(ins)) // DESTINATION = MEMOIRE (RCL_RM)
         {   
             switch (INS_MemoryWriteSize(ins)) 
@@ -271,14 +271,14 @@ void ROTATE::cRCL(INS &ins)
             } 
             INS_InsertCall (ins, IPOINT_BEFORE, callback,
                 IARG_THREAD_ID, 
-                IARG_REG_VALUE, REG_CL, // valeur numérique du déplacement
+                IARG_REG_VALUE, REG_CL, // valeur numÃ©rique du dÃ©placement
                 IARG_MEMORYWRITE_EA, 
                 IARG_REG_VALUE, REG_GFLAGS, // pour valeur du Carry Flag
                 IARG_INST_PTR, IARG_END);
         }
         else // DESTINATION = REGISTRE (RCL_RR)
         {         
-            REG reg = INS_OperandReg(ins, 0); // registre qui sera décalé 
+            REG reg = INS_OperandReg(ins, 0); // registre qui sera dÃ©calÃ© 
             switch (getRegSize(reg)) 
             {
                 case 1: callback = (AFUNPTR) sRCL_RR<8>;  break;
@@ -292,8 +292,8 @@ void ROTATE::cRCL(INS &ins)
             
             INS_InsertCall (ins, IPOINT_BEFORE, callback,
                 IARG_THREAD_ID, 
-                IARG_REG_VALUE, REG_CL, // valeur numérique du déplacement
-                IARG_UINT32,    reg,    // registre décalé
+                IARG_REG_VALUE, REG_CL, // valeur numÃ©rique du dÃ©placement
+                IARG_UINT32,    reg,    // registre dÃ©calÃ©
                 IARG_REG_VALUE, reg,    // sa valeur lors du callback
                 IARG_REG_VALUE, REG_GFLAGS, // pour valeur du Carry Flag
                 IARG_INST_PTR, IARG_END);
@@ -323,7 +323,7 @@ void ROTATE::cRCR(INS &ins)
                 #endif
                 default: return;
             } 
-            // déplacement non nul : instrumentation (sinon aucun chgt)
+            // dÃ©placement non nul : instrumentation (sinon aucun chgt)
             INS_InsertCall (ins, IPOINT_BEFORE, callback,
                 IARG_THREAD_ID, 
                 IARG_UINT32, depl,
@@ -333,7 +333,7 @@ void ROTATE::cRCR(INS &ins)
         }
         else // DESTINATION = REGISTRE (RCR_IR)
         {         
-            REG reg = INS_OperandReg(ins, 0); // registre qui sera décalé 
+            REG reg = INS_OperandReg(ins, 0); // registre qui sera dÃ©calÃ© 
             switch (getRegSize(reg)) 
             {
                 case 1: callback = (AFUNPTR) sRCR_IR<8>;  break;
@@ -345,11 +345,11 @@ void ROTATE::cRCR(INS &ins)
                 default: return;
             } 
             
-            // déplacement non nul : instrumentation (sinon aucun chgt)
+            // dÃ©placement non nul : instrumentation (sinon aucun chgt)
             INS_InsertCall (ins, IPOINT_BEFORE, callback,
                 IARG_THREAD_ID, 
                 IARG_UINT32,    depl,
-                IARG_UINT32,    reg,    // registre décalé
+                IARG_UINT32,    reg,    // registre dÃ©calÃ©
                 IARG_REG_VALUE, reg,    // sa valeur lors du callback
                 IARG_REG_VALUE, REG_GFLAGS, // pour valeur du Carry Flag
                 IARG_INST_PTR, IARG_END);
@@ -358,7 +358,7 @@ void ROTATE::cRCR(INS &ins)
     // DECALAGE PAR REGISTRE : RCR_RM ou RCR_RR
     else 
     {  
-        // le masquage à 0x1f ou 0x3f sera fait dans le callback
+        // le masquage Ã  0x1f ou 0x3f sera fait dans le callback
         if (INS_IsMemoryWrite(ins)) // DESTINATION = MEMOIRE (RCR_RM)
         {   
             switch (INS_MemoryWriteSize(ins)) 
@@ -373,14 +373,14 @@ void ROTATE::cRCR(INS &ins)
             } 
             INS_InsertCall (ins, IPOINT_BEFORE, callback,
                 IARG_THREAD_ID, 
-                IARG_REG_VALUE, REG_CL, // valeur numérique du déplacement
+                IARG_REG_VALUE, REG_CL, // valeur numÃ©rique du dÃ©placement
                 IARG_MEMORYWRITE_EA, 
                 IARG_REG_VALUE, REG_GFLAGS, // pour valeur du Carry Flag
                 IARG_INST_PTR, IARG_END);
         }
         else // DESTINATION = REGISTRE (RCR_RR)
         {         
-            REG reg = INS_OperandReg(ins, 0); // registre qui sera décalé 
+            REG reg = INS_OperandReg(ins, 0); // registre qui sera dÃ©calÃ© 
             switch (getRegSize(reg)) 
             {
                 case 1: callback = (AFUNPTR) sRCR_RR<8>;  break;
@@ -394,8 +394,8 @@ void ROTATE::cRCR(INS &ins)
             
             INS_InsertCall (ins, IPOINT_BEFORE, callback,
                 IARG_THREAD_ID, 
-                IARG_REG_VALUE, REG_CL, // valeur numérique du déplacement
-                IARG_UINT32,    reg,    // registre décalé
+                IARG_REG_VALUE, REG_CL, // valeur numÃ©rique du dÃ©placement
+                IARG_UINT32,    reg,    // registre dÃ©calÃ©
                 IARG_REG_VALUE, reg,    // sa valeur lors du callback
                 IARG_REG_VALUE, REG_GFLAGS, // pour valeur du Carry Flag
                 IARG_INST_PTR, IARG_END);

@@ -75,10 +75,12 @@ std::string TranslateToC::getSourceName(const ObjectSource &objSrc) const
 // entete de la déclaration : type de variable et affectation d'un nom + '(define-fun XX () (BitVec nb) ('
 void TranslateToC::declareRelationHeader(const TaintPtr &tPtr)
 {
-    const std::string name = this->setObjectName(tPtr);
+    const std::string name      = this->setObjectName(tPtr);
+    const std::string typeOfVar = "uint" + decstr(tPtr->getLength()) + "_t";
 
     // declaration de l'entête de ligne : nom de variable et longueur
-    _formula << "uint" << tPtr->getLength() << "_t " << name << " = ";
+    // on caste le resultat de l'opération à la longueur de la destination
+    _formula << typeOfVar << ' ' << name << " = (" << typeOfVar << ") ";
 }
 
 // fin de la déclaration : ';' + infos du mode verbeux si présent
@@ -93,7 +95,9 @@ void TranslateToC::declareRelationFooter(const TaintPtr &tPtr)
     _formula  << '\n';
 }
 
+/***************/
 /** RELATIONS **/
+/***************/
 
 void TranslateToC::translate_BYTESOURCE(const TaintPtr &tPtr)
 {
@@ -105,31 +109,26 @@ void TranslateToC::translate_BYTESOURCE(const TaintPtr &tPtr)
     _formula << "uint8_t " << objectName << ";\n";
 }
 
-
-
-
-
-/*
-
-
-
 void TranslateToC::translate_EXTRACT(const TaintPtr &tPtr)
 {
     // EXTRACT : source0 forcément marqué, source1 (index) forcément valeur
-    ObjectSource source      = tPtr->getSource(0);
+    TaintPtr srcPtr          = tPtr->getSource(0).getTaintedSource();
     UINT32 indexOfExtraction = static_cast<UINT32>(tPtr->getSource(1).getValue());
     UINT32 lengthOfResult    = tPtr->getLength();
-
-    // borne min = index d'extraction * longueur du resultat
-    UINT32 lowerLimit = indexOfExtraction * lengthOfResult;
-    // borne max = borne min + (longueur - 1)
-    UINT32 higherLimit = lowerLimit + (lengthOfResult - 1);
-
+    UINT32 bitMin            = indexOfExtraction * lengthOfResult; // bit faible d'extraction
+    
     BEGIN_RELATION_DECLARATION;
+    
+    // L'extraction s'effectue par la forumle suivante, bitMin étant le bit faible d'extraction
+    // result = (source >> bitMin) & ((1 << lengthOfResult) - 1);
 
-    _formula << "(_ extract " << higherLimit << ' ' << lowerLimit << ") ";     
-    // ajout de l'objet subissant l'extraction
-    _formula <<  source.getTaintedSource()->getName();
+    _formula << "( ";
+
+    // si l'extraction se fait au dela du bit 32 : cast de la source sur 64 bits (sinon pb de shift)
+    if (bitMin > 31) _formula << "(uint64_t) ";
+
+    _formula << srcPtr->getName() << " >> " << bitMin << ")";
+    _formula << " & (1 << " << lengthOfResult << ") - 1)";
 
     END_RELATION_DECLARATION;
 }
@@ -137,22 +136,47 @@ void TranslateToC::translate_EXTRACT(const TaintPtr &tPtr)
 void TranslateToC::translate_CONCAT(const TaintPtr &tPtr)
 {
     // CONCAT : concaténation des objets fournis en Sources
-    // Attention : les objets seront inséres du plus fort au plus faible
-    // d'ou le rbegin/rend (cf def CONCAT du langage SMTLIB)
-    std::vector<ObjectSource> sources = tPtr->getSources();
+    // la source0 est celle de poids faible
+
+    // La concatenation se fait par insertion et décalages : 
+    // result = src[0] | (src[1] << lenSrc[0]) | (src[2] << (lenSrc[0] + lenSrc[1])
+    
+    // pour l'instant ne fonctionne pas pour les objets de plus de 64 bits
+    if (tPtr->getLength() > 63)
+    {
+        _formula << " 0 /* TranslateToC: CONCAT > 64bits : not implemented */";
+        return;
+    }
+
+    // liste des sources à concaténer
+    std::vector<ObjectSource> sources           = tPtr->getSources();
+    std::vector<ObjectSource>::iterator sourceN = sources.begin();
+
+    // index de décalage, incrémenté à chaque tour de boucle avec la longueur de la source
+    // il est initialisé à la longueur de la premiere source
+    UINT32 indexOfInsert = (*sourceN).getLength();
 
     BEGIN_RELATION_DECLARATION;
 
-    _formula << "concat";
-    for (auto it = sources.rbegin();  it != sources.rend() ; ++it) 
+    // insertion de la premiere source : pas de décalage
+    _formula << "( " << this->getSourceName(*sourceN);
+
+    // iteration sur les sources 1 à N
+    while (++sourceN != sources.end()) 
     {
-        _formula <<  ' ' << this->getSourceName(*it);
+        _formula << " | (" << this->getSourceName(*sourceN) << " << " << indexOfInsert << ')';
+        // mise à jour de l'index d'insertion
+        indexOfInsert += (*sourceN).getLength();
     } 
+
+    _formula << ')';
 
     END_RELATION_DECLARATION;
 }
 
-// instructions
+/******************/
+/** INSTRUCTIONS **/
+/******************/
 
 void TranslateToC::translate_X_ASSIGN(const TaintPtr &tPtr)
 {
@@ -167,9 +191,17 @@ void TranslateToC::translate_X_SIGNEXTEND(const TaintPtr &tPtr)
     ObjectSource source   = tPtr->getSource(0); // forcément marquée
     UINT32 lengthOfSource = source.getLength();
 
+    // ne fonctionne que pour l'extension des sources de 8/16/32 bits
+    if (lengthOfSource % 8 != 0)
+    {
+        _formula << " 0 /* TranslateToC: SIGNEXTEND "<< lengthOfSource << " : not implemented */";
+        return;
+    }
+    
     BEGIN_RELATION_DECLARATION;
-
-    _formula << "(_ sign_extend " << (lengthOfResult - lengthOfSource) << ") ";
+    
+    // extension de signe par double cast en int
+    _formula << "(int " << (lengthOfResult - lengthOfSource) << ") ";
     _formula << source.getTaintedSource()->getName();
 
     END_RELATION_DECLARATION;

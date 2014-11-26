@@ -1,10 +1,10 @@
-#pragma once
+ï»¿#pragma once
 
 #include <pintool.h>
-#include "TaintObject.h"    // références croisées de classe 
+#include "TaintObject.h"    // rÃ©fÃ©rences croisÃ©es de classe 
 // cf http://cpp.developpez.com/faq/cpp/index.php?page=classes#CLASS_reference_croisee
 
-// classe représentant les sources d'un objet
+// classe reprÃ©sentant les sources d'un objet
 class ObjectSource 
 { 
 private:    

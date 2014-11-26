@@ -1,3 +1,3 @@
-// simple wrapper des diff�rents headers de traductions
+﻿// simple wrapper des différents headers de traductions
 #include "translateSMTLIB.h"
 #include "translateC.h"

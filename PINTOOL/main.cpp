@@ -1,4 +1,4 @@
-/*BEGIN_LEGAL 
+ï»¿/*BEGIN_LEGAL 
 Intel Open Source License 
 
 Copyright (c) 2002-2013 Intel Corporation. All rights reserved.
@@ -35,67 +35,58 @@ END_LEGAL */
 #include <Translate\translate.h>
 
 /* ================================================================== */
-// Doxygen MainPage
-/* ================================================================== */
-
-//! \mainpage Page d'accueil
-//! \section intro Introduction
-//!
-//! Ceci est l'introduction
-
-/* ================================================================== */
 // Global variables
 /* ================================================================== */
 
-// pointeur global vers classe de gestion du marquage mémoire
+// pointeur global vers classe de gestion du marquage mÃ©moire
 TaintManager_Global *pTmgrGlobal;
 // pointeur global vers classe de gestion de la traduction SMT-LIB
 SolverFormula       *g_pFormula;
 
 TLS_KEY             g_tlsKeyTaint;          // classe de marquage des registres
-TLS_KEY             g_tlsKeySyscallData;    // stockage des données avant/apres syscall
-TLS_KEY             g_tlsStringOpInfo;      // données statiques pour les instructions CMPS / SCAS
+TLS_KEY             g_tlsKeySyscallData;    // stockage des donnÃ©es avant/apres syscall
+TLS_KEY             g_tlsStringOpInfo;      // donnÃ©es statiques pour les instructions CMPS / SCAS
 
-// structure de verrou, utilisée pour accéder aux variables globales
+// structure de verrou, utilisÃ©e pour accÃ©der aux variables globales
 // en multithread
 PIN_LOCK            g_lock;      
 
-// handle du pipe de communication avec l'extérieur
-// en MODE nopipe : correspond à STDOUT
+// handle du pipe de communication avec l'extÃ©rieur
+// en MODE nopipe : correspond Ã  STDOUT
 HANDLE              g_hPipe;     
 
-// variable déterminant l'instrumentation ou non des instructions
+// variable dÃ©terminant l'instrumentation ou non des instructions
 bool                g_beginInstrumentationOfInstructions; 
 
 /** VARIABLES FOURNIES VIA PIPE ou LIGNE DE COMMANDE  **/
-// chemin vers le fichier d'entrée pour le programme fuzzé
+// chemin vers le fichier d'entrÃ©e pour le programme fuzzÃ©
 std::string         g_inputFile;
 // option du pintool : taint ou ckeckscore
 std::string         g_option;
-// nombre maximal de contraintes à récupérer (illimité si nul) 
+// nombre maximal de contraintes Ã  rÃ©cupÃ©rer (illimitÃ© si nul) 
 UINT32              g_maxConstraints;
-// temps maximal d'exécution du pintool (en secondes)
+// temps maximal d'exÃ©cution du pintool (en secondes)
 UINT32              g_maxTime;
 
-// mode verbeux : logs de désassemblage et de marquage
+// mode verbeux : logs de dÃ©sassemblage et de marquage
 bool                g_verbose;
 ofstream            g_debug;      // fichier de log de dessassemblage
 ofstream            g_taint;      // fichier de log du marquage
-clock_t             g_timeBegin;  // temps d'exécution du pintool pour statistiques
+clock_t             g_timeBegin;  // temps d'exÃ©cution du pintool pour statistiques
 
-// option pipe ou non pour l'échange du fichier initial  et de la formule finale
+// option pipe ou non pour l'Ã©change du fichier initial  et de la formule finale
 bool                g_nopipe;
-// type d'OS hote. Sert à déterminer les numéros de syscalls
+// type d'OS hote. Sert Ã  dÃ©terminer les numÃ©ros de syscalls
 OSTYPE              g_osType;
 // adresse de la fonction NtQueryObject (NtDll.dll)
 t_NtQueryObject     g_AddressOfNtQueryObject;
 
 /** OPTION CHECKSCORE **/
 
-// nombre de threads démarrés
+// nombre de threads dÃ©marrÃ©s
 UINT32 g_numThreads = 0;
 
-// vrai si erreur trouvée
+// vrai si erreur trouvÃ©e
 bool   g_faultFound;
 
 // compteur d'instruction de chaque thread
@@ -107,12 +98,12 @@ ThreadCount g_icount[MaxNumThreads];
 
 KNOB<std::string> KInputFile(KNOB_MODE_WRITEONCE, "pintool", "input", "", "fichier d'entree");
 KNOB<UINT32>      KMaxTime(KNOB_MODE_WRITEONCE,   "pintool", "maxtime", "0", "temps maximal d'execution");
-KNOB<std::string> KBytes(KNOB_MODE_WRITEONCE,     "pintool", "range", "", "intervalles d'octets à surveiller");
+KNOB<std::string> KBytes(KNOB_MODE_WRITEONCE,     "pintool", "range", "", "intervalles d'octets Ã  surveiller");
 KNOB<UINT32>      KMaxConstr(KNOB_MODE_WRITEONCE, "pintool", "maxconstraints", "0", "nombre maximal de contraintes");
 KNOB<std::string> KOption(KNOB_MODE_WRITEONCE,    "pintool", "option", "", "option 'taint' ou 'checkscore'");
-KNOB<UINT32>      KOsType(KNOB_MODE_WRITEONCE,    "pintool", "os", "11", "OS hote (de 1 à 10); 11 = erreur");
-KNOB<BOOL>        KVerbose(KNOB_MODE_WRITEONCE,   "pintool", "verbose", "0", "mode verbeux : logs de désassemblage et de marquage");
-KNOB<BOOL>        KNoPipe(KNOB_MODE_WRITEONCE,    "pintool", "nopipe", "0", "ne pas utiliser de tube nommé (option 'input' obligatoire)");
+KNOB<UINT32>      KOsType(KNOB_MODE_WRITEONCE,    "pintool", "os", "11", "OS hote (de 1 Ã  10); 11 = erreur");
+KNOB<BOOL>        KVerbose(KNOB_MODE_WRITEONCE,   "pintool", "verbose", "0", "mode verbeux : logs de dÃ©sassemblage et de marquage");
+KNOB<BOOL>        KNoPipe(KNOB_MODE_WRITEONCE,    "pintool", "nopipe", "0", "ne pas utiliser de tube nommÃ© (option 'input' obligatoire)");
 
 /* ===================================================================== */
 // Main procedure
@@ -131,23 +122,23 @@ int main(int argc, char *argv[])
     // obligatoire pour l'instrumentation des images
     //PIN_InitSymbolsAlt(EXPORT_SYMBOLS);
     
-    // Initialisation de PIN. Renvoie TRUE si erreur trouvée
+    // Initialisation de PIN. Renvoie TRUE si erreur trouvÃ©e
     if (PIN_Init(argc, argv)) return (Usage());
 
-    // initialisation des arguments passés au pintool
+    // initialisation des arguments passÃ©s au pintool
     // et traitement de l'instrumentation correspondante
     int initStatus = pintoolInit();
     if (OPTION_TAINT == initStatus)
     {
-        // fonctions d'instrumentation des appels systèmes
+        // fonctions d'instrumentation des appels systÃ¨mes
         PIN_AddSyscallEntryFunction(SYSCALLS::syscallEntry, 0);
         PIN_AddSyscallExitFunction(SYSCALLS::syscallExit, 0);
 
         // fonction d'instrumentation de chaque instruction
         INS_AddInstrumentFunction(INSTRUMENTATION::Instruction, 0);
     
-        // Fonction appelée lors de la fin du programme
-        // version spécifique pour le multithreading
+        // Fonction appelÃ©e lors de la fin du programme
+        // version spÃ©cifique pour le multithreading
         PIN_AddFiniUnlockedFunction(INSTRUMENTATION::FiniTaint, 0);
 
         // Fonctions de notification de la creation et de la
@@ -157,7 +148,7 @@ int main(int argc, char *argv[])
 
         // fonction d'instrumentattion des images
         // permet d'obtenir dynamiquement l'adresse de fonctions
-        // contenues dans Ntdll. Utilisé par la partie 'syscalls'
+        // contenues dans Ntdll. UtilisÃ© par la partie 'syscalls'
         IMG_AddInstrumentFunction(INSTRUMENTATION::Image, 0);
 
     }
@@ -175,16 +166,16 @@ int main(int argc, char *argv[])
         // fonction de notification des changements de contexte
         PIN_AddContextChangeFunction(INSTRUMENTATION::changeCtx, 0);
 
-        // fonction d'instrumentation de chaque trace d'exécution
+        // fonction d'instrumentation de chaque trace d'exÃ©cution
         TRACE_AddInstrumentFunction(INSTRUMENTATION::traceCheckScore, 0);
 
         // Fonction de notification lors de la fin du programme
-        // version spécifique pour le multithreading
+        // version spÃ©cifique pour le multithreading
         PIN_AddFiniUnlockedFunction(INSTRUMENTATION::FiniCheckScore, 0);
     }
     else return (Usage());
 
-    // Démarrage de l'instrumentation, ne retourne jamais
+    // DÃ©marrage de l'instrumentation, ne retourne jamais
     PIN_StartProgram();
 
     return (EXIT_SUCCESS); 
