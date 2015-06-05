@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include <TaintEngine\TaintManager.h>
 #include <Dataxfer\dataxfer.h> // pour addition et soustraction avec valeurs nulles
+#include <Translate\translateIR.h> // pour ajout des contraintes sur DIV/IDIV
 
 namespace BINARY 
 {

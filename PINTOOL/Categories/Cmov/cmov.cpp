@@ -1,5 +1,4 @@
 ﻿#include "cmov.h"
-#include <Translate\translate.h>
 #include <Dataxfer\dataxfer.h>
 
 //! tous les callbacks pour CMOV suivent le même principe

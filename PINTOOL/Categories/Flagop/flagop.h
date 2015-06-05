@@ -1,5 +1,6 @@
 ﻿#pragma once
 #include <TaintEngine\TaintManager.h>
+#include <Translate\translateIR.h> // pour SALC
 
 namespace FLAGOP
 {

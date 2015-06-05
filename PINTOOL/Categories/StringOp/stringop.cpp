@@ -1,7 +1,7 @@
 ﻿#include "stringop.h"
 #include <Dataxfer\dataxfer.h>	// pour STOS et LODS 
 #include <Binary\binary.h>		// pour SCAS sans préfixe REP
-#include <Translate\translate.h>
+#include <Translate\translateIR.h>
 
 // pour les instructions MOVS, LODS et STOS, 
 // un seul prefixe possible : REP, avec (e/r)cx comme compteur
@@ -19,6 +19,7 @@ ADDRINT PIN_FAST_ANALYSIS_CALL STRINGOP::returnArg(BOOL arg)
 //////////
 // MOVS //
 //////////
+
 // CALLBACKS
 void STRINGOP::cMOVS(INS &ins, UINT32 size)
 { 

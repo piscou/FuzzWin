@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
       <Configuration>Debug</Configuration>
@@ -28,27 +28,27 @@
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <CharacterSet>MultiByte</CharacterSet>
-    <PlatformToolset>v110</PlatformToolset>
+    <PlatformToolset>v120</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <CharacterSet>MultiByte</CharacterSet>
-    <PlatformToolset>v110</PlatformToolset>
+    <PlatformToolset>v120</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <WholeProgramOptimization>false</WholeProgramOptimization>
     <CharacterSet>MultiByte</CharacterSet>
-    <PlatformToolset>v110</PlatformToolset>
+    <PlatformToolset>v120</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <WholeProgramOptimization>false</WholeProgramOptimization>
     <CharacterSet>MultiByte</CharacterSet>
-    <PlatformToolset>v110</PlatformToolset>
+    <PlatformToolset>v120</PlatformToolset>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -69,47 +69,47 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>false</LinkIncremental>
     <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
-    <OutDir>$(SolutionDir)BUILD\pintool\</OutDir>
+    <OutDir>$(SolutionDir)..\bin\pintool\</OutDir>
     <TargetExt>.dll</TargetExt>
-    <IncludePath>$(ProjectDir);$(ProjectDir)core\;$(ProjectDir)categories\;$(PIN_ROOT)source\include\pin;$(PIN_ROOT)source\include\pin\gen;$(PIN_ROOT)extras\xed2-ia32\include;$(PIN_ROOT)extras\components\include;$(IncludePath)</IncludePath>
-    <LibraryPath>$(PIN_ROOT)ia32\lib;$(PIN_ROOT)ia32\lib-ext;$(PIN_ROOT)extras\xed2-ia32\lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(ProjectDir);$(ProjectDir)core\;$(ProjectDir)categories\;$(PIN_ROOT)source\include\pin;$(PIN_ROOT)source\include\pin\gen;$(PIN_ROOT)extras\xed-ia32\include;$(PIN_ROOT)extras\components\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(PIN_ROOT)ia32\lib;$(PIN_ROOT)ia32\lib-ext;$(PIN_ROOT)extras\xed-ia32\lib;$(LibraryPath)</LibraryPath>
     <GenerateManifest />
     <ExecutablePath>$(VCInstallDir)bin;$(WindowsSdkDir)bin\NETFX 4.0 Tools;$(WindowsSdkDir)bin;$(VSInstallDir)Common7\Tools\bin;$(VSInstallDir)Common7\tools;$(VSInstallDir)Common7\ide;$(ProgramFiles)\HTML Help Workshop;$(FrameworkSDKDir)\bin;$(MSBuildToolsPath32);$(VSInstallDir);$(SystemRoot)\SysWow64;$(FxCopDir);$(PATH);</ExecutablePath>
-    <TargetName>fuzzwinX86</TargetName>
-    <IntDir>$(SolutionDir)TEMP\$(Platform)\$(Configuration)\</IntDir>
+    <TargetName>fuzzwin$(PlatformShortName)</TargetName>
+    <IntDir>$(SolutionDir)..\temp\$(ProjectName)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <TargetExt>.dll</TargetExt>
-    <IncludePath>$(ProjectDir);$(ProjectDir)core\;$(ProjectDir)categories\;$(PIN_ROOT)source\include\pin;$(PIN_ROOT)source\include\pin\gen;$(PIN_ROOT)extras\xed2-intel64\include;$(PIN_ROOT)extras\components\include;$(IncludePath)</IncludePath>
-    <LibraryPath>$(PIN_ROOT)intel64\lib;$(PIN_ROOT)intel64\lib-ext;$(PIN_ROOT)extras\xed2-intel64\lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(ProjectDir);$(ProjectDir)core\;$(ProjectDir)categories\;$(PIN_ROOT)source\include\pin;$(PIN_ROOT)source\include\pin\gen;$(PIN_ROOT)extras\xed-intel64\include;$(PIN_ROOT)extras\components\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(PIN_ROOT)intel64\lib;$(PIN_ROOT)intel64\lib-ext;$(PIN_ROOT)extras\xed-intel64\lib;$(LibraryPath)</LibraryPath>
     <GenerateManifest />
     <LinkIncremental>false</LinkIncremental>
     <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
-    <TargetName>fuzzwinX64</TargetName>
-    <OutDir>$(SolutionDir)BUILD\pintool\</OutDir>
-    <IntDir>$(SolutionDir)TEMP\$(Platform)\$(Configuration)\</IntDir>
+    <TargetName>fuzzwin$(PlatformShortName)</TargetName>
+    <OutDir>$(SolutionDir)..\bin\pintool\</OutDir>
+    <IntDir>$(SolutionDir)..\temp\$(ProjectName)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(ProjectDir);$(ProjectDir)core\;$(ProjectDir)categories\;$(ProjectDir);$(ProjectDir)core\;$(ProjectDir)categories\;$(PIN_ROOT)source\include\pin;$(PIN_ROOT)source\include\pin\gen;$(PIN_ROOT)extras\xed2-ia32\include;$(PIN_ROOT)extras\components\include;$(IncludePath)</IncludePath>
-    <LibraryPath>$(PIN_ROOT)ia32\lib;$(PIN_ROOT)ia32\lib-ext;$(PIN_ROOT)extras\xed2-ia32\lib;$(LibraryPath)</LibraryPath>
-    <OutDir>$(SolutionDir)BUILD\pintool\</OutDir>
+    <IncludePath>$(ProjectDir);$(ProjectDir)core\;$(ProjectDir)categories\;$(PIN_ROOT)source\include\pin;$(PIN_ROOT)source\include\pin\gen;$(PIN_ROOT)extras\xed-ia32\include;$(PIN_ROOT)extras\components\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(PIN_ROOT)ia32\lib;$(PIN_ROOT)ia32\lib-ext;$(PIN_ROOT)extras\xed-ia32\lib;$(LibraryPath)</LibraryPath>
+    <OutDir>$(SolutionDir)..\bin\pintool\</OutDir>
     <TargetExt>.dll</TargetExt>
     <GenerateManifest />
-    <ExecutablePath>$(VCInstallDir)bin;$(WindowsSdkDir)bin\NETFX 4.0 Tools;$(WindowsSdkDir)bin;$(VSInstallDir)Common7\Tools\bin;$(VSInstallDir)Common7\tools;$(VSInstallDir)Common7\ide;$(ProgramFiles)\HTML Help Workshop;$(FrameworkSDKDir)\bin;$(MSBuildToolsPath32);$(VSInstallDir);$(SystemRoot)\SysWow64;$(FxCopDir);$(PATH);</ExecutablePath>
-    <TargetName>fuzzwinX86</TargetName>
-    <IntDir>$(SolutionDir)TEMP\$(Platform)\$(Configuration)\</IntDir>
+    <ExecutablePath>$(VCInstallDir)bin;$(WindowsSdkDir)bin\NETFX 4.0 Tools;$(WindowsSdkDir)bin;$(VSInstallDir)Common7\Tools\bin;$(VSInstallDir)Common7\tools;$(VSInstallDir)Common7\ide;$(ProgramFiles)\HTML Help Workshop;$(FrameworkSDKDir)\bin;$(MSBuildToolsPath32);$(VSInstallDir);$(SystemRoot)\SysWow64;$(FxCopDir);$(PATH)</ExecutablePath>
+    <TargetName>fuzzwin$(PlatformShortName)</TargetName>
+    <IntDir>$(SolutionDir)..\temp\$(ProjectName)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <TargetExt>.dll</TargetExt>
     <GenerateManifest />
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(ProjectDir);$(ProjectDir)core\;$(ProjectDir)categories\;$(PIN_ROOT)source\include\pin;$(PIN_ROOT)source\include\pin\gen;$(PIN_ROOT)extras\xed2-intel64\include;$(PIN_ROOT)extras\components\include;$(IncludePath)</IncludePath>
-    <LibraryPath>$(PIN_ROOT)intel64\lib;$(PIN_ROOT)intel64\lib-ext;$(PIN_ROOT)extras\xed2-intel64\lib;$(LibraryPath)</LibraryPath>
-    <TargetName>fuzzwinX64</TargetName>
-    <OutDir>$(SolutionDir)BUILD\pintool\</OutDir>
+    <IncludePath>$(ProjectDir);$(ProjectDir)core\;$(ProjectDir)categories\;$(PIN_ROOT)source\include\pin;$(PIN_ROOT)source\include\pin\gen;$(PIN_ROOT)extras\xed-intel64\include;$(PIN_ROOT)extras\components\include;$(IncludePath)</IncludePath>
+    <LibraryPath>$(PIN_ROOT)intel64\lib;$(PIN_ROOT)intel64\lib-ext;$(PIN_ROOT)extras\xed-intel64\lib;$(LibraryPath)</LibraryPath>
+    <TargetName>fuzzwin$(PlatformShortName)</TargetName>
+    <OutDir>$(SolutionDir)..\bin\pintool\</OutDir>
     <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
-    <IntDir>$(SolutionDir)TEMP\$(Platform)\$(Configuration)\</IntDir>
+    <IntDir>$(SolutionDir)..\temp\$(ProjectName)\</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -466,10 +466,7 @@ del "$(TargetDir)$(TargetName).exp"</Command>
     <ClInclude Include="Core\TaintEngine\TaintObject.h" />
     <ClInclude Include="Core\TaintUtilities\utils.h" />
     <ClInclude Include="Core\TaintUtilities\utils.hpp" />
-    <ClInclude Include="Core\Translate\translate.h" />
-    <ClInclude Include="Core\Translate\translateC.h" />
     <ClInclude Include="Core\Translate\translateIR.h" />
-    <ClInclude Include="Core\Translate\translateSMTLIB.h" />
     <ClInclude Include="pintool.h" />
   </ItemGroup>
   <ItemGroup>
@@ -497,9 +494,7 @@ del "$(TargetDir)$(TargetName).exp"</Command>
     <ClCompile Include="Core\TaintEngine\ObjectSource.cpp" />
     <ClCompile Include="Core\TaintEngine\TaintObject.cpp" />
     <ClCompile Include="Core\TaintUtilities\utils.cpp" />
-    <ClCompile Include="Core\Translate\translateC.cpp" />
     <ClCompile Include="Core\Translate\translateIR.cpp" />
-    <ClCompile Include="Core\Translate\translateSMTLIB.cpp" />
     <ClCompile Include="initialize.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>

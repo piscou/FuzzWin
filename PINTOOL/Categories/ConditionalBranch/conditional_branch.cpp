@@ -1,5 +1,4 @@
 ﻿#include "conditional_branch.h"
-#include <Translate\translate.h>
 
 void CONDITIONAL_BR::cJB(INS &ins) 
 { 

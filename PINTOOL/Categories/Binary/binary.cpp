@@ -1,5 +1,4 @@
 ﻿#include "binary.h"
-#include <Translate\translate.h> // pour ajout des contraintes sur DIV/IDIV
 
 /////////
 // NEG //

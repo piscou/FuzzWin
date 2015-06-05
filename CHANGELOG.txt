@@ -1,4 +1,8 @@
-+ encodage de tous les fichiers en UTF-8
+﻿V1.5
++ enconding files in UTF-8
++ moving to VS2013 compilers
++ moving to PIN KIT 2.14
++ starting to reorganize project IOT make it more modular
 
 *********************************
 Version 1.5 (beta) - 22 mai 2014

@@ -1,6 +1,6 @@
 ﻿#include <Syscalls\syscalls.h>
 #include <TaintEngine\TaintManager.h>
-#include <Translate\translate.h>
+#include <Translate\translateIR.h>
 #include <Instrumentation\instrumentation.h>
 
 /* ===================================================================== */
@@ -78,7 +78,7 @@ int pintoolInit()
 
         // instanciation des classes globales : marquage mémoire et formule SMT2
         pTmgrGlobal   = new TaintManager_Global;
-        g_pFormula    = new SolverFormula;
+        g_pFormula    = new TranslateIR;
         if (!pTmgrGlobal || !g_pFormula)  return (INIT_ERROR);
 
         /*** RECUPERATION DES ARGUMENTS DE LA LIGNE DE COMMANDE ***/

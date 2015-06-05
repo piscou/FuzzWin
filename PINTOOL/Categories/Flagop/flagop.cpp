@@ -1,5 +1,4 @@
 ﻿#include "flagop.h"
-#include <Translate\translate.h> // pour SALC
 
 // CALLBACKS
 void FLAGOP::cCLC_STC(INS &ins)

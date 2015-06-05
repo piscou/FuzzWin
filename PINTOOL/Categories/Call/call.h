@@ -1,7 +1,7 @@
 ﻿#pragma once
 #include <TaintEngine\TaintManager.h> 
 #include <TaintUtilities\utils.h>
-#include <Translate\translate.h> // ajout des contraintes sur les adresses de saut
+#include <Translate\translateIR.h> // ajout des contraintes sur les adresses de saut
 
 namespace CALL 
 {

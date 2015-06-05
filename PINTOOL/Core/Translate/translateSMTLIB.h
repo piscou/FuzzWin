@@ -183,4 +183,4 @@ public:
 typedef TranslateToSMTLIB SolverFormula;
 
 // pointeur global vers classe de gestion de la traduction SMT-LIB
-extern SolverFormula *g_pFormula;
+extern TranslateIR *g_pFormula;

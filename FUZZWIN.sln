@@ -9,13 +9,10 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "FUZZWIN_CMDLINE", "LIGNE DE
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "FUZZWIN_GUI", "GUI\FUZZWIN_GUI.vcxproj", "{B12702AD-ABFB-343A-A199-8E24837244A3}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SUIVI DES VERSIONS", "SUIVI DES VERSIONS", "{32BDFF28-B379-48C1-877C-5E23CB8A81F4}"
-	ProjectSection(SolutionItems) = preProject
-		CHANGELOG.txt = CHANGELOG.txt
-	EndProjectSection
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{17A2C477-B1C7-41AB-B56D-A4B26CCDB693}"
 	ProjectSection(SolutionItems) = preProject
+		CHANGELOG.txt = CHANGELOG.txt
+		Performance2.psess = Performance2.psess
 		README.md = README.md
 	EndProjectSection
 EndProject
@@ -84,7 +81,10 @@ Global
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
-		VisualSVNWorkingCopyRoot = .
 		Qt5Version = 5.2.1_32bits
+		VisualSVNWorkingCopyRoot = .
+	EndGlobalSection
+	GlobalSection(Performance) = preSolution
+		HasPerformanceSessions = true
 	EndGlobalSection
 EndGlobal

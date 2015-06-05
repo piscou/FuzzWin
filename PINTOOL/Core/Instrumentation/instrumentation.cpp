@@ -1,5 +1,5 @@
 ﻿#include "instrumentation.h"
-#include <Translate\translate.h>
+#include <Translate\translateIR.h>
 #include <Syscalls\syscalls.h>
 #include <TaintUtilities\utils.h>
 

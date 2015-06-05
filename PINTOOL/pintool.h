@@ -11,7 +11,7 @@
 #include <fstream>  // pour fichiers de log
 #include <ctime>    // pour calcul du temps dans fichier de log
 
-// Namespace obligatoire pour eviter les confilts WINAPI / PIN
+// Namespace obligatoire pour eviter les conflits WINAPI / PIN
 namespace WINDOWS 
 {
 #include <windows.h>

@@ -78,12 +78,6 @@
     <ClCompile Include="Core\Translate\translateIR.cpp">
       <Filter>Core\Translate</Filter>
     </ClCompile>
-    <ClCompile Include="Core\Translate\translateSMTLIB.cpp">
-      <Filter>Core\Translate\SMTLIB</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Translate\translateC.cpp">
-      <Filter>Core\Translate\C</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pintool.h" />
@@ -204,9 +198,6 @@
     <ClInclude Include="Categories\UnconditionalBranch\unconditional_branch.h">
       <Filter>Categories\Unconditional Branch</Filter>
     </ClInclude>
-    <ClInclude Include="Core\Translate\translate.h">
-      <Filter>Core\Translate</Filter>
-    </ClInclude>
     <ClInclude Include="Categories\Call\call.hpp">
       <Filter>Categories\Call</Filter>
     </ClInclude>
@@ -218,12 +209,6 @@
     </ClInclude>
     <ClInclude Include="Core\Translate\translateIR.h">
       <Filter>Core\Translate</Filter>
-    </ClInclude>
-    <ClInclude Include="Core\Translate\translateSMTLIB.h">
-      <Filter>Core\Translate\SMTLIB</Filter>
-    </ClInclude>
-    <ClInclude Include="Core\Translate\translateC.h">
-      <Filter>Core\Translate\C</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -304,12 +289,6 @@
     </Filter>
     <Filter Include="Core\Translate">
       <UniqueIdentifier>{a2cb6821-50a1-4e72-a047-161c0b178285}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Core\Translate\SMTLIB">
-      <UniqueIdentifier>{721c0de9-449f-4848-a959-b2b13127477b}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Core\Translate\C">
-      <UniqueIdentifier>{062511e7-a12c-44ee-acaa-ad99ccd23404}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

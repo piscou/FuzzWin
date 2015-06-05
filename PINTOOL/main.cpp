@@ -32,7 +32,7 @@ END_LEGAL */
 #include <TaintEngine\TaintManager.h>
 #include <Instrumentation\instrumentation.h>
 #include <Syscalls\syscalls.h>
-#include <Translate\translate.h>
+#include <Translate\translateIR.h>
 
 /* ================================================================== */
 // Global variables
@@ -41,7 +41,7 @@ END_LEGAL */
 // pointeur global vers classe de gestion du marquage mémoire
 TaintManager_Global *pTmgrGlobal;
 // pointeur global vers classe de gestion de la traduction SMT-LIB
-SolverFormula       *g_pFormula;
+TranslateIR         *g_pFormula;
 
 TLS_KEY             g_tlsKeyTaint;          // classe de marquage des registres
 TLS_KEY             g_tlsKeySyscallData;    // stockage des données avant/apres syscall

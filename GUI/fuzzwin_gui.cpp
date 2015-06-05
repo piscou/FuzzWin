@@ -55,7 +55,7 @@ int FUZZWIN_GUI::testConfig()
         QMessageBox::critical(nullptr, "Erreur", "OS non supporté", QMessageBox::Close);
         return (EXIT_FAILURE);
     }
-
+#if 0
     // test de la présence des DLL du pintool
     QString exePath = QApplication::applicationDirPath();
     _pintool_X86    = QDir::toNativeSeparators(exePath + "/../pintool/fuzzwinX86.dll");
@@ -75,6 +75,7 @@ int FUZZWIN_GUI::testConfig()
             return (EXIT_FAILURE);
         }
     }
+#endif
 
     // présence "normale" de PIN = via variable d'environnement "PIN_ROOT"
     QString pinPath = _env.value("PIN_ROOT");

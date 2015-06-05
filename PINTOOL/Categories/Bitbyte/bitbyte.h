@@ -1,5 +1,6 @@
 ﻿#pragma once
 #include <TaintEngine\TaintManager.h>
+#include <Translate\translateIR.h> // Vérifier pourquoi 
 
 namespace BITBYTE
 {

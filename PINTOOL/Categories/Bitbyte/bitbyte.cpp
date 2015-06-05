@@ -1,5 +1,4 @@
 ﻿#include "bitbyte.h"
-#include <Translate\translate.h>
 
 /*************/
 /*** SETcc ***/
